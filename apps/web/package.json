@@ -18,7 +18,6 @@
     "@portfolio/ui": "workspace:*",
     "@react-pdf/renderer": "^4.4.1",
     "@sentry/nextjs": "^10.48.0",
-    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@vercel/analytics": "^2.0.1",

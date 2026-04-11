@@ -1,22 +1,13 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@portfolio/shared/supabase/database.types";
 
-export async function createClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient<Database>(
+/**
+ * Anonymous Supabase client for public RLS reads. No cookies — safe inside
+ * `unstable_cache` and during static generation / not-found prerender.
+ */
+export function createPublicClient() {
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {
-          // Read-only in server components — no-op
-        },
-      },
-    },
   );
 }

@@ -1,5 +1,5 @@
 import { unstable_cache as cache } from "next/cache";
-import { createClient } from "@/lib/supabase-server";
+import { createPublicClient } from "@/lib/supabase-server";
 import {
   getHero,
   getAbout,
@@ -19,7 +19,7 @@ import {
 
 export const fetchHero = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getHero(client);
   },
   ["hero"],
@@ -28,7 +28,7 @@ export const fetchHero = cache(
 
 export const fetchAbout = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getAbout(client);
   },
   ["about"],
@@ -37,7 +37,7 @@ export const fetchAbout = cache(
 
 export const fetchExperience = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getExperience(client);
   },
   ["experience"],
@@ -46,7 +46,7 @@ export const fetchExperience = cache(
 
 export const fetchFeaturedProjects = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getFeaturedProjects(client);
   },
   ["featured-projects"],
@@ -55,7 +55,7 @@ export const fetchFeaturedProjects = cache(
 
 export const fetchAllProjects = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getProjects(client);
   },
   ["all-projects"],
@@ -64,7 +64,7 @@ export const fetchAllProjects = cache(
 
 export const fetchSkills = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getSkills(client);
   },
   ["skills"],
@@ -73,7 +73,7 @@ export const fetchSkills = cache(
 
 export const fetchTestimonials = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getTestimonials(client);
   },
   ["testimonials"],
@@ -82,7 +82,7 @@ export const fetchTestimonials = cache(
 
 export const fetchSiteConfig = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getSiteConfig(client);
   },
   ["site-config"],
@@ -91,7 +91,7 @@ export const fetchSiteConfig = cache(
 
 export const fetchResume = cache(
   async () => {
-    const client = await createClient();
+    const client = createPublicClient();
     return getResume(client);
   },
   ["resume"],
