@@ -4,42 +4,13 @@ import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { cn } from "@/lib/utils";
+import type { Database } from "@portfolio/shared/supabase/database.types";
 
-type FeaturedProject = {
-  title: string;
-  description: string;
-  tech: string[];
-  github?: string;
-  live?: string;
-  image?: string;
+type Project = Database["public"]["Tables"]["projects"]["Row"];
+
+type FeaturedProjectsSectionProps = {
+  projects: Project[];
 };
-
-const projects: FeaturedProject[] = [
-  {
-    title: "Shopsense AI Ad Platform",
-    description:
-      "Serverless ad delivery system on AWS handling 50K+ daily impressions. Built with CDK, Lambda, DynamoDB, and SQS with real-time analytics via CloudFront.",
-    tech: ["AWS CDK", "Lambda", "DynamoDB", "SQS", "React", "TypeScript"],
-  },
-  {
-    title: "GudangAda Design System",
-    description:
-      "Private npm design system adopted by 40+ engineers across 8 product teams. Component library with Storybook documentation and automated visual regression testing.",
-    tech: ["React", "TypeScript", "Storybook", "npm", "styled-components"],
-  },
-  {
-    title: "Achieve Web Platform",
-    description:
-      "Enterprise financial wellness platform. Led CRA→Vite migration (70% faster builds) and React 18 upgrade achieving 60% Core Web Vitals improvement.",
-    tech: ["React 18", "Vite", "TypeScript", "React Query", "Tailwind CSS"],
-  },
-  {
-    title: "GudangAda Company Profile",
-    description:
-      "Public-facing company website built with Next.js, Contentful CMS, and Tailwind CSS. Achieved 70% improvement in Core Web Vitals with SSG and ISR.",
-    tech: ["Next.js", "Contentful", "Tailwind CSS", "TypeScript", "Vercel"],
-  },
-];
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -50,7 +21,7 @@ const sectionVariants = {
   },
 };
 
-export function FeaturedProjectsSection() {
+export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionProps) {
   return (
     <section
       id="projects"
@@ -78,7 +49,7 @@ export function FeaturedProjectsSection() {
 
               return (
                 <motion.div
-                  key={project.title}
+                  key={project.id}
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
@@ -92,14 +63,16 @@ export function FeaturedProjectsSection() {
                     isOdd && "md:[direction:rtl] md:[&>*]:[direction:ltr]",
                   )}
                 >
-                  {/* Image placeholder */}
                   <div className="aspect-video overflow-hidden rounded-xl bg-muted">
-                    <div className="flex h-full items-center justify-center text-muted-foreground/30">
-                      Project Screenshot
-                    </div>
+                    {project.cover_url ? (
+                      <img src={project.cover_url} alt={project.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground/30">
+                        Project Screenshot
+                      </div>
+                    )}
                   </div>
 
-                  {/* Content */}
                   <div className={cn(isOdd && "md:text-right")}>
                     <p className="font-mono text-sm text-accent">
                       Featured Project
@@ -116,7 +89,7 @@ export function FeaturedProjectsSection() {
                         isOdd && "md:justify-end",
                       )}
                     >
-                      {project.tech.map((t) => (
+                      {project.tech_tags.map((t) => (
                         <span
                           key={t}
                           className="font-mono text-xs text-muted-foreground"
@@ -131,9 +104,9 @@ export function FeaturedProjectsSection() {
                         isOdd && "md:justify-end",
                       )}
                     >
-                      {project.github && (
+                      {project.github_url && (
                         <a
-                          href={project.github}
+                          href={project.github_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-muted-foreground transition-colors hover:text-foreground"
@@ -142,9 +115,9 @@ export function FeaturedProjectsSection() {
                           <GitHubIcon className="h-5 w-5" />
                         </a>
                       )}
-                      {project.live && (
+                      {project.live_url && (
                         <a
-                          href={project.live}
+                          href={project.live_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-muted-foreground transition-colors hover:text-foreground"

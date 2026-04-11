@@ -10,62 +10,68 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { CommandPalette } from "@/components/layout/command-palette";
-import { SITE, SOCIAL_LINKS } from "@portfolio/shared/constants";
+import { SiteConfigProvider } from "@/components/layout/site-config-provider";
+import { fetchSiteConfig } from "@/lib/data";
 import "@/styles/globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE.url),
-  title: {
-    template: "%s | Khubaib Qaiser",
-    default: "Khubaib Qaiser | Senior Software Engineer",
-  },
-  description: SITE.description,
-  keywords: [
-    "Senior Software Engineer",
-    "React",
-    "Next.js",
-    "TypeScript",
-    "React Native",
-    "AWS",
-    "Full Stack Developer",
-    "Remote Engineer",
-    "Pakistan",
-    "Khubaib Qaiser",
-  ],
-  authors: [{ name: SITE.name, url: SITE.url }],
-  creator: SITE.name,
-  openGraph: {
-    type: "profile",
-    locale: "en_US",
-    url: SITE.url,
-    siteName: SITE.name,
-    title: "Khubaib Qaiser | Senior Software Engineer",
-    description: SITE.description,
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Khubaib Qaiser — Senior Software Engineer",
-      },
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const config = await fetchSiteConfig();
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      template: `%s | ${config.name}`,
+      default: `${config.name} | ${config.title}`,
+    },
+    description: config.description,
+    keywords: [
+      "Senior Software Engineer",
+      "React",
+      "Next.js",
+      "TypeScript",
+      "React Native",
+      "AWS",
+      "Full Stack Developer",
+      "Remote Engineer",
+      config.name,
     ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Khubaib Qaiser | Senior Software Engineer",
-    description: SITE.description,
-    images: ["/og-image.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    "max-image-preview": "large",
-    "max-snippet": -1,
-  },
-  alternates: {
-    canonical: SITE.url,
-  },
-};
+    authors: [{ name: config.name, url: SITE_URL }],
+    creator: config.name,
+    openGraph: {
+      type: "profile",
+      locale: "en_US",
+      url: SITE_URL,
+      siteName: config.name,
+      title: `${config.name} | ${config.title}`,
+      description: config.description,
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `${config.name} — ${config.title}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${config.name} | ${config.title}`,
+      description: config.description,
+      images: ["/og-image.png"],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+    alternates: {
+      canonical: SITE_URL,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -76,17 +82,24 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-function JsonLd() {
+function JsonLd({
+  config,
+  siteUrl,
+}: {
+  config: Awaited<ReturnType<typeof fetchSiteConfig>>;
+  siteUrl: string;
+}) {
+  const socialLinks = config.social_links as unknown as Array<{ url: string }>;
   const personSchema = {
     "@context": "https://schema.org",
     "@type": ["Person", "ProfilePage"],
-    "@id": `${SITE.url}/#person`,
-    name: SITE.name,
-    url: SITE.url,
-    jobTitle: SITE.title,
-    description: SITE.description,
-    email: SITE.email,
-    sameAs: Object.values(SOCIAL_LINKS),
+    "@id": `${siteUrl}/#person`,
+    name: config.name,
+    url: siteUrl,
+    jobTitle: config.title,
+    description: config.description,
+    email: config.email,
+    sameAs: socialLinks.map((l) => l.url),
     knowsAbout: [
       "React",
       "Next.js",
@@ -100,14 +113,9 @@ function JsonLd() {
       "Docker",
       "CI/CD",
     ],
-    alumniOf: {
-      "@type": "CollegeOrUniversity",
-      name: "Quaid-i-Azam University",
-      sameAs: "https://www.qau.edu.pk",
-    },
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Islamabad",
+      addressLocality: config.location.split(",")[0]?.trim(),
       addressCountry: "PK",
     },
   };
@@ -115,13 +123,8 @@ function JsonLd() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: SITE.name,
-    url: SITE.url,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE.url}/projects?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
+    name: config.name,
+    url: siteUrl,
   };
 
   return (
@@ -138,7 +141,11 @@ function JsonLd() {
   );
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const config = await fetchSiteConfig();
+  const navLinks = config.nav_links as unknown as Array<{ label: string; href: string }>;
+  const socialLinks = config.social_links as unknown as Array<{ platform: string; url: string; label: string }>;
+
   return (
     <html
       lang="en"
@@ -147,7 +154,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <JsonLd />
+        <JsonLd config={config} siteUrl={SITE_URL} />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider>
@@ -155,13 +162,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <a href="#main" className="skip-to-content">
               Skip to content
             </a>
-            <Navbar />
+            <Navbar name={config.name} navLinks={navLinks} />
             <main id="main" className="relative">
               {children}
             </main>
-            <Footer />
-            <ChatBubble />
-            <CommandPalette />
+            <Footer name={config.name} socialLinks={socialLinks} />
+            <SiteConfigProvider email={config.email} socialLinks={socialLinks}>
+              <ChatBubble />
+              <CommandPalette />
+            </SiteConfigProvider>
           </SmoothScroll>
         </ThemeProvider>
         <Analytics />

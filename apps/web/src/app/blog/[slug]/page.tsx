@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import { notFound } from "next/navigation";
-import { SITE } from "@portfolio/shared/constants";
 
 type BlogPostData = {
   slug: string;
@@ -136,7 +135,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
-    authors: [{ name: SITE.name }],
+    authors: [{ name: "Khubaib Qaiser" }],
     openGraph: {
       type: "article",
       title: post.title,

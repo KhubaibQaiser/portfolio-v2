@@ -3,60 +3,12 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
+import type { Database } from "@portfolio/shared/supabase/database.types";
 
-type SkillItem = {
-  name: string;
-  proficiency: number;
-};
+type Skill = Database["public"]["Tables"]["skills"]["Row"];
 
-const skillData: Record<string, SkillItem[]> = {
-  frontend: [
-    { name: "React 18", proficiency: 95 },
-    { name: "Next.js", proficiency: 92 },
-    { name: "TypeScript", proficiency: 93 },
-    { name: "Tailwind CSS", proficiency: 90 },
-    { name: "HTML5/CSS3", proficiency: 95 },
-    { name: "Framer Motion", proficiency: 80 },
-  ],
-  mobile: [
-    { name: "React Native", proficiency: 88 },
-    { name: "Expo", proficiency: 82 },
-    { name: "Kotlin", proficiency: 55 },
-  ],
-  backend: [
-    { name: "Node.js", proficiency: 85 },
-    { name: "REST API", proficiency: 90 },
-    { name: "GraphQL", proficiency: 78 },
-  ],
-  cloud: [
-    { name: "AWS Lambda", proficiency: 82 },
-    { name: "AWS CDK", proficiency: 78 },
-    { name: "DynamoDB", proficiency: 75 },
-    { name: "S3 / CloudFront", proficiency: 80 },
-    { name: "Firebase", proficiency: 75 },
-    { name: "Vercel", proficiency: 88 },
-  ],
-  state: [
-    { name: "Redux / RTK", proficiency: 88 },
-    { name: "TanStack Query", proficiency: 85 },
-    { name: "Zustand", proficiency: 80 },
-    { name: "Apollo GraphQL", proficiency: 75 },
-  ],
-  devops: [
-    { name: "Docker", proficiency: 70 },
-    { name: "GitHub Actions", proficiency: 82 },
-    { name: "Sentry", proficiency: 78 },
-  ],
-  testing: [
-    { name: "Jest / RTL", proficiency: 80 },
-    { name: "Playwright", proficiency: 70 },
-    { name: "Detox", proficiency: 65 },
-  ],
-  tools: [
-    { name: "Storybook", proficiency: 78 },
-    { name: "Figma", proficiency: 72 },
-    { name: "Linear / JIRA", proficiency: 85 },
-  ],
+type SkillsSectionProps = {
+  skills: Skill[];
 };
 
 const sectionVariants = {
@@ -68,7 +20,14 @@ const sectionVariants = {
   },
 };
 
-export function SkillsSection() {
+export function SkillsSection({ skills }: SkillsSectionProps) {
+  const grouped = skills.reduce<Record<string, Skill[]>>((acc, skill) => {
+    const cat = skill.category;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(skill);
+    return acc;
+  }, {});
+
   return (
     <section
       id="skills"
@@ -91,14 +50,14 @@ export function SkillsSection() {
           </h2>
 
           <div className="mt-10 grid gap-8 md:grid-cols-2">
-            {Object.entries(skillData).map(([category, skills]) => (
+            {Object.entries(grouped).map(([category, categorySkills]) => (
               <div key={category} className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">
                   {SKILL_CATEGORIES[category as keyof typeof SKILL_CATEGORIES] ?? category}
                 </h3>
                 <div className="space-y-3">
-                  {skills.map((skill) => (
-                    <div key={skill.name}>
+                  {categorySkills.map((skill) => (
+                    <div key={skill.id}>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-sm font-medium">{skill.name}</span>
                         <span className="font-mono text-xs text-muted-foreground">

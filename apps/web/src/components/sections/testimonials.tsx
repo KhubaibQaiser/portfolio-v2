@@ -2,35 +2,17 @@
 
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
+import type { Database } from "@portfolio/shared/supabase/database.types";
 
-const TESTIMONIALS = [
-  {
-    id: "1",
-    quote:
-      "Khubaib is one of the most skilled frontend engineers I've worked with. He took ownership of our ad delivery platform and delivered a production-grade system that handles tens of thousands of impressions daily.",
-    author_name: "Alex Rivera",
-    author_title: "CTO",
-    company: "Shopsense AI",
-  },
-  {
-    id: "2",
-    quote:
-      "His work on migrating our legacy CRA apps to Vite was flawless. Build times dropped by 70% and developer satisfaction went through the roof. Khubaib consistently ships high-quality, well-tested code.",
-    author_name: "Sarah Chen",
-    author_title: "Engineering Manager",
-    company: "Achieve",
-  },
-  {
-    id: "3",
-    quote:
-      "Khubaib created our entire design system from scratch as a private npm package. It unified the UI across 8 teams and 40+ engineers. His attention to DX and component API design is exceptional.",
-    author_name: "Adi Prasetyo",
-    author_title: "VP of Engineering",
-    company: "GudangAda",
-  },
-];
+type Testimonial = Database["public"]["Tables"]["testimonials"]["Row"];
 
-export function Testimonials() {
+type TestimonialsProps = {
+  testimonials: Testimonial[];
+};
+
+export function Testimonials({ testimonials }: TestimonialsProps) {
+  if (testimonials.length === 0) return null;
+
   return (
     <section
       id="testimonials"
@@ -54,7 +36,7 @@ export function Testimonials() {
         </motion.div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
+          {testimonials.map((t, i) => (
             <motion.div
               key={t.id}
               initial={{ opacity: 0, y: 30 }}

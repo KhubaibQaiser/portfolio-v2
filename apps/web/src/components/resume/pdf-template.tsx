@@ -211,14 +211,16 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
             <Link src={`https://${data.website}`} style={s.headerLink}>
               {data.website}
             </Link>
-            <Text style={s.headerSep}>|</Text>
-            <Link src={`https://${data.linkedin}`} style={s.headerLink}>
-              {data.linkedin}
-            </Link>
-            <Text style={s.headerSep}>|</Text>
-            <Link src={`https://${data.github}`} style={s.headerLink}>
-              {data.github}
-            </Link>
+            {data.socialLinks
+              .filter((l) => ["linkedin", "github"].includes(l.platform))
+              .map((link) => (
+                <View key={link.platform} style={{ flexDirection: "row" }}>
+                  <Text style={s.headerSep}>|</Text>
+                  <Link src={link.url} style={s.headerLink}>
+                    {link.url.replace(/^https?:\/\//, "")}
+                  </Link>
+                </View>
+              ))}
           </View>
         </View>
 

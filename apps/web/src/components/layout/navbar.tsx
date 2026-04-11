@@ -6,9 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@portfolio/ui/theme-toggle";
-import { NAV_LINKS, SITE } from "@portfolio/shared/constants";
 
-export function Navbar() {
+type NavLink = { label: string; href: string };
+
+type NavbarProps = {
+  name: string;
+  navLinks: NavLink[];
+};
+
+export function Navbar({ name, navLinks }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -29,6 +35,8 @@ export function Navbar() {
     };
   }, [mobileOpen]);
 
+  const firstName = name.split(" ")[0];
+
   return (
     <header
       className={cn(
@@ -41,18 +49,16 @@ export function Navbar() {
         role="navigation"
         aria-label="Main navigation"
       >
-        {/* Logo */}
         <Link
           href="/"
           className="text-lg font-semibold tracking-tight text-foreground transition-opacity hover:opacity-70"
         >
-          {SITE.name.split(" ")[0]}
+          {firstName}
           <span className="text-accent">.</span>
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link, i) => (
+          {navLinks.map((link, i) => (
             <a
               key={link.href}
               href={link.href}
@@ -84,7 +90,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu button */}
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
           <button
@@ -98,7 +103,6 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile menu overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -108,7 +112,7 @@ export function Navbar() {
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 md:hidden"
           >
-            {NAV_LINKS.map((link, i) => (
+            {navLinks.map((link, i) => (
               <motion.a
                 key={link.href}
                 href={link.href}
@@ -126,7 +130,7 @@ export function Navbar() {
               href="/resume"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: NAV_LINKS.length * 0.05, duration: 0.3 }}
+              transition={{ delay: navLinks.length * 0.05, duration: 0.3 }}
               onClick={() => setMobileOpen(false)}
               className="rounded-full border border-accent px-6 py-2 text-sm font-medium text-accent"
             >

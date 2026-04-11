@@ -3,16 +3,20 @@
 import { motion } from "framer-motion";
 import { MapPin, Clock, Briefcase, Globe, Users, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Database } from "@portfolio/shared/supabase/database.types";
 
-const stats = [
-  { icon: Clock, label: "Years", value: "11+" },
-  { icon: Briefcase, label: "Companies", value: "6" },
-  { icon: Globe, label: "Countries", value: "4" },
-  { icon: FolderOpen, label: "Projects", value: "30+" },
-  { icon: Users, label: "Users Impacted", value: "500K+" },
-];
+type About = Database["public"]["Tables"]["about"]["Row"];
 
-const industries = ["Ad-Tech", "E-Commerce", "SaaS", "EdTech", "FinTech"];
+type AboutSectionProps = {
+  about: About;
+  location: string;
+};
+
+const statusLabel: Record<string, string> = {
+  available: "Open to Opportunities",
+  open: "Open to Conversations",
+  unavailable: "Not Available",
+};
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -23,7 +27,17 @@ const sectionVariants = {
   },
 };
 
-export function AboutSection() {
+export function AboutSection({ about, location }: AboutSectionProps) {
+  const stats = [
+    { icon: Clock, label: "Years", value: `${about.years_experience}+` },
+    { icon: Briefcase, label: "Companies", value: String(about.companies_count) },
+    { icon: Globe, label: "Countries", value: String(about.countries_count) },
+    { icon: FolderOpen, label: "Projects", value: `${about.projects_count}+` },
+    { icon: Users, label: "Users Impacted", value: about.users_impacted },
+  ];
+
+  const paragraphs = about.bio.split("\n").filter(Boolean);
+
   return (
     <section
       id="about"
@@ -37,7 +51,6 @@ export function AboutSection() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          {/* Section heading */}
           <h2 className="flex items-center gap-3 text-[length:var(--text-h2)] font-semibold tracking-tight">
             <span className="font-mono text-base font-normal text-accent">
               01.
@@ -47,53 +60,45 @@ export function AboutSection() {
           </h2>
 
           <div className="mt-10 grid gap-12 md:grid-cols-[3fr_2fr]">
-            {/* Text content */}
             <div className="space-y-5 text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground">
-              <p>
-                I&apos;m a Senior Software Engineer with over a decade of experience
-                building high-performance web and mobile applications across Ad-Tech,
-                E-Commerce, SaaS, and EdTech industries. Currently at{" "}
-                <span className="font-medium text-foreground">Shopsense AI</span>,
-                where I architect serverless systems on AWS handling 50K+ daily ad
-                impressions.
-              </p>
-              <p>
-                My expertise spans the full stack — from crafting pixel-perfect React
-                interfaces to designing cloud infrastructure with AWS CDK, Lambda, and
-                DynamoDB. I&apos;ve led teams, built design systems used by 40+
-                engineers, and consistently delivered measurable performance
-                improvements (60% CWV boost, 20%+ engagement increase).
-              </p>
-              <p>
-                I use AI as a force multiplier — not a crutch. It helps me ship 3x
-                faster while maintaining code quality I can defend in any review. This
-                portfolio was built with AI assistance, and every line is
-                production-grade.
-              </p>
+              {paragraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
 
-              {/* Status badge */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <span className="flex items-center gap-2 rounded-full bg-green-500/10 px-4 py-1.5 text-sm font-medium text-green-600 dark:text-green-400">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                  </span>
-                  Open to Opportunities
+                <span className={cn(
+                  "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium",
+                  about.status === "available"
+                    ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                    : about.status === "open"
+                      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      : "bg-red-500/10 text-red-600 dark:text-red-400",
+                )}>
+                  {about.status === "available" && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                    </span>
+                  )}
+                  {statusLabel[about.status] ?? about.status}
                 </span>
                 <span className="flex items-center gap-1 text-sm text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" />
-                  Islamabad, Pakistan · GMT+5
+                  {location} · {about.timezone}
                 </span>
               </div>
             </div>
 
-            {/* Photo placeholder */}
             <div className="flex items-start justify-center">
               <div className="relative">
                 <div className="aspect-square w-64 overflow-hidden rounded-2xl bg-muted md:w-72">
-                  <div className="flex h-full items-center justify-center text-muted-foreground/30">
-                    Photo
-                  </div>
+                  {about.photo_url ? (
+                    <img src={about.photo_url} alt="Portrait" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-muted-foreground/30">
+                      Photo
+                    </div>
+                  )}
                 </div>
                 <div
                   className="absolute -bottom-3 -right-3 -z-10 h-full w-full rounded-2xl border-2 border-accent/30"
@@ -103,7 +108,6 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
             {stats.map(({ icon: Icon, label, value }) => (
               <div
@@ -120,9 +124,8 @@ export function AboutSection() {
             ))}
           </div>
 
-          {/* Industries */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-            {industries.map((industry) => (
+            {about.industries.map((industry) => (
               <span
                 key={industry}
                 className="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground"

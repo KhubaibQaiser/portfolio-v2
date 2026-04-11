@@ -4,11 +4,14 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send, CheckCircle, AlertCircle, Mail, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SITE } from "@portfolio/shared/constants";
+
+type ContactSectionProps = {
+  email: string;
+};
 
 type FormStatus = "idle" | "submitting" | "success" | "error";
 
-export function ContactSection() {
+export function ContactSection({ email }: ContactSectionProps) {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [copied, setCopied] = useState(false);
@@ -50,7 +53,7 @@ export function ContactSection() {
   }
 
   function handleCopyEmail() {
-    navigator.clipboard.writeText(SITE.email).then(() => {
+    navigator.clipboard.writeText(email).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -88,14 +91,13 @@ export function ContactSection() {
             question or just want to say hi, my inbox is always open.
           </p>
 
-          {/* Direct email */}
           <div className="mt-6 flex items-center justify-center gap-2">
             <a
-              href={`mailto:${SITE.email}`}
+              href={`mailto:${email}`}
               className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               <Mail className="h-4 w-4" />
-              {SITE.email}
+              {email}
             </a>
             <button
               onClick={handleCopyEmail}
@@ -110,7 +112,6 @@ export function ContactSection() {
             </button>
           </div>
 
-          {/* Contact form */}
           <form onSubmit={handleSubmit} className="mt-10 space-y-4 text-left">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -183,7 +184,6 @@ export function ContactSection() {
               />
             </div>
 
-            {/* Status messages */}
             {status === "success" && (
               <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400">
                 <CheckCircle className="h-4 w-4" />

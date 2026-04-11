@@ -8,34 +8,56 @@ import { ContactSection } from "@/components/sections/contact";
 import { Testimonials } from "@/components/sections/testimonials";
 import { ParallaxDivider } from "@portfolio/ui/parallax-divider";
 import { BuiltWithSection } from "@/components/sections/built-with";
+import {
+  fetchHero,
+  fetchAbout,
+  fetchExperience,
+  fetchFeaturedProjects,
+  fetchSkills,
+  fetchTestimonials,
+  fetchSiteConfig,
+} from "@/lib/data";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [hero, about, experience, featuredProjects, skills, testimonials, siteConfig] =
+    await Promise.all([
+      fetchHero(),
+      fetchAbout(),
+      fetchExperience(),
+      fetchFeaturedProjects(),
+      fetchSkills(),
+      fetchTestimonials(),
+      fetchSiteConfig(),
+    ]);
+
+  const companies = experience.map((e) => e.company);
+
   return (
     <>
-      <HeroSection />
-      <AboutSection />
+      <HeroSection hero={hero} companies={companies} />
+      <AboutSection about={about} location={siteConfig.location} />
       <WhyHireMeSection />
       <ParallaxDivider
-        stat="11+"
+        stat={`${about.years_experience}+`}
         label="Years of shipping production code"
         variant="gradient"
       />
-      <SkillsSection />
+      <SkillsSection skills={skills} />
       <ParallaxDivider
-        stat="6"
-        label="Companies across 4 countries"
+        stat={String(about.companies_count)}
+        label={`Companies across ${about.countries_count} countries`}
         variant="subtle"
       />
-      <ExperienceSection />
+      <ExperienceSection experience={experience} />
       <ParallaxDivider
-        stat="500K+"
+        stat={about.users_impacted}
         label="Users impacted by my work"
         variant="accent"
       />
-      <FeaturedProjectsSection />
-      <Testimonials />
+      <FeaturedProjectsSection projects={featuredProjects} />
+      <Testimonials testimonials={testimonials} />
       <BuiltWithSection />
-      <ContactSection />
+      <ContactSection email={siteConfig.email} />
     </>
   );
 }

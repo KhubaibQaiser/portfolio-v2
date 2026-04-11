@@ -1,21 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Download, MapPin, Mail, Globe, ExternalLink } from "lucide-react";
-import { SITE, SOCIAL_LINKS } from "@portfolio/shared/constants";
 import { getResumeData } from "@/lib/resume-data";
 
 export const metadata: Metadata = {
   title: "Resume",
-  description: `${SITE.name} — Senior Software Engineer resume. 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.`,
+  description: "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
 };
 
-export default function ResumePage() {
-  const resume = getResumeData();
+export default async function ResumePage() {
+  const resume = await getResumeData();
 
   return (
     <div className="py-32">
       <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
-        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[length:var(--text-h1)] font-bold tracking-tight">
@@ -54,27 +52,22 @@ export default function ResumePage() {
           </Link>
         </div>
 
-        {/* Social links */}
         <div className="mt-4 flex flex-wrap gap-3">
-          <a
-            href={SOCIAL_LINKS.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
-          >
-            LinkedIn <ExternalLink className="h-3 w-3" />
-          </a>
-          <a
-            href={SOCIAL_LINKS.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
-          >
-            GitHub <ExternalLink className="h-3 w-3" />
-          </a>
+          {resume.socialLinks
+            .filter((s) => ["linkedin", "github"].includes(s.platform))
+            .map(({ platform, url, label }) => (
+              <a
+                key={platform}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
+              >
+                {label} <ExternalLink className="h-3 w-3" />
+              </a>
+            ))}
         </div>
 
-        {/* Summary */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Professional Summary
@@ -85,7 +78,6 @@ export default function ResumePage() {
           </p>
         </section>
 
-        {/* Skills */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Technical Skills
@@ -105,7 +97,6 @@ export default function ResumePage() {
           </div>
         </section>
 
-        {/* Experience */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Professional Experience
@@ -141,7 +132,6 @@ export default function ResumePage() {
           </div>
         </section>
 
-        {/* Education */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Education
@@ -158,7 +148,6 @@ export default function ResumePage() {
           ))}
         </section>
 
-        {/* Certifications */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Certifications
