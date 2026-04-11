@@ -1,5 +1,6 @@
 import { groq } from "@ai-sdk/groq";
-import { streamText } from "ai";
+import { convertToModelMessages, smoothStream, streamText } from "ai";
+import type { UIMessage } from "ai";
 
 export const maxDuration = 30;
 
@@ -25,7 +26,15 @@ Guidelines:
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const body = (await req.json()) as { messages?: UIMessage[] };
+    const { messages } = body;
+
+    if (!messages?.length) {
+      return new Response(
+        JSON.stringify({ error: "Missing messages in request body." }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
     if (!process.env.GROQ_API_KEY) {
       return new Response(
@@ -36,14 +45,17 @@ export async function POST(req: Request) {
       );
     }
 
+    const modelMessages = await convertToModelMessages(messages);
+
     const result = streamText({
       model: groq("llama-3.3-70b-versatile"),
       system: SYSTEM_PROMPT,
-      messages,
+      messages: modelMessages,
       maxOutputTokens: 1000,
+      experimental_transform: smoothStream({ chunking: "word" }),
     });
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse({ originalMessages: messages });
   } catch {
     return new Response(
       JSON.stringify({
