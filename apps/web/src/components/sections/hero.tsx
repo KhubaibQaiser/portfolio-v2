@@ -1,0 +1,138 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { ArrowDown, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SITE, COMPANIES } from "@portfolio/shared/constants";
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1, delayChildren: 0.3 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+export function HeroSection() {
+  return (
+    <section
+      className="relative flex min-h-screen items-center justify-center overflow-hidden"
+      aria-label="Hero"
+    >
+      {/* Gradient background */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent"
+        aria-hidden
+      />
+
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 mx-auto max-w-[var(--container-max)] px-[var(--container-padding)] py-32 text-center"
+      >
+        {/* Greeting */}
+        <motion.p
+          variants={itemVariants}
+          className="font-mono text-sm text-accent md:text-base"
+        >
+          Hi, my name is
+        </motion.p>
+
+        {/* Name */}
+        <motion.h1
+          variants={itemVariants}
+          className="mt-5 text-[length:var(--text-display)] font-bold leading-[1.1] tracking-tight"
+        >
+          {SITE.name}
+          <span className="text-accent">.</span>
+        </motion.h1>
+
+        {/* Headline */}
+        <motion.h2
+          variants={itemVariants}
+          className="mt-3 text-[length:var(--text-h1)] font-semibold leading-tight tracking-tight text-muted-foreground"
+        >
+          I build things for the web & beyond.
+        </motion.h2>
+
+        {/* Value proposition */}
+        <motion.p
+          variants={itemVariants}
+          className="mx-auto mt-6 max-w-2xl text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground"
+        >
+          11 years. 6 companies. 4 countries. I ship production systems that
+          scale — from pixel-perfect React UIs to serverless AWS infrastructure.
+        </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          variants={itemVariants}
+          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+        >
+          <a
+            href="#projects"
+            className={cn(
+              "rounded-full bg-accent px-8 py-3 text-sm font-medium text-accent-foreground",
+              "transition-all duration-200 hover:opacity-90 active:scale-95",
+              "shadow-md hover:shadow-lg",
+            )}
+          >
+            View My Work
+          </a>
+          <a
+            href="/resume"
+            className={cn(
+              "flex items-center gap-2 rounded-full border border-border px-8 py-3",
+              "text-sm font-medium text-foreground transition-all duration-200",
+              "hover:border-accent hover:text-accent active:scale-95",
+            )}
+          >
+            <FileText className="h-4 w-4" />
+            Download Resume
+          </a>
+        </motion.div>
+
+        {/* Company logos */}
+        <motion.div variants={itemVariants} className="mt-16">
+          <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
+            Trusted by teams at
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {COMPANIES.map((company) => (
+              <span
+                key={company}
+                className="text-sm font-medium text-muted-foreground/40 transition-colors duration-200 hover:text-muted-foreground"
+              >
+                {company}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.8 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ArrowDown className="h-5 w-5 text-muted-foreground/40" />
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}

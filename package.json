@@ -1,0 +1,27 @@
+{
+  "name": "portfolio-v2",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@portfolio/web",
+    "dev:admin": "turbo run dev --filter=@portfolio/admin",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md,mdx,json,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,mdx,json,css}\"",
+    "storybook": "pnpm --filter @portfolio/ui storybook",
+    "build-storybook": "pnpm --filter @portfolio/ui build-storybook",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "prettier": "^3.8.2",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.9.6"
+  }
+}
