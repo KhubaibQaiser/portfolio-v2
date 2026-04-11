@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@portfolio/ui/styles/tokens.css";
 
+/* Include workspace sources so utilities used only in shared packages (e.g. @portfolio/ui) are generated */
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../../packages/shared/src/**/*.{ts,tsx}";
+
 @theme {
   /* Typography — Geist font family */
   --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system,
