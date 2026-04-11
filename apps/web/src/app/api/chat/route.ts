@@ -2,7 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
-import { createPublicClient } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase-server";
 import {
   getHero,
   getAbout,
@@ -18,13 +18,12 @@ const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
 const buildSystemPrompt = cache(
   async () => {
-    const client = createPublicClient();
     const [hero, about, experience, skills, config] = await Promise.all([
-      getHero(client),
-      getAbout(client),
-      getExperience(client),
-      getSkills(client),
-      getSiteConfig(client),
+      getHero(supabase),
+      getAbout(supabase),
+      getExperience(supabase),
+      getSkills(supabase),
+      getSiteConfig(supabase),
     ]);
 
     const expSummary = experience

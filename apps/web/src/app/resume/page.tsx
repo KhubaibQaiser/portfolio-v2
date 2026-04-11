@@ -155,9 +155,14 @@ export default async function ResumePage() {
           <div className="mt-3 h-px bg-border" />
           <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
             {resume.certifications.map((cert) => (
-              <li key={cert} className="flex items-center gap-2">
+              <li key={cert.name} className="flex items-center gap-2">
                 <span className="h-1 w-1 rounded-full bg-accent" />
-                {cert}
+                {cert.name}
+                {cert.issuer && (
+                  <span className="text-xs text-muted-foreground/70">
+                    ({cert.issuer})
+                  </span>
+                )}
               </li>
             ))}
           </ul>

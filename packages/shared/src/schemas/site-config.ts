@@ -1,8 +1,19 @@
 import { z } from "zod";
 
+/** http(s), mailto, or tel — resume PDF uses tel:+… for phone (no DOM `URL` — shared pkg is ES-only) */
+const socialUrlSchema = z.string().min(1).refine(
+  (val) => {
+    const s = val.trim();
+    if (/^tel:/i.test(s)) return /^tel:\S+/i.test(s);
+    if (/^mailto:/i.test(s)) return /^mailto:\S+@\S+\.\S+/i.test(s);
+    return /^https?:\/\/\S+/i.test(s);
+  },
+  { message: "Must be a valid https URL, mailto:, or tel: link" },
+);
+
 export const socialLinkSchema = z.object({
   platform: z.string().min(1),
-  url: z.string().url(),
+  url: socialUrlSchema,
   label: z.string().min(1),
 });
 
