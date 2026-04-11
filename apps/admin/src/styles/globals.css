@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@portfolio/ui/styles/tokens.css";
 
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../../packages/shared/src/**/*.{ts,tsx}";
+
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "@portfolio/ui/theme-toggle";
 import { NAV_LINKS, SITE } from "@portfolio/shared/constants";
 
 export function Navbar() {
