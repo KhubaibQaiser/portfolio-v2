@@ -40,6 +40,9 @@ Thumbs.db
 # sentry
 .sentryclirc
 
+# storybook
+storybook-static/
+
 # misc
 *.tsbuildinfo
 next-env.d.ts
