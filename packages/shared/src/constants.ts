@@ -1,28 +1,7 @@
-export const SITE = {
-  name: "Khubaib Qaiser",
-  title: "Senior Software Engineer",
-  url: "https://khubaibqaiser.com",
-  email: "khubaib.dev@gmail.com",
-  location: "Islamabad, Pakistan",
-  description:
-    "Senior Software Engineer with 11+ years of experience specializing in React, Next.js, TypeScript, React Native, and cloud infrastructure (AWS, GCP). Available for senior/staff engineering roles, remote worldwide.",
-} as const;
-
-export const SOCIAL_LINKS = {
-  github: "https://github.com/khubaibqaiser",
-  linkedin: "https://linkedin.com/in/khubaib-qaiser",
-  twitter: "https://twitter.com/khubaibqaiser",
-  instagram: "https://instagram.com/khubaibqaiser",
-} as const;
-
-export const NAV_LINKS = [
-  { label: "About", href: "#about" },
-  { label: "Skills", href: "#skills" },
-  { label: "Experience", href: "#experience" },
-  { label: "Projects", href: "#projects" },
-  { label: "Contact", href: "#contact" },
-] as const;
-
+/**
+ * Skill category display labels — used by both admin editor and web UI.
+ * This is configuration, not data, so it stays here rather than in Supabase.
+ */
 export const SKILL_CATEGORIES = {
   frontend: "Frontend",
   mobile: "Mobile",
@@ -37,15 +16,10 @@ export const SKILL_CATEGORIES = {
   legacy: "Legacy",
 } as const;
 
-export const COMPANIES = [
-  "Shopsense AI",
-  "Achieve",
-  "Tradeblock.us",
-  "GudangAda",
-  "STOQO",
-  "Knowledge Platform",
-] as const;
-
+/**
+ * Admin email allowlist — enforced by admin middleware.
+ * Add emails here to grant dashboard access.
+ */
 export const ADMIN_ALLOWED_EMAILS = [
   "khubaib.dev@gmail.com",
 ] as const;

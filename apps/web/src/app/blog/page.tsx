@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, ArrowRight } from "lucide-react";
-import { SITE } from "@portfolio/shared/constants";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: `Technical articles on React, Next.js, TypeScript, AWS, and modern web development by ${SITE.name}.`,
+  description: "Technical articles on React, Next.js, TypeScript, AWS, and modern web development.",
 };
 
 const POSTS = [

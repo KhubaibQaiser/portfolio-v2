@@ -3,7 +3,14 @@
 import { motion } from "framer-motion";
 import { ArrowDown, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SITE, COMPANIES } from "@portfolio/shared/constants";
+import type { Database } from "@portfolio/shared/supabase/database.types";
+
+type Hero = Database["public"]["Tables"]["hero"]["Row"];
+
+type HeroSectionProps = {
+  hero: Hero;
+  companies: string[];
+};
 
 const containerVariants = {
   hidden: {},
@@ -21,13 +28,12 @@ const itemVariants = {
   },
 };
 
-export function HeroSection() {
+export function HeroSection({ hero, companies }: HeroSectionProps) {
   return (
     <section
       className="relative flex min-h-screen items-center justify-center overflow-hidden"
       aria-label="Hero"
     >
-      {/* Gradient background */}
       <div
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent"
         aria-hidden
@@ -39,41 +45,35 @@ export function HeroSection() {
         animate="visible"
         className="relative z-10 mx-auto max-w-[var(--container-max)] px-[var(--container-padding)] py-32 text-center"
       >
-        {/* Greeting */}
         <motion.p
           variants={itemVariants}
           className="font-mono text-sm text-accent md:text-base"
         >
-          Hi, my name is
+          {hero.greeting}
         </motion.p>
 
-        {/* Name */}
         <motion.h1
           variants={itemVariants}
           className="mt-5 text-[length:var(--text-display)] font-bold leading-[1.1] tracking-tight"
         >
-          {SITE.name}
+          {hero.name}
           <span className="text-accent">.</span>
         </motion.h1>
 
-        {/* Headline */}
         <motion.h2
           variants={itemVariants}
           className="mt-3 text-[length:var(--text-h1)] font-semibold leading-tight tracking-tight text-muted-foreground"
         >
-          I build things for the web & beyond.
+          {hero.headline}
         </motion.h2>
 
-        {/* Value proposition */}
         <motion.p
           variants={itemVariants}
           className="mx-auto mt-6 max-w-2xl text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground"
         >
-          11 years. 6 companies. 4 countries. I ship production systems that
-          scale — from pixel-perfect React UIs to serverless AWS infrastructure.
+          {hero.value_proposition}
         </motion.p>
 
-        {/* CTAs */}
         <motion.div
           variants={itemVariants}
           className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
@@ -86,7 +86,7 @@ export function HeroSection() {
               "shadow-md hover:shadow-lg",
             )}
           >
-            View My Work
+            {hero.cta_primary_text}
           </a>
           <a
             href="/resume"
@@ -97,17 +97,16 @@ export function HeroSection() {
             )}
           >
             <FileText className="h-4 w-4" />
-            Download Resume
+            {hero.cta_secondary_text}
           </a>
         </motion.div>
 
-        {/* Company logos */}
         <motion.div variants={itemVariants} className="mt-16">
           <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
             Trusted by teams at
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {COMPANIES.map((company) => (
+            {companies.map((company) => (
               <span
                 key={company}
                 className="text-sm font-medium text-muted-foreground/40 transition-colors duration-200 hover:text-muted-foreground"
@@ -118,7 +117,6 @@ export function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

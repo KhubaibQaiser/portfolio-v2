@@ -19,13 +19,14 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SOCIAL_LINKS, SITE } from "@portfolio/shared/constants";
 import { GitHubIcon, LinkedInIcon } from "@portfolio/ui/icons";
+import { useSiteConfig } from "./site-config-provider";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const { setTheme } = useTheme();
   const router = useRouter();
+  const { email, socialLinks } = useSiteConfig();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -47,6 +48,9 @@ export function CommandPalette() {
   );
 
   if (!open) return null;
+
+  const github = socialLinks.find((l) => l.platform === "github")?.url;
+  const linkedin = socialLinks.find((l) => l.platform === "linkedin")?.url;
 
   return (
     <div className="fixed inset-0 z-[100]">
@@ -103,9 +107,9 @@ export function CommandPalette() {
             <Command.Separator className="my-1 h-px bg-border" />
 
             <Command.Group heading="Links" className="px-1 pb-2">
-              <CommandItem icon={GitHubIcon} label="GitHub" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.github, "_blank"))} />
-              <CommandItem icon={LinkedInIcon} label="LinkedIn" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.linkedin, "_blank"))} />
-              <CommandItem icon={Mail} label="Copy Email" onSelect={() => runCommand(() => navigator.clipboard.writeText(SITE.email))} />
+              {github && <CommandItem icon={GitHubIcon} label="GitHub" onSelect={() => runCommand(() => window.open(github, "_blank"))} />}
+              {linkedin && <CommandItem icon={LinkedInIcon} label="LinkedIn" onSelect={() => runCommand(() => window.open(linkedin, "_blank"))} />}
+              {email && <CommandItem icon={Mail} label="Copy Email" onSelect={() => runCommand(() => navigator.clipboard.writeText(email))} />}
             </Command.Group>
           </Command.List>
         </Command>

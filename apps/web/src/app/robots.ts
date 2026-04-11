@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@portfolio/shared/constants";
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -16,6 +17,6 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "PerplexityBot", allow: "/" },
       { userAgent: "Google-Extended", allow: "/" },
     ],
-    sitemap: `${SITE.url}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

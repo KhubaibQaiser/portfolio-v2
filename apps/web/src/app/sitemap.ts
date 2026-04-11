@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@portfolio/shared/constants";
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = SITE.url;
-
   return [
     {
       url: baseUrl,
