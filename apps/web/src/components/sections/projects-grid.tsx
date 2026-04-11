@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Github, Smartphone, Globe, Gamepad2 } from "lucide-react";
+import { ExternalLink, Smartphone, Globe, Gamepad2 } from "lucide-react";
+import { GitHubIcon } from "@portfolio/ui/icons";
 import { cn } from "@/lib/utils";
 
 type ProjectItem = {
@@ -29,7 +30,8 @@ const allProjects: ProjectItem[] = [
   },
   {
     title: "Tradeblock Trading App",
-    description: "Cross-platform trading app with shared React Native + web codebase.",
+    description:
+      "Cross-platform sneaker trading app with shared React Native + web codebase.",
     tech: ["React Native", "Next.js", "Apollo GraphQL"],
     type: "mobile",
   },
@@ -138,18 +140,18 @@ export function ProjectsGrid() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
               className={cn(
-                "group flex flex-col rounded-xl border border-border/50 bg-muted/20 p-6",
-                "transition-all duration-300 hover:border-accent/30 hover:shadow-md",
+                "group border-border/50 bg-muted/20 flex flex-col rounded-xl border p-6",
+                "hover:border-accent/30 transition-all duration-300 hover:shadow-md",
               )}
             >
               <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                  {project.type === "web" && <Globe className="h-5 w-5 text-accent" />}
+                <div className="bg-accent/10 flex h-10 w-10 items-center justify-center rounded-lg">
+                  {project.type === "web" && <Globe className="text-accent h-5 w-5" />}
                   {project.type === "mobile" && (
-                    <Smartphone className="h-5 w-5 text-accent" />
+                    <Smartphone className="text-accent h-5 w-5" />
                   )}
                   {project.type === "game" && (
-                    <Gamepad2 className="h-5 w-5 text-accent" />
+                    <Gamepad2 className="text-accent h-5 w-5" />
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -158,10 +160,10 @@ export function ProjectsGrid() {
                       href={project.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
                       aria-label={`${project.title} GitHub`}
                     >
-                      <Github className="h-4 w-4" />
+                      <GitHubIcon className="h-4 w-4" />
                     </a>
                   )}
                   {project.live && (
@@ -169,7 +171,7 @@ export function ProjectsGrid() {
                       href={project.live}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
                       aria-label={`${project.title} Live`}
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -177,18 +179,15 @@ export function ProjectsGrid() {
                   )}
                 </div>
               </div>
-              <h3 className="mt-4 text-lg font-semibold tracking-tight group-hover:text-accent">
+              <h3 className="group-hover:text-accent mt-4 text-lg font-semibold tracking-tight">
                 {project.title}
               </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+              <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
                 {project.description}
               </p>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {project.tech.map((t) => (
-                  <span
-                    key={t}
-                    className="font-mono text-xs text-muted-foreground/70"
-                  >
+                  <span key={t} className="text-muted-foreground/70 font-mono text-xs">
                     {t}
                   </span>
                 ))}

@@ -5,7 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { SmoothScroll } from "@/components/layout/smooth-scroll";
+import { SmoothScroll } from "@portfolio/ui/smooth-scroll";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ChatBubble } from "@/components/chat/chat-bubble";

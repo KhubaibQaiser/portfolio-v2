@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     if (tags) {
       for (const tag of tags) {
-        revalidateTag(tag);
+        revalidateTag(tag, { expire: 0 });
       }
     }
 

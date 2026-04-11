@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, Github } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { GitHubIcon } from "@portfolio/ui/icons";
 import { cn } from "@/lib/utils";
 
 type FeaturedProject = {
@@ -138,7 +139,7 @@ export function FeaturedProjectsSection() {
                           className="text-muted-foreground transition-colors hover:text-foreground"
                           aria-label={`${project.title} GitHub`}
                         >
-                          <Github className="h-5 w-5" />
+                          <GitHubIcon className="h-5 w-5" />
                         </a>
                       )}
                       {project.live && (

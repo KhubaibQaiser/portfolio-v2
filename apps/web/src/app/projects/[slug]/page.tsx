@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Github } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 
 type ProjectCase = {
@@ -123,7 +124,7 @@ export default async function ProjectCaseStudy({
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
-              <Github className="h-4 w-4" />
+              <GitHubIcon className="h-4 w-4" />
               Source
             </a>
           )}

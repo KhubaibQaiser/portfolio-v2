@@ -10,6 +10,7 @@ Built as a production-grade monorepo with a public-facing portfolio, a private a
 |-----|-----|---------|
 | Portfolio | [khubaibqaiser.com](https://khubaibqaiser.com) | Public portfolio site |
 | Admin | [admin.khubaibqaiser.com](https://admin.khubaibqaiser.com) | Content management dashboard |
+| Storybook | [storybook.khubaibqaiser.com](https://storybook.khubaibqaiser.com) | Design system documentation |
 
 ## Tech Stack
 
@@ -97,8 +98,7 @@ portfolio-v2/
 │
 ├── .github/workflows/ci.yml   # CI pipeline (lint, typecheck, build, Lighthouse)
 ├── turbo.json                  # Turborepo task graph
-├── pnpm-workspace.yaml         # Workspace definition
-└── .env.example                # Environment variable template
+└── pnpm-workspace.yaml         # Workspace definition
 ```
 
 ### Workspace Packages
@@ -130,39 +130,46 @@ pnpm install
 
 ### Environment Variables
 
-Copy the template and fill in your values:
+Each app has its own `.env.example` with only the variables it needs. Copy and fill in:
 
 ```bash
-cp .env.example apps/web/.env.local
-cp .env.example apps/admin/.env.local
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
 ```
 
-| Variable | Required | Where | Description |
-|----------|----------|-------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Both | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Both | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Web | Supabase service role key (server-only) |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Web | Public site URL |
-| `REVALIDATE_SECRET` | Yes | Web | Shared secret for ISR revalidation webhook |
-| `GROQ_API_KEY` | No | Web | Groq API key for AI chat |
-| `UPSTASH_REDIS_REST_URL` | No | Web | Upstash Redis URL for rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | No | Web | Upstash Redis token |
-| `RESEND_API_KEY` | No | Web | Resend API key for contact form emails |
-| `R2_ACCOUNT_ID` | No | Admin | Cloudflare R2 account ID |
-| `R2_ACCESS_KEY_ID` | No | Admin | R2 access key |
-| `R2_SECRET_ACCESS_KEY` | No | Admin | R2 secret key |
-| `R2_BUCKET_NAME` | No | Admin | R2 bucket name |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | No | Web | Cloudflare Turnstile site key |
-| `TURNSTILE_SECRET_KEY` | No | Web | Cloudflare Turnstile secret |
-| `CLOUDFLARE_ACCOUNT_ID` | No | Web | Workers AI account ID |
-| `CLOUDFLARE_API_TOKEN` | No | Web | Workers AI API token |
-| `NEXT_PUBLIC_POSTHOG_KEY` | No | Web | PostHog project API key |
-| `NEXT_PUBLIC_POSTHOG_HOST` | No | Web | PostHog host URL |
-| `NEXT_PUBLIC_SENTRY_DSN` | No | Web | Sentry DSN |
-| `SENTRY_ORG` | No | Web | Sentry organization slug |
-| `SENTRY_PROJECT` | No | Web | Sentry project slug |
-| `SENTRY_AUTH_TOKEN` | No | Web | Sentry auth token (source maps) |
-| `GITHUB_TOKEN` | No | Web | GitHub PAT for stats API |
+**`apps/web`** (portfolio) — 20 variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `NEXT_PUBLIC_SITE_URL` | Yes | Public site URL |
+| `REVALIDATE_SECRET` | Yes | Shared secret for ISR revalidation webhook |
+| `GROQ_API_KEY` | No | Groq API key for AI chat |
+| `GITHUB_TOKEN` | No | GitHub PAT for stats API |
+| `UPSTASH_REDIS_REST_URL` | No | Upstash Redis URL for rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Upstash Redis token |
+| `RESEND_API_KEY` | No | Resend API key for contact form emails |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | No | Cloudflare Turnstile site key |
+| `TURNSTILE_SECRET_KEY` | No | Cloudflare Turnstile secret |
+| `CLOUDFLARE_ACCOUNT_ID` | No | Workers AI account ID |
+| `CLOUDFLARE_API_TOKEN` | No | Workers AI API token |
+| `NEXT_PUBLIC_POSTHOG_KEY` | No | PostHog project API key |
+| `NEXT_PUBLIC_POSTHOG_HOST` | No | PostHog host URL |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Sentry DSN |
+| `SENTRY_ORG` | No | Sentry organization slug |
+| `SENTRY_PROJECT` | No | Sentry project slug |
+| `SENTRY_AUTH_TOKEN` | No | Sentry auth token (source maps) |
+
+**`apps/admin`** (dashboard) — 2 variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase public anon key |
+
+**`packages/ui`** (Storybook) — no environment variables needed.
 
 The web app uses `@t3-oss/env-nextjs` for runtime validation. Set `SKIP_ENV_VALIDATION=1` to bypass during CI builds or initial setup.
 
@@ -189,25 +196,32 @@ pnpm storybook
 ### Build
 
 ```bash
-pnpm build          # Build all apps (Turborepo-cached)
-pnpm lint           # ESLint across all packages
-pnpm typecheck      # TypeScript strict checking
-pnpm format         # Prettier formatting
-pnpm format:check   # Check formatting without writing
+pnpm build              # Build all apps (Turborepo-cached)
+pnpm build-storybook    # Build Storybook static site
+pnpm lint               # ESLint across all packages
+pnpm typecheck          # TypeScript strict checking
+pnpm format             # Prettier formatting
+pnpm format:check       # Check formatting without writing
 ```
 
 ## Deployment
 
-Both apps are deployed as separate Vercel projects from the same repository.
+All three apps are deployed as separate Vercel projects from the same repository.
 
 ### Vercel Setup
 
 1. Import the repository into Vercel
-2. Create two projects:
-   - **Portfolio**: root directory `apps/web`, domain `khubaibqaiser.com`
-   - **Admin**: root directory `apps/admin`, domain `admin.khubaibqaiser.com`
-3. Add environment variables to each project via the Vercel dashboard
-4. Vercel auto-detects Turborepo and only rebuilds the app whose dependencies changed
+2. Create three projects:
+
+   | Project | Root Directory | Build Command | Output Directory | Domain |
+   |---------|---------------|---------------|-----------------|--------|
+   | Portfolio | `apps/web` | (auto-detected) | (auto-detected) | `khubaibqaiser.com` |
+   | Admin | `apps/admin` | (auto-detected) | (auto-detected) | `admin.khubaibqaiser.com` |
+   | Storybook | `packages/ui` | `pnpm build-storybook` | `storybook-static` | `storybook.khubaibqaiser.com` |
+
+3. For the **Storybook** project, set Framework Preset to **Other** (it is a static site, not Next.js)
+4. Add environment variables to the Portfolio and Admin projects via the Vercel dashboard
+5. Vercel auto-detects Turborepo and only rebuilds the project whose dependencies changed
 
 ### CI Pipeline
 

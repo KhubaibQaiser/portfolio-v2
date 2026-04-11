@@ -6,7 +6,7 @@ import { ExperienceSection } from "@/components/sections/experience";
 import { FeaturedProjectsSection } from "@/components/sections/featured-projects";
 import { ContactSection } from "@/components/sections/contact";
 import { Testimonials } from "@/components/sections/testimonials";
-import { ParallaxDivider } from "@/components/parallax/divider";
+import { ParallaxDivider } from "@portfolio/ui/parallax-divider";
 import { BuiltWithSection } from "@/components/sections/built-with";
 
 export default function HomePage() {
