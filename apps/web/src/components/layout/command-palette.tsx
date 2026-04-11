@@ -15,13 +15,12 @@ import {
   Zap,
   FolderOpen,
   Mail,
-  Github,
-  Linkedin,
   Home,
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SOCIAL_LINKS, SITE } from "@portfolio/shared/constants";
+import { GitHubIcon, LinkedInIcon } from "@portfolio/ui/icons";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -104,8 +103,8 @@ export function CommandPalette() {
             <Command.Separator className="my-1 h-px bg-border" />
 
             <Command.Group heading="Links" className="px-1 pb-2">
-              <CommandItem icon={Github} label="GitHub" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.github, "_blank"))} />
-              <CommandItem icon={Linkedin} label="LinkedIn" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.linkedin, "_blank"))} />
+              <CommandItem icon={GitHubIcon} label="GitHub" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.github, "_blank"))} />
+              <CommandItem icon={LinkedInIcon} label="LinkedIn" onSelect={() => runCommand(() => window.open(SOCIAL_LINKS.linkedin, "_blank"))} />
               <CommandItem icon={Mail} label="Copy Email" onSelect={() => runCommand(() => navigator.clipboard.writeText(SITE.email))} />
             </Command.Group>
           </Command.List>

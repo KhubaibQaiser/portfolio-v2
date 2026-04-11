@@ -2,17 +2,17 @@ import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-essentials"],
-  framework: {
-    name: "@storybook/react-vite",
-    options: {},
-  },
+  framework: "@storybook/react-vite",
   viteFinal: async (config) => {
     config.css = {
       ...config.css,
       postcss: {
         plugins: [(await import("@tailwindcss/postcss")).default],
       },
+    };
+    config.optimizeDeps = {
+      ...config.optimizeDeps,
+      include: [...(config.optimizeDeps?.include ?? []), "framer-motion", "lenis"],
     };
     return config;
   },

@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Github, Linkedin, Twitter, Instagram } from "lucide-react";
 import { SITE, SOCIAL_LINKS } from "@portfolio/shared/constants";
+import { GitHubIcon, LinkedInIcon, TwitterIcon, InstagramIcon } from "@portfolio/ui/icons";
 
 const socialIcons = [
-  { href: SOCIAL_LINKS.github, icon: Github, label: "GitHub" },
-  { href: SOCIAL_LINKS.linkedin, icon: Linkedin, label: "LinkedIn" },
-  { href: SOCIAL_LINKS.twitter, icon: Twitter, label: "Twitter" },
-  { href: SOCIAL_LINKS.instagram, icon: Instagram, label: "Instagram" },
+  { href: SOCIAL_LINKS.github, icon: GitHubIcon, label: "GitHub" },
+  { href: SOCIAL_LINKS.linkedin, icon: LinkedInIcon, label: "LinkedIn" },
+  { href: SOCIAL_LINKS.twitter, icon: TwitterIcon, label: "Twitter" },
+  { href: SOCIAL_LINKS.instagram, icon: InstagramIcon, label: "Instagram" },
 ] as const;
 
 export function Footer() {
