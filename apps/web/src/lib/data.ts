@@ -1,5 +1,5 @@
 import { unstable_cache as cache } from "next/cache";
-import { createPublicClient } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase-server";
 import {
   getHero,
   getAbout,
@@ -18,82 +18,55 @@ import {
 // ---------------------------------------------------------------------------
 
 export const fetchHero = cache(
-  async () => {
-    const client = createPublicClient();
-    return getHero(client);
-  },
+  async () => getHero(supabase),
   ["hero"],
   { tags: ["hero"] },
 );
 
 export const fetchAbout = cache(
-  async () => {
-    const client = createPublicClient();
-    return getAbout(client);
-  },
+  async () => getAbout(supabase),
   ["about"],
   { tags: ["about"] },
 );
 
 export const fetchExperience = cache(
-  async () => {
-    const client = createPublicClient();
-    return getExperience(client);
-  },
+  async () => getExperience(supabase),
   ["experience"],
   { tags: ["experience"] },
 );
 
 export const fetchFeaturedProjects = cache(
-  async () => {
-    const client = createPublicClient();
-    return getFeaturedProjects(client);
-  },
+  async () => getFeaturedProjects(supabase),
   ["featured-projects"],
   { tags: ["projects"] },
 );
 
 export const fetchAllProjects = cache(
-  async () => {
-    const client = createPublicClient();
-    return getProjects(client);
-  },
+  async () => getProjects(supabase),
   ["all-projects"],
   { tags: ["projects"] },
 );
 
 export const fetchSkills = cache(
-  async () => {
-    const client = createPublicClient();
-    return getSkills(client);
-  },
+  async () => getSkills(supabase),
   ["skills"],
   { tags: ["skills"] },
 );
 
 export const fetchTestimonials = cache(
-  async () => {
-    const client = createPublicClient();
-    return getTestimonials(client);
-  },
+  async () => getTestimonials(supabase),
   ["testimonials"],
   { tags: ["testimonials"] },
 );
 
 export const fetchSiteConfig = cache(
-  async () => {
-    const client = createPublicClient();
-    return getSiteConfig(client);
-  },
+  async () => getSiteConfig(supabase),
   ["site-config"],
   { tags: ["site-config"] },
 );
 
 export const fetchResume = cache(
-  async () => {
-    const client = createPublicClient();
-    return getResume(client);
-  },
+  async () => getResume(supabase),
   ["resume"],
   { tags: ["resume"] },
 );

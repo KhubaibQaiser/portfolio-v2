@@ -16,6 +16,7 @@ import {
   updateTestimonial,
   deleteTestimonial as deleteTest,
   upsertSiteConfig,
+  upsertResume,
 } from "@portfolio/shared/supabase/queries";
 import {
   heroSchema,
@@ -25,6 +26,7 @@ import {
   skillSchema,
   testimonialSchema,
   siteConfigSchema,
+  resumeSchema,
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
 
@@ -244,6 +246,44 @@ export async function saveSiteConfig(
     const client = await createClient();
     await upsertSiteConfig(client, parsed.data);
     await revalidateWeb(["site-config"]);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resume (singleton)
+// ---------------------------------------------------------------------------
+
+export async function saveResume(
+  values: z.infer<typeof resumeSchema>,
+): Promise<ActionResult> {
+  const normalized = {
+    ...values,
+    education: values.education.map((e) => ({
+      ...e,
+      url:
+        e.url != null && String(e.url).trim() !== ""
+          ? String(e.url).trim()
+          : null,
+    })),
+    certifications: values.certifications.map((c) => ({
+      ...c,
+      url:
+        c.url != null && String(c.url).trim() !== ""
+          ? String(c.url).trim()
+          : null,
+    })),
+  };
+
+  const parsed = resumeSchema.safeParse(normalized);
+  if (!parsed.success) return { success: false, error: parsed.error.message };
+
+  try {
+    const client = await createClient();
+    await upsertResume(client, parsed.data);
+    await revalidateWeb(["resume"]);
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };

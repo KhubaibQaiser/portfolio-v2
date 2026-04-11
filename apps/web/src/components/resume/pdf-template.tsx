@@ -1,31 +1,23 @@
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Link,
-  Font,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 import type { ResumeData } from "@/lib/resume-data";
 
 Font.registerHyphenationCallback((word) => [word]);
 
 const COLORS = {
-  black: "#111827",
-  dark: "#1f2937",
-  muted: "#4b5563",
-  light: "#9ca3af",
-  accent: "#2563eb",
-  border: "#d1d5db",
+  primary: "#111827",
+  body: "#1f2937",
+  secondary: "#374151",
+  subtle: "#6b7280",
+  accent: "#1d4ed8",
+  rule: "#d1d5db",
   bg: "#ffffff",
 } as const;
 
 const s = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
-    fontSize: 9.5,
-    color: COLORS.dark,
+    fontSize: 10,
+    color: COLORS.body,
     backgroundColor: COLORS.bg,
     paddingTop: 36,
     paddingBottom: 36,
@@ -33,59 +25,68 @@ const s = StyleSheet.create({
     lineHeight: 1.4,
   },
 
-  // Header
+  // ── Header ──────────────────────────────────────────────────────────
   headerName: {
-    fontSize: 22,
+    fontSize: 18,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.black,
-    letterSpacing: 0.5,
+    color: COLORS.primary,
+    letterSpacing: 0.3,
+    lineHeight: 1.2,
   },
   headerTitle: {
     fontSize: 11,
-    color: COLORS.accent,
-    marginTop: 2,
+    color: COLORS.secondary,
+    lineHeight: 1.3,
+    marginTop: 3,
   },
-  headerMeta: {
+  headerContact: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    alignItems: "center",
     marginTop: 6,
-    fontSize: 9,
-    color: COLORS.muted,
+    fontSize: 9.5,
+    color: COLORS.body,
   },
   headerLink: {
     color: COLORS.accent,
     textDecoration: "none",
+    fontSize: 9.5,
   },
   headerSep: {
-    color: COLORS.light,
+    color: COLORS.subtle,
+    fontSize: 9.5,
+  },
+  headerRule: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.primary,
+    borderBottomStyle: "solid",
+    marginTop: 10,
   },
 
-  // Sections
+  // ── Section ─────────────────────────────────────────────────────────
   section: {
-    marginTop: 14,
+    marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.black,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    paddingBottom: 3,
-    borderBottomWidth: 0.8,
-    borderBottomColor: COLORS.border,
+    color: COLORS.primary,
+    letterSpacing: 0.3,
+    paddingBottom: 2,
+    borderBottomWidth: 0.75,
+    borderBottomColor: COLORS.rule,
     borderBottomStyle: "solid",
     marginBottom: 6,
   },
 
-  // Summary
+  // ── Summary ─────────────────────────────────────────────────────────
   summary: {
-    fontSize: 9.5,
-    color: COLORS.muted,
+    fontSize: 10,
+    color: COLORS.body,
     lineHeight: 1.5,
   },
 
-  // Experience
+  // ── Experience ──────────────────────────────────────────────────────
   expEntry: {
     marginBottom: 10,
   },
@@ -95,202 +96,265 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
   },
   expRole: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.black,
+    color: COLORS.primary,
   },
   expPeriod: {
-    fontSize: 8.5,
-    color: COLORS.muted,
+    fontSize: 9,
+    color: COLORS.secondary,
     textAlign: "right",
   },
-  expCompany: {
-    fontSize: 9.5,
-    color: COLORS.accent,
+  expSubHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 1,
+  },
+  expCompany: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Oblique",
+    color: COLORS.body,
   },
   expLocation: {
-    fontSize: 8.5,
-    color: COLORS.light,
-    marginTop: 1,
+    fontSize: 9,
+    color: COLORS.secondary,
   },
   bulletList: {
-    marginTop: 4,
-    paddingLeft: 8,
+    marginTop: 3,
+    paddingLeft: 10,
   },
   bulletRow: {
     flexDirection: "row",
     marginBottom: 2,
   },
   bulletDot: {
-    width: 8,
-    fontSize: 9,
-    color: COLORS.accent,
+    width: 10,
+    fontSize: 10,
+    color: COLORS.primary,
   },
   bulletText: {
     flex: 1,
-    fontSize: 9,
-    color: COLORS.muted,
+    fontSize: 9.5,
+    color: COLORS.body,
     lineHeight: 1.45,
   },
   techLine: {
-    fontSize: 8,
-    color: COLORS.light,
-    marginTop: 3,
+    fontSize: 9,
+    color: COLORS.secondary,
+    marginTop: 2,
+    paddingLeft: 10,
+    lineHeight: 1.35,
   },
-  techBold: {
+  techLabel: {
     fontFamily: "Helvetica-Bold",
-    color: COLORS.muted,
+    color: COLORS.body,
   },
 
-  // Skills grid
+  // ── Skills ──────────────────────────────────────────────────────────
   skillRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   skillCategory: {
-    width: 110,
-    fontSize: 9,
+    width: 100,
+    fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.black,
+    color: COLORS.primary,
   },
   skillItems: {
     flex: 1,
-    fontSize: 9,
-    color: COLORS.muted,
+    fontSize: 9.5,
+    color: COLORS.body,
   },
 
-  // Education
+  // ── Education ───────────────────────────────────────────────────────
   eduEntry: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 3,
   },
   eduDegree: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.black,
+    color: COLORS.primary,
   },
   eduInstitution: {
-    fontSize: 9,
-    color: COLORS.accent,
+    fontSize: 9.5,
+    fontFamily: "Helvetica-Oblique",
+    color: COLORS.body,
   },
   eduYear: {
-    fontSize: 9,
-    color: COLORS.muted,
+    fontSize: 9.5,
+    color: COLORS.secondary,
   },
 
-  // Certifications
-  certItem: {
-    fontSize: 9,
-    color: COLORS.muted,
+  // ── Certifications ─────────────────────────────────────────────────
+  certRow: {
+    flexDirection: "row",
     marginBottom: 2,
+  },
+  certBullet: {
+    width: 10,
+    fontSize: 10,
+    color: COLORS.primary,
+  },
+  certText: {
+    flex: 1,
+    fontSize: 9.5,
+    color: COLORS.body,
+  },
+  certIssuer: {
+    color: COLORS.secondary,
   },
 });
 
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+function socialLinkLabel(link: { platform: string; label: string }): string {
+  const trimmed = link.label.trim();
+  if (trimmed) return trimmed;
+  return link.platform;
+}
+
+function Sep() {
+  return <Text style={s.headerSep}>&nbsp;|&nbsp;</Text>;
+}
+
+// ── Document ────────────────────────────────────────────────────────────
+
 export function ResumeDocument({ data }: { data: ResumeData }) {
+  const show = (key: string) => data.visibleSections.includes(key);
+
   return (
     <Document
-      title={`${data.name} — ${data.title} Resume`}
+      title={`${data.name} - ${data.title} Resume`}
       author={data.name}
       subject={`Resume of ${data.name}, ${data.title}`}
-      keywords="Senior Software Engineer, React, Next.js, TypeScript, AWS, Full Stack"
+      keywords={data.keywords}
     >
       <Page size="LETTER" style={s.page}>
-        {/* Header */}
+        {/* ── Header ─────────────────────────────────── */}
         <View>
           <Text style={s.headerName}>{data.name}</Text>
           <Text style={s.headerTitle}>{data.title}</Text>
-          <View style={s.headerMeta}>
+
+          <View style={s.headerContact}>
             <Text>{data.location}</Text>
-            <Text style={s.headerSep}>|</Text>
+            {data.phone && (
+              <>
+                <Sep />
+                <Link src={data.phone} style={s.headerLink}>
+                  {data.phone.replace("tel:", "")}
+                </Link>
+              </>
+            )}
+            <Sep />
             <Link src={`mailto:${data.email}`} style={s.headerLink}>
               {data.email}
             </Link>
-            <Text style={s.headerSep}>|</Text>
+            <Sep />
             <Link src={`https://${data.website}`} style={s.headerLink}>
-              {data.website}
+              Portfolio
             </Link>
             {data.socialLinks
               .filter((l) => ["linkedin", "github"].includes(l.platform))
-              .map((link) => (
-                <View key={link.platform} style={{ flexDirection: "row" }}>
-                  <Text style={s.headerSep}>|</Text>
-                  <Link src={link.url} style={s.headerLink}>
-                    {link.url.replace(/^https?:\/\//, "")}
-                  </Link>
-                </View>
-              ))}
+              .flatMap((link) => [
+                <Sep key={`${link.platform}-sep`} />,
+                <Link key={link.platform} src={link.url} style={s.headerLink}>
+                  {socialLinkLabel(link)}
+                </Link>,
+              ])}
           </View>
+
+          <View style={s.headerRule} />
         </View>
 
-        {/* Summary */}
+        {/* ── Professional Summary ────────────────────── */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Professional Summary</Text>
           <Text style={s.summary}>{data.summary}</Text>
         </View>
 
-        {/* Skills */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Technical Skills</Text>
-          {data.skills.map((group) => (
-            <View key={group.category} style={s.skillRow}>
-              <Text style={s.skillCategory}>{group.category}:</Text>
-              <Text style={s.skillItems}>{group.items.join(", ")}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Experience */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Professional Experience</Text>
-          {data.experience.map((exp) => (
-            <View key={`${exp.company}-${exp.period}`} style={s.expEntry}>
-              <View style={s.expHeader}>
-                <Text style={s.expRole}>{exp.role}</Text>
-                <Text style={s.expPeriod}>{exp.period}</Text>
+        {/* ── Work Experience ─────────────────────────── */}
+        {show("experience") && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Work Experience</Text>
+            {data.experience.map((exp) => (
+              <View key={`${exp.company}-${exp.period}`} style={s.expEntry} wrap={false}>
+                <View style={s.expHeader}>
+                  <Text style={s.expRole}>{exp.role}</Text>
+                  <Text style={s.expPeriod}>{exp.period}</Text>
+                </View>
+                <View style={s.expSubHeader}>
+                  <Text style={s.expCompany}>{exp.company}</Text>
+                  <Text style={s.expLocation}>{exp.location}</Text>
+                </View>
+                <View style={s.bulletList}>
+                  {exp.bullets.map((bullet, i) => (
+                    <View key={i} style={s.bulletRow}>
+                      <Text style={s.bulletDot}>-</Text>
+                      <Text style={s.bulletText}>{bullet}</Text>
+                    </View>
+                  ))}
+                </View>
+                {exp.tech && (
+                  <Text style={s.techLine}>
+                    <Text style={s.techLabel}>Technologies: </Text>
+                    {exp.tech}
+                  </Text>
+                )}
               </View>
-              <Text style={s.expCompany}>{exp.company}</Text>
-              <Text style={s.expLocation}>{exp.location}</Text>
-              <View style={s.bulletList}>
-                {exp.bullets.map((bullet, i) => (
-                  <View key={i} style={s.bulletRow}>
-                    <Text style={s.bulletDot}>•</Text>
-                    <Text style={s.bulletText}>{bullet}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text style={s.techLine}>
-                <Text style={s.techBold}>Tech: </Text>
-                {exp.tech}
-              </Text>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
-        {/* Education */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Education</Text>
-          {data.education.map((edu) => (
-            <View key={edu.institution} style={s.eduEntry}>
-              <View>
-                <Text style={s.eduDegree}>{edu.degree}</Text>
-                <Text style={s.eduInstitution}>{edu.institution}</Text>
+        {/* ── Technical Skills ────────────────────────── */}
+        {show("skills") && (
+          <View style={s.section} wrap={false}>
+            <Text style={s.sectionTitle}>Technical Skills</Text>
+            {data.skills.map((group) => (
+              <View key={group.category} style={s.skillRow}>
+                <Text style={s.skillCategory}>{group.category}</Text>
+                <Text style={s.skillItems}>{group.items.join(", ")}</Text>
               </View>
-              <Text style={s.eduYear}>{edu.year}</Text>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
-        {/* Certifications */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Certifications</Text>
-          {data.certifications.map((cert) => (
-            <Text key={cert} style={s.certItem}>
-              • {cert}
-            </Text>
-          ))}
-        </View>
+        {/* ── Education ───────────────────────────────── */}
+        {show("education") && data.education.length > 0 && (
+          <View style={s.section} wrap={false}>
+            <Text style={s.sectionTitle}>Education</Text>
+            {data.education.map((edu) => (
+              <View key={edu.institution} style={s.eduEntry}>
+                <View>
+                  <Text style={s.eduDegree}>{edu.degree}</Text>
+                  <Text style={s.eduInstitution}>{edu.institution}</Text>
+                </View>
+                <Text style={s.eduYear}>{edu.year}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* ── Certifications ──────────────────────────── */}
+        {show("certifications") && data.certifications.length > 0 && (
+          <View style={s.section} wrap={false}>
+            <Text style={s.sectionTitle}>Certifications</Text>
+            {data.certifications.map((cert) => (
+              <View key={cert.name} style={s.certRow}>
+                <Text style={s.certBullet}>-</Text>
+                <Text style={s.certText}>
+                  {cert.name}
+                  {cert.issuer ? (
+                    <Text style={s.certIssuer}>{` (${cert.issuer})`}</Text>
+                  ) : null}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </Page>
     </Document>
   );
