@@ -1,0 +1,179 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Download, MapPin, Mail, Globe, ExternalLink } from "lucide-react";
+import { SITE, SOCIAL_LINKS } from "@portfolio/shared/constants";
+import { getResumeData } from "@/lib/resume-data";
+
+export const metadata: Metadata = {
+  title: "Resume",
+  description: `${SITE.name} — Senior Software Engineer resume. 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.`,
+};
+
+export default function ResumePage() {
+  const resume = getResumeData();
+
+  return (
+    <div className="py-32">
+      <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-[length:var(--text-h1)] font-bold tracking-tight">
+              {resume.name}
+            </h1>
+            <p className="mt-1 text-[length:var(--text-body-lg)] font-medium text-accent">
+              {resume.title}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {resume.location}
+              </span>
+              <a
+                href={`mailto:${resume.email}`}
+                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {resume.email}
+              </a>
+              <a
+                href={`https://${resume.website}`}
+                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                {resume.website}
+              </a>
+            </div>
+          </div>
+          <Link
+            href="/api/pdf"
+            className="flex shrink-0 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Link>
+        </div>
+
+        {/* Social links */}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <a
+            href={SOCIAL_LINKS.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
+          >
+            LinkedIn <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href={SOCIAL_LINKS.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
+          >
+            GitHub <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+
+        {/* Summary */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Professional Summary
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          <p className="mt-4 leading-relaxed text-muted-foreground">
+            {resume.summary}
+          </p>
+        </section>
+
+        {/* Skills */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Technical Skills
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          <div className="mt-4 space-y-3">
+            {resume.skills.map((group) => (
+              <div key={group.category} className="flex gap-2">
+                <span className="w-32 shrink-0 text-sm font-semibold text-foreground">
+                  {group.category}:
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {group.items.join(", ")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Experience */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Professional Experience
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          <div className="mt-4 space-y-8">
+            {resume.experience.map((exp) => (
+              <div key={`${exp.company}-${exp.period}`}>
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="font-semibold">{exp.role}</h3>
+                  <span className="font-mono text-sm text-muted-foreground">
+                    {exp.period}
+                  </span>
+                </div>
+                <p className="text-accent">{exp.company}</p>
+                <p className="text-sm text-muted-foreground">{exp.location}</p>
+                <ul className="mt-2 space-y-1">
+                  {exp.bullets.map((bullet, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2 text-sm leading-relaxed text-muted-foreground"
+                    >
+                      <span className="mt-2 h-1 w-1 flex-shrink-0 rounded-full bg-accent" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground/70">
+                  <strong>Tech:</strong> {exp.tech}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Education */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Education
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          {resume.education.map((edu) => (
+            <div key={edu.institution} className="mt-4 flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold">{edu.degree}</h3>
+                <p className="text-accent">{edu.institution}</p>
+              </div>
+              <span className="text-sm text-muted-foreground">{edu.year}</span>
+            </div>
+          ))}
+        </section>
+
+        {/* Certifications */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Certifications
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
+            {resume.certifications.map((cert) => (
+              <li key={cert} className="flex items-center gap-2">
+                <span className="h-1 w-1 rounded-full bg-accent" />
+                {cert}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}

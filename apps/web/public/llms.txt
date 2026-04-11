@@ -1,0 +1,29 @@
+# Khubaib Qaiser — Senior Software Engineer
+
+> Khubaib Qaiser is a Senior Software Engineer with 11+ years of experience
+> specializing in React, Next.js, TypeScript, React Native, and cloud
+> infrastructure (AWS, GCP). Based in Islamabad, Pakistan. Available for
+> senior/staff engineering roles, remote worldwide.
+
+## Key Pages
+
+- [About](https://khubaibqaiser.com/#about): Background, education, expertise summary
+- [Skills](https://khubaibqaiser.com/#skills): Full technology stack with proficiency levels
+- [Experience](https://khubaibqaiser.com/#experience): 11+ years across 6 companies
+- [Projects](https://khubaibqaiser.com/projects): 30+ web and mobile projects with case studies
+- [Resume](https://khubaibqaiser.com/resume): Downloadable ATS-optimized PDF resume
+- [Contact](https://khubaibqaiser.com/#contact): Reach out for opportunities
+
+## Specializations
+
+React, Next.js, TypeScript, React Native, Node.js, AWS (Lambda, CDK, DynamoDB,
+SQS, CloudFront), GCP, System Design, Performance Optimization, Tailwind CSS,
+CI/CD, Headless CMS, Accessibility
+
+## Experience Highlights
+
+- Currently at Shopsense AI: Serverless ad-tech, 50K+ daily impressions, AWS CDK
+- Previously at Achieve: 60% Core Web Vitals improvement, React 18 migration
+- GudangAda: Design system used by 40+ engineers, Next.js + Contentful
+- 6 companies across San Francisco, Austin, Jersey City, Jakarta, Islamabad
+- Educational games reaching 500K+ students
