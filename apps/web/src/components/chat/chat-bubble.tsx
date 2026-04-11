@@ -12,6 +12,7 @@ import {
   Bot,
   User,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AssistantMarkdown } from "./assistant-markdown";
@@ -116,7 +117,9 @@ export function ChatBubble() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { messages: chatMessages, sendMessage, status } = useChat({ transport });
+  const { messages: chatMessages, sendMessage, status, error } = useChat({
+    transport,
+  });
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -291,6 +294,18 @@ export function ChatBubble() {
                     <span className="text-xs text-muted-foreground">
                       Thinking...
                     </span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                    <p className="text-xs leading-relaxed text-destructive">
+                      {error.message.includes("429") ||
+                      error.message.toLowerCase().includes("rate limit")
+                        ? "I'm getting a lot of questions right now. Please try again in a moment!"
+                        : "Something went wrong. Please try again."}
+                    </p>
                   </div>
                 )}
               </div>

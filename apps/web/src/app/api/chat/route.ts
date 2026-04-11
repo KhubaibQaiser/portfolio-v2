@@ -4,6 +4,9 @@ import type { UIMessage } from "ai";
 
 export const maxDuration = 30;
 
+const PRIMARY_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const FALLBACK_MODEL = "llama-3.1-8b-instant";
+
 const SYSTEM_PROMPT = `You are Khubaib Qaiser's AI assistant on his portfolio website. You represent Khubaib professionally and helpfully.
 
 About Khubaib:
@@ -23,6 +26,33 @@ Guidelines:
 - Include specific metrics and achievements when relevant
 - If asked something unrelated, politely redirect: "I can help with questions about Khubaib's experience and skills. For other topics, feel free to reach out via the contact form."
 - Never make up information not included in the context above`;
+
+function isRateLimitError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("429") || msg.includes("rate limit")) return true;
+  }
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    (error as { statusCode: number }).statusCode === 429
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function createStream(model: string, messages: Awaited<ReturnType<typeof convertToModelMessages>>, originalMessages: UIMessage[]) {
+  const result = streamText({
+    model: groq(model),
+    system: SYSTEM_PROMPT,
+    messages,
+    maxOutputTokens: 1000,
+    experimental_transform: smoothStream({ chunking: "word" }),
+  });
+  return result.toUIMessageStreamResponse({ originalMessages });
+}
 
 export async function POST(req: Request) {
   try {
@@ -47,19 +77,29 @@ export async function POST(req: Request) {
 
     const modelMessages = await convertToModelMessages(messages);
 
-    const result = streamText({
-      model: groq("llama-3.3-70b-versatile"),
-      system: SYSTEM_PROMPT,
-      messages: modelMessages,
-      maxOutputTokens: 1000,
-      experimental_transform: smoothStream({ chunking: "word" }),
-    });
+    try {
+      return createStream(PRIMARY_MODEL, modelMessages, messages);
+    } catch (primaryError) {
+      if (isRateLimitError(primaryError)) {
+        return createStream(FALLBACK_MODEL, modelMessages, messages);
+      }
+      throw primaryError;
+    }
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "I'm getting a lot of questions right now. Please try again in a moment!",
+        }),
+        { status: 429, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
-    return result.toUIMessageStreamResponse({ originalMessages: messages });
-  } catch {
     return new Response(
       JSON.stringify({
-        error: "AI chat is temporarily unavailable. Please try again later.",
+        error:
+          "AI chat is temporarily unavailable. Please try again later.",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
