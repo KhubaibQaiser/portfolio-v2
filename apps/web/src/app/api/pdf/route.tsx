@@ -5,10 +5,11 @@ import { getResumeData } from "@/lib/resume-data";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try {
-    const data = getResumeData();
+  const data = getResumeData();
+  const document = <ResumeDocument data={data} />;
 
-    const buffer = await renderToBuffer(<ResumeDocument data={data} />);
+  try {
+    const buffer = await renderToBuffer(document);
     const bytes = new Uint8Array(buffer);
 
     const filename = `Khubaib_Qaiser_Senior_Software_Engineer_Resume.pdf`;
