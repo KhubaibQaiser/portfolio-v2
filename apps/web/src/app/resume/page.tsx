@@ -22,23 +22,23 @@ export default async function ResumePage() {
             <p className="mt-1 text-[length:var(--text-body-lg)] font-medium text-accent">
               {resume.title}
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground/90 dark:text-foreground/85">
               <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
+                <MapPin className="h-3.5 w-3.5 opacity-80" />
                 {resume.location}
               </span>
               <a
                 href={`mailto:${resume.email}`}
-                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+                className="inline-flex items-center gap-1 text-foreground/90 underline-offset-4 transition-colors hover:text-accent dark:text-foreground/85"
               >
-                <Mail className="h-3.5 w-3.5" />
+                <Mail className="h-3.5 w-3.5 opacity-80" />
                 {resume.email}
               </a>
               <a
                 href={`https://${resume.website}`}
-                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+                className="inline-flex items-center gap-1 text-foreground/90 underline-offset-4 transition-colors hover:text-accent dark:text-foreground/85"
               >
-                <Globe className="h-3.5 w-3.5" />
+                <Globe className="h-3.5 w-3.5 opacity-80" />
                 {resume.website}
               </a>
             </div>
@@ -61,7 +61,7 @@ export default async function ResumePage() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/30 hover:text-accent"
+                className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-foreground/88 transition-colors hover:border-accent/40 hover:text-accent dark:text-foreground/80"
               >
                 {label} <ExternalLink className="h-3 w-3" />
               </a>
@@ -73,7 +73,7 @@ export default async function ResumePage() {
             Professional Summary
           </h2>
           <div className="mt-3 h-px bg-border" />
-          <p className="mt-4 leading-relaxed text-muted-foreground">
+          <p className="mt-4 leading-relaxed text-foreground/92 dark:text-foreground/88">
             {resume.summary}
           </p>
         </section>
@@ -89,7 +89,7 @@ export default async function ResumePage() {
                 <span className="w-32 shrink-0 text-sm font-semibold text-foreground">
                   {group.category}:
                 </span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground/88 dark:text-foreground/82">
                   {group.items.join(", ")}
                 </span>
               </div>
@@ -106,26 +106,27 @@ export default async function ResumePage() {
             {resume.experience.map((exp) => (
               <div key={`${exp.company}-${exp.period}`}>
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 className="font-semibold">{exp.role}</h3>
-                  <span className="font-mono text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-foreground">{exp.role}</h3>
+                  <span className="font-mono text-sm text-foreground/78 dark:text-foreground/72">
                     {exp.period}
                   </span>
                 </div>
                 <p className="text-accent">{exp.company}</p>
-                <p className="text-sm text-muted-foreground">{exp.location}</p>
+                <p className="text-sm text-foreground/82 dark:text-foreground/75">{exp.location}</p>
                 <ul className="mt-2 space-y-1">
                   {exp.bullets.map((bullet, i) => (
                     <li
                       key={i}
-                      className="flex gap-2 text-sm leading-relaxed text-muted-foreground"
+                      className="flex gap-2 text-sm leading-relaxed text-foreground/90 dark:text-foreground/85"
                     >
-                      <span className="mt-2 h-1 w-1 flex-shrink-0 rounded-full bg-accent" />
+                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" />
                       {bullet}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-muted-foreground/70">
-                  <strong>Tech:</strong> {exp.tech}
+                <p className="mt-2 text-xs text-foreground/78 dark:text-foreground/70">
+                  <strong className="font-semibold text-foreground/88">Tech:</strong>{" "}
+                  {exp.tech}
                 </p>
               </div>
             ))}
@@ -140,10 +141,10 @@ export default async function ResumePage() {
           {resume.education.map((edu) => (
             <div key={edu.institution} className="mt-4 flex items-start justify-between">
               <div>
-                <h3 className="font-semibold">{edu.degree}</h3>
+                <h3 className="font-semibold text-foreground">{edu.degree}</h3>
                 <p className="text-accent">{edu.institution}</p>
               </div>
-              <span className="text-sm text-muted-foreground">{edu.year}</span>
+              <span className="text-sm text-foreground/82 dark:text-foreground/75">{edu.year}</span>
             </div>
           ))}
         </section>
@@ -153,13 +154,13 @@ export default async function ResumePage() {
             Certifications
           </h2>
           <div className="mt-3 h-px bg-border" />
-          <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="mt-4 space-y-1 text-sm text-foreground/90 dark:text-foreground/85">
             {resume.certifications.map((cert) => (
-              <li key={cert.name} className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-accent" />
+              <li key={cert.name} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="h-1 w-1 shrink-0 rounded-full bg-accent" />
                 {cert.name}
                 {cert.issuer && (
-                  <span className="text-xs text-muted-foreground/70">
+                  <span className="text-xs text-foreground/72 dark:text-foreground/65">
                     ({cert.issuer})
                   </span>
                 )}
