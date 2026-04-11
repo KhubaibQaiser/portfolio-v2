@@ -20,6 +20,22 @@ const sectionVariants = {
   },
 };
 
+const groupVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.04 },
+  },
+};
+
+const tagVariants = {
+  hidden: { opacity: 0, scale: 0.85 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
 export function SkillsSection({ skills }: SkillsSectionProps) {
   const grouped = skills.reduce<Record<string, Skill[]>>((acc, skill) => {
     const cat = skill.category;
@@ -51,43 +67,39 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
 
           <div className="mt-10 grid gap-8 md:grid-cols-2">
             {Object.entries(grouped).map(([category, categorySkills]) => (
-              <div key={category} className="space-y-4">
+              <motion.div
+                key={category}
+                variants={groupVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                className="space-y-3"
+              >
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">
                   {SKILL_CATEGORIES[category as keyof typeof SKILL_CATEGORIES] ?? category}
                 </h3>
-                <div className="space-y-3">
-                  {categorySkills.map((skill) => (
-                    <div key={skill.id}>
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-sm font-medium">{skill.name}</span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {skill.proficiency}%
+                <div className="flex flex-wrap gap-2">
+                  {[...categorySkills].sort((a, b) => b.years - a.years).map((skill) => (
+                    <motion.span
+                      key={skill.id}
+                      variants={tagVariants}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5",
+                        "text-sm font-medium text-foreground/90",
+                        "transition-all duration-200",
+                        "hover:border-accent/40 hover:bg-accent/5 hover:text-accent",
+                      )}
+                    >
+                      {skill.name}
+                      {skill.years > 0 && (
+                        <span className="font-mono text-[0.65rem] text-muted-foreground">
+                          {skill.years}yr
                         </span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-border">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${skill.proficiency}%` }}
-                          viewport={{ once: true }}
-                          transition={{
-                            duration: 0.8,
-                            ease: [0.22, 1, 0.36, 1] as const,
-                            delay: 0.1,
-                          }}
-                          className={cn(
-                            "h-full rounded-full",
-                            skill.proficiency >= 85
-                              ? "bg-accent"
-                              : skill.proficiency >= 70
-                                ? "bg-accent/70"
-                                : "bg-accent/50",
-                          )}
-                        />
-                      </div>
-                    </div>
+                      )}
+                    </motion.span>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
