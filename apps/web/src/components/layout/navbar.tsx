@@ -20,6 +20,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -40,8 +41,8 @@ export function Navbar({ name, navLinks }: NavbarProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        scrolled ? "glass shadow-sm" : "bg-transparent",
+        "fixed top-0 right-0 left-0 z-50 transition-all duration-500",
+        scrolled ? "glass-header" : "bg-transparent",
       )}
     >
       <nav
