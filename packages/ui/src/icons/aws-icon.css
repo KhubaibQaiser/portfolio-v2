@@ -1,0 +1,11 @@
+/**
+ * AWS wordmark uses fill="currentColor". Explicit html.dark rules avoid Tailwind
+ * utility order where text-[#232F3E] overrides dark:text-* in production.
+ */
+.aws-icon--colored {
+  color: #232f3e;
+}
+
+html.dark .aws-icon--colored {
+  color: var(--color-foreground);
+}

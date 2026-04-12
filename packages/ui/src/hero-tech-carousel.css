@@ -16,3 +16,15 @@
 .hero-tech-marquee-root:focus-within .hero-tech-marquee-track {
   animation-play-state: paused;
 }
+
+/**
+ * Next.js & Vercel logos are black; icons use fill={color} from @icons-pack/react-simple-icons.
+ * Pass color="currentColor" and set `color` here so html.dark matches AWS wordmark behavior.
+ */
+.hero-tech-mono-brand {
+  color: #000000;
+}
+
+html.dark .hero-tech-mono-brand {
+  color: var(--color-foreground);
+}
