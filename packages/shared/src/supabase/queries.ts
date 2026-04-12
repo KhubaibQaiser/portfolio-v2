@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sortExperienceByRecencyDesc } from "../experience-dates";
+import { uniqueCompanyCount } from "../experience-stats";
 import type { Database } from "./database.types";
 
 type Client = SupabaseClient<Database>;
@@ -45,6 +46,19 @@ export async function upsertAbout(client: Client, values: Tables["about"]["Updat
     const { error } = await client.from("about").insert(values as Tables["about"]["Insert"]);
     if (error) throw error;
   }
+}
+
+/** Keeps `about.companies_count` aligned with unique companies in `experience`. */
+export async function syncCompaniesCountFromExperience(client: Client) {
+  const rows = await getExperience(client);
+  const count = uniqueCompanyCount(rows);
+  const existing = await client.from("about").select("id").maybeSingle();
+  if (!existing.data) return;
+  const { error } = await client
+    .from("about")
+    .update({ companies_count: count })
+    .eq("id", existing.data.id);
+  if (error) throw error;
 }
 
 // ---------------------------------------------------------------------------

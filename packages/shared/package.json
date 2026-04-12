@@ -11,7 +11,8 @@
     "./supabase/*": "./src/supabase/*.ts",
     "./constants": "./src/constants.ts",
     "./utils": "./src/utils.ts",
-    "./experience-dates": "./src/experience-dates.ts"
+    "./experience-dates": "./src/experience-dates.ts",
+    "./experience-stats": "./src/experience-stats.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

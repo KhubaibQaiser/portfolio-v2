@@ -10,6 +10,8 @@ type About = Database["public"]["Tables"]["about"]["Row"];
 type AboutSectionProps = {
   about: About;
   location: string;
+  /** Distinct employers from Experience (not the stored `about.companies_count` field). */
+  companiesCount: number;
 };
 
 const statusLabel: Record<string, string> = {
@@ -27,10 +29,10 @@ const sectionVariants = {
   },
 };
 
-export function AboutSection({ about, location }: AboutSectionProps) {
+export function AboutSection({ about, location, companiesCount }: AboutSectionProps) {
   const stats = [
     { icon: Clock, label: "Years", value: `${about.years_experience}+` },
-    { icon: Briefcase, label: "Companies", value: String(about.companies_count) },
+    { icon: Briefcase, label: "Companies", value: String(companiesCount) },
     { icon: Globe, label: "Countries", value: String(about.countries_count) },
     { icon: FolderOpen, label: "Projects", value: `${about.projects_count}+` },
     { icon: Users, label: "Users Impacted", value: about.users_impacted },

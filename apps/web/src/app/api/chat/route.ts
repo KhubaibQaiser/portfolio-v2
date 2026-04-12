@@ -3,6 +3,7 @@ import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
 import { supabase } from "@/lib/supabase-server";
+import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import {
   getHero,
   getAbout,
@@ -25,6 +26,8 @@ const buildSystemPrompt = cache(
       getSkills(supabase),
       getSiteConfig(supabase),
     ]);
+
+    const companiesFromExperience = uniqueCompanyCount(experience);
 
     const expSummary = experience
       .map(
@@ -49,7 +52,7 @@ About ${config.name}:
 - ${config.title}
 - ${hero.headline}
 - ${about.bio.split("\n").filter(Boolean).join(" ")}
-- ${about.years_experience}+ years of experience across ${about.companies_count} companies in ${about.countries_count} countries
+- ${about.years_experience}+ years of experience across ${companiesFromExperience} companies in ${about.countries_count} countries
 - ${about.users_impacted} users impacted
 - Industries: ${about.industries.join(", ")}
 - Based in ${config.location} (${about.timezone}), status: ${about.status}

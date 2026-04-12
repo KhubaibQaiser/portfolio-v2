@@ -12,9 +12,11 @@ type About = Database["public"]["Tables"]["about"]["Row"];
 
 type AboutFormProps = {
   initialData: About | null;
+  /** Unique company names in Experience — used for the public “Companies” stat. */
+  derivedCompaniesCount: number;
 };
 
-export function AboutForm({ initialData }: AboutFormProps) {
+export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState<AboutFormData>({
@@ -23,7 +25,7 @@ export function AboutForm({ initialData }: AboutFormProps) {
     status: (initialData?.status as AboutFormData["status"] | undefined) ?? "available",
     timezone: initialData?.timezone ?? "GMT+5",
     years_experience: initialData?.years_experience ?? 0,
-    companies_count: initialData?.companies_count ?? 0,
+    companies_count: derivedCompaniesCount,
     countries_count: initialData?.countries_count ?? 0,
     projects_count: initialData?.projects_count ?? 0,
     users_impacted: initialData?.users_impacted ?? "0",
@@ -38,7 +40,7 @@ export function AboutForm({ initialData }: AboutFormProps) {
   async function handleSave() {
     setSaving(true);
     setMessage("");
-    const result = await saveAbout(form);
+    const result = await saveAbout({ ...form, companies_count: derivedCompaniesCount });
     setSaving(false);
     setMessage(result.success ? "Saved!" : result.error);
   }
@@ -87,10 +89,23 @@ export function AboutForm({ initialData }: AboutFormProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Companies</label>
+          <div
+            className={cn(
+              "flex min-h-[42px] items-center rounded-lg border border-border bg-muted/20 px-4 py-2.5",
+              "text-sm text-muted-foreground",
+            )}
+          >
+            {derivedCompaniesCount}{" "}
+            <span className="ml-1.5 text-xs">
+              (unique employers from Experience — updates when you edit that list)
+            </span>
+          </div>
+        </div>
         {(
           [
             ["years_experience", "Years Experience"],
-            ["companies_count", "Companies"],
             ["countries_count", "Countries"],
             ["projects_count", "Projects"],
             ["users_impacted", "Users Impacted"],
@@ -112,6 +127,13 @@ export function AboutForm({ initialData }: AboutFormProps) {
                 "text-sm focus:border-accent focus:outline-none",
               )}
             />
+            {key === "countries_count" && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Manual count for how many countries you’ve worked across (there is no per-job country
+                field yet). Used with Companies in the “Companies across N countries” line on the
+                site.
+              </p>
+            )}
           </div>
         ))}
       </div>
