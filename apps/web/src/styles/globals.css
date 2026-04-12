@@ -35,7 +35,7 @@
   --duration-slow: 500ms;
 
   /* Glass effect */
-  --glass-bg: oklch(0.99 0 0 / 0.72);
+  --glass-bg: oklch(0.99 0 0 / 1);
   --glass-border: oklch(0.92 0.005 261 / 0.5);
   --glass-blur: 12px;
 
@@ -119,4 +119,11 @@ body {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
+}
+
+/* Site navbar — solid background after scroll (matches body); edge + shadow only, no translucent blur */
+.glass-header {
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
 }

@@ -11,7 +11,6 @@ import {
   Loader2,
   Bot,
   User,
-  Sparkles,
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -218,9 +217,9 @@ export function ChatBubble() {
                 <MessageCircle className="h-6 w-6" />
               </motion.span>
 
-              {/* Sparkle badge */}
+              {/* Robot badge */}
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-background shadow-sm ring-2 ring-accent/20">
-                <Sparkles className="h-3 w-3 text-accent" />
+                <Bot className="h-3 w-3 text-accent" />
               </span>
             </motion.button>
           </motion.div>
