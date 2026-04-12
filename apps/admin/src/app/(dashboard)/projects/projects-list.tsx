@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Save, Loader2, X, Star } from "lucide-react";
+import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveProject, deleteProject } from "@/lib/actions";
 import type { Database } from "@portfolio/shared/supabase/database.types";
+import { projectSchema, type ProjectFormData } from "@portfolio/shared/schemas";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -12,7 +14,7 @@ type ProjectsListProps = {
   initialData: Project[];
 };
 
-const EMPTY: Omit<Project, "id" | "created_at" | "updated_at"> = {
+const EMPTY: ProjectFormData = {
   title: "",
   slug: "",
   description: "",
@@ -29,9 +31,14 @@ const EMPTY: Omit<Project, "id" | "created_at" | "updated_at"> = {
   sort_order: 0,
 };
 
+function projectRowToForm(row: Project): ProjectFormData & { id: string } {
+  const { id, created_at, updated_at, ...rest } = row;
+  return { ...projectSchema.parse(rest), id };
+}
+
 export function ProjectsList({ initialData }: ProjectsListProps) {
   const [items, setItems] = useState(initialData);
-  const [editing, setEditing] = useState<(typeof EMPTY & { id?: string }) | null>(null);
+  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -87,15 +94,18 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Type</label>
-          <select
+          <Select
+            variant="muted"
+            className="px-4"
             value={editing.type}
-            onChange={(e) => setEditing((p) => p && { ...p, type: e.target.value as Project["type"] })}
-            className="rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            onChange={(e) =>
+              setEditing((p) => p && { ...p, type: e.target.value as ProjectFormData["type"] })
+            }
           >
             {["web", "mobile", "game", "open-source", "other"].map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Tech Tags (comma-separated)</label>
@@ -149,7 +159,7 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
               <p className="font-medium">{project.title}</p>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{project.type}</span>
             </div>
-            <button onClick={() => setEditing(project)} className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <button onClick={() => setEditing(projectRowToForm(project))} className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
               <Pencil className="h-4 w-4" />
             </button>
             <button onClick={() => handleDelete(project.id)} className="rounded-md p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500">

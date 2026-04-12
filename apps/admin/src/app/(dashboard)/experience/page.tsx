@@ -4,7 +4,7 @@ import { ExperienceList } from "./experience-list";
 
 export default async function ExperienceListPage() {
   const client = await createClient();
-  const experience = await getExperience(client).catch(() => []);
+  const experience = await getExperience(client);
 
   return (
     <>

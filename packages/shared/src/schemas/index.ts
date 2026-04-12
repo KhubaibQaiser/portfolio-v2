@@ -4,6 +4,10 @@ export {
   experienceSchema,
   experienceRowSchema,
   locationTypeEnum,
+  contractTypeEnum,
+  CONTRACT_TYPE_LABELS,
+  getContractTypeLabel,
+  type ContractType,
   type ExperienceFormData,
   type Experience,
 } from "./experience";

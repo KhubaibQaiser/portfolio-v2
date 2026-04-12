@@ -107,18 +107,39 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         </motion.div>
 
         <motion.div variants={itemVariants} className="mt-16">
-          <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
-            Trusted by teams at
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {companies.map((company) => (
+          <div
+            className={cn(
+              "mx-auto max-w-4xl rounded-2xl border border-border/80",
+              "bg-muted/50 px-5 py-6 shadow-sm",
+              "dark:border-border/60 dark:bg-muted/35",
+            )}
+          >
+            <div className="mb-5 flex items-center justify-center gap-3">
               <span
-                key={company}
-                className="text-sm font-medium text-muted-foreground/40 transition-colors duration-200 hover:text-muted-foreground"
-              >
-                {company}
-              </span>
-            ))}
+                className="h-px w-10 shrink-0 bg-border sm:w-14"
+                aria-hidden
+              />
+              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/90">
+                Trusted by teams at
+              </p>
+              <span
+                className="h-px w-10 shrink-0 bg-border sm:w-14"
+                aria-hidden
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-10">
+              {companies.map((company) => (
+                <span
+                  key={company}
+                  className={cn(
+                    "text-sm font-semibold tracking-tight text-foreground/85",
+                    "transition-colors duration-200 hover:text-accent sm:text-base",
+                  )}
+                >
+                  {company}
+                </span>
+              ))}
+            </div>
           </div>
         </motion.div>
 

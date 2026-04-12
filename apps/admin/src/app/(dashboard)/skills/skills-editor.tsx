@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Select } from "@portfolio/ui/select";
 import { Plus, Save, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveSkills, deleteSkill } from "@/lib/actions";
@@ -94,15 +95,15 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
               placeholder="Skill name"
               className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-accent focus:outline-none"
             />
-            <select
+            <Select
+              className="h-9 min-w-0 rounded-md bg-background px-2 py-1.5 text-sm"
               value={skill.category}
               onChange={(e) => updateSkill(skill.id, "category", e.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
             >
               {Object.entries(SKILL_CATEGORIES).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
               ))}
-            </select>
+            </Select>
             <div className="flex items-center gap-1">
               <input
                 type="number"

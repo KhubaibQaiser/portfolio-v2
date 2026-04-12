@@ -119,6 +119,11 @@ const s = StyleSheet.create({
     fontSize: 9,
     color: COLORS.secondary,
   },
+  expJobType: {
+    fontSize: 8.5,
+    color: COLORS.subtle,
+    marginTop: 2,
+  },
   bulletList: {
     marginTop: 3,
     paddingLeft: 10,
@@ -290,6 +295,7 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                   <Text style={s.expCompany}>{exp.company}</Text>
                   <Text style={s.expLocation}>{exp.location}</Text>
                 </View>
+                <Text style={s.expJobType}>{exp.contractType}</Text>
                 <View style={s.bulletList}>
                   {exp.bullets.map((bullet, i) => (
                     <View key={i} style={s.bulletRow}>

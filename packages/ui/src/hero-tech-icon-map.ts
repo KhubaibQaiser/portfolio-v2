@@ -9,6 +9,7 @@ import {
   SiReact,
   SiRedux,
   SiTailwindcss,
+  SiTanstack,
   SiTypescript,
   SiVercel,
 } from "@icons-pack/react-simple-icons";
@@ -23,6 +24,7 @@ export const HERO_SIMPLE_ICON_MAP: Record<string, HeroSimpleIconComponent> = {
   SiNodedotjs,
   SiGraphql,
   SiRedux,
+  SiTanstack,
   SiDocker,
   SiFirebase,
   SiTailwindcss,

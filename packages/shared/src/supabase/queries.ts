@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sortExperienceByRecencyDesc } from "../experience-dates";
 import type { Database } from "./database.types";
 
 type Client = SupabaseClient<Database>;
@@ -51,12 +52,9 @@ export async function upsertAbout(client: Client, values: Tables["about"]["Updat
 // ---------------------------------------------------------------------------
 
 export async function getExperience(client: Client) {
-  const { data, error } = await client
-    .from("experience")
-    .select("*")
-    .order("sort_order");
+  const { data, error } = await client.from("experience").select("*");
   if (error) throw error;
-  return data;
+  return sortExperienceByRecencyDesc(data);
 }
 
 export async function getExperienceById(client: Client, id: string) {

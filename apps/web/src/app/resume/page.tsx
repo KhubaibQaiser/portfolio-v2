@@ -113,6 +113,7 @@ export default async function ResumePage() {
                 </div>
                 <p className="text-accent">{exp.company}</p>
                 <p className="text-sm text-foreground/82 dark:text-foreground/75">{exp.location}</p>
+                <p className="text-xs text-foreground/70 dark:text-foreground/65">{exp.contractType}</p>
                 <ul className="mt-2 space-y-1">
                   {exp.bullets.map((bullet, i) => (
                     <li
