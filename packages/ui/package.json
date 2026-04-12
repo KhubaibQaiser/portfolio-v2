@@ -18,6 +18,8 @@
     "./hero-tech-carousel": "./src/hero-tech-carousel.tsx",
     "./calendar": "./src/calendar.tsx",
     "./date-picker": "./src/date-picker.tsx",
+    "./media-dropzone": "./src/media-dropzone.tsx",
+    "./media-asset-card": "./src/media-asset-card.tsx",
     "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "scripts": {

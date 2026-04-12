@@ -11,6 +11,7 @@
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
     "@hookform/resolvers": "^5.2.2",
     "@portfolio/shared": "workspace:*",
     "@portfolio/ui": "workspace:*",
