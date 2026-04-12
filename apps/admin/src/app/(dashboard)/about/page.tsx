@@ -1,10 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAbout } from "@portfolio/shared/supabase/queries";
+import { getAbout, getExperience } from "@portfolio/shared/supabase/queries";
+import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { AboutForm } from "./about-form";
 
 export default async function AboutEditPage() {
   const client = await createClient();
-  const about = await getAbout(client).catch(() => null);
+  const [about, experience] = await Promise.all([
+    getAbout(client).catch(() => null),
+    getExperience(client).catch(() => []),
+  ]);
+  const derivedCompaniesCount = uniqueCompanyCount(experience);
 
   return (
     <>
@@ -12,7 +17,7 @@ export default async function AboutEditPage() {
       <p className="mt-1 text-sm text-muted-foreground">
         Update your bio, stats, and availability status.
       </p>
-      <AboutForm initialData={about} />
+      <AboutForm initialData={about} derivedCompaniesCount={derivedCompaniesCount} />
     </>
   );
 }

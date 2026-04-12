@@ -7,6 +7,7 @@ import {
   insertExperience,
   updateExperience,
   deleteExperience as deleteExp,
+  syncCompaniesCountFromExperience,
   insertProject,
   updateProject,
   deleteProject as deleteProj,
@@ -90,6 +91,7 @@ export async function saveAbout(values: z.infer<typeof aboutSchema>): Promise<Ac
   try {
     const client = await createClient();
     await upsertAbout(client, parsed.data);
+    await syncCompaniesCountFromExperience(client);
     await revalidateWeb(["about"]);
     return { success: true };
   } catch (e) {
@@ -115,7 +117,8 @@ export async function saveExperience(
     } else {
       await insertExperience(client, parsed.data);
     }
-    await revalidateWeb(["experience"]);
+    await syncCompaniesCountFromExperience(client);
+    await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -126,7 +129,8 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
   try {
     const client = await createClient();
     await deleteExp(client, id);
-    await revalidateWeb(["experience"]);
+    await syncCompaniesCountFromExperience(client);
+    await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };

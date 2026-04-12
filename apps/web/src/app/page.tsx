@@ -17,6 +17,7 @@ import {
   fetchTestimonials,
   fetchSiteConfig,
 } from "@/lib/data";
+import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 
 export default async function HomePage() {
   const [hero, about, experience, featuredProjects, skills, testimonials, siteConfig] =
@@ -31,11 +32,12 @@ export default async function HomePage() {
     ]);
 
   const companies = experience.map((e) => e.company);
+  const companiesCount = uniqueCompanyCount(experience);
 
   return (
     <>
       <HeroSection hero={hero} companies={companies} />
-      <AboutSection about={about} location={siteConfig.location} />
+      <AboutSection about={about} location={siteConfig.location} companiesCount={companiesCount} />
       <WhyHireMeSection />
       <ParallaxDivider
         stat={`${about.years_experience}+`}
@@ -44,7 +46,7 @@ export default async function HomePage() {
       />
       <SkillsSection skills={skills} />
       <ParallaxDivider
-        stat={String(about.companies_count)}
+        stat={String(companiesCount)}
         label={`Companies across ${about.countries_count} countries`}
         variant="subtle"
       />
