@@ -17,6 +17,24 @@ export const SKILL_CATEGORIES = {
 } as const;
 
 /**
+ * Display order for skill category blocks (higher = earlier).
+ * Priority: Frontend → Mobile → Backend → Cloud → State → everything else.
+ */
+export const SKILL_CATEGORY_SORT_WEIGHT: Partial<
+  Record<keyof typeof SKILL_CATEGORIES, number>
+> = {
+  frontend: 100,
+  mobile: 90,
+  backend: 80,
+  cloud: 70,
+  state: 60,
+};
+
+export function getSkillCategorySortWeight(category: string): number {
+  return SKILL_CATEGORY_SORT_WEIGHT[category as keyof typeof SKILL_CATEGORIES] ?? 0;
+}
+
+/**
  * Admin email allowlist — enforced by admin middleware.
  * Add emails here to grant dashboard access.
  */
