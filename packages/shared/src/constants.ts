@@ -34,6 +34,32 @@ export function getSkillCategorySortWeight(category: string): number {
   return SKILL_CATEGORY_SORT_WEIGHT[category as keyof typeof SKILL_CATEGORIES] ?? 0;
 }
 
+export type HeroTopTech = {
+  id: string;
+  label: string;
+  iconKey: string;
+  brandColor: string | null;
+};
+
+/**
+ * Curated hero marquee stack (manual order by preference).
+ */
+export const HERO_TOP_TECHS: HeroTopTech[] = [
+  { id: "react", label: "React", iconKey: "SiReact", brandColor: "#61DAFB" },
+  { id: "nextjs", label: "Next.js", iconKey: "SiNextdotjs", brandColor: null },
+  { id: "typescript", label: "TypeScript", iconKey: "SiTypescript", brandColor: "#3178C6" },
+  { id: "nodejs", label: "Node.js", iconKey: "SiNodedotjs", brandColor: "#5FA04E" },
+  { id: "graphql", label: "GraphQL", iconKey: "SiGraphql", brandColor: "#E10098" },
+  { id: "react-native", label: "React Native", iconKey: "SiReact", brandColor: "#61DAFB" },
+  { id: "aws", label: "AWS", iconKey: "AwsBrand", brandColor: "#FF9900" },
+  { id: "redux", label: "Redux", iconKey: "SiRedux", brandColor: "#764ABC" },
+  { id: "docker", label: "Docker", iconKey: "SiDocker", brandColor: "#2496ED" },
+  { id: "firebase", label: "Firebase", iconKey: "SiFirebase", brandColor: "#FFCA28" },
+  { id: "tailwindcss", label: "Tailwind CSS", iconKey: "SiTailwindcss", brandColor: "#06B6D4" },
+  { id: "vercel", label: "Vercel", iconKey: "SiVercel", brandColor: null },
+  { id: "github-actions", label: "GitHub Actions", iconKey: "SiGithubactions", brandColor: "#2088FF" },
+] as const;
+
 /**
  * Admin email allowlist — enforced by admin middleware.
  * Add emails here to grant dashboard access.

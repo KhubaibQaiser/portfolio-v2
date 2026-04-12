@@ -15,6 +15,6 @@
       "@portfolio/shared/*": ["../shared/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "storybook-static", "**/*.stories.tsx"]
 }
