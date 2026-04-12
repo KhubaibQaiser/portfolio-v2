@@ -63,3 +63,4 @@ export {
   type NavLink,
 } from "./site-config";
 export { contactSchema, type ContactFormData } from "./contact";
+export { mediaInsertSchema, type MediaInsert } from "./media";

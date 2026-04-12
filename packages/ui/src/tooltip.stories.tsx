@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import React from "react";
 import { Info } from "lucide-react";
 import { Tooltip } from "./tooltip";
 import { Button } from "./button";

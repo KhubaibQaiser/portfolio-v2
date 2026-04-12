@@ -256,3 +256,30 @@ export async function upsertResume(client: Client, values: Tables["resume"]["Upd
     if (error) throw error;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------------------
+
+export async function getMedia(client: Client) {
+  const { data, error } = await client.from("media").select("*").order("uploaded_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function getMediaById(client: Client, id: string) {
+  const { data, error } = await client.from("media").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function insertMedia(client: Client, values: Tables["media"]["Insert"]) {
+  const { data, error } = await client.from("media").insert(values).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteMediaRow(client: Client, id: string) {
+  const { error } = await client.from("media").delete().eq("id", id);
+  if (error) throw error;
+}

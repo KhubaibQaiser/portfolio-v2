@@ -4,6 +4,8 @@ export { Button } from "./button";
 export { Input } from "./input";
 export { Card, CardHeader, CardTitle, CardContent } from "./card";
 export { Badge } from "./badge";
+export { MediaDropzone } from "./media-dropzone";
+export { MediaAssetCard } from "./media-asset-card";
 export { SmoothScroll } from "./smooth-scroll";
 export { ParallaxDivider } from "./parallax-divider";
 export { GitHubIcon, LinkedInIcon, TwitterIcon, InstagramIcon } from "./icons";
