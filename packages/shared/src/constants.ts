@@ -48,6 +48,12 @@ export const HERO_TOP_TECHS: HeroTopTech[] = [
   { id: "react", label: "React", iconKey: "SiReact", brandColor: "#61DAFB" },
   { id: "nextjs", label: "Next.js", iconKey: "SiNextdotjs", brandColor: null },
   { id: "typescript", label: "TypeScript", iconKey: "SiTypescript", brandColor: "#3178C6" },
+  {
+    id: "tanstack",
+    label: "TanStack",
+    iconKey: "SiTanstack",
+    brandColor: "#FF4154",
+  },
   { id: "nodejs", label: "Node.js", iconKey: "SiNodedotjs", brandColor: "#5FA04E" },
   { id: "graphql", label: "GraphQL", iconKey: "SiGraphql", brandColor: "#E10098" },
   { id: "react-native", label: "React Native", iconKey: "SiReact", brandColor: "#61DAFB" },

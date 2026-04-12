@@ -8,6 +8,7 @@
     "./theme-toggle": "./src/theme-toggle.tsx",
     "./button": "./src/button.tsx",
     "./input": "./src/input.tsx",
+    "./select": "./src/select.tsx",
     "./card": "./src/card/index.ts",
     "./badge": "./src/badge.tsx",
     "./tooltip": "./src/tooltip.tsx",
@@ -15,6 +16,8 @@
     "./smooth-scroll": "./src/smooth-scroll.tsx",
     "./parallax-divider": "./src/parallax-divider.tsx",
     "./hero-tech-carousel": "./src/hero-tech-carousel.tsx",
+    "./calendar": "./src/calendar.tsx",
+    "./date-picker": "./src/date-picker.tsx",
     "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "scripts": {
@@ -26,7 +29,10 @@
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.13.0",
     "@portfolio/shared": "workspace:*",
-    "next-themes": "^0.4.6"
+    "@radix-ui/react-popover": "^1.1.15",
+    "date-fns": "^4.1.0",
+    "next-themes": "^0.4.6",
+    "react-day-picker": "^9.14.0"
   },
   "peerDependencies": {
     "framer-motion": ">=12.0.0",
@@ -36,17 +42,21 @@
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
-    "framer-motion": { "optional": true },
-    "lenis": { "optional": true }
+    "framer-motion": {
+      "optional": true
+    },
+    "lenis": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@storybook/react": "^10.3.5",
-    "framer-motion": "^12.38.0",
-    "lenis": "^1.3.21",
     "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "framer-motion": "^12.38.0",
+    "lenis": "^1.3.21",
     "lucide-react": "^1.8.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

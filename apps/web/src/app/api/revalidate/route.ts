@@ -25,10 +25,12 @@ export async function POST(request: Request) {
       }
     }
 
-    if (tags) {
+    if (tags && tags.length > 0) {
       for (const tag of tags) {
         revalidateTag(tag, { expire: 0 });
       }
+      /* unstable_cache + tag invalidation: also refresh the app router tree so pages pick up new data */
+      revalidatePath("/", "layout");
     }
 
     return NextResponse.json({

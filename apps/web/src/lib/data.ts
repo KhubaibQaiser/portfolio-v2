@@ -13,8 +13,9 @@ import {
 } from "@portfolio/shared/supabase/queries";
 
 // ---------------------------------------------------------------------------
-// Cache wrappers — data is cached per-request on the edge and invalidated
-// via revalidateTag("hero") etc. from the admin server actions.
+// All data is loaded from Supabase (see lib/supabase-server). These are
+// unstable_cache wrappers keyed by tag; the admin app calls POST /api/revalidate
+// (revalidateTag + revalidatePath layout) so updates appear immediately.
 // ---------------------------------------------------------------------------
 
 export const fetchHero = cache(

@@ -5,6 +5,7 @@ import {
   fetchSkills,
 } from "@/lib/data";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
+import { getContractTypeLabel } from "@portfolio/shared/schemas";
 
 type SocialLink = { platform: string; url: string; label: string };
 
@@ -24,6 +25,7 @@ export type ResumeData = {
     role: string;
     period: string;
     location: string;
+    contractType: string;
     bullets: string[];
     tech: string;
   }[];
@@ -110,6 +112,7 @@ export async function getResumeData(): Promise<ResumeData> {
       role: exp.role,
       period: `${exp.start_date} – ${exp.end_date ?? "Present"}`,
       location: `${exp.location} (${exp.location_type.charAt(0).toUpperCase() + exp.location_type.slice(1)})`,
+      contractType: getContractTypeLabel(exp.contract_type),
       bullets: exp.description.split("\n").filter(Boolean),
       tech: exp.tech_tags.join(", "),
     })),

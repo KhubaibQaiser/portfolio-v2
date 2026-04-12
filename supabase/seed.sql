@@ -63,12 +63,13 @@ values (
 -- ---------------------------------------------------------------------------
 -- experience (sort_order 0 = most recent)
 -- ---------------------------------------------------------------------------
-insert into public.experience (company, role, location, location_type, start_date, end_date, description, tech_tags, sort_order) values
+insert into public.experience (company, role, location, location_type, contract_type, start_date, end_date, description, tech_tags, sort_order) values
 (
   'Shopsense AI',
   'Senior Software Engineer',
   'San Francisco, CA',
   'remote',
+  'full_time',
   'Aug 2024',
   null,
   E'Architected serverless ad delivery system with AWS CDK, Lambda, and DynamoDB handling 50K+ daily impressions\nBuilt real-time analytics pipeline with SQS and CloudFront, driving 20%+ engagement improvement\nDesigned and implemented scalable microservices for ad-tech platform serving enterprise clients',
@@ -80,6 +81,7 @@ insert into public.experience (company, role, location, location_type, start_dat
   'Senior Web Developer',
   'Jersey City, NJ',
   'remote',
+  'full_time',
   'Jun 2023',
   'Aug 2024',
   E'Led CRA to Vite migration, reducing build times by 70% and improving developer experience\nImplemented React 18 features (Suspense, React Query) achieving 60% Core Web Vitals improvement\nMentored team of 5 on performance optimization best practices and modern React patterns',
@@ -91,6 +93,7 @@ insert into public.experience (company, role, location, location_type, start_dat
   'Senior React Native Engineer',
   'Austin, TX',
   'remote',
+  'full_time',
   'Jan 2023',
   'Jun 2023',
   E'Built cross-platform trading app with React Native, Next.js, and shared web/mobile codebase\nIntegrated Apollo GraphQL, Auth0, and Storybook for a cohesive full-stack development experience\nImplemented E2E testing with Detox (mobile) and Playwright (web) ensuring release stability',
@@ -102,6 +105,7 @@ insert into public.experience (company, role, location, location_type, start_dat
   'Senior Software Engineer',
   'Jakarta, Indonesia',
   'remote',
+  'full_time',
   'Sep 2020',
   'Jan 2023',
   E'Created private npm design system adopted by 40+ engineers across 8 product teams\nBuilt company profile with Next.js + Contentful + Tailwind, achieving 70% Core Web Vitals improvement\nLed marketplace feature development for B2B e-commerce platform serving Indonesian market',
@@ -113,6 +117,7 @@ insert into public.experience (company, role, location, location_type, start_dat
   'Senior Software Engineer',
   'Jakarta, Indonesia',
   'remote',
+  'full_time',
   'Feb 2019',
   'Aug 2020',
   E'Built transport management dashboards and driver tracking system for logistics operations\nDeveloped React Native driver app and rewrote Android app in Kotlin for improved performance\nMentored junior engineers and established code review processes for the engineering team',
@@ -124,6 +129,7 @@ insert into public.experience (company, role, location, location_type, start_dat
   'Mobile App & Game Developer',
   'Islamabad, Pakistan',
   'onsite',
+  'full_time',
   'Sep 2015',
   'Feb 2019',
   E'Developed educational games reaching 500K+ students across Pakistan and Middle East\nBuilt cross-platform mobile applications and interactive learning tools with HTML5 Canvas\nCreated survey application for CERP (Centre for Economic Research in Pakistan)',

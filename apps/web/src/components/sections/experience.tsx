@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
+import { Badge } from "@portfolio/ui/badge";
+import { getContractTypeLabel } from "@portfolio/shared/schemas";
 import type { Database } from "@portfolio/shared/supabase/database.types";
 
 type Experience = Database["public"]["Tables"]["experience"]["Row"];
@@ -52,6 +54,7 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                 const period = `${exp.start_date} – ${exp.end_date ?? "Present"}`;
                 const bullets = exp.description.split("\n").filter(Boolean);
                 const locationType = exp.location_type.charAt(0).toUpperCase() + exp.location_type.slice(1);
+                const jobType = getContractTypeLabel(exp.contract_type);
 
                 return (
                   <motion.div
@@ -82,12 +85,17 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                         </div>
                       </div>
 
-                      <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {exp.location}
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                          {locationType}
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          {exp.location}
                         </span>
+                        <Badge variant="default" className="border-transparent font-normal">
+                          {locationType}
+                        </Badge>
+                        <Badge variant="default" className="border-transparent font-normal">
+                          {jobType}
+                        </Badge>
                       </div>
 
                       <ul className="mt-4 space-y-2">
@@ -104,12 +112,9 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
 
                       <div className="mt-4 flex flex-wrap gap-1.5">
                         {exp.tech_tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full bg-accent/10 px-2.5 py-0.5 font-mono text-xs text-accent"
-                          >
+                          <Badge key={t} variant="accent" className="font-mono font-normal">
                             {t}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>

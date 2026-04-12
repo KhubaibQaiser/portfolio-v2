@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { Save, Loader2 } from "lucide-react";
+import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveAbout } from "@/lib/actions";
+import type { AboutFormData } from "@portfolio/shared/schemas";
 import type { Database } from "@portfolio/shared/supabase/database.types";
 
 type About = Database["public"]["Tables"]["about"]["Row"];
@@ -15,10 +17,10 @@ type AboutFormProps = {
 export function AboutForm({ initialData }: AboutFormProps) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<AboutFormData>({
     bio: initialData?.bio ?? "",
     photo_url: initialData?.photo_url ?? "",
-    status: initialData?.status ?? ("available" as const),
+    status: (initialData?.status as AboutFormData["status"] | undefined) ?? "available",
     timezone: initialData?.timezone ?? "GMT+5",
     years_experience: initialData?.years_experience ?? 0,
     companies_count: initialData?.companies_count ?? 0,
@@ -29,7 +31,7 @@ export function AboutForm({ initialData }: AboutFormProps) {
     languages: initialData?.languages ?? [],
   });
 
-  function handleChange(field: string, value: string | number | string[]) {
+  function handleChange<K extends keyof AboutFormData>(field: K, value: AboutFormData[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -70,15 +72,18 @@ export function AboutForm({ initialData }: AboutFormProps) {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium">Status</label>
-        <select
+        <Select
+          variant="muted"
+          className="px-4"
           value={form.status}
-          onChange={(e) => handleChange("status", e.target.value)}
-          className="rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-accent focus:outline-none"
+          onChange={(e) =>
+            handleChange("status", e.target.value as AboutFormData["status"])
+          }
         >
           <option value="available">Open to Opportunities</option>
           <option value="open">Open to Conversations</option>
           <option value="unavailable">Not Available</option>
-        </select>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
