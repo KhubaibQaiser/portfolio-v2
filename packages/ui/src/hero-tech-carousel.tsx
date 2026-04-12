@@ -77,12 +77,13 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
               {setItems.map((tech) => {
                 const activeKey = `${setIndex}-${tech.id}`;
                 const isActive = activeItem === activeKey;
-                const isNeutralActive = isActive && !tech.brandColor;
+                const isMonoBrand = tech.id === "nextjs" || tech.id === "vercel";
 
                 const buttonClass = cn(
                   "inline-flex h-12 w-12 items-center justify-center rounded-full border border-transparent",
-                  "text-muted-foreground/65 transition-all duration-200",
-                  isNeutralActive && "text-foreground",
+                  "transition-all duration-200",
+                  isActive && "scale-105",
+                  isMonoBrand && "hero-tech-mono-brand",
                   "hover:border-border/70 hover:bg-muted/40 focus-visible:border-border/70 focus-visible:bg-muted/40 focus-visible:outline-none",
                 );
 
@@ -105,9 +106,7 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                         <AwsIcon
                           width={24}
                           height={24}
-                          accentColor={
-                            isActive ? (tech.brandColor ?? "#FF9900") : undefined
-                          }
+                          accentColor={tech.brandColor ?? "#FF9900"}
                           className="transition-colors duration-200"
                         />
                       </button>
@@ -136,7 +135,7 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                       <SimpleIcon
                         width={24}
                         height={24}
-                        color={isActive ? (tech.brandColor ?? undefined) : undefined}
+                        color={isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)}
                         className="transition-colors duration-200"
                       />
                     </button>

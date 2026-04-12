@@ -1,5 +1,6 @@
 import type { SVGProps } from "react";
 import { cn } from "@portfolio/shared/utils";
+import "./aws-icon.css";
 
 /** Wordmark paths from Wikimedia Commons (Amazon Web Services logo). */
 const AWS_WORDMARK_D =
@@ -12,7 +13,7 @@ const AWS_SMILE_B_D =
   "M287.2,128.1c-4.2-5.4-27.8-2.6-38.5-1.3c-3.2,0.4-3.7-2.4-0.8-4.5c18.8-13.2,49.7-9.4,53.3-5c3.6,4.5-1,35.4-18.6,50.2c-2.7,2.3-5.3,1.1-4.1-1.9C282.5,155.7,291.4,133.4,287.2,128.1z";
 
 type AwsIconProps = SVGProps<SVGSVGElement> & {
-  /** When set (hover/focus), show brand colors; otherwise match muted monochrome icons. */
+  /** Orange smile + dark wordmark; omit for monochrome (currentColor). */
   accentColor?: string;
 };
 
@@ -24,7 +25,7 @@ export function AwsIcon({ className, accentColor, ...props }: AwsIconProps) {
     <svg
       viewBox="0 0 304 182"
       className={cn(
-        colored ? "dark:text-foreground text-[#232F3E]" : "text-current",
+        colored ? "aws-icon--colored" : "text-current",
         "transition-colors duration-200",
         className,
       )}

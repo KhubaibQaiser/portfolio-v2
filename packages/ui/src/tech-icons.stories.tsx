@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { HERO_TOP_TECHS, type HeroTopTech } from "@portfolio/shared/constants";
 import { AwsIcon } from "./icons/aws-icon";
 import { getHeroSimpleIcon } from "./hero-tech-icon-map";
+import { cn } from "@portfolio/shared/utils";
+import "./hero-tech-carousel.css";
 
 const meta: Meta = {
   title: "Blocks/HeroTechIcons",
@@ -20,7 +22,15 @@ function HeroTechIconPreview({ tech }: { tech: HeroTopTech }) {
   if (!Icon) {
     return <span className="text-destructive text-xs">?</span>;
   }
-  return <Icon width={28} height={28} color={tech.brandColor ?? undefined} />;
+  const isMonoBrand = tech.id === "nextjs" || tech.id === "vercel";
+  return (
+    <Icon
+      width={28}
+      height={28}
+      color={isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)}
+      className={cn(isMonoBrand && "hero-tech-mono-brand")}
+    />
+  );
 }
 
 export const Gallery: Story = {
