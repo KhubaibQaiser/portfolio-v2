@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowDown, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HeroTechCarousel } from "@portfolio/ui/hero-tech-carousel";
 import type { Database } from "@portfolio/shared/supabase/database.types";
 
 type Hero = Database["public"]["Tables"]["hero"]["Row"];
@@ -74,9 +75,13 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
           {hero.value_proposition}
         </motion.p>
 
+        <motion.div variants={itemVariants}>
+          <HeroTechCarousel />
+        </motion.div>
+
         <motion.div
           variants={itemVariants}
-          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
           <a
             href="#projects"

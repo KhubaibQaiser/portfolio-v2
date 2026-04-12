@@ -1,0 +1,18 @@
+@keyframes hero-tech-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(var(--hero-marquee-distance, 0px) * -1), 0, 0);
+  }
+}
+
+.hero-tech-marquee-track {
+  animation: hero-tech-marquee var(--hero-marquee-duration, 28s) linear infinite;
+  transform: translate3d(0, 0, 0);
+}
+
+.hero-tech-marquee-root:hover .hero-tech-marquee-track,
+.hero-tech-marquee-root:focus-within .hero-tech-marquee-track {
+  animation-play-state: paused;
+}

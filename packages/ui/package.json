@@ -10,9 +10,11 @@
     "./input": "./src/input.tsx",
     "./card": "./src/card/index.ts",
     "./badge": "./src/badge.tsx",
+    "./tooltip": "./src/tooltip.tsx",
     "./icons": "./src/icons/index.ts",
     "./smooth-scroll": "./src/smooth-scroll.tsx",
     "./parallax-divider": "./src/parallax-divider.tsx",
+    "./hero-tech-carousel": "./src/hero-tech-carousel.tsx",
     "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "scripts": {
@@ -22,6 +24,7 @@
     "clean": "rm -rf dist .turbo storybook-static"
   },
   "dependencies": {
+    "@icons-pack/react-simple-icons": "^13.13.0",
     "@portfolio/shared": "workspace:*",
     "next-themes": "^0.4.6"
   },
