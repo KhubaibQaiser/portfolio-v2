@@ -41,8 +41,8 @@ export function Navbar({ name, navLinks }: NavbarProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 left-0 z-50 transition-all duration-500",
-        scrolled ? "glass-header" : "bg-transparent",
+        "glass-header fixed top-0 right-0 left-0 z-50 backdrop-blur-[10px] transition-shadow duration-500",
+        scrolled && "shadow-lg",
       )}
     >
       <nav
@@ -52,7 +52,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
       >
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight text-foreground transition-opacity hover:opacity-70"
+          className="text-foreground text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"
         >
           {firstName}
           <span className="text-accent">.</span>
@@ -64,22 +64,20 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               key={link.href}
               href={link.href}
               className={cn(
-                "relative px-3 py-2 text-sm font-medium text-muted-foreground",
-                "transition-colors duration-200 hover:text-foreground",
+                "text-muted-foreground relative px-3 py-2 text-sm font-medium",
+                "hover:text-foreground transition-colors duration-200",
               )}
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="font-mono text-xs text-accent opacity-70">
-                0{i + 1}.
-              </span>{" "}
+              <span className="text-accent font-mono text-xs opacity-70">0{i + 1}.</span>{" "}
               {link.label}
             </a>
           ))}
           <a
             href="/resume"
             className={cn(
-              "ml-2 rounded-full border border-accent px-4 py-1.5",
-              "text-sm font-medium text-accent transition-all duration-200",
+              "border-accent ml-2 rounded-full border px-4 py-1.5",
+              "text-accent text-sm font-medium transition-all duration-200",
               "hover:bg-accent hover:text-accent-foreground",
               "active:scale-95",
             )}
@@ -95,7 +93,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-muted/50 text-foreground"
+            className="bg-muted/50 text-foreground flex h-9 w-9 items-center justify-center rounded-full"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
           >
@@ -111,7 +109,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 md:hidden"
+            className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 backdrop-blur-[24px] md:hidden"
           >
             {navLinks.map((link, i) => (
               <motion.a
@@ -121,9 +119,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="text-lg font-medium text-foreground"
+                className="text-foreground text-lg font-medium"
               >
-                <span className="font-mono text-sm text-accent">0{i + 1}.</span>{" "}
+                <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
                 {link.label}
               </motion.a>
             ))}
@@ -133,7 +131,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: navLinks.length * 0.05, duration: 0.3 }}
               onClick={() => setMobileOpen(false)}
-              className="rounded-full border border-accent px-6 py-2 text-sm font-medium text-accent"
+              className="border-accent text-accent rounded-full border px-6 py-2 text-sm font-medium"
             >
               Resume
             </motion.a>

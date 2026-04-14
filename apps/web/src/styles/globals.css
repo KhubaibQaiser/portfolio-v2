@@ -34,11 +34,6 @@
   --duration-normal: 300ms;
   --duration-slow: 500ms;
 
-  /* Glass effect */
-  --glass-bg: oklch(0.99 0 0 / 1);
-  --glass-border: oklch(0.92 0.005 261 / 0.5);
-  --glass-blur: 12px;
-
   /* Shadows */
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
   --shadow-md: 0 4px 12px oklch(0 0 0 / 0.06);
@@ -46,9 +41,6 @@
 }
 
 .dark {
-  --glass-bg: oklch(0.16 0.025 261 / 0.72);
-  --glass-border: oklch(0.25 0.02 261 / 0.5);
-
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2);
   --shadow-md: 0 4px 12px oklch(0 0 0 / 0.3);
   --shadow-lg: 0 12px 40px oklch(0 0 0 / 0.4);
@@ -114,16 +106,161 @@ body {
   background: var(--color-muted-foreground);
 }
 
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+/* ── Glassmorphism ────────────────────────────────────────────────────── */
+/* Frosted blur is applied with Tailwind `backdrop-blur-*` on the header / overlay.
+   Raw `backdrop-filter` in this file was being minified to webkit-only (no unprefixed
+   property), which breaks Firefox and makes DevTools look like blur was "dropped". */
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 20px 10px rgba(255, 255, 255, 0.06);
+  overflow: hidden;
 }
 
-/* Site navbar — solid background after scroll (matches body); edge + shadow only, no translucent blur */
-.glass-header {
-  background: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-md);
+.glass-header > * {
+  position: relative;
+  z-index: 2;
 }
+
+.glass-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-header::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────── */
+
+.dark .glass-header {
+  background: rgba(17, 17, 27, 0.55);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    inset 0 0 20px 10px rgba(255, 255, 255, 0.02);
+}
+
+.dark .glass-header::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+.dark .glass-header::after {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2),
+    transparent,
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+.dark .glass {
+  background: rgba(17, 17, 27, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ── Fallbacks ────────────────────────────────────────────────────────── */
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-header {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-md);
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-md);
+  }
+
+  .dark .glass-header {
+    background: rgba(17, 17, 27, 0.92);
+  }
+
+  .dark .glass {
+    background: rgba(17, 17, 27, 0.92);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-header,
+  .glass {
+    --tw-backdrop-blur: initial !important;
+    --tw-backdrop-brightness: initial !important;
+    --tw-backdrop-contrast: initial !important;
+    --tw-backdrop-grayscale: initial !important;
+    --tw-backdrop-hue-rotate: initial !important;
+    --tw-backdrop-invert: initial !important;
+    --tw-backdrop-opacity: initial !important;
+    --tw-backdrop-saturate: initial !important;
+    --tw-backdrop-sepia: initial !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: var(--shadow-md);
+  }
+
+  .glass-header {
+    background: var(--color-background);
+    border-bottom-color: var(--color-border);
+  }
+
+  .glass {
+    background: var(--color-background);
+    border-color: var(--color-border);
+  }
+
+  .glass-header::before,
+  .glass-header::after {
+    display: none;
+  }
+}
+
