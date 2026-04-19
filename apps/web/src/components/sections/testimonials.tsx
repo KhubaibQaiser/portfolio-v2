@@ -16,9 +16,9 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
   return (
     <section
       id="testimonials"
-      className="py-[length:var(--section-padding-y)]"
+      className="py-(--section-padding-y)"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -26,10 +26,10 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
           className="text-center"
         >
-          <h2 className="text-[length:var(--text-h2)] font-bold tracking-tight">
+          <h2 className="text-h2 font-bold tracking-tight">
             What People Say
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[length:var(--text-body-lg)] text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-xl text-body-lg text-muted-foreground">
             Feedback from leaders and colleagues I&apos;ve had the privilege of
             working with.
           </p>

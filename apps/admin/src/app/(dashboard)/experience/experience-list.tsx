@@ -36,7 +36,7 @@ const EMPTY: ExperienceFormData = {
 };
 
 function experienceRowToForm(row: Experience): ExperienceFormData & { id: string } {
-  const { id, created_at, updated_at, ...rest } = row;
+  const { id, created_at: _created_at, updated_at: _updated_at, ...rest } = row;
   return { ...experienceSchema.parse(rest), id };
 }
 
@@ -103,7 +103,7 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
             <input
               value={editing[key] ?? ""}
               onChange={(e) => setEditing((p) => p && { ...p, [key]: e.target.value })}
-              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
             />
           </div>
         ))}
@@ -165,7 +165,7 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
             value={editing.description}
             onChange={(e) => setEditing((p) => p && { ...p, description: e.target.value })}
             rows={5}
-            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
         <div>
@@ -177,7 +177,7 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
             value={techTagsInput}
             onChange={(e) => setTechTagsInput(e.target.value)}
             placeholder="React, TypeScript, Node.js"
-            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
             autoComplete="off"
           />
         </div>
@@ -187,7 +187,7 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
             type="number"
             value={editing.sort_order}
             onChange={(e) => setEditing((p) => p && { ...p, sort_order: parseInt(e.target.value) || 0 })}
-            className="w-32 rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-32 rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
 

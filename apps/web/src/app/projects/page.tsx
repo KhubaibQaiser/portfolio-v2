@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 export default function ProjectsPage() {
   return (
     <div className="py-32">
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
-        <h1 className="text-[length:var(--text-h1)] font-bold tracking-tight">
+      <div className="mx-auto max-w-container px-(--container-padding)">
+        <h1 className="text-h1 font-bold tracking-tight">
           All Projects
         </h1>
-        <p className="mt-3 max-w-xl text-[length:var(--text-body-lg)] text-muted-foreground">
+        <p className="mt-3 max-w-xl text-body-lg text-muted-foreground">
           A collection of projects I&apos;ve built throughout my career — from
           serverless cloud systems to educational games.
         </p>

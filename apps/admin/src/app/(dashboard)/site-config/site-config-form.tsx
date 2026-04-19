@@ -104,7 +104,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
               onChange={(e) => handleChange(key, e.target.value)}
               className={cn(
                 "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                "text-sm focus:border-accent focus:outline-none",
+                "text-sm focus:border-accent focus:outline-hidden",
               )}
             />
           </div>
@@ -119,7 +119,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
           rows={3}
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>
@@ -171,7 +171,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
                         handleSocialChange(link._clientId, "platform", e.target.value)
                       }
                       placeholder="e.g. github, phone"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-hidden"
                     />
                   </div>
                   <div>
@@ -184,7 +184,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
                         handleSocialChange(link._clientId, "url", e.target.value)
                       }
                       placeholder="https://… or tel:+…"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-hidden"
                     />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
                         handleSocialChange(link._clientId, "label", e.target.value)
                       }
                       placeholder="Shown in header / PDF"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-hidden"
                     />
                   </div>
                 </div>

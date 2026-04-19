@@ -21,7 +21,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ref={ref}
         className={cn(
           "flex h-10 w-full cursor-pointer appearance-none rounded-lg border px-3 py-2 text-sm",
-          "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent",
+          "focus:border-accent focus:outline-hidden focus:ring-1 focus:ring-accent",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "[&>option]:bg-background",
           error ? "border-destructive" : "border-border",

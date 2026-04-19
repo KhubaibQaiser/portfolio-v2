@@ -70,8 +70,8 @@ export const HERO_TOP_TECHS: HeroTopTech[] = [
   },
   { id: "vercel", label: "Vercel", iconKey: "SiVercel", brandColor: "#000000" },
   {
-    id: "vercel-ai-sdk",
-    label: "Vercel AI SDK",
+    id: "ai-sdk",
+    label: "AI SDK",
     iconKey: "VercelAiSdkBrand",
     brandColor: "#000000",
   },

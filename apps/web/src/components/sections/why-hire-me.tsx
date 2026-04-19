@@ -46,14 +46,14 @@ const cardVariants = {
 
 export function WhyHireMeSection() {
   return (
-    <section className="py-[var(--section-padding-y)]" aria-label="Why Hire Me">
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+    <section className="py-(--section-padding-y)" aria-label="Why Hire Me">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
-          className="text-center text-[length:var(--text-h2)] font-semibold tracking-tight"
+          className="text-center text-h2 font-semibold tracking-tight"
         >
           Why Hire Me
         </motion.h2>
@@ -62,7 +62,7 @@ export function WhyHireMeSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-xl text-center text-[length:var(--text-body-lg)] text-muted-foreground"
+          className="mx-auto mt-3 max-w-xl text-center text-body-lg text-muted-foreground"
         >
           What sets me apart from the other 50 senior engineers you&apos;re reviewing.
         </motion.p>

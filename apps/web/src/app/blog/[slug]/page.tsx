@@ -180,7 +180,7 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
 
-          <h1 className="mt-4 text-[length:var(--text-h1)] font-bold tracking-tight">
+          <h1 className="mt-4 text-h1 font-bold tracking-tight">
             {post.title}
           </h1>
 
@@ -202,7 +202,7 @@ export default async function BlogPostPage({ params }: Props) {
               return (
                 <h2
                   key={i}
-                  className="mt-10 mb-4 text-[length:var(--text-h3)] font-bold tracking-tight"
+                  className="mt-10 mb-4 text-h3 font-bold tracking-tight"
                 >
                   {para.replace("## ", "")}
                 </h2>
@@ -221,7 +221,7 @@ export default async function BlogPostPage({ params }: Props) {
                 <ul key={i} className="space-y-1">
                   {items.map((item, j) => (
                     <li key={j} className="text-muted-foreground flex gap-2">
-                      <span className="bg-accent mt-2 h-1 w-1 flex-shrink-0 rounded-full" />
+                      <span className="bg-accent mt-2 h-1 w-1 shrink-0 rounded-full" />
                       {item.replace(/^[-\d.]\s*/, "")}
                     </li>
                   ))}

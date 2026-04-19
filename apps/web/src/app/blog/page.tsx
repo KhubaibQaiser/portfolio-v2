@@ -40,11 +40,11 @@ const POSTS = [
 export default function BlogPage() {
   return (
     <div className="py-32">
-      <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
-        <h1 className="text-[length:var(--text-h1)] font-bold tracking-tight">
+      <div className="mx-auto max-w-3xl px-(--container-padding)">
+        <h1 className="text-h1 font-bold tracking-tight">
           Blog
         </h1>
-        <p className="mt-4 text-[length:var(--text-body-lg)] text-muted-foreground">
+        <p className="mt-4 text-body-lg text-muted-foreground">
           Technical articles on web development, architecture, and engineering
           leadership.
         </p>

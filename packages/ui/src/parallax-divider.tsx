@@ -30,18 +30,18 @@ export function ParallaxDivider({
       className={cn(
         "relative overflow-hidden py-24 md:py-32",
         variant === "gradient" &&
-          "bg-gradient-to-br from-accent/5 via-transparent to-accent/5",
+          "bg-linear-to-br from-accent/5 via-transparent to-accent/5",
         variant === "subtle" && "bg-muted/30",
         variant === "accent" && "bg-accent/5",
       )}
     >
       <motion.div
         style={{ y }}
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-accent)_0%,_transparent_70%)] opacity-[0.03]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-accent)_0%,transparent_70%)] opacity-[0.03]"
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-[var(--container-max)] px-[var(--container-padding)] text-center">
+      <div className="relative mx-auto max-w-container px-(--container-padding) text-center">
         {stat && (
           <p className="font-mono text-5xl font-bold tracking-tight text-foreground md:text-6xl">
             {stat}
@@ -53,7 +53,7 @@ export function ParallaxDivider({
           </p>
         )}
         {quote && (
-          <blockquote className="mx-auto max-w-2xl text-[length:var(--text-h3)] font-medium italic leading-relaxed text-muted-foreground">
+          <blockquote className="mx-auto max-w-2xl text-h3 font-medium italic leading-relaxed text-muted-foreground">
             &ldquo;{quote}&rdquo;
           </blockquote>
         )}

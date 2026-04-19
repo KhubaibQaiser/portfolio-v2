@@ -15,7 +15,7 @@ type FooterProps = {
 export function Footer({ name, socialLinks }: FooterProps) {
   return (
     <footer className="border-t border-border py-12">
-      <div className="mx-auto flex max-w-[var(--container-max)] flex-col items-center gap-6 px-[var(--container-padding)]">
+      <div className="mx-auto flex max-w-container flex-col items-center gap-6 px-(--container-padding)">
         <FooterSocialLinks socialLinks={socialLinks} />
 
         <div className="flex flex-col items-center gap-1 text-center">
