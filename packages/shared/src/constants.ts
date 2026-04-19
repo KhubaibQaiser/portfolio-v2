@@ -62,7 +62,19 @@ export const HERO_TOP_TECHS: HeroTopTech[] = [
   { id: "docker", label: "Docker", iconKey: "SiDocker", brandColor: "#2496ED" },
   { id: "firebase", label: "Firebase", iconKey: "SiFirebase", brandColor: "#FFCA28" },
   { id: "tailwindcss", label: "Tailwind CSS", iconKey: "SiTailwindcss", brandColor: "#06B6D4" },
+  {
+    id: "posthog",
+    label: "PostHog",
+    iconKey: "SiPosthog",
+    brandColor: "#F54E00",
+  },
   { id: "vercel", label: "Vercel", iconKey: "SiVercel", brandColor: "#000000" },
+  {
+    id: "vercel-ai-sdk",
+    label: "Vercel AI SDK",
+    iconKey: "VercelAiSdkBrand",
+    brandColor: "#000000",
+  },
   { id: "github-actions", label: "GitHub Actions", iconKey: "SiGithubactions", brandColor: "#2088FF" },
 ] as const;
 

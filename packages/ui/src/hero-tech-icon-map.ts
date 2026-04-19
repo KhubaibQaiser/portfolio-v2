@@ -6,6 +6,7 @@ import {
   SiGraphql,
   SiNextdotjs,
   SiNodedotjs,
+  SiPosthog,
   SiReact,
   SiRedux,
   SiTailwindcss,
@@ -28,6 +29,7 @@ export const HERO_SIMPLE_ICON_MAP: Record<string, HeroSimpleIconComponent> = {
   SiDocker,
   SiFirebase,
   SiTailwindcss,
+  SiPosthog,
   SiVercel,
   SiGithubactions,
 };

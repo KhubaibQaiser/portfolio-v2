@@ -6,6 +6,7 @@ import { cn } from "@portfolio/shared/utils";
 import { HERO_TOP_TECHS, type HeroTopTech } from "@portfolio/shared/constants";
 import { Tooltip } from "./tooltip";
 import { AwsIcon } from "./icons/aws-icon";
+import { VercelAiSdkIcon } from "./icons/vercel-ai-sdk-icon";
 import { getHeroSimpleIcon } from "./hero-tech-icon-map";
 import "./hero-tech-carousel.css";
 
@@ -77,7 +78,10 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
               {setItems.map((tech) => {
                 const activeKey = `${setIndex}-${tech.id}`;
                 const isActive = activeItem === activeKey;
-                const isMonoBrand = tech.id === "nextjs" || tech.id === "vercel";
+                const isMonoBrand =
+                  tech.id === "nextjs" ||
+                  tech.id === "vercel" ||
+                  tech.id === "vercel-ai-sdk";
 
                 const buttonClass = cn(
                   "inline-flex h-12 w-12 items-center justify-center rounded-full border border-transparent",
@@ -107,6 +111,33 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                           width={24}
                           height={24}
                           accentColor={tech.brandColor ?? "#FF9900"}
+                          className="transition-colors duration-200"
+                        />
+                      </button>
+                    </Tooltip>
+                  );
+                }
+
+                if (tech.iconKey === "VercelAiSdkBrand") {
+                  return (
+                    <Tooltip
+                      key={`${tech.id}-${setIndex}`}
+                      content={tech.label}
+                      offset={12}
+                    >
+                      <button
+                        type="button"
+                        aria-label={tech.label}
+                        className={buttonClass}
+                        onMouseEnter={() => setActiveItem(activeKey)}
+                        onMouseLeave={() => setActiveItem(null)}
+                        onFocus={() => setActiveItem(activeKey)}
+                        onBlur={() => setActiveItem(null)}
+                      >
+                        <VercelAiSdkIcon
+                          width={24}
+                          height={24}
+                          color={isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)}
                           className="transition-colors duration-200"
                         />
                       </button>
