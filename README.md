@@ -12,7 +12,7 @@ Production-grade monorepo for **[Khubaib Qaiser](https://khubaibqaiser.com)**’
 | **Next.js App Router + RSC** — cached server data, minimal client JS | Modern React architecture, performance-conscious |
 | **Supabase (Postgres + Auth + RLS)** | Real database, not static JSON; content is editable and protected |
 | **Split deploys on Vercel** — web, admin, Storybook as separate projects | Same repo, independent release surfaces |
-| **Type-safe env** — `@t3-oss/env-nextjs` | Production hygiene; fails fast on misconfiguration |
+| **Configuration** | Per-app `.env.example`; see [Environment setup](#environment-setup) |
 | **CI** — lint, typecheck, build, PR Lighthouse | Quality gate before merge |
 | **Sentry + Vercel Analytics / Speed Insights** | Operational awareness |
 
@@ -27,7 +27,6 @@ Production-grade monorepo for **[Khubaib Qaiser](https://khubaibqaiser.com)**’
 - **Vercel for hosting:** Best-in-class Next.js integration, preview deployments, edge caching, and minimal ops for a portfolio-sized team (one person). Alternatives (e.g. raw GCP/AWS containers) trade DX and iteration speed for control we do not need here.
 - **Supabase for data and auth:** Postgres is the source of truth for structured content; Row Level Security and Supabase Auth align admin-only writes with **defense in depth** (not “security only in the Next.js layer”).
 - **Cloudflare R2 for media:** S3-compatible object storage with a **public URL** pattern suitable for images/assets uploaded from the admin app; keeps large blobs out of Postgres.
-- **Optional Redis (Upstash):** Intended for **rate limiting**, short-lived caching, and similar cross-request state that does not belong in Postgres. Serverless-friendly; same Redis family as production systems at scale.
 - **Groq + Vercel AI SDK for chat:** Inference is delegated to a hosted LLM API; the app builds a **grounded system prompt** from Supabase-backed profile data so the assistant stays on-topic.
 
 ### Scope & boundaries
@@ -125,12 +124,9 @@ portfolio-v2/
 |---------|------|--------|
 | **Vercel** | Hosting, CDN, previews | Three projects: web, admin, Storybook (`packages/ui`) |
 | **Supabase** | Postgres, Auth, RLS | Single project; migrations in `supabase/migrations/` |
-| **Cloudflare R2** | Object storage for uploads | Configured in admin env; public asset URLs |
-| **Groq** | LLM API for chat | Optional `GROQ_API_KEY` on web |
-| **Upstash Redis** | Rate limits / cache (planned) | Env placeholders; use when wired in API routes |
-| **Resend** | Transactional email (contact) | Env supported; contact route has staged enhancements |
-| **Cloudflare Turnstile** | Bot protection (contact) | Schema/env ready; integration staged with form hardening |
-| **PostHog** | Product analytics (optional) | Env keys; wire when you want full event analytics |
+| **Cloudflare R2** | Object storage for uploads | Admin env; S3-compatible API + public asset base URL |
+| **Groq** | LLM API for chat | Optional key on web app |
+| **Sentry** | Errors and performance | Web app (`@sentry/nextjs`) |
 | **GitHub Actions** | CI | Lint, typecheck, build; Lighthouse on pull requests for web |
 
 ---
@@ -138,7 +134,7 @@ portfolio-v2/
 ## Security
 
 - **Security headers** on the public app (HSTS, `X-Frame-Options`, `Referrer-Policy`, etc.) — see [`apps/web/next.config.ts`](apps/web/next.config.ts).
-- **Secrets:** Revalidation uses a **shared secret** between admin and web; never expose service role keys to the browser.
+- **Secrets:** Revalidation uses a **shared secret** between admin and web; never expose Supabase **service role** keys to the browser (public env uses the **anon** key with RLS).
 - **Admin access:** Middleware + Supabase session + **allowlisted emails** + RLS policies — multiple layers, not a single gate.
 - **AI chat:** Prompt is built from **your** published Supabase content; no anonymous training story — third-party inference still applies (see Groq terms).
 
@@ -159,20 +155,14 @@ cd portfolio-v2
 pnpm install
 ```
 
-### Environment
-
-Copy examples and fill values:
+### Environment files
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local
 cp apps/admin/.env.example apps/admin/.env.local
 ```
 
-The web app validates env at runtime via **`@t3-oss/env-nextjs`**. For CI or first boot without all optional keys:
-
-```bash
-export SKIP_ENV_VALIDATION=1
-```
+Fill in values using [Environment setup](#environment-setup).
 
 ### Commands
 
@@ -210,23 +200,76 @@ On every push to `main` and every PR:
 
 1. **Lint** — ESLint across packages  
 2. **Typecheck** — `tsc --noEmit`  
-3. **Build** — full Turborepo build with `SKIP_ENV_VALIDATION=1` and GitHub **Variables** for public Supabase URL/anon key and site URL  
+3. **Build** — full Turborepo build with GitHub **Variables** for public Supabase URL/anon key and site URL  
 
 **Pull requests** additionally run **Lighthouse CI** on the built web app (see [`apps/web/lighthouserc.json`](apps/web/lighthouserc.json)).
 
 ---
 
-## Environment variables (reference)
+## Environment setup
 
-Details live in **`apps/web/.env.example`** and **`apps/admin/.env.example`**. Summary:
+Templates live in **`apps/web/.env.example`** and **`apps/admin/.env.example`**. Copy them to **`.env.local`** in each app (Next.js loads that file automatically in development).
 
-**Web — required for a full production build:** `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `REVALIDATE_SECRET`.
+### Web — `apps/web`
 
-**Web — optional:** `GROQ_API_KEY`, `GITHUB_TOKEN`, Upstash, Resend, Turnstile, PostHog, Sentry, Cloudflare Workers AI (embeddings pipeline when implemented).
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase **anon (public)** key for server-side reads |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata, sitemap, and robots |
+| `REVALIDATE_SECRET` | Shared secret for `POST /api/revalidate` (must match admin) |
+| `GROQ_API_KEY` | Groq API key for the AI chat route |
+| `GITHUB_TOKEN` | Optional — GitHub PAT for higher rate limits on `/api/github` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN (client + server SDKs) |
+| `SENTRY_ORG` | Sentry organization slug (used by `withSentryConfig` in [`apps/web/next.config.ts`](apps/web/next.config.ts)) |
+| `SENTRY_PROJECT` | Sentry project slug |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token for build-time source map upload (local prod builds or CI; often set via Vercel / Sentry integration instead) |
 
-**Admin — required:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_WEB_URL`, `REVALIDATE_SECRET` (must match web).
+**Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)**  
+In the [Supabase Dashboard](https://supabase.com/dashboard): open your project → **Project Settings** → **API**. Copy **Project URL** and the **anon public** key.
 
-**Admin — media:** `R2_*` variables for Cloudflare R2 (see admin `.env.example`).
+**Site URL (`NEXT_PUBLIC_SITE_URL`)**  
+Local: `http://localhost:3000`. Production: your public site origin with scheme, e.g. `https://yourdomain.com` (no trailing slash).
+
+**Revalidation secret (`REVALIDATE_SECRET`)**  
+Generate a long random string (e.g. `openssl rand -hex 32`). Use the **same** value in the web app and admin app env files and in Vercel for both projects.
+
+**Groq (`GROQ_API_KEY`)**  
+Create a key in the [Groq Console](https://console.groq.com/) under API keys. Without it, the chat route returns a service-unavailable response.
+
+**GitHub (`GITHUB_TOKEN`)**  
+Optional. Create a [Personal Access Token](https://github.com/settings/tokens) with scope sufficient for the endpoints your `/api/github` route calls (often public read-only is enough for public repo stats).
+
+**Sentry**  
+Create a project in [Sentry](https://sentry.io/). The **DSN** is under **Project Settings → Client Keys**. **Organization slug** and **project slug** appear in the project URL or settings. For **auth token**, use **Settings → Auth Tokens** (or the Vercel–Sentry integration so uploads happen in CI without storing the token locally).
+
+### Admin — `apps/admin`
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Same Supabase project as the web app |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same anon key as the web app |
+| `NEXT_PUBLIC_WEB_URL` | Public portfolio base URL used when calling the web app’s revalidate API |
+| `REVALIDATE_SECRET` | Same value as `REVALIDATE_SECRET` on the web app |
+| `R2_ACCOUNT_ID` | Cloudflare account ID |
+| `R2_ACCESS_KEY_ID` | R2 S3 API access key id |
+| `R2_SECRET_ACCESS_KEY` | R2 S3 API secret |
+| `R2_BUCKET_NAME` | Bucket name |
+| `R2_PUBLIC_BASE_URL` | Public URL prefix for uploaded objects (custom domain or R2 public bucket URL, no trailing slash) |
+
+**Supabase**  
+Use the same **Project URL** and **anon** key as in the web app (dashboard path above).
+
+**Public web URL (`NEXT_PUBLIC_WEB_URL`)**  
+Local: `http://localhost:3000` (where the portfolio runs). Production: `https://your-public-site.com` so revalidation requests hit the deployed web app.
+
+**Cloudflare R2**  
+In the [Cloudflare Dashboard](https://dash.cloudflare.com/): **R2** → create a bucket. **Account ID** is on the R2 overview. Under **Manage R2 API Tokens**, create a token with **Object Read & Write** on that bucket (or compatible S3 scope). Map **Access Key ID** and **Secret Access Key** to `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`. Set **Public URL** to how browsers load assets (e.g. `https://pub-<id>.r2.dev` or a custom domain on the bucket).
+
+### Vercel and GitHub Actions
+
+- **Vercel:** For each project (web, admin), add the same variables as in `.env.example`, using **production** URLs for `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_WEB_URL`. Mark secrets (e.g. `REVALIDATE_SECRET`, R2 keys, `SENTRY_AUTH_TOKEN`) as **Sensitive** where appropriate.
+- **GitHub Actions:** The CI workflow builds with repository **Variables** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_SITE_URL` so the build succeeds without checking in secrets. Configure them under the repo **Settings → Secrets and variables → Actions → Variables**.
 
 ---
 
