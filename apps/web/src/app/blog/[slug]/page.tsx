@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
+import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
 import { notFound } from "next/navigation";
 
 type BlogPostData = {
@@ -85,8 +86,7 @@ CRA was showing its age — build times exceeding 2 minutes, slow HMR, and no ea
   "design-system-npm-package-guide": {
     slug: "design-system-npm-package-guide",
     title: "Building a Private npm Design System Used by 40+ Engineers",
-    excerpt:
-      "Everything I learned building a shared design system at GudangAda.",
+    excerpt: "Everything I learned building a shared design system at GudangAda.",
     content: `At GudangAda, I built a private npm design system from the ground up that was adopted by 40+ engineers across 8 teams. Here's the full story.
 
 ## Why Build One?
@@ -153,17 +153,18 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="py-32">
-      <article className="mx-auto max-w-3xl px-[var(--container-padding)]">
+      <SlugViewTracker kind="blog" slug={slug} />
+      <article className="mx-auto max-w-3xl px-(--container-padding)">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-accent"
+          className="text-muted-foreground hover:text-accent inline-flex items-center gap-1 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Blog
         </Link>
 
         <header className="mt-8">
-          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
               {new Date(post.published_at).toLocaleDateString("en-US", {
@@ -172,7 +173,7 @@ export default async function BlogPostPage({ params }: Props) {
                 day: "numeric",
               })}
             </span>
-            <span className="h-1 w-1 rounded-full bg-border" />
+            <span className="bg-border h-1 w-1 rounded-full" />
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
               {post.reading_time_minutes} min read
@@ -187,7 +188,7 @@ export default async function BlogPostPage({ params }: Props) {
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium text-accent"
+                className="border-accent/30 bg-accent/5 text-accent rounded-full border px-3 py-1 text-xs font-medium"
               >
                 {tag}
               </span>
@@ -209,10 +210,7 @@ export default async function BlogPostPage({ params }: Props) {
             }
             if (para.startsWith("**")) {
               return (
-                <p
-                  key={i}
-                  className="font-semibold leading-relaxed text-foreground"
-                >
+                <p key={i} className="text-foreground leading-relaxed font-semibold">
                   {para}
                 </p>
               );
@@ -222,11 +220,8 @@ export default async function BlogPostPage({ params }: Props) {
               return (
                 <ul key={i} className="space-y-1">
                   {items.map((item, j) => (
-                    <li
-                      key={j}
-                      className="flex gap-2 text-muted-foreground"
-                    >
-                      <span className="mt-2 h-1 w-1 flex-shrink-0 rounded-full bg-accent" />
+                    <li key={j} className="text-muted-foreground flex gap-2">
+                      <span className="bg-accent mt-2 h-1 w-1 flex-shrink-0 rounded-full" />
                       {item.replace(/^[-\d.]\s*/, "")}
                     </li>
                   ))}
@@ -235,13 +230,13 @@ export default async function BlogPostPage({ params }: Props) {
             }
             if (para.startsWith("*") && para.endsWith("*")) {
               return (
-                <p key={i} className="italic text-muted-foreground/80">
+                <p key={i} className="text-muted-foreground/80 italic">
                   {para.replace(/^\*|\*$/g, "")}
                 </p>
               );
             }
             return (
-              <p key={i} className="leading-relaxed text-muted-foreground">
+              <p key={i} className="text-muted-foreground leading-relaxed">
                 {para}
               </p>
             );

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/analytics/capture-server";
+import { PortfolioEvents } from "@/lib/analytics/events";
 
 const GITHUB_USERNAME = "khubaibqaiser";
 
@@ -26,6 +28,10 @@ export async function GET() {
     );
 
     if (!res.ok) {
+      await captureServerEvent(undefined, PortfolioEvents.githubApiError, {
+        status: res.status,
+        reason: "upstream_error",
+      });
       return NextResponse.json(
         { success: false, error: "Failed to fetch GitHub data" },
         { status: 502 },
@@ -55,8 +61,16 @@ export async function GET() {
       updatedAt: new Date().toISOString(),
     };
 
+    await captureServerEvent(undefined, PortfolioEvents.githubApi, {
+      repo_count: stats.totalRepos,
+      star_total: stats.totalStars,
+    });
+
     return NextResponse.json({ success: true, data: stats });
   } catch {
+    await captureServerEvent(undefined, PortfolioEvents.githubApiError, {
+      reason: "exception",
+    });
     return NextResponse.json(
       { success: false, error: "GitHub API unavailable" },
       { status: 502 },

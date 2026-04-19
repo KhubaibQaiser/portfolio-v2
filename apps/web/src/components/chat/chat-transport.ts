@@ -1,4 +1,6 @@
 import { DefaultChatTransport } from "ai";
+import posthog from "posthog-js";
+import { POSTHOG_DISTINCT_ID_HEADER } from "@/lib/analytics/constants";
 
 const RATE_LIMIT_MESSAGE =
   "Too many messages. Please wait a moment before sending another.";
@@ -37,7 +39,17 @@ function parseRetryAfterSeconds(res: Response, data: unknown): number {
 export const chatTransport = new DefaultChatTransport({
   api: "/api/chat",
   fetch: async (input, init) => {
-    const res = await fetch(input, init);
+    const headers = new Headers(init?.headers);
+    if (
+      typeof window !== "undefined" &&
+      process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+    ) {
+      const id = posthog.get_distinct_id();
+      if (id) {
+        headers.set(POSTHOG_DISTINCT_ID_HEADER, id);
+      }
+    }
+    const res = await fetch(input, { ...init, headers });
     if (res.status !== 429) return res;
 
     let data: unknown;

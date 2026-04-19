@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
+import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 
@@ -95,20 +97,19 @@ export default async function ProjectCaseStudy({
 
   return (
     <div className="py-32">
-      <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
+      <SlugViewTracker kind="project" slug={slug} />
+      <div className="mx-auto max-w-3xl px-(--container-padding)">
         <Link
           href="/projects"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           All Projects
         </Link>
 
-        <h1 className="mt-6 text-[length:var(--text-h1)] font-bold tracking-tight">
-          {project.title}
-        </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span className="font-medium text-accent">{project.company}</span>
+        <h1 className="text-h1 mt-6 font-bold tracking-tight">{project.title}</h1>
+        <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-accent font-medium">{project.company}</span>
           <span>·</span>
           <span>{project.role}</span>
           <span>·</span>
@@ -118,64 +119,57 @@ export default async function ProjectCaseStudy({
         {/* Links */}
         <div className="mt-4 flex items-center gap-3">
           {project.github && (
-            <a
+            <TrackedExternalLink
               href={project.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              destination="github"
+              location="project_case_study"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
             >
               <GitHubIcon className="h-4 w-4" />
               Source
-            </a>
+            </TrackedExternalLink>
           )}
           {project.live && (
-            <a
+            <TrackedExternalLink
               href={project.live}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              destination="live_demo"
+              location="project_case_study"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
             >
               <ExternalLink className="h-4 w-4" />
               Live Demo
-            </a>
+            </TrackedExternalLink>
           )}
         </div>
 
         {/* Cover placeholder */}
-        <div className="mt-8 aspect-video rounded-2xl bg-muted" />
+        <div className="bg-muted mt-8 aspect-video rounded-2xl" />
 
         {/* Problem */}
         <section className="mt-12">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-accent">
+          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             The Problem
           </h2>
-          <p className="mt-3 leading-relaxed text-muted-foreground">
-            {project.problem}
-          </p>
+          <p className="text-muted-foreground mt-3 leading-relaxed">{project.problem}</p>
         </section>
 
         {/* Solution */}
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-accent">
+          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             My Solution
           </h2>
-          <p className="mt-3 leading-relaxed text-muted-foreground">
-            {project.solution}
-          </p>
+          <p className="text-muted-foreground mt-3 leading-relaxed">{project.solution}</p>
         </section>
 
         {/* Impact */}
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-accent">
+          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             Impact
           </h2>
           <ul className="mt-3 space-y-2">
             {project.impact.map((item, i) => (
-              <li
-                key={i}
-                className="flex gap-2 leading-relaxed text-muted-foreground"
-              >
-                <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent" />
+              <li key={i} className="text-muted-foreground flex gap-2 leading-relaxed">
+                <span className="bg-accent mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />
                 {item}
               </li>
             ))}
@@ -184,14 +178,14 @@ export default async function ProjectCaseStudy({
 
         {/* Tech stack */}
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-accent">
+          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             Tech Stack
           </h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {project.tech.map((t) => (
               <span
                 key={t}
-                className="rounded-full bg-accent/10 px-3 py-1 font-mono text-sm text-accent"
+                className="bg-accent/10 text-accent rounded-full px-3 py-1 font-mono text-sm"
               >
                 {t}
               </span>

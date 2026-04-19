@@ -1,20 +1,26 @@
-import * as Sentry from "@sentry/nextjs";
+import posthog from "posthog-js";
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+const uiHost =
+  process.env.NEXT_PUBLIC_POSTHOG_UI_HOST ?? "https://us.posthog.com";
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  enabled: process.env.NODE_ENV === "production",
-  tracesSampleRate: 0.1,
-  replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 1.0,
-  integrations: [
-    Sentry.replayIntegration({ maskAllText: false, blockAllMedia: false }),
-  ],
-  ignoreErrors: [
-    "ResizeObserver loop",
-    "Non-Error promise rejection",
-    "AbortError",
-    "ChunkLoadError",
-  ],
-});
+if (token) {
+  posthog.init(token, {
+    api_host: "/ph",
+    ui_host: uiHost,
+    defaults: "2026-01-30",
+    capture_pageview: false,
+    capture_pageleave: true,
+    persistence: "localStorage+cookie",
+    loaded: (ph) => {
+      if (process.env.NODE_ENV === "development") {
+        ph.debug();
+      }
+      const env =
+        process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT ?? process.env.VERCEL_ENV;
+      if (env) {
+        ph.register({ environment: env });
+      }
+    },
+  });
+}

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { contactSchema } from "@portfolio/shared/schemas/contact";
+import { captureServerEvent } from "@/lib/analytics/capture-server";
+import { PortfolioEvents } from "@/lib/analytics/events";
 
 export async function POST(request: Request) {
   try {
@@ -7,6 +9,10 @@ export async function POST(request: Request) {
     const parsed = contactSchema.safeParse(body);
 
     if (!parsed.success) {
+      await captureServerEvent(undefined, PortfolioEvents.contactApiError, {
+        phase: "validation",
+        status: 400,
+      });
       return NextResponse.json(
         {
           success: false,
@@ -22,6 +28,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch {
+    await captureServerEvent(undefined, PortfolioEvents.contactApiError, {
+      phase: "unhandled",
+      status: 500,
+    });
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 },

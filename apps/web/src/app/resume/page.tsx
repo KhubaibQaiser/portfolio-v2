@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Download, MapPin, Mail, Globe, ExternalLink } from "lucide-react";
+import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
+import {
+  ResumePdfDownloadLink,
+  ResumeViewTracker,
+} from "@/components/analytics/resume-analytics";
 import { getResumeData } from "@/lib/resume-data";
 
 export const metadata: Metadata = {
@@ -13,6 +17,7 @@ export default async function ResumePage() {
 
   return (
     <div className="py-32">
+      <ResumeViewTracker />
       <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -34,37 +39,36 @@ export default async function ResumePage() {
                 <Mail className="h-3.5 w-3.5 opacity-80" />
                 {resume.email}
               </a>
-              <a
+              <TrackedExternalLink
                 href={`https://${resume.website}`}
+                destination="website"
+                location="resume_page"
                 className="inline-flex items-center gap-1 text-foreground/90 underline-offset-4 transition-colors hover:text-accent dark:text-foreground/85"
               >
                 <Globe className="h-3.5 w-3.5 opacity-80" />
                 {resume.website}
-              </a>
+              </TrackedExternalLink>
             </div>
           </div>
-          <Link
-            href="/api/pdf"
-            className="flex shrink-0 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground shadow-sm transition-opacity hover:opacity-90"
-          >
+          <ResumePdfDownloadLink className="flex shrink-0 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground shadow-sm transition-opacity hover:opacity-90">
             <Download className="h-4 w-4" />
             Download PDF
-          </Link>
+          </ResumePdfDownloadLink>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           {resume.socialLinks
             .filter((s) => ["linkedin", "github"].includes(s.platform))
             .map(({ platform, url, label }) => (
-              <a
+              <TrackedExternalLink
                 key={platform}
                 href={url}
-                target="_blank"
-                rel="noopener noreferrer"
+                destination={platform}
+                location="resume_page"
                 className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-foreground/88 transition-colors hover:border-accent/40 hover:text-accent dark:text-foreground/80"
               >
                 {label} <ExternalLink className="h-3 w-3" />
-              </a>
+              </TrackedExternalLink>
             ))}
         </div>
 

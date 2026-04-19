@@ -1,24 +1,35 @@
-import * as Sentry from "@sentry/nextjs";
+import { parseDistinctIdFromCookie } from "@/lib/analytics/posthog-cookie";
+import { getPostHogServer, shutdownPostHogServer } from "@/lib/analytics/posthog-server";
 
-export const onRequestError = Sentry.captureRequestError;
+export function register() {}
 
-export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const Sentry = await import("@sentry/nextjs");
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      enabled: process.env.NODE_ENV === "production",
-      tracesSampleRate: 0.1,
-      ignoreErrors: ["NEXT_NOT_FOUND", "NEXT_REDIRECT"],
-    });
+function getCookieHeader(request: {
+  headers?: Headers | { get?: (name: string) => string | null | undefined };
+}): string | null {
+  const h = request.headers;
+  if (!h) return null;
+  if (typeof Headers !== "undefined" && h instanceof Headers) {
+    return h.get("cookie");
   }
+  return h.get?.("cookie") ?? null;
+}
 
-  if (process.env.NEXT_RUNTIME === "edge") {
-    const Sentry = await import("@sentry/nextjs");
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      enabled: process.env.NODE_ENV === "production",
-      tracesSampleRate: 0.1,
+export async function onRequestError(
+  err: unknown,
+  request: { headers?: Headers | { get?: (name: string) => string | null | undefined } },
+): Promise<void> {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  const ph = getPostHogServer();
+  if (!ph) return;
+
+  const distinctId = parseDistinctIdFromCookie(getCookieHeader(request));
+
+  try {
+    await ph.captureExceptionImmediate(err, distinctId, {
+      source: "next_onRequestError",
     });
+  } finally {
+    await shutdownPostHogServer();
   }
 }

@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withPostHogConfig } from "@posthog/nextjs-config";
+
+const ingestionHost =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
 
 const nextConfig: NextConfig = {
+  skipTrailingSlashRedirect: true,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -35,12 +39,41 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
+  async rewrites() {
+    const isEu = ingestionHost.includes("eu.i.posthog");
+    const assetsHost = isEu
+      ? "https://eu-assets.i.posthog.com"
+      : "https://us-assets.i.posthog.com";
+    return [
+      {
+        source: "/ph/static/:path*",
+        destination: `${assetsHost}/static/:path*`,
+      },
+      {
+        source: "/ph/array/:path*",
+        destination: `${assetsHost}/array/:path*`,
+      },
+      {
+        source: "/ph/:path*",
+        destination: `${ingestionHost}/:path*`,
+      },
+    ];
+  },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  telemetry: false,
-});
+const sourceMapsEnabled =
+  process.env.NODE_ENV === "production" &&
+  Boolean(process.env.POSTHOG_API_KEY) &&
+  Boolean(process.env.POSTHOG_PROJECT_ID);
+
+export default sourceMapsEnabled
+  ? withPostHogConfig(nextConfig, {
+      personalApiKey: process.env.POSTHOG_API_KEY!,
+      projectId: process.env.POSTHOG_PROJECT_ID!,
+      host: process.env.POSTHOG_APP_HOST ?? "https://us.posthog.com",
+      sourcemaps: {
+        enabled: true,
+        deleteAfterUpload: true,
+      },
+    })
+  : nextConfig;

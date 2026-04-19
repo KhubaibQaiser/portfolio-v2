@@ -5,7 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
+import { PortfolioEvents } from "@/lib/analytics/events";
 import { ThemeToggle } from "@portfolio/ui/theme-toggle";
+
+function trackNav(href: string, label: string) {
+  capturePortfolioEvent(PortfolioEvents.primaryNavClick, { href, label });
+}
 
 type NavLink = { label: string; href: string };
 
@@ -63,6 +69,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             <a
               key={link.href}
               href={link.href}
+              onClick={() => trackNav(link.href, link.label)}
               className={cn(
                 "text-muted-foreground relative px-3 py-2 text-sm font-medium",
                 "hover:text-foreground transition-colors duration-200",
@@ -75,6 +82,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
           ))}
           <a
             href="/resume"
+            onClick={() => trackNav("/resume", "Resume")}
             className={cn(
               "border-accent ml-2 rounded-full border px-4 py-1.5",
               "text-accent text-sm font-medium transition-all duration-200",
@@ -115,7 +123,10 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               <motion.a
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => {
+                  trackNav(link.href, link.label);
+                  setMobileOpen(false);
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
@@ -130,7 +141,10 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: navLinks.length * 0.05, duration: 0.3 }}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => {
+                trackNav("/resume", "Resume");
+                setMobileOpen(false);
+              }}
               className="border-accent text-accent rounded-full border px-6 py-2 text-sm font-medium"
             >
               Resume

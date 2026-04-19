@@ -2,6 +2,9 @@ import { groq } from "@ai-sdk/groq";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
+import { captureServerEvent } from "@/lib/analytics/capture-server";
+import { PortfolioEvents } from "@/lib/analytics/events";
+import { getDistinctIdFromRequest } from "@/lib/analytics/request";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
 import { supabase } from "@/lib/supabase-server";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
@@ -132,16 +135,26 @@ async function createStream(
 }
 
 export async function POST(req: Request) {
+  const distinctId = getDistinctIdFromRequest(req);
+
   try {
     const body = (await req.json()) as { messages?: UIMessage[] };
     const { messages } = body;
 
     if (!messages?.length) {
+      await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
+        reason: "missing_messages",
+        status: 400,
+      });
       return jsonResponse({ error: "Missing messages in request body." }, 400);
     }
 
     const rate = await checkChatRateLimit(req);
     if (!rate.ok) {
+      await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
+        reason: "rate_limited",
+        status: 429,
+      });
       return jsonResponse(
         {
           error: RATE_LIMIT_USER_MESSAGE,
@@ -152,6 +165,10 @@ export async function POST(req: Request) {
     }
 
     if (!process.env.GROQ_API_KEY) {
+      await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
+        reason: "missing_groq_key",
+        status: 503,
+      });
       return jsonResponse(
         {
           error: "AI chat is not configured yet. Please use the contact form.",
@@ -163,6 +180,10 @@ export async function POST(req: Request) {
     const systemPrompt = await buildSystemPrompt();
     const modelMessages = await convertToModelMessages(messages);
 
+    await captureServerEvent(distinctId, PortfolioEvents.chatApiRequest, {
+      message_count: messages.length,
+    });
+
     try {
       return await createStream(systemPrompt, PRIMARY_MODEL, modelMessages, messages);
     } catch (primaryError) {
@@ -173,6 +194,10 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     if (isProviderRateLimitError(error)) {
+      await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
+        reason: "provider_rate_limited",
+        status: 429,
+      });
       return jsonResponse(
         {
           error: RATE_LIMIT_PROVIDER_MESSAGE,
@@ -182,6 +207,10 @@ export async function POST(req: Request) {
       );
     }
 
+    await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
+      reason: "unhandled",
+      status: 500,
+    });
     return jsonResponse(
       {
         error: "AI chat is temporarily unavailable. Please try again later.",

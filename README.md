@@ -14,7 +14,7 @@ Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**’s site: **Turborepo
 | **Vercel** | Web, admin, and Storybook deployed as separate projects |
 | **Env** | `apps/web/.env.example` and `apps/admin/.env.example` — [Environment setup](#environment-setup) |
 | **CI** | Lint, typecheck, build; Lighthouse on PRs for web |
-| **Sentry, Vercel Analytics / Speed Insights** | Web app monitoring |
+| **PostHog**, **Vercel Analytics / Speed Insights** | Product analytics, errors, alerts; aggregate traffic / Web Vitals |
 
 **Links:** [khubaibqaiser.com](https://khubaibqaiser.com) · [admin.khubaibqaiser.com](https://admin.khubaibqaiser.com) · [storybook.khubaibqaiser.com](https://storybook.khubaibqaiser.com)
 
@@ -32,7 +32,7 @@ Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**’s site: **Turborepo
 
 ### Scope
 
-- **Stack:** Vercel, Supabase, Cloudflare, Groq, Sentry — separate vendors by design.
+- **Stack:** Vercel, Supabase, Cloudflare, Groq, PostHog — separate vendors by design.
 - **Embeddings / RAG:** Migrations define a `content_embeddings` table (pgvector). The chat route today does **not** query embeddings; it uses a fixed prompt built from Supabase tables. Embeddings are there for a future retrieval step.
 
 ### Data flow
@@ -109,7 +109,7 @@ portfolio-v2/
 | Chat | **Vercel AI SDK** + **Groq** (Llama models; second model if the first hits rate limits) |
 | Resume PDF | `@react-pdf/renderer` (route handler) |
 | Content | Supabase on the server + Next cache tags + revalidate |
-| Errors / traffic | **Sentry**, **Vercel Analytics**, **Speed Insights** |
+| Analytics / errors | **PostHog** (events, `$exception`, alerts); **Vercel Analytics**, **Speed Insights** (aggregate) |
 
 ### Admin (`apps/admin`)
 
@@ -128,7 +128,7 @@ portfolio-v2/
 | **Cloudflare R2** | Uploads | Admin env; public base URL for assets |
 | **Groq** | Chat LLM | Optional key on web |
 | **Upstash Redis** | Chat rate limits | Sliding window per IP; `POST /api/chat` returns 429 + `Retry-After` when exceeded (omit env locally to disable limiting) |
-| **Sentry** | Errors | Web (`@sentry/nextjs`) |
+| **PostHog** | Analytics + error tracking + alerting | Web (`posthog-js`, `posthog-node`, `@posthog/nextjs-config` for source maps) |
 | **GitHub Actions** | CI | Lint, typecheck, build, Lighthouse on PRs |
 
 ---
@@ -222,10 +222,14 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `REVALIDATE_SECRET` | Header secret for `POST /api/revalidate` — same as admin |
 | `GROQ_API_KEY` | Groq — chat returns 503 if missing |
 | `GITHUB_TOKEN` | Optional — higher GitHub API limits for `/api/github` |
-| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN |
-| `SENTRY_ORG` | Org slug (`withSentryConfig` in [`apps/web/next.config.ts`](apps/web/next.config.ts)) |
-| `SENTRY_PROJECT` | Project slug |
-| `SENTRY_AUTH_TOKEN` | Upload source maps at build time; optional if you use Vercel + Sentry integration |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | PostHog project API key |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Ingestion host (`https://us.i.posthog.com` or EU `https://eu.i.posthog.com`) |
+| `NEXT_PUBLIC_POSTHOG_UI_HOST` | PostHog app URL for toolbar links (`https://us.posthog.com` or EU) |
+| `NEXT_PUBLIC_POSTHOG_ENVIRONMENT` | Optional tag (e.g. `production`, `preview`) |
+| `POSTHOG_ENVIRONMENT` | Optional server-side environment property for API analytics |
+| `POSTHOG_API_KEY` | Personal API key — source map upload to PostHog (production builds) |
+| `POSTHOG_PROJECT_ID` | Numeric project id (PostHog project settings) — pair with `POSTHOG_API_KEY` for maps |
+| `POSTHOG_APP_HOST` | Optional; PostHog app host for `@posthog/nextjs-config` (default `https://us.posthog.com`) |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — enables chat rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash token (pair with URL) |
 | `CHAT_RATE_LIMIT_MAX` | Max chat requests per IP per window (default `10`) |
@@ -241,7 +245,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 
 **GitHub:** [github.com/settings/tokens](https://github.com/settings/tokens) — scopes for what `/api/github` calls (public repo stats often need no auth or minimal scope).
 
-**Sentry:** New project at [sentry.io](https://sentry.io/) — DSN under **Client Keys**; org/project slugs in the URL or settings; auth token under **Auth Tokens** if you upload maps outside Vercel’s integration.
+**PostHog:** [Project settings](https://app.posthog.com/) → project API key + region (US/EU). Enable **exception autocapture** and configure **error tracking alerts** (Slack, webhooks, spike detection) in PostHog. For **readable stack traces** in production, add `POSTHOG_API_KEY` (personal API key with error-tracking write) and `POSTHOG_PROJECT_ID` so [`@posthog/nextjs-config`](https://posthog.com/docs/error-tracking/upload-source-maps/nextjs) can upload source maps on `next build`. The site proxies ingestion through `/ph/*` ([`apps/web/next.config.ts`](apps/web/next.config.ts)) to reduce ad-blocker impact.
 
 **Upstash (chat limits):** [console.upstash.com](https://console.upstash.com/) → Redis → REST URL + token. Without both, chat works but **no** app-level rate limit (still subject to Groq limits).
 
@@ -263,7 +267,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 
 ### Vercel and GitHub Actions
 
-- **Vercel:** Add the same keys as in `.env.example`. Production values for `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_WEB_URL`. Treat `REVALIDATE_SECRET`, R2 secrets, and `SENTRY_AUTH_TOKEN` as secrets.
+- **Vercel:** Add the same keys as in `.env.example`. Production values for `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_WEB_URL`. Treat `REVALIDATE_SECRET`, R2 secrets, `POSTHOG_API_KEY`, and `POSTHOG_PROJECT_ID` as secrets.
 - **GitHub Actions:** Set repository **Variables** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` under **Settings → Secrets and variables → Actions → Variables** so CI can build without committing keys.
 
 ---
@@ -284,7 +288,7 @@ Rough goals; tune as the site grows.
 
 - **Contact:** Turnstile, Resend, optional Supabase persistence  
 - **RAG:** Use `content_embeddings` in the chat route  
-- **Analytics:** PostHog when event-level data is worth it  
+- **Analytics:** Expand PostHog dashboards / feature flags as needed  
 
 ---
 
