@@ -2,6 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
+import { checkChatRateLimit } from "@/lib/chat-rate-limit";
 import { supabase } from "@/lib/supabase-server";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import {
@@ -16,6 +17,28 @@ export const maxDuration = 30;
 
 const PRIMARY_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 const FALLBACK_MODEL = "llama-3.1-8b-instant";
+
+const RATE_LIMIT_USER_MESSAGE =
+  "Too many messages. Please wait a moment before sending another.";
+const RATE_LIMIT_PROVIDER_MESSAGE =
+  "I'm getting a lot of questions right now. Please try again in a moment!";
+
+function jsonResponse(
+  body: { error: string; retryAfterSeconds?: number },
+  status: number,
+) {
+  const retry =
+    typeof body.retryAfterSeconds === "number"
+      ? Math.max(1, Math.ceil(body.retryAfterSeconds))
+      : undefined;
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...(retry !== undefined ? { "Retry-After": String(retry) } : {}),
+    },
+  });
+}
 
 const buildSystemPrompt = cache(
   async () => {
@@ -76,7 +99,7 @@ Guidelines:
   { tags: ["hero", "about", "experience", "skills", "site-config"], revalidate: 3600 },
 );
 
-function isRateLimitError(error: unknown): boolean {
+function isProviderRateLimitError(error: unknown): boolean {
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
     if (msg.includes("429") || msg.includes("rate limit")) return true;
@@ -114,18 +137,26 @@ export async function POST(req: Request) {
     const { messages } = body;
 
     if (!messages?.length) {
-      return new Response(
-        JSON.stringify({ error: "Missing messages in request body." }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
+      return jsonResponse({ error: "Missing messages in request body." }, 400);
+    }
+
+    const rate = await checkChatRateLimit(req);
+    if (!rate.ok) {
+      return jsonResponse(
+        {
+          error: RATE_LIMIT_USER_MESSAGE,
+          retryAfterSeconds: rate.retryAfterSeconds,
+        },
+        429,
       );
     }
 
     if (!process.env.GROQ_API_KEY) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           error: "AI chat is not configured yet. Please use the contact form.",
-        }),
-        { status: 503, headers: { "Content-Type": "application/json" } },
+        },
+        503,
       );
     }
 
@@ -135,28 +166,27 @@ export async function POST(req: Request) {
     try {
       return await createStream(systemPrompt, PRIMARY_MODEL, modelMessages, messages);
     } catch (primaryError) {
-      if (isRateLimitError(primaryError)) {
+      if (isProviderRateLimitError(primaryError)) {
         return await createStream(systemPrompt, FALLBACK_MODEL, modelMessages, messages);
       }
       throw primaryError;
     }
   } catch (error) {
-    if (isRateLimitError(error)) {
-      return new Response(
-        JSON.stringify({
-          error:
-            "I'm getting a lot of questions right now. Please try again in a moment!",
-        }),
-        { status: 429, headers: { "Content-Type": "application/json" } },
+    if (isProviderRateLimitError(error)) {
+      return jsonResponse(
+        {
+          error: RATE_LIMIT_PROVIDER_MESSAGE,
+          retryAfterSeconds: 60,
+        },
+        429,
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        error:
-          "AI chat is temporarily unavailable. Please try again later.",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+    return jsonResponse(
+      {
+        error: "AI chat is temporarily unavailable. Please try again later.",
+      },
+      500,
     );
   }
 }

@@ -28,6 +28,7 @@ Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**’s site: **Turborepo
 - **Supabase:** Postgres holds structured content; Auth + RLS restrict who can write what (not only checks in Next.js).
 - **Cloudflare R2:** S3-style storage for uploads from admin; files are served from a public URL, not stored as blobs in Postgres.
 - **Groq + Vercel AI SDK:** Chat calls Groq’s API; the system prompt is built from profile data in Supabase so answers stay on topic.
+- **Upstash Redis (optional):** Server-side sliding-window limits on `POST /api/chat` per client IP so the Groq key is not abused; skipped when env vars are unset (e.g. local dev).
 
 ### Scope
 
@@ -126,6 +127,7 @@ portfolio-v2/
 | **Supabase** | DB + Auth | One project; SQL under `supabase/migrations/` |
 | **Cloudflare R2** | Uploads | Admin env; public base URL for assets |
 | **Groq** | Chat LLM | Optional key on web |
+| **Upstash Redis** | Chat rate limits | Sliding window per IP; `POST /api/chat` returns 429 + `Retry-After` when exceeded (omit env locally to disable limiting) |
 | **Sentry** | Errors | Web (`@sentry/nextjs`) |
 | **GitHub Actions** | CI | Lint, typecheck, build, Lighthouse on PRs |
 
@@ -136,7 +138,7 @@ portfolio-v2/
 - Default **security headers** on the public app: [`apps/web/next.config.ts`](apps/web/next.config.ts).
 - **Revalidate:** `REVALIDATE_SECRET` must match between admin and web. Do not put Supabase **service role** keys in `NEXT_PUBLIC_*`; the app uses the **anon** key with RLS.
 - **Admin:** Session in middleware, allowlisted emails, RLS on the database.
-- **Chat:** The model only sees the prompt built from your Supabase-backed copy; Groq still runs inference on their side (see their terms).
+- **Chat:** The model only sees the prompt built from your Supabase-backed copy; Groq still runs inference on their side (see their terms). **Application rate limiting** (Upstash, per IP) runs before calling Groq; the UI shows a short cooldown when limited.
 
 ---
 
@@ -224,6 +226,10 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `SENTRY_ORG` | Org slug (`withSentryConfig` in [`apps/web/next.config.ts`](apps/web/next.config.ts)) |
 | `SENTRY_PROJECT` | Project slug |
 | `SENTRY_AUTH_TOKEN` | Upload source maps at build time; optional if you use Vercel + Sentry integration |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — enables chat rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash token (pair with URL) |
+| `CHAT_RATE_LIMIT_MAX` | Max chat requests per IP per window (default `10`) |
+| `CHAT_RATE_LIMIT_WINDOW_SEC` | Window length in seconds (default `60`) |
 
 **Supabase:** [Dashboard](https://supabase.com/dashboard) → project → **Settings → API** → Project URL + **anon** key.
 
@@ -236,6 +242,8 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 **GitHub:** [github.com/settings/tokens](https://github.com/settings/tokens) — scopes for what `/api/github` calls (public repo stats often need no auth or minimal scope).
 
 **Sentry:** New project at [sentry.io](https://sentry.io/) — DSN under **Client Keys**; org/project slugs in the URL or settings; auth token under **Auth Tokens** if you upload maps outside Vercel’s integration.
+
+**Upstash (chat limits):** [console.upstash.com](https://console.upstash.com/) → Redis → REST URL + token. Without both, chat works but **no** app-level rate limit (still subject to Groq limits).
 
 ### Admin — `apps/admin`
 
@@ -274,7 +282,6 @@ Rough goals; tune as the site grows.
 
 ## Roadmap
 
-- **Chat:** Rate limiting (e.g. Upstash) + clear `Retry-After` in the UI  
 - **Contact:** Turnstile, Resend, optional Supabase persistence  
 - **RAG:** Use `content_embeddings` in the chat route  
 - **Analytics:** PostHog when event-level data is worth it  
