@@ -52,7 +52,7 @@ export function HeroForm({ initialData }: HeroFormProps) {
                 rows={3}
                 className={cn(
                   "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                  "text-sm focus:border-accent focus:outline-none",
+                  "text-sm focus:border-accent focus:outline-hidden",
                 )}
               />
             ) : (
@@ -61,7 +61,7 @@ export function HeroForm({ initialData }: HeroFormProps) {
                 onChange={(e) => handleChange(key, e.target.value)}
                 className={cn(
                   "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                  "text-sm focus:border-accent focus:outline-none",
+                  "text-sm focus:border-accent focus:outline-hidden",
                 )}
               />
             )}
@@ -84,7 +84,7 @@ export function HeroForm({ initialData }: HeroFormProps) {
           rows={3}
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>

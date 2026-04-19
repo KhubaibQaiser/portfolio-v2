@@ -43,17 +43,17 @@ export function AboutSection({ about, location, companiesCount }: AboutSectionPr
   return (
     <section
       id="about"
-      className="py-[var(--section-padding-y)]"
+      className="py-(--section-padding-y)"
       aria-label="About"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-[length:var(--text-h2)] font-semibold tracking-tight">
+          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
             <span className="font-mono text-base font-normal text-accent">
               01.
             </span>
@@ -62,7 +62,7 @@ export function AboutSection({ about, location, companiesCount }: AboutSectionPr
           </h2>
 
           <div className="mt-10 grid gap-12 md:grid-cols-[3fr_2fr]">
-            <div className="space-y-5 text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground">
+            <div className="space-y-5 text-body-lg leading-relaxed text-muted-foreground">
               {paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}

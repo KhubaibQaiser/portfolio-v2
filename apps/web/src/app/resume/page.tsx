@@ -18,13 +18,13 @@ export default async function ResumePage() {
   return (
     <div className="py-32">
       <ResumeViewTracker />
-      <div className="mx-auto max-w-3xl px-[var(--container-padding)]">
+      <div className="mx-auto max-w-3xl px-(--container-padding)">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[length:var(--text-h1)] font-bold tracking-tight">
+            <h1 className="text-h1 font-bold tracking-tight">
               {resume.name}
             </h1>
-            <p className="mt-1 text-[length:var(--text-body-lg)] font-medium text-accent">
+            <p className="mt-1 text-body-lg font-medium text-accent">
               {resume.title}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground/90 dark:text-foreground/85">

@@ -25,17 +25,17 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
   return (
     <section
       id="experience"
-      className="py-[var(--section-padding-y)]"
+      className="py-(--section-padding-y)"
       aria-label="Experience"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-[length:var(--text-h2)] font-semibold tracking-tight">
+          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
             <span className="font-mono text-base font-normal text-accent">
               03.
             </span>
@@ -104,7 +104,7 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                             key={idx}
                             className="flex gap-2 text-sm leading-relaxed text-muted-foreground"
                           >
-                            <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-accent" />
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
                             {item}
                           </li>
                         ))}

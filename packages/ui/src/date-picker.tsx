@@ -57,7 +57,7 @@ export function MonthYearPicker({
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content
-            className="z-[100] rounded-xl border border-border bg-background p-0 shadow-lg outline-none"
+            className="z-100 rounded-xl border border-border bg-background p-0 shadow-lg outline-hidden"
             sideOffset={6}
             align="start"
           >

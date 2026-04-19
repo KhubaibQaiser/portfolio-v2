@@ -81,14 +81,14 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                 const isMonoBrand =
                   tech.id === "nextjs" ||
                   tech.id === "vercel" ||
-                  tech.id === "vercel-ai-sdk";
+                  tech.id === "ai-sdk";
 
                 const buttonClass = cn(
                   "inline-flex h-12 w-12 items-center justify-center rounded-full border border-transparent",
                   "transition-all duration-200",
                   isActive && "scale-105",
                   isMonoBrand && "hero-tech-mono-brand",
-                  "hover:border-border/70 hover:bg-muted/40 focus-visible:border-border/70 focus-visible:bg-muted/40 focus-visible:outline-none",
+                  "hover:border-border/70 hover:bg-muted/40 focus-visible:border-border/70 focus-visible:bg-muted/40 focus-visible:outline-hidden",
                 );
 
                 if (tech.iconKey === "AwsBrand") {
@@ -178,11 +178,11 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
         </div>
 
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-background to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-background to-transparent"
           aria-hidden
         />
       </div>

@@ -52,7 +52,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
       )}
     >
       <nav
-        className="mx-auto flex h-16 max-w-[var(--container-max)] items-center justify-between px-[var(--container-padding)]"
+        className="mx-auto flex h-16 max-w-container items-center justify-between px-(--container-padding)"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -117,7 +117,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 backdrop-blur-[24px] md:hidden"
+            className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 backdrop-blur-xl md:hidden"
           >
             {navLinks.map((link, i) => (
               <motion.a

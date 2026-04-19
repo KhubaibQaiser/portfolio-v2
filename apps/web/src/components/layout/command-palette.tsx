@@ -68,7 +68,7 @@ export function CommandPalette() {
   const linkedin = socialLinks.find((l) => l.platform === "linkedin")?.url;
 
   return (
-    <div className="fixed inset-0 z-[100]">
+    <div className="fixed inset-0 z-100">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => setOpen(false)}
@@ -84,7 +84,7 @@ export function CommandPalette() {
             <Search className="h-4 w-4 text-muted-foreground" />
             <Command.Input
               placeholder="Type a command or search..."
-              className="h-12 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+              className="h-12 flex-1 bg-transparent text-sm outline-hidden placeholder:text-muted-foreground/50"
             />
             <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
               ESC

@@ -70,17 +70,17 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
   return (
     <section
       id="skills"
-      className="bg-muted/30 py-[var(--section-padding-y)]"
+      className="bg-muted/30 py-(--section-padding-y)"
       aria-label="Skills"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-[length:var(--text-h2)] font-semibold tracking-tight">
+          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
             <span className="font-mono text-base font-normal text-accent">
               02.
             </span>

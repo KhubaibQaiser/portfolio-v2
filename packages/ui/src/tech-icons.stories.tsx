@@ -34,7 +34,7 @@ function HeroTechIconPreview({ tech }: { tech: HeroTopTech }) {
     return <span className="text-destructive text-xs">?</span>;
   }
   const isMonoBrand =
-    tech.id === "nextjs" || tech.id === "vercel" || tech.id === "vercel-ai-sdk";
+    tech.id === "nextjs" || tech.id === "vercel" || tech.id === "ai-sdk";
   return (
     <Icon
       width={28}

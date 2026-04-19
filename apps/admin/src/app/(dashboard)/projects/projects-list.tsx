@@ -32,7 +32,7 @@ const EMPTY: ProjectFormData = {
 };
 
 function projectRowToForm(row: Project): ProjectFormData & { id: string } {
-  const { id, created_at, updated_at, ...rest } = row;
+  const { id, created_at: _created_at, updated_at: _updated_at, ...rest } = row;
   return { ...projectSchema.parse(rest), id };
 }
 
@@ -79,7 +79,7 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
             <input
               value={editing[key]}
               onChange={(e) => setEditing((p) => p && { ...p, [key]: e.target.value })}
-              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
             />
           </div>
         ))}
@@ -89,7 +89,7 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
             value={editing.description}
             onChange={(e) => setEditing((p) => p && { ...p, description: e.target.value })}
             rows={4}
-            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
         <div>
@@ -112,7 +112,7 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
           <input
             value={editing.tech_tags.join(", ")}
             onChange={(e) => setEditing((p) => p && { ...p, tech_tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
         {(["github_url", "live_url", "cover_url"] as const).map((key) => (
@@ -121,7 +121,7 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
             <input
               value={editing[key] ?? ""}
               onChange={(e) => setEditing((p) => p && { ...p, [key]: e.target.value || null })}
-              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
             />
           </div>
         ))}

@@ -398,7 +398,7 @@ export function ChatBubble() {
                     "flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground/50",
                     "transition-colors duration-150",
-                    "focus:border-accent/60 focus:ring-2 focus:ring-accent/10 focus:outline-none",
+                    "focus:border-accent/60 focus:ring-2 focus:ring-accent/10 focus:outline-hidden",
                   )}
                   disabled={isLoading || isCoolingDown}
                   maxLength={500}

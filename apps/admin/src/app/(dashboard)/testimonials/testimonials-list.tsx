@@ -64,7 +64,7 @@ export function TestimonialsList({ initialData }: TestimonialsListProps) {
             value={editing.quote}
             onChange={(e) => setEditing((p) => p && { ...p, quote: e.target.value })}
             rows={4}
-            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
         {(["author_name", "author_title", "company"] as const).map((key) => (
@@ -73,7 +73,7 @@ export function TestimonialsList({ initialData }: TestimonialsListProps) {
             <input
               value={editing[key]}
               onChange={(e) => setEditing((p) => p && { ...p, [key]: e.target.value })}
-              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
             />
           </div>
         ))}
@@ -83,7 +83,7 @@ export function TestimonialsList({ initialData }: TestimonialsListProps) {
             type="number"
             value={editing.sort_order}
             onChange={(e) => setEditing((p) => p && { ...p, sort_order: parseInt(e.target.value) || 0 })}
-            className="w-32 rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-none"
+            className="w-32 rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-accent focus:outline-hidden"
           />
         </div>
         {message && <p className={cn("text-sm", message === "Saved!" ? "text-green-600" : "text-red-500")}>{message}</p>}

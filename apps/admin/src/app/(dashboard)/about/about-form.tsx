@@ -55,7 +55,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           rows={6}
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>
@@ -67,7 +67,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           onChange={(e) => handleChange("photo_url", e.target.value)}
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>
@@ -124,7 +124,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
               }}
               className={cn(
                 "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                "text-sm focus:border-accent focus:outline-none",
+                "text-sm focus:border-accent focus:outline-hidden",
               )}
             />
             {key === "countries_count" && (
@@ -147,7 +147,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           }
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>
@@ -161,7 +161,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           }
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>

@@ -93,7 +93,7 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
               value={skill.name}
               onChange={(e) => updateSkill(skill.id, "name", e.target.value)}
               placeholder="Skill name"
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-accent focus:outline-none"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-accent focus:outline-hidden"
             />
             <Select
               className="h-9 min-w-0 rounded-md bg-background px-2 py-1.5 text-sm"
@@ -111,7 +111,7 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
                 max={100}
                 value={skill.proficiency}
                 onChange={(e) => updateSkill(skill.id, "proficiency", parseInt(e.target.value) || 0)}
-                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-center text-sm focus:border-accent focus:outline-none"
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-center text-sm focus:border-accent focus:outline-hidden"
               />
               <span className="text-xs text-muted-foreground">%</span>
             </div>
@@ -122,7 +122,7 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
                 max={30}
                 value={skill.years}
                 onChange={(e) => updateSkill(skill.id, "years", parseInt(e.target.value) || 0)}
-                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-center text-sm focus:border-accent focus:outline-none"
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-center text-sm focus:border-accent focus:outline-hidden"
               />
               <span className="text-xs text-muted-foreground">yr</span>
             </div>

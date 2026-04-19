@@ -109,7 +109,7 @@ export function ProjectsGrid() {
       : allProjects.filter((p) => p.type === activeFilter);
 
   return (
-    <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)] pt-10">
+    <div className="mx-auto max-w-container px-(--container-padding) pt-10">
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         {filters.map(({ label, value }) => (

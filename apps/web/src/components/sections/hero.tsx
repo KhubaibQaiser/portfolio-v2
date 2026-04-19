@@ -38,7 +38,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
       aria-label="Hero"
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent"
+        className="pointer-events-none absolute inset-0 bg-linear-to-b from-accent/5 via-transparent to-transparent"
         aria-hidden
       />
 
@@ -46,7 +46,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mx-auto w-full min-w-0 max-w-[var(--container-max)] px-[var(--container-padding)] py-16 text-center sm:py-24 md:py-32"
+        className="relative z-10 mx-auto w-full min-w-0 max-w-container px-(--container-padding) py-16 text-center sm:py-24 md:py-32"
       >
         <motion.p
           variants={itemVariants}
@@ -57,7 +57,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
 
         <motion.h1
           variants={itemVariants}
-          className="mt-5 text-balance text-[length:var(--text-display)] font-bold leading-[1.1] tracking-tight"
+          className="mt-5 text-balance text-display font-bold leading-[1.1] tracking-tight"
         >
           {hero.name}
           <span className="text-accent">.</span>
@@ -65,14 +65,14 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
 
         <motion.h2
           variants={itemVariants}
-          className="mt-3 text-balance text-[length:var(--text-h1)] font-semibold leading-tight tracking-tight text-muted-foreground"
+          className="mt-3 text-balance text-h1 font-semibold leading-tight tracking-tight text-muted-foreground"
         >
           {hero.headline}
         </motion.h2>
 
         <motion.p
           variants={itemVariants}
-          className="mx-auto mt-6 max-w-2xl text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground"
+          className="mx-auto mt-6 max-w-2xl text-body-lg leading-relaxed text-muted-foreground"
         >
           {hero.value_proposition}
         </motion.p>

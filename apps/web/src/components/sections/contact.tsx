@@ -89,10 +89,10 @@ export function ContactSection({ email }: ContactSectionProps) {
   return (
     <section
       id="contact"
-      className="py-[var(--section-padding-y)]"
+      className="py-(--section-padding-y)"
       aria-label="Contact"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
@@ -101,10 +101,10 @@ export function ContactSection({ email }: ContactSectionProps) {
           className="mx-auto max-w-2xl text-center"
         >
           <p className="font-mono text-sm text-accent">05. What&apos;s Next?</p>
-          <h2 className="mt-3 text-[length:var(--text-h1)] font-semibold tracking-tight">
+          <h2 className="mt-3 text-h1 font-semibold tracking-tight">
             Get In Touch
           </h2>
-          <p className="mt-4 text-[length:var(--text-body-lg)] leading-relaxed text-muted-foreground">
+          <p className="mt-4 text-body-lg leading-relaxed text-muted-foreground">
             I&apos;m currently open to new opportunities. Whether you have a
             question or just want to say hi, my inbox is always open.
           </p>
@@ -144,7 +144,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                   className={cn(
                     "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
                     "text-sm text-foreground placeholder:text-muted-foreground/50",
-                    "transition-colors duration-200 focus:border-accent focus:outline-none",
+                    "transition-colors duration-200 focus:border-accent focus:outline-hidden",
                   )}
                   placeholder="Your name"
                 />
@@ -161,7 +161,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                   className={cn(
                     "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
                     "text-sm text-foreground placeholder:text-muted-foreground/50",
-                    "transition-colors duration-200 focus:border-accent focus:outline-none",
+                    "transition-colors duration-200 focus:border-accent focus:outline-hidden",
                   )}
                   placeholder="your@email.com"
                 />
@@ -179,7 +179,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                 className={cn(
                   "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
                   "text-sm text-foreground placeholder:text-muted-foreground/50",
-                  "transition-colors duration-200 focus:border-accent focus:outline-none",
+                  "transition-colors duration-200 focus:border-accent focus:outline-hidden",
                 )}
                 placeholder="What's this about?"
               />
@@ -196,7 +196,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                 className={cn(
                   "w-full resize-none rounded-lg border border-border bg-muted/30 px-4 py-2.5",
                   "text-sm text-foreground placeholder:text-muted-foreground/50",
-                  "transition-colors duration-200 focus:border-accent focus:outline-none",
+                  "transition-colors duration-200 focus:border-accent focus:outline-hidden",
                 )}
                 placeholder="Your message..."
               />

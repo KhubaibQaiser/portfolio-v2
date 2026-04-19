@@ -25,17 +25,17 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
   return (
     <section
       id="projects"
-      className="py-[var(--section-padding-y)]"
+      className="py-(--section-padding-y)"
       aria-label="Featured Projects"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-[length:var(--text-h2)] font-semibold tracking-tight">
+          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
             <span className="font-mono text-base font-normal text-accent">
               04.
             </span>
@@ -60,7 +60,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                   }}
                   className={cn(
                     "grid items-center gap-8 md:grid-cols-[1fr_1fr]",
-                    isOdd && "md:[direction:rtl] md:[&>*]:[direction:ltr]",
+                    isOdd && "md:[direction:rtl] md:*:[direction:ltr]",
                   )}
                 >
                   <div className="aspect-video overflow-hidden rounded-xl bg-muted">
@@ -77,7 +77,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                     <p className="font-mono text-sm text-accent">
                       Featured Project
                     </p>
-                    <h3 className="mt-1 text-[length:var(--text-h3)] font-semibold tracking-tight">
+                    <h3 className="mt-1 text-h3 font-semibold tracking-tight">
                       {project.title}
                     </h3>
                     <div className="mt-4 rounded-xl bg-muted/50 p-5 text-sm leading-relaxed text-muted-foreground">

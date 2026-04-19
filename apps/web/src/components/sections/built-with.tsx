@@ -33,20 +33,20 @@ const sectionVariants = {
 export function BuiltWithSection() {
   return (
     <section
-      className="bg-muted/30 py-[var(--section-padding-y)]"
+      className="bg-muted/30 py-(--section-padding-y)"
       aria-label="How this was built"
     >
-      <div className="mx-auto max-w-[var(--container-max)] px-[var(--container-padding)]">
+      <div className="mx-auto max-w-container px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="text-center text-[length:var(--text-h2)] font-semibold tracking-tight">
+          <h2 className="text-center text-h2 font-semibold tracking-tight">
             How This Portfolio Was Built
           </h2>
-          <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-center text-[length:var(--text-body-lg)]">
+          <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-center text-body-lg">
             This portfolio is itself a technical showcase — a Turborepo monorepo with two
             Next.js apps, server-side AI chat, and edge-cached performance.
           </p>

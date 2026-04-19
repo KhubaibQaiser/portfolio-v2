@@ -175,7 +175,7 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
           rows={8}
           className={cn(
             "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-none",
+            "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
       </div>

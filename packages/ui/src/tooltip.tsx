@@ -118,7 +118,7 @@ export function Tooltip({
               className={cn(
                 "pointer-events-none fixed z-50 rounded-md border border-border/70 bg-background/95 px-2 py-1",
                 "text-xs font-medium text-foreground shadow-md backdrop-blur",
-                "translate-x-[-50%]",
+                "-translate-x-1/2",
                 side === "top"
                   ? "-translate-y-full"
                   : "translate-y-0",
