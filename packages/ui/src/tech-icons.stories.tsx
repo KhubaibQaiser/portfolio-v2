@@ -2,6 +2,7 @@ import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { HERO_TOP_TECHS, type HeroTopTech } from "@portfolio/shared/constants";
 import { AwsIcon } from "./icons/aws-icon";
+import { VercelAiSdkIcon } from "./icons/vercel-ai-sdk-icon";
 import { getHeroSimpleIcon } from "./hero-tech-icon-map";
 import { cn } from "@portfolio/shared/utils";
 import "./hero-tech-carousel.css";
@@ -18,11 +19,22 @@ function HeroTechIconPreview({ tech }: { tech: HeroTopTech }) {
   if (tech.iconKey === "AwsBrand") {
     return <AwsIcon width={28} height={28} accentColor="#FF9900" />;
   }
+  if (tech.iconKey === "VercelAiSdkBrand") {
+    return (
+      <VercelAiSdkIcon
+        width={28}
+        height={28}
+        color="currentColor"
+        className="hero-tech-mono-brand"
+      />
+    );
+  }
   const Icon = getHeroSimpleIcon(tech.iconKey);
   if (!Icon) {
     return <span className="text-destructive text-xs">?</span>;
   }
-  const isMonoBrand = tech.id === "nextjs" || tech.id === "vercel";
+  const isMonoBrand =
+    tech.id === "nextjs" || tech.id === "vercel" || tech.id === "vercel-ai-sdk";
   return (
     <Icon
       width={28}
