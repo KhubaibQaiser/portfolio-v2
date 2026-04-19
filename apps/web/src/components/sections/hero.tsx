@@ -32,7 +32,7 @@ const itemVariants = {
 export function HeroSection({ hero, companies }: HeroSectionProps) {
   return (
     <section
-      className="relative flex min-h-screen items-center justify-center overflow-hidden"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16"
       aria-label="Hero"
     >
       <div
@@ -44,7 +44,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mx-auto max-w-[var(--container-max)] px-[var(--container-padding)] py-32 text-center"
+        className="relative z-10 mx-auto w-full min-w-0 max-w-[var(--container-max)] px-[var(--container-padding)] py-16 text-center sm:py-24 md:py-32"
       >
         <motion.p
           variants={itemVariants}
@@ -55,7 +55,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
 
         <motion.h1
           variants={itemVariants}
-          className="mt-5 text-[length:var(--text-display)] font-bold leading-[1.1] tracking-tight"
+          className="mt-5 text-balance text-[length:var(--text-display)] font-bold leading-[1.1] tracking-tight"
         >
           {hero.name}
           <span className="text-accent">.</span>
@@ -63,7 +63,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
 
         <motion.h2
           variants={itemVariants}
-          className="mt-3 text-[length:var(--text-h1)] font-semibold leading-tight tracking-tight text-muted-foreground"
+          className="mt-3 text-balance text-[length:var(--text-h1)] font-semibold leading-tight tracking-tight text-muted-foreground"
         >
           {hero.headline}
         </motion.h2>

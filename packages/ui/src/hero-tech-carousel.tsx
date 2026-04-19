@@ -50,7 +50,7 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("relative mx-auto mt-8 w-full max-w-3xl", className)}
+      className={cn("relative mx-auto mt-8 w-full min-w-0 max-w-3xl", className)}
       aria-label="Top technologies"
     >
       <div className="hero-tech-marquee-root group relative overflow-hidden rounded-full border border-border/60 bg-background/30 px-3 py-2.5 backdrop-blur-sm">
