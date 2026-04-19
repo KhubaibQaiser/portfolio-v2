@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { ArrowDown, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
+import { PortfolioEvents } from "@/lib/analytics/events";
 import { HeroTechCarousel } from "@portfolio/ui/hero-tech-carousel";
 import type { Database } from "@portfolio/shared/supabase/database.types";
 
@@ -85,6 +87,12 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         >
           <a
             href="#projects"
+            onClick={() =>
+              capturePortfolioEvent(PortfolioEvents.primaryNavClick, {
+                href: "#projects",
+                label: "hero_primary_cta",
+              })
+            }
             className={cn(
               "rounded-full bg-accent px-8 py-3 text-sm font-medium text-accent-foreground",
               "transition-all duration-200 hover:opacity-90 active:scale-95",
@@ -95,6 +103,12 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
           </a>
           <a
             href="/resume"
+            onClick={() =>
+              capturePortfolioEvent(PortfolioEvents.primaryNavClick, {
+                href: "/resume",
+                label: "hero_secondary_cta",
+              })
+            }
             className={cn(
               "flex items-center gap-2 rounded-full border border-border px-8 py-3",
               "text-sm font-medium text-foreground transition-all duration-200",

@@ -19,6 +19,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
+import { PortfolioEvents } from "@/lib/analytics/events";
 import { GitHubIcon, LinkedInIcon } from "@portfolio/ui/icons";
 import { useSiteConfig } from "./site-config-provider";
 
@@ -39,12 +41,25 @@ export function CommandPalette() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const runCommand = useCallback(
-    (command: () => void) => {
-      setOpen(false);
-      command();
+  useEffect(() => {
+    if (open) {
+      capturePortfolioEvent(PortfolioEvents.commandPaletteOpened);
+    }
+  }, [open]);
+
+  const runCommand = useCallback((command: () => void) => {
+    setOpen(false);
+    command();
+  }, []);
+
+  const runTracked = useCallback(
+    (action: string, command: () => void) => {
+      runCommand(() => {
+        capturePortfolioEvent(PortfolioEvents.commandPaletteAction, { action });
+        command();
+      });
     },
-    [],
+    [runCommand],
   );
 
   if (!open) return null;
@@ -81,35 +96,35 @@ export function CommandPalette() {
             </Command.Empty>
 
             <Command.Group heading="Navigation" className="px-1 pb-2">
-              <CommandItem icon={Home} label="Home" onSelect={() => runCommand(() => router.push("/"))} />
-              <CommandItem icon={FolderOpen} label="Projects" onSelect={() => runCommand(() => router.push("/projects"))} />
-              <CommandItem icon={FileText} label="Resume" onSelect={() => runCommand(() => router.push("/resume"))} />
-              <CommandItem icon={BarChart3} label="Analytics" onSelect={() => runCommand(() => router.push("/analytics"))} />
+              <CommandItem icon={Home} label="Home" onSelect={() => runTracked("nav_home", () => router.push("/"))} />
+              <CommandItem icon={FolderOpen} label="Projects" onSelect={() => runTracked("nav_projects", () => router.push("/projects"))} />
+              <CommandItem icon={FileText} label="Resume" onSelect={() => runTracked("nav_resume", () => router.push("/resume"))} />
+              <CommandItem icon={BarChart3} label="Analytics" onSelect={() => runTracked("nav_analytics", () => router.push("/analytics"))} />
             </Command.Group>
 
             <Command.Separator className="my-1 h-px bg-border" />
 
             <Command.Group heading="Sections" className="px-1 pb-2">
-              <CommandItem icon={User} label="About" onSelect={() => runCommand(() => { document.getElementById("about")?.scrollIntoView({ behavior: "smooth" }); })} />
-              <CommandItem icon={Zap} label="Skills" onSelect={() => runCommand(() => { document.getElementById("skills")?.scrollIntoView({ behavior: "smooth" }); })} />
-              <CommandItem icon={Briefcase} label="Experience" onSelect={() => runCommand(() => { document.getElementById("experience")?.scrollIntoView({ behavior: "smooth" }); })} />
-              <CommandItem icon={Mail} label="Contact" onSelect={() => runCommand(() => { document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }); })} />
+              <CommandItem icon={User} label="About" onSelect={() => runTracked("section_about", () => { document.getElementById("about")?.scrollIntoView({ behavior: "smooth" }); })} />
+              <CommandItem icon={Zap} label="Skills" onSelect={() => runTracked("section_skills", () => { document.getElementById("skills")?.scrollIntoView({ behavior: "smooth" }); })} />
+              <CommandItem icon={Briefcase} label="Experience" onSelect={() => runTracked("section_experience", () => { document.getElementById("experience")?.scrollIntoView({ behavior: "smooth" }); })} />
+              <CommandItem icon={Mail} label="Contact" onSelect={() => runTracked("section_contact", () => { document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }); })} />
             </Command.Group>
 
             <Command.Separator className="my-1 h-px bg-border" />
 
             <Command.Group heading="Theme" className="px-1 pb-2">
-              <CommandItem icon={Sun} label="Light Mode" onSelect={() => runCommand(() => setTheme("light"))} />
-              <CommandItem icon={Moon} label="Dark Mode" onSelect={() => runCommand(() => setTheme("dark"))} />
-              <CommandItem icon={Monitor} label="System Theme" onSelect={() => runCommand(() => setTheme("system"))} />
+              <CommandItem icon={Sun} label="Light Mode" onSelect={() => runTracked("theme_light", () => setTheme("light"))} />
+              <CommandItem icon={Moon} label="Dark Mode" onSelect={() => runTracked("theme_dark", () => setTheme("dark"))} />
+              <CommandItem icon={Monitor} label="System Theme" onSelect={() => runTracked("theme_system", () => setTheme("system"))} />
             </Command.Group>
 
             <Command.Separator className="my-1 h-px bg-border" />
 
             <Command.Group heading="Links" className="px-1 pb-2">
-              {github && <CommandItem icon={GitHubIcon} label="GitHub" onSelect={() => runCommand(() => window.open(github, "_blank"))} />}
-              {linkedin && <CommandItem icon={LinkedInIcon} label="LinkedIn" onSelect={() => runCommand(() => window.open(linkedin, "_blank"))} />}
-              {email && <CommandItem icon={Mail} label="Copy Email" onSelect={() => runCommand(() => navigator.clipboard.writeText(email))} />}
+              {github && <CommandItem icon={GitHubIcon} label="GitHub" onSelect={() => runTracked("link_github", () => window.open(github, "_blank"))} />}
+              {linkedin && <CommandItem icon={LinkedInIcon} label="LinkedIn" onSelect={() => runTracked("link_linkedin", () => window.open(linkedin, "_blank"))} />}
+              {email && <CommandItem icon={Mail} label="Copy Email" onSelect={() => runTracked("copy_email", () => navigator.clipboard.writeText(email))} />}
             </Command.Group>
           </Command.List>
         </Command>

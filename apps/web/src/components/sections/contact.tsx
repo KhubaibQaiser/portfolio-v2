@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send, CheckCircle, AlertCircle, Mail, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
+import { PortfolioEvents } from "@/lib/analytics/events";
 
 type ContactSectionProps = {
   email: string;
@@ -37,18 +39,34 @@ export function ContactSection({ email }: ContactSectionProps) {
         body: JSON.stringify(data),
       });
 
+      const body = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Failed to send message");
+        capturePortfolioEvent(PortfolioEvents.contactSubmit, {
+          result: "http_error",
+          status: res.status,
+        });
+        setStatus("error");
+        setErrorMessage(
+          typeof body === "object" &&
+            body !== null &&
+            "error" in body &&
+            typeof (body as { error: unknown }).error === "string"
+            ? (body as { error: string }).error
+            : "Failed to send message",
+        );
+        return;
       }
 
+      capturePortfolioEvent(PortfolioEvents.contactSubmit, { result: "success" });
       setStatus("success");
       (e.target as HTMLFormElement).reset();
-    } catch (err) {
+    } catch {
+      capturePortfolioEvent(PortfolioEvents.contactSubmit, {
+        result: "network_error",
+      });
       setStatus("error");
-      setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong",
-      );
+      setErrorMessage("Something went wrong");
     }
   }
 

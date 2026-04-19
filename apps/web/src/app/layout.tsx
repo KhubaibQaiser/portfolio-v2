@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { PostHogAnalyticsProvider } from "@/components/analytics/posthog-provider";
+import { PostHogPageView } from "@/components/analytics/posthog-pageview";
+import { PostHogThemeCapture } from "@/components/analytics/posthog-theme-capture";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { SmoothScroll } from "@portfolio/ui/smooth-scroll";
 import { Navbar } from "@/components/layout/navbar";
@@ -158,6 +162,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider>
+          <PostHogAnalyticsProvider>
+            <PostHogThemeCapture />
+            <Suspense fallback={null}>
+              <PostHogPageView />
+            </Suspense>
           <SmoothScroll>
             <a href="#main" className="skip-to-content">
               Skip to content
@@ -172,6 +181,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <CommandPalette />
             </SiteConfigProvider>
           </SmoothScroll>
+          </PostHogAnalyticsProvider>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

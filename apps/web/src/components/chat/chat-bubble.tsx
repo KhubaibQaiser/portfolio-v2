@@ -13,6 +13,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
+import { PortfolioEvents } from "@/lib/analytics/events";
 import { AssistantMarkdown } from "./assistant-markdown";
 import {
   chatTransport,
@@ -117,6 +119,7 @@ export function ChatBubble() {
   const [cooldownSecondsLeft, setCooldownSecondsLeft] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevOpen = useRef(false);
 
   const { messages: chatMessages, sendMessage, status, error, clearError } =
     useChat({
@@ -131,6 +134,26 @@ export function ChatBubble() {
 
   const isLoading = status === "streaming" || status === "submitted";
   const isCoolingDown = cooldownSecondsLeft > 0;
+
+  useEffect(() => {
+    if (open && !prevOpen.current) {
+      capturePortfolioEvent(PortfolioEvents.chatOpened);
+    }
+    if (!open && prevOpen.current) {
+      capturePortfolioEvent(PortfolioEvents.chatClosed);
+    }
+    prevOpen.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!error) return;
+    const msg = error.message.toLowerCase();
+    const rateLimited =
+      msg.includes("429") || msg.includes("rate limit");
+    capturePortfolioEvent(PortfolioEvents.chatClientError, {
+      reason: rateLimited ? "rate_limit" : "other",
+    });
+  }, [error]);
 
   useEffect(() => {
     if (cooldownSecondsLeft <= 0) return;
@@ -171,13 +194,25 @@ export function ChatBubble() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!inputValue.trim() || isLoading || isCoolingDown) return;
-    sendMessage({ text: inputValue });
+    const trimmed = inputValue.trim();
+    const len = trimmed.length;
+    sendMessage({ text: trimmed });
+    capturePortfolioEvent(PortfolioEvents.chatMessageSent, {
+      length_bucket:
+        len <= 60 ? "short" : len <= 180 ? "medium" : "long",
+    });
     setInputValue("");
   }
 
   function askQuestion(q: string) {
     if (isLoading || isCoolingDown) return;
+    const len = q.length;
     sendMessage({ text: q });
+    capturePortfolioEvent(PortfolioEvents.chatMessageSent, {
+      length_bucket:
+        len <= 60 ? "short" : len <= 180 ? "medium" : "long",
+      source: "suggested",
+    });
   }
 
   const lastMsg = chatMessages[chatMessages.length - 1];
