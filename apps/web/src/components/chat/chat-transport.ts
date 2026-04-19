@@ -2,17 +2,31 @@ import { DefaultChatTransport } from "ai";
 import posthog from "posthog-js";
 import { POSTHOG_DISTINCT_ID_HEADER } from "@/lib/analytics/constants";
 
-const RATE_LIMIT_MESSAGE =
+/** Default when JSON body has no usable `error` string (matches `/api/chat` rate-limit copy). */
+export const RATE_LIMIT_FALLBACK_MESSAGE =
   "Too many messages. Please wait a moment before sending another.";
 
 export class ChatRateLimitError extends Error {
   readonly retryAfterSeconds: number;
 
-  constructor(retryAfterSeconds: number) {
-    super(RATE_LIMIT_MESSAGE);
+  constructor(message: string, retryAfterSeconds: number) {
+    super(message);
     this.name = "ChatRateLimitError";
     this.retryAfterSeconds = retryAfterSeconds;
   }
+}
+
+function parseRateLimitErrorMessage(data: unknown): string {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "error" in data &&
+    typeof (data as { error: unknown }).error === "string"
+  ) {
+    const trimmed = (data as { error: string }).error.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return RATE_LIMIT_FALLBACK_MESSAGE;
 }
 
 function parseRetryAfterSeconds(res: Response, data: unknown): number {
@@ -59,6 +73,7 @@ export const chatTransport = new DefaultChatTransport({
       data = undefined;
     }
     const retryAfterSeconds = parseRetryAfterSeconds(res, data);
-    throw new ChatRateLimitError(retryAfterSeconds);
+    const message = parseRateLimitErrorMessage(data);
+    throw new ChatRateLimitError(message, retryAfterSeconds);
   },
 });

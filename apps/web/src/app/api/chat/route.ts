@@ -5,6 +5,7 @@ import { unstable_cache as cache } from "next/cache";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { getDistinctIdFromRequest } from "@/lib/analytics/request";
+import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
 import { supabase } from "@/lib/supabase-server";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
@@ -26,10 +27,7 @@ const RATE_LIMIT_USER_MESSAGE =
 const RATE_LIMIT_PROVIDER_MESSAGE =
   "I'm getting a lot of questions right now. Please try again in a moment!";
 
-function jsonResponse(
-  body: { error: string; retryAfterSeconds?: number },
-  status: number,
-) {
+function jsonResponse(body: ChatApiErrorBody, status: number) {
   const retry =
     typeof body.retryAfterSeconds === "number"
       ? Math.max(1, Math.ceil(body.retryAfterSeconds))

@@ -121,12 +121,10 @@ export function ChatBubble() {
   const inputRef = useRef<HTMLInputElement>(null);
   const prevOpen = useRef(false);
 
-  const { messages: chatMessages, sendMessage, status, error, clearError } =
-    useChat({
+  const { messages: chatMessages, sendMessage, status, error } = useChat({
       transport: chatTransport,
       onError: (err) => {
         if (err instanceof ChatRateLimitError) {
-          clearError();
           setCooldownSecondsLeft(err.retryAfterSeconds);
         }
       },
@@ -147,11 +145,8 @@ export function ChatBubble() {
 
   useEffect(() => {
     if (!error) return;
-    const msg = error.message.toLowerCase();
-    const rateLimited =
-      msg.includes("429") || msg.includes("rate limit");
     capturePortfolioEvent(PortfolioEvents.chatClientError, {
-      reason: rateLimited ? "rate_limit" : "other",
+      reason: error instanceof ChatRateLimitError ? "rate_limit" : "other",
     });
   }, [error]);
 
@@ -349,9 +344,8 @@ export function ChatBubble() {
                   <div className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                     <p className="text-xs leading-relaxed text-destructive">
-                      {error.message.includes("429") ||
-                      error.message.toLowerCase().includes("rate limit")
-                        ? "I'm getting a lot of questions right now. Please try again in a moment!"
+                      {error instanceof ChatRateLimitError
+                        ? error.message
                         : "Something went wrong. Please try again."}
                     </p>
                   </div>
