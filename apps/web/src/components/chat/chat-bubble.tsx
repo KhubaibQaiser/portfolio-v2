@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle,
@@ -15,14 +14,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AssistantMarkdown } from "./assistant-markdown";
+import {
+  chatTransport,
+  ChatRateLimitError,
+} from "./chat-transport";
 
 const SUGGESTED_QUESTIONS = [
   "What's Khubaib's strongest skill?",
   "Tell me about his AWS experience",
   "What companies has he worked at?",
 ];
-
-const transport = new DefaultChatTransport({ api: "/api/chat" });
 
 const GREETING =
   "Hi! I'm Khubaib's AI assistant. Ask me anything about his experience, projects, or skills.";
@@ -113,14 +114,31 @@ const iconSwap = {
 export function ChatBubble() {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [cooldownSecondsLeft, setCooldownSecondsLeft] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { messages: chatMessages, sendMessage, status, error } = useChat({
-    transport,
-  });
+  const { messages: chatMessages, sendMessage, status, error, clearError } =
+    useChat({
+      transport: chatTransport,
+      onError: (err) => {
+        if (err instanceof ChatRateLimitError) {
+          clearError();
+          setCooldownSecondsLeft(err.retryAfterSeconds);
+        }
+      },
+    });
 
   const isLoading = status === "streaming" || status === "submitted";
+  const isCoolingDown = cooldownSecondsLeft > 0;
+
+  useEffect(() => {
+    if (cooldownSecondsLeft <= 0) return;
+    const id = window.setInterval(() => {
+      setCooldownSecondsLeft((s) => Math.max(0, s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownSecondsLeft]);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
@@ -152,12 +170,13 @@ export function ChatBubble() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isLoading || isCoolingDown) return;
     sendMessage({ text: inputValue });
     setInputValue("");
   }
 
   function askQuestion(q: string) {
+    if (isLoading || isCoolingDown) return;
     sendMessage({ text: q });
   }
 
@@ -175,7 +194,6 @@ export function ChatBubble() {
             exit={{ scale: 0, opacity: 0 }}
             transition={{ delay: 1.5, duration: 0.4, ease: "backOut" }}
           >
-            {/* Pulsing rings */}
             <motion.span
               className="pointer-events-none absolute inset-0 rounded-full bg-accent"
               variants={pulseRing}
@@ -198,7 +216,6 @@ export function ChatBubble() {
               aria-hidden
             />
 
-            {/* Floating button */}
             <motion.button
               onClick={() => setOpen(true)}
               variants={floatingBubble}
@@ -217,7 +234,6 @@ export function ChatBubble() {
                 <MessageCircle className="h-6 w-6" />
               </motion.span>
 
-              {/* Robot badge */}
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-background shadow-sm ring-2 ring-accent/20">
                 <Bot className="h-3 w-3 text-accent" />
               </span>
@@ -243,7 +259,6 @@ export function ChatBubble() {
               "shadow-[0_20px_60px_-12px] shadow-black/25 dark:shadow-black/50",
             )}
           >
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10">
@@ -268,7 +283,6 @@ export function ChatBubble() {
               </button>
             </div>
 
-            {/* Messages */}
             <div
               ref={scrollRef}
               data-lenis-prevent
@@ -317,12 +331,15 @@ export function ChatBubble() {
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <button
                       key={q}
+                      type="button"
+                      disabled={isLoading || isCoolingDown}
                       onClick={() => askQuestion(q)}
                       className={cn(
                         "block w-full rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5",
                         "text-left text-xs text-muted-foreground",
                         "transition-all duration-150",
                         "hover:border-accent/30 hover:bg-accent/5 hover:text-foreground",
+                        "disabled:pointer-events-none disabled:opacity-40",
                       )}
                     >
                       {q}
@@ -332,7 +349,6 @@ export function ChatBubble() {
               )}
             </div>
 
-            {/* Input */}
             <form
               onSubmit={onSubmit}
               className="border-t border-border/60 bg-muted/20 p-3"
@@ -349,13 +365,15 @@ export function ChatBubble() {
                     "transition-colors duration-150",
                     "focus:border-accent/60 focus:ring-2 focus:ring-accent/10 focus:outline-none",
                   )}
-                  disabled={isLoading}
+                  disabled={isLoading || isCoolingDown}
                   maxLength={500}
                   name="message"
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !inputValue.trim()}
+                  disabled={
+                    isLoading || isCoolingDown || !inputValue.trim()
+                  }
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-xl",
                     "bg-accent text-accent-foreground",
@@ -367,6 +385,11 @@ export function ChatBubble() {
                   <Send className="h-4 w-4" />
                 </button>
               </div>
+              {isCoolingDown && (
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  Try again in {cooldownSecondsLeft}s
+                </p>
+              )}
             </form>
           </motion.div>
         )}
