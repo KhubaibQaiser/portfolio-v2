@@ -131,6 +131,24 @@ portfolio-v2/
 | **PostHog** | Analytics + error tracking + alerting | Web (`posthog-js`, `posthog-node`, `@posthog/nextjs-config` for source maps) |
 | **GitHub Actions** | CI | Lint, typecheck, build, Lighthouse on PRs |
 
+### PostHog: events and user journeys
+
+Custom event names live in one place: [`apps/web/src/lib/analytics/events.ts`](apps/web/src/lib/analytics/events.ts) (prefix `portfolio_*`). Client capture uses [`capture-client.ts`](apps/web/src/lib/analytics/capture-client.ts); route handlers use [`capture-server.ts`](apps/web/src/lib/analytics/capture-server.ts).
+
+| Area | Events (examples) |
+|------|-------------------|
+| Navigation | `portfolio_primary_nav_click`, `portfolio_command_palette_opened`, `portfolio_command_palette_action` |
+| Outbound | `portfolio_outbound_link` (footer, resume, project demo/source links — includes `destination`, `location`, `link_domain` where applicable) |
+| Content | `portfolio_resume_view`, `portfolio_resume_pdf_download`, `portfolio_project_viewed`, `portfolio_blog_post_viewed` (with `slug`) |
+| Theme | `portfolio_theme_changed` |
+| AI chat | `portfolio_chat_*` (open/close/message/errors); server: `portfolio_chat_api_request`, `portfolio_chat_api_error` |
+| Contact | `portfolio_contact_submit` (client outcomes); `portfolio_contact_api_error` (validation/server) |
+| GitHub API | `portfolio_github_api`, `portfolio_github_api_error` |
+
+PostHog also receives **`$pageview`** (client-side route changes) and **`$exception`** (error boundaries, optional JS autocapture, server `onRequestError` — see env section below).
+
+**User journeys** are not hard-coded in the app: define them in the **PostHog** project using **Funnel** insights, **User paths**, **Retention**, and other dashboard widgets. Typical combinations use `$pageview` plus relevant `portfolio_*` steps (for example: landing → `portfolio_project_viewed` → `portfolio_outbound_link` with `destination=github`).
+
 ---
 
 ## Security
@@ -288,7 +306,7 @@ Rough goals; tune as the site grows.
 
 - **Contact:** Turnstile, Resend, optional Supabase persistence  
 - **RAG:** Use `content_embeddings` in the chat route  
-- **Analytics:** Expand PostHog dashboards / feature flags as needed  
+- **Analytics:** Add or refine PostHog **funnels** and dashboard widgets using the events in [`events.ts`](apps/web/src/lib/analytics/events.ts); feature flags if needed  
 
 ---
 
