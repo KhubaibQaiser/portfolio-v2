@@ -14,7 +14,6 @@
     "./tooltip": "./src/tooltip.tsx",
     "./icons": "./src/icons/index.ts",
     "./smooth-scroll": "./src/smooth-scroll.tsx",
-    "./parallax-divider": "./src/parallax-divider.tsx",
     "./hero-tech-carousel": "./src/hero-tech-carousel.tsx",
     "./calendar": "./src/calendar.tsx",
     "./date-picker": "./src/date-picker.tsx",
