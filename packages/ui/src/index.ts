@@ -7,5 +7,4 @@ export { Badge } from "./badge";
 export { MediaDropzone } from "./media-dropzone";
 export { MediaAssetCard } from "./media-asset-card";
 export { SmoothScroll } from "./smooth-scroll";
-export { ParallaxDivider } from "./parallax-divider";
 export { GitHubIcon, LinkedInIcon, TwitterIcon, InstagramIcon } from "./icons";

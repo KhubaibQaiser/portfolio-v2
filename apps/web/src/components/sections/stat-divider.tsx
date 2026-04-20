@@ -1,32 +1,20 @@
-"use client";
-
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@portfolio/shared/utils";
 
-type ParallaxDividerProps = {
+type StatDividerProps = {
   quote?: string;
   stat?: string;
   label?: string;
   variant?: "gradient" | "subtle" | "accent";
 };
 
-export function ParallaxDivider({
+export function StatDivider({
   quote,
   stat,
   label,
   variant = "gradient",
-}: ParallaxDividerProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-
+}: StatDividerProps) {
   return (
     <div
-      ref={ref}
       className={cn(
         "relative overflow-hidden py-24 md:py-32",
         variant === "gradient" &&
@@ -35,8 +23,7 @@ export function ParallaxDivider({
         variant === "accent" && "bg-accent/5",
       )}
     >
-      <motion.div
-        style={{ y }}
+      <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-accent)_0%,transparent_70%)] opacity-[0.03]"
         aria-hidden
       />

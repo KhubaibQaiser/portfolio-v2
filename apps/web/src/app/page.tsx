@@ -6,7 +6,7 @@ import { ExperienceSection } from "@/components/sections/experience";
 import { FeaturedProjectsSection } from "@/components/sections/featured-projects";
 import { ContactSection } from "@/components/sections/contact";
 import { Testimonials } from "@/components/sections/testimonials";
-import { ParallaxDivider } from "@portfolio/ui/parallax-divider";
+import { StatDivider } from "@/components/sections/stat-divider";
 import { BuiltWithSection } from "@/components/sections/built-with";
 import {
   fetchHero,
@@ -39,19 +39,19 @@ export default async function HomePage() {
       <HeroSection hero={hero} companies={companies} />
       <AboutSection about={about} location={siteConfig.location} companiesCount={companiesCount} />
       <WhyHireMeSection />
-      <ParallaxDivider
+      <StatDivider
         stat={`${about.years_experience}+`}
         label="Years of shipping production code"
         variant="gradient"
       />
       <SkillsSection skills={skills} />
-      <ParallaxDivider
+      <StatDivider
         stat={String(companiesCount)}
         label={`Companies across ${about.countries_count} countries`}
         variant="subtle"
       />
       <ExperienceSection experience={experience} />
-      <ParallaxDivider
+      <StatDivider
         stat={about.users_impacted}
         label="Users impacted by my work"
         variant="accent"
