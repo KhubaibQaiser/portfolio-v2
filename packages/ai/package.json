@@ -1,0 +1,45 @@
+{
+  "name": "@portfolio/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./models": "./src/models.ts",
+    "./providers": "./src/providers.ts",
+    "./errors": "./src/errors.ts",
+    "./telemetry": "./src/telemetry.ts",
+    "./schemas": "./src/schemas/index.ts",
+    "./schemas/tailored-resume": "./src/schemas/tailored-resume.ts",
+    "./schemas/cover-letter": "./src/schemas/cover-letter.ts",
+    "./schemas/ats-score": "./src/schemas/ats-score.ts",
+    "./schemas/combined": "./src/schemas/combined.ts",
+    "./context/build-candidate-facts": "./src/context/build-candidate-facts.ts",
+    "./context/trim-job-description": "./src/context/trim-job-description.ts",
+    "./prompts/resume": "./src/prompts/resume.ts",
+    "./prompts/cover-letter": "./src/prompts/cover-letter.ts",
+    "./prompts/ats": "./src/prompts/ats.ts",
+    "./prompts/shared": "./src/prompts/shared.ts",
+    "./guardrails/prompt-injection": "./src/guardrails/prompt-injection.ts",
+    "./guardrails/output-sanitize": "./src/guardrails/output-sanitize.ts",
+    "./guardrails/ai-tone": "./src/guardrails/ai-tone.ts",
+    "./guardrails/fabrication-check": "./src/guardrails/fabrication-check.ts",
+    "./guardrails/ats-refine": "./src/guardrails/ats-refine.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.55",
+    "@ai-sdk/groq": "^3.0.35",
+    "ai": "^6.0.158",
+    "server-only": "^0.0.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2"
+  }
+}

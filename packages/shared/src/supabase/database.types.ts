@@ -313,6 +313,7 @@ export type Database = {
           is_projects_visible: boolean
           updated_at: string
           visible_sections: Json
+          voice_sample: string | null
         }
         Insert: {
           certifications?: Json
@@ -323,6 +324,7 @@ export type Database = {
           is_projects_visible?: boolean
           updated_at?: string
           visible_sections?: Json
+          voice_sample?: string | null
         }
         Update: {
           certifications?: Json
@@ -333,6 +335,85 @@ export type Database = {
           is_projects_visible?: boolean
           updated_at?: string
           visible_sections?: Json
+          voice_sample?: string | null
+        }
+        Relationships: []
+      }
+      resume_generations: {
+        Row: {
+          archived_at: string | null
+          ats: Json | null
+          company: string | null
+          cover_letter: Json | null
+          cover_letter_pdf_url: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          fallback_used: boolean
+          hiring_manager: string | null
+          id: string
+          jd_pdf_url: string | null
+          jd_source: string
+          jd_text: string
+          language: string
+          length: string | null
+          model: string
+          resume: Json | null
+          resume_pdf_url: string | null
+          role: string | null
+          tone: string | null
+          updated_at: string
+          usage: Json | null
+        }
+        Insert: {
+          archived_at?: string | null
+          ats?: Json | null
+          company?: string | null
+          cover_letter?: Json | null
+          cover_letter_pdf_url?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          fallback_used?: boolean
+          hiring_manager?: string | null
+          id?: string
+          jd_pdf_url?: string | null
+          jd_source: string
+          jd_text: string
+          language?: string
+          length?: string | null
+          model: string
+          resume?: Json | null
+          resume_pdf_url?: string | null
+          role?: string | null
+          tone?: string | null
+          updated_at?: string
+          usage?: Json | null
+        }
+        Update: {
+          archived_at?: string | null
+          ats?: Json | null
+          company?: string | null
+          cover_letter?: Json | null
+          cover_letter_pdf_url?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          fallback_used?: boolean
+          hiring_manager?: string | null
+          id?: string
+          jd_pdf_url?: string | null
+          jd_source?: string
+          jd_text?: string
+          language?: string
+          length?: string | null
+          model?: string
+          resume?: Json | null
+          resume_pdf_url?: string | null
+          role?: string | null
+          tone?: string | null
+          updated_at?: string
+          usage?: Json | null
         }
         Relationships: []
       }

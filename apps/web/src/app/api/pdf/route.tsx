@@ -1,5 +1,5 @@
 import { renderToBuffer } from "@react-pdf/renderer";
-import { ResumeDocument } from "@/components/resume/pdf-template";
+import { ResumeDocument } from "@portfolio/ui/resume-pdf";
 import { getResumeData } from "@/lib/resume-data";
 
 export const dynamic = "force-dynamic";

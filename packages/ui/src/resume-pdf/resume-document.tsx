@@ -1,95 +1,21 @@
-import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
-import type { ResumeData } from "@/lib/resume-data";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Link,
+  Font,
+} from "@react-pdf/renderer";
+import type { ResumeData } from "@portfolio/shared/resume-data";
+import { COLORS, baseStyles } from "./styles";
 
 Font.registerHyphenationCallback((word) => [word]);
 
-const COLORS = {
-  primary: "#111827",
-  body: "#1f2937",
-  secondary: "#374151",
-  subtle: "#6b7280",
-  accent: "#1d4ed8",
-  rule: "#d1d5db",
-  bg: "#ffffff",
-} as const;
-
 const s = StyleSheet.create({
-  page: {
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: COLORS.body,
-    backgroundColor: COLORS.bg,
-    paddingTop: 36,
-    paddingBottom: 36,
-    paddingHorizontal: 40,
-    lineHeight: 1.4,
-  },
+  ...baseStyles,
 
-  // ── Header ──────────────────────────────────────────────────────────
-  headerName: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-    letterSpacing: 0.3,
-    lineHeight: 1.2,
-  },
-  headerTitle: {
-    fontSize: 11,
-    color: COLORS.secondary,
-    lineHeight: 1.3,
-    marginTop: 3,
-  },
-  headerContact: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    marginTop: 6,
-    fontSize: 9.5,
-    color: COLORS.body,
-  },
-  headerLink: {
-    color: COLORS.accent,
-    textDecoration: "none",
-    fontSize: 9.5,
-  },
-  headerSep: {
-    color: COLORS.subtle,
-    fontSize: 9.5,
-  },
-  headerRule: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primary,
-    borderBottomStyle: "solid",
-    marginTop: 10,
-  },
-
-  // ── Section ─────────────────────────────────────────────────────────
-  section: {
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-    letterSpacing: 0.3,
-    paddingBottom: 2,
-    borderBottomWidth: 0.75,
-    borderBottomColor: COLORS.rule,
-    borderBottomStyle: "solid",
-    marginBottom: 6,
-  },
-
-  // ── Summary ─────────────────────────────────────────────────────────
-  summary: {
-    fontSize: 10,
-    color: COLORS.body,
-    lineHeight: 1.5,
-  },
-
-  // ── Experience ──────────────────────────────────────────────────────
-  expEntry: {
-    marginBottom: 10,
-  },
+  expEntry: { marginBottom: 10 },
   expHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -100,11 +26,7 @@ const s = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: COLORS.primary,
   },
-  expPeriod: {
-    fontSize: 9,
-    color: COLORS.secondary,
-    textAlign: "right",
-  },
+  expPeriod: { fontSize: 9, color: COLORS.secondary, textAlign: "right" },
   expSubHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -115,28 +37,11 @@ const s = StyleSheet.create({
     fontFamily: "Helvetica-Oblique",
     color: COLORS.body,
   },
-  expLocation: {
-    fontSize: 9,
-    color: COLORS.secondary,
-  },
-  expJobType: {
-    fontSize: 8.5,
-    color: COLORS.subtle,
-    marginTop: 2,
-  },
-  bulletList: {
-    marginTop: 3,
-    paddingLeft: 10,
-  },
-  bulletRow: {
-    flexDirection: "row",
-    marginBottom: 2,
-  },
-  bulletDot: {
-    width: 10,
-    fontSize: 10,
-    color: COLORS.primary,
-  },
+  expLocation: { fontSize: 9, color: COLORS.secondary },
+  expJobType: { fontSize: 8.5, color: COLORS.subtle, marginTop: 2 },
+  bulletList: { marginTop: 3, paddingLeft: 10 },
+  bulletRow: { flexDirection: "row", marginBottom: 2 },
+  bulletDot: { width: 10, fontSize: 10, color: COLORS.primary },
   bulletText: {
     flex: 1,
     fontSize: 9.5,
@@ -150,29 +55,15 @@ const s = StyleSheet.create({
     paddingLeft: 10,
     lineHeight: 1.35,
   },
-  techLabel: {
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.body,
-  },
-
-  // ── Skills ──────────────────────────────────────────────────────────
-  skillRow: {
-    flexDirection: "row",
-    marginBottom: 3,
-  },
+  techLabel: { fontFamily: "Helvetica-Bold", color: COLORS.body },
+  skillRow: { flexDirection: "row", marginBottom: 3 },
   skillCategory: {
     width: 100,
     fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
     color: COLORS.primary,
   },
-  skillItems: {
-    flex: 1,
-    fontSize: 9.5,
-    color: COLORS.body,
-  },
-
-  // ── Education ───────────────────────────────────────────────────────
+  skillItems: { flex: 1, fontSize: 9.5, color: COLORS.body },
   eduEntry: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -189,32 +80,12 @@ const s = StyleSheet.create({
     fontFamily: "Helvetica-Oblique",
     color: COLORS.body,
   },
-  eduYear: {
-    fontSize: 9.5,
-    color: COLORS.secondary,
-  },
-
-  // ── Certifications ─────────────────────────────────────────────────
-  certRow: {
-    flexDirection: "row",
-    marginBottom: 2,
-  },
-  certBullet: {
-    width: 10,
-    fontSize: 10,
-    color: COLORS.primary,
-  },
-  certText: {
-    flex: 1,
-    fontSize: 9.5,
-    color: COLORS.body,
-  },
-  certIssuer: {
-    color: COLORS.secondary,
-  },
+  eduYear: { fontSize: 9.5, color: COLORS.secondary },
+  certRow: { flexDirection: "row", marginBottom: 2 },
+  certBullet: { width: 10, fontSize: 10, color: COLORS.primary },
+  certText: { flex: 1, fontSize: 9.5, color: COLORS.body },
+  certIssuer: { color: COLORS.secondary },
 });
-
-// ── Helpers ─────────────────────────────────────────────────────────────
 
 function socialLinkLabel(link: { platform: string; label: string }): string {
   const trimmed = link.label.trim();
@@ -225,8 +96,6 @@ function socialLinkLabel(link: { platform: string; label: string }): string {
 function Sep() {
   return <Text style={s.headerSep}>&nbsp;|&nbsp;</Text>;
 }
-
-// ── Document ────────────────────────────────────────────────────────────
 
 export function ResumeDocument({ data }: { data: ResumeData }) {
   const show = (key: string) => data.visibleSections.includes(key);
@@ -239,7 +108,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
       keywords={data.keywords}
     >
       <Page size="LETTER" style={s.page}>
-        {/* ── Header ─────────────────────────────────── */}
         <View>
           <Text style={s.headerName}>{data.name}</Text>
           <Text style={s.headerTitle}>{data.title}</Text>
@@ -275,18 +143,20 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           <View style={s.headerRule} />
         </View>
 
-        {/* ── Professional Summary ────────────────────── */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Professional Summary</Text>
           <Text style={s.summary}>{data.summary}</Text>
         </View>
 
-        {/* ── Work Experience ─────────────────────────── */}
         {show("experience") && (
           <View style={s.section}>
             <Text style={s.sectionTitle}>Work Experience</Text>
             {data.experience.map((exp) => (
-              <View key={`${exp.company}-${exp.period}`} style={s.expEntry} wrap={false}>
+              <View
+                key={`${exp.company}-${exp.period}`}
+                style={s.expEntry}
+                wrap={false}
+              >
                 <View style={s.expHeader}>
                   <Text style={s.expRole}>{exp.role}</Text>
                   <Text style={s.expPeriod}>{exp.period}</Text>
@@ -315,7 +185,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           </View>
         )}
 
-        {/* ── Technical Skills ────────────────────────── */}
         {show("skills") && (
           <View style={s.section} wrap={false}>
             <Text style={s.sectionTitle}>Technical Skills</Text>
@@ -328,7 +197,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           </View>
         )}
 
-        {/* ── Education ───────────────────────────────── */}
         {show("education") && data.education.length > 0 && (
           <View style={s.section} wrap={false}>
             <Text style={s.sectionTitle}>Education</Text>
@@ -344,7 +212,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           </View>
         )}
 
-        {/* ── Certifications ──────────────────────────── */}
         {show("certifications") && data.certifications.length > 0 && (
           <View style={s.section} wrap={false}>
             <Text style={s.sectionTitle}>Certifications</Text>

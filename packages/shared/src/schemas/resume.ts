@@ -23,6 +23,7 @@ export const resumeSchema = z.object({
   certifications: z.array(certificationSchema),
   visible_sections: z.array(z.string()),
   is_projects_visible: z.boolean(),
+  voice_sample: z.string().max(3000).nullable().optional(),
 });
 
 export type ResumeFormData = z.infer<typeof resumeSchema>;

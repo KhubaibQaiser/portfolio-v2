@@ -23,24 +23,48 @@ importers:
 
   apps/admin:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^2.0.55
+        version: 2.0.77(zod@4.3.6)
+      '@ai-sdk/groq':
+        specifier: ^3.0.35
+        version: 3.0.35(zod@4.3.6)
+      '@ai-sdk/react':
+        specifier: ^3.0.160
+        version: 3.0.160(react@19.2.5)(zod@4.3.6)
       '@aws-sdk/client-s3':
         specifier: ^3.1029.0
         version: 3.1029.0
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@19.2.5))
+      '@portfolio/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@portfolio/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@react-pdf/renderer':
+        specifier: ^4.4.1
+        version: 4.4.1(react@19.2.5)
       '@supabase/ssr':
         specifier: ^0.10.2
         version: 0.10.2(@supabase/supabase-js@2.103.0)
       '@supabase/supabase-js':
         specifier: ^2.103.0
         version: 2.103.0
+      '@upstash/ratelimit':
+        specifier: ^2.0.8
+        version: 2.0.8(@upstash/redis@1.37.0)
+      '@upstash/redis':
+        specifier: ^1.37.0
+        version: 1.37.0
+      ai:
+        specifier: ^6.0.158
+        version: 6.0.158(zod@4.3.6)
       lucide-react:
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.5)
@@ -56,6 +80,9 @@ importers:
       react-hook-form:
         specifier: ^7.72.1
         version: 7.72.1(react@19.2.5)
+      unpdf:
+        specifier: ^1.3.0
+        version: 1.6.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -99,6 +126,9 @@ importers:
       '@gsap/react':
         specifier: ^2.1.2
         version: 2.1.2(gsap@3.14.2)(react@19.2.5)
+      '@portfolio/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -212,6 +242,31 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/ai:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^2.0.55
+        version: 2.0.77(zod@4.3.6)
+      '@ai-sdk/groq':
+        specifier: ^3.0.35
+        version: 3.0.35(zod@4.3.6)
+      ai:
+        specifier: ^6.0.158
+        version: 6.0.158(zod@4.3.6)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/eslint-config:
     dependencies:
       eslint:
@@ -248,12 +303,18 @@ importers:
       '@icons-pack/react-simple-icons':
         specifier: ^13.13.0
         version: 13.13.0(react@19.2.5)
+      '@portfolio/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../shared
       '@radix-ui/react-popover':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@react-pdf/renderer':
+        specifier: '>=4.0.0'
+        version: 4.4.1(react@19.2.5)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -309,6 +370,12 @@ packages:
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
+  '@ai-sdk/anthropic@2.0.77':
+    resolution: {integrity: sha512-8n7ApEzFOxqVvT3HyqLrEQlgUx/2nUmPFLTGY3fNKwUA8KVNU3Ovd2C66Qh1Y93Iq5NkHsOWuLiTyAZpRKQhgw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/gateway@3.0.95':
     resolution: {integrity: sha512-ZmUNNbZl3V42xwQzPaNUi+s8eqR2lnrxf0bvB6YbLXpLjHYv0k2Y78t12cNOfY0bxGeuVVTLyk856uLuQIuXEQ==}
     engines: {node: '>=18'}
@@ -321,11 +388,21 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@3.0.23':
+    resolution: {integrity: sha512-60GYsRj5wIJQRcq5YwYJq4KhwLeStceXEJiZdecP1miiH+6FMmrnc7lZDOJoQ6m9lrudEb+uI4LEwddLz5+rPQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@4.0.23':
     resolution: {integrity: sha512-z8GlDaCmRSDlqkMF2f4/RFgWxdarvIbyuk+m6WXT1LYgsnGiXRJGTD2Z1+SDl3LqtFuRtGX1aghYvQLoHL/9pg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider@2.0.1':
+    resolution: {integrity: sha512-KCUwswvsC5VsW2PWFqF8eJgSCu5Ysj7m1TxiHTVA6g7k360bk0RNQENT8KTMAYEs+8fWPD3Uu4dEmzGHc+jGng==}
+    engines: {node: '>=18'}
 
   '@ai-sdk/provider@3.0.8':
     resolution: {integrity: sha512-oGMAgGoQdBXbZqNG0Ze56CHjDZ1IDYOwGYxYjO5KLSlz5HiNQ9udIXsPZ61VWaHGZ5XW/jyjmr6t2xz2jGVwbQ==}
@@ -4588,6 +4665,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -4905,6 +4985,14 @@ packages:
   unist-util-visit@5.1.0:
     resolution: {integrity: sha512-m+vIdyeCOpdr/QeQCu2EzxX/ohgS8KbnPDgFni4dQsfSCtpz8UqDyY5GjRru8PDKuYn7Fq19j1CQ+nJSsGKOzg==}
 
+  unpdf@1.6.0:
+    resolution: {integrity: sha512-DsjbuDe6PDbZzGvAP40QQp0xskrXP3Tm3fd/FLkGObL00Icr7cc28QgrPHYg+6B1lMWydgXwDXauIv5CGyXudA==}
+    peerDependencies:
+      '@napi-rs/canvas': ^0.1.69
+    peerDependenciesMeta:
+      '@napi-rs/canvas':
+        optional: true
+
   unplugin@2.3.11:
     resolution: {integrity: sha512-5uKD0nqiYVzlmCRs01Fhs2BdkEgBS3SAVP6ndrBsuK42iC2+JHyxM05Rm9G8+5mkmRtzMZGY8Ct5+mliZxU/Ww==}
     engines: {node: '>=18.12.0'}
@@ -5093,6 +5181,12 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
+  '@ai-sdk/anthropic@2.0.77(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.1
+      '@ai-sdk/provider-utils': 3.0.23(zod@4.3.6)
+      zod: 4.3.6
+
   '@ai-sdk/gateway@3.0.95(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
@@ -5106,12 +5200,23 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.23(zod@4.3.6)
       zod: 4.3.6
 
+  '@ai-sdk/provider-utils@3.0.23(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.1
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
+      zod: 4.3.6
+
   '@ai-sdk/provider-utils@4.0.23(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.3.6
+
+  '@ai-sdk/provider@2.0.1':
+    dependencies:
+      json-schema: 0.4.0
 
   '@ai-sdk/provider@3.0.8':
     dependencies:
@@ -9931,6 +10036,8 @@ snapshots:
 
   semver@7.7.4: {}
 
+  server-only@0.0.1: {}
+
   set-function-length@1.2.2:
     dependencies:
       define-data-property: 1.1.4
@@ -10357,6 +10464,8 @@ snapshots:
       '@types/unist': 3.0.3
       unist-util-is: 6.0.1
       unist-util-visit-parents: 6.0.2
+
+  unpdf@1.6.0: {}
 
   unplugin@2.3.11:
     dependencies:

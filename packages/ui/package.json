@@ -20,6 +20,7 @@
     "./date-picker": "./src/date-picker.tsx",
     "./media-dropzone": "./src/media-dropzone.tsx",
     "./media-asset-card": "./src/media-asset-card.tsx",
+    "./resume-pdf": "./src/resume-pdf/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "scripts": {
@@ -31,6 +32,7 @@
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.13.0",
+    "@portfolio/ai": "workspace:*",
     "@portfolio/shared": "workspace:*",
     "@radix-ui/react-popover": "^1.1.15",
     "date-fns": "^4.1.0",
@@ -38,6 +40,7 @@
     "react-day-picker": "^9.14.0"
   },
   "peerDependencies": {
+    "@react-pdf/renderer": ">=4.0.0",
     "framer-motion": ">=12.0.0",
     "lenis": ">=1.0.0",
     "lucide-react": ">=0.400.0",
@@ -45,6 +48,9 @@
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
+    "@react-pdf/renderer": {
+      "optional": true
+    },
     "framer-motion": {
       "optional": true
     },
