@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  Wand2,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/skills", label: "Skills", icon: Zap },
   { href: "/resume", label: "Resume", icon: FileText },
+  { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
   { href: "/testimonials", label: "Testimonials", icon: MessageSquare },
   { href: "/blog", label: "Blog", icon: PenTool },
   { href: "/site-config", label: "Site Config", icon: Settings },
@@ -78,8 +80,11 @@ export function Sidebar() {
 
         <nav className="flex-1 overflow-y-auto p-2">
           {navItems.map(({ href, label, icon: Icon }) => {
+            // Exact segment match: `/resume` must not match `/resume-generator`
             const isActive =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+              href === "/"
+                ? pathname === "/"
+                : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}

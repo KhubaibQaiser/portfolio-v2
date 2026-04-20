@@ -12,7 +12,8 @@
     "./constants": "./src/constants.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",
-    "./experience-stats": "./src/experience-stats.ts"
+    "./experience-stats": "./src/experience-stats.ts",
+    "./resume-data": "./src/resume-data.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

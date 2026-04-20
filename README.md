@@ -82,6 +82,7 @@ portfolio-v2/
 | `apps/admin` | `@portfolio/admin` | Admin (port **3001**) |
 | `packages/shared` | `@portfolio/shared` | Types, validation, data access |
 | `packages/ui` | `@portfolio/ui` | UI kit, Storybook (**6006**) |
+| `packages/ai` | `@portfolio/ai` | Shared AI logic — model factory, Zod schemas, prompts, guardrails, telemetry |
 | `packages/eslint-config` | `@portfolio/eslint-config` | Shared ESLint |
 
 ---
@@ -118,6 +119,7 @@ portfolio-v2/
 | Forms | **React Hook Form** + **Zod** |
 | Auth | **Supabase Auth** (e.g. Google, magic link); middleware + email allowlist + RLS |
 | Media | **AWS SDK** → **Cloudflare R2** |
+| Resume AI | **Vercel AI SDK** + **Anthropic** (Claude Sonnet 4.5, primary) + **Groq** (fast draft + silent fallback + ATS); structured output via Zod; `streamObject` to the preview UI |
 
 ### Services
 
@@ -157,6 +159,7 @@ PostHog also receives **`$pageview`** (client-side route changes) and **`$except
 - **Revalidate:** `REVALIDATE_SECRET` must match between admin and web. Do not put Supabase **service role** keys in `NEXT_PUBLIC_*`; the app uses the **anon** key with RLS.
 - **Admin:** Session in middleware, allowlisted emails, RLS on the database.
 - **Chat:** The model only sees the prompt built from your Supabase-backed copy; Groq still runs inference on their side (see their terms). **Application rate limiting** (Upstash, per IP) runs before calling Groq; the UI shows a short cooldown when limited.
+- **Resume AI (admin):** Admin-allowlist + middleware + RLS gate every route. Prompt-injection stripping on JD input, structured Zod output validation, fabrication check (rejects invented employers/bullets), output sanitization, regex-based AI-tone detector with silent retry via the cheap model, per-user sliding-window rate limit, and a daily USD cost cap (`RESUME_GEN_DAILY_USD_CAP`). PDF uploads are size-capped (2 MB) + magic-byte checked before parsing with `unpdf`.
 
 ---
 
@@ -280,8 +283,17 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `R2_SECRET_ACCESS_KEY` | S3 secret |
 | `R2_BUCKET_NAME` | Bucket name |
 | `R2_PUBLIC_BASE_URL` | Public URL for objects (no trailing slash) |
+| `ANTHROPIC_API_KEY` | Resume AI — Claude Sonnet 4.5 (primary model) |
+| `GROQ_API_KEY` | Resume AI — Groq (fast draft, silent fallback, ATS scoring) |
+| `UPSTASH_REDIS_REST_URL` | Optional — per-user rate limiting (10/hr + 40/day per admin) |
+| `UPSTASH_REDIS_REST_TOKEN` | Optional — pair with URL |
+| `RESUME_GEN_DAILY_USD_CAP` | Optional — daily spend cap in USD per admin (default `5`) |
 
 **R2:** [Cloudflare dashboard](https://dash.cloudflare.com/) → **R2** → bucket. Account ID on the R2 screen. **Manage R2 API Tokens** → token with read/write on that bucket → map to `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`. `R2_PUBLIC_BASE_URL` = how the browser loads files (`*.r2.dev` or your domain).
+
+**Anthropic:** [console.anthropic.com](https://console.anthropic.com/) → API keys. Primary quality model for Resume AI; Groq is used as the silent fallback on provider 429/5xx.
+
+**Resume AI cost cap:** per-admin daily USD cap; the generator blocks with HTTP 402 once exceeded. Tune via `RESUME_GEN_DAILY_USD_CAP`.
 
 ### Vercel and GitHub Actions
 

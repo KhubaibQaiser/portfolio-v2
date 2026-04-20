@@ -1,7 +1,13 @@
-import { groq } from "@ai-sdk/groq";
+import type { LanguageModel } from "ai";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
+import {
+  MODEL_IDS,
+  isProviderRateLimitError,
+  modelFor,
+} from "@portfolio/ai";
+import { stripPromptInjection } from "@portfolio/ai/guardrails/prompt-injection";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { getDistinctIdFromRequest } from "@/lib/analytics/request";
@@ -9,6 +15,7 @@ import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
 import { supabase } from "@/lib/supabase-server";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
+import { groq } from "@ai-sdk/groq";
 import {
   getHero,
   getAbout,
@@ -18,9 +25,6 @@ import {
 } from "@portfolio/shared/supabase/queries";
 
 export const maxDuration = 30;
-
-const PRIMARY_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
 const RATE_LIMIT_USER_MESSAGE =
   "Too many messages. Please wait a moment before sending another.";
@@ -100,36 +104,34 @@ Guidelines:
   { tags: ["hero", "about", "experience", "skills", "site-config"], revalidate: 3600 },
 );
 
-function isProviderRateLimitError(error: unknown): boolean {
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
-    if (msg.includes("429") || msg.includes("rate limit")) return true;
-  }
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "statusCode" in error &&
-    (error as { statusCode: number }).statusCode === 429
-  ) {
-    return true;
-  }
-  return false;
-}
-
 async function createStream(
   systemPrompt: string,
-  model: string,
+  model: LanguageModel,
   messages: Awaited<ReturnType<typeof convertToModelMessages>>,
   originalMessages: UIMessage[],
 ) {
   const result = streamText({
-    model: groq(model),
+    model,
     system: systemPrompt,
     messages,
     maxOutputTokens: 1000,
     experimental_transform: smoothStream({ chunking: "word" }),
   });
   return result.toUIMessageStreamResponse({ originalMessages });
+}
+
+function sanitizeUserMessages(messages: UIMessage[]): UIMessage[] {
+  return messages.map((m) => {
+    if (m.role !== "user" || !m.parts) return m;
+    return {
+      ...m,
+      parts: m.parts.map((p) =>
+        p.type === "text"
+          ? { ...p, text: stripPromptInjection(p.text) }
+          : p,
+      ),
+    };
+  });
 }
 
 export async function POST(req: Request) {
@@ -176,17 +178,21 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = await buildSystemPrompt();
-    const modelMessages = await convertToModelMessages(messages);
+    const sanitizedMessages = sanitizeUserMessages(messages);
+    const modelMessages = await convertToModelMessages(sanitizedMessages);
 
     await captureServerEvent(distinctId, PortfolioEvents.chatApiRequest, {
       message_count: messages.length,
     });
 
+    const primary = modelFor("fast");
+    const fallback = groq(MODEL_IDS.groqLlama8bInstant);
+
     try {
-      return await createStream(systemPrompt, PRIMARY_MODEL, modelMessages, messages);
+      return await createStream(systemPrompt, primary.model, modelMessages, messages);
     } catch (primaryError) {
       if (isProviderRateLimitError(primaryError)) {
-        return await createStream(systemPrompt, FALLBACK_MODEL, modelMessages, messages);
+        return await createStream(systemPrompt, fallback, modelMessages, messages);
       }
       throw primaryError;
     }

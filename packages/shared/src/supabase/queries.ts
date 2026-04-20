@@ -283,3 +283,111 @@ export async function deleteMediaRow(client: Client, id: string) {
   const { error } = await client.from("media").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ---------------------------------------------------------------------------
+// Resume Generations (Resume AI history)
+// ---------------------------------------------------------------------------
+
+export type ResumeGenerationRow = Tables["resume_generations"]["Row"];
+export type ResumeGenerationInsert = Tables["resume_generations"]["Insert"];
+export type ResumeGenerationUpdate = Tables["resume_generations"]["Update"];
+
+export async function insertResumeGeneration(
+  client: Client,
+  values: ResumeGenerationInsert,
+): Promise<ResumeGenerationRow> {
+  const { data, error } = await client
+    .from("resume_generations")
+    .insert(values)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateResumeGeneration(
+  client: Client,
+  id: string,
+  values: ResumeGenerationUpdate,
+): Promise<void> {
+  const { error } = await client
+    .from("resume_generations")
+    .update(values)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function getResumeGenerations(
+  client: Client,
+  opts: { limit?: number; includeDeleted?: boolean } = {},
+): Promise<ResumeGenerationRow[]> {
+  const limit = opts.limit ?? 20;
+  let query = client
+    .from("resume_generations")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (!opts.includeDeleted) {
+    query = query.is("deleted_at", null);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function getResumeGenerationById(
+  client: Client,
+  id: string,
+): Promise<ResumeGenerationRow | null> {
+  const { data, error } = await client
+    .from("resume_generations")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Sum the `usage.costUsd` (USD) for the given user across the last
+ * `windowHours` (default 24h). Used for the daily cost cap.
+ */
+export async function sumDailyUsage(
+  client: Client,
+  userId: string,
+  windowHours = 24,
+): Promise<{ totalUsd: number; count: number }> {
+  const since = new Date(
+    Date.now() - windowHours * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { data, error } = await client
+    .from("resume_generations")
+    .select("usage")
+    .eq("created_by", userId)
+    .is("deleted_at", null)
+    .gte("created_at", since);
+
+  if (error) throw error;
+
+  let totalUsd = 0;
+  for (const row of data) {
+    const usage = row.usage as { costUsd?: number } | null;
+    if (usage && typeof usage.costUsd === "number") {
+      totalUsd += usage.costUsd;
+    }
+  }
+  return { totalUsd, count: data.length };
+}
+
+/**
+ * Monthly cost summary for the dashboard stat panel.
+ */
+export async function sumMonthlyUsage(
+  client: Client,
+  userId: string,
+): Promise<{ totalUsd: number; count: number }> {
+  return sumDailyUsage(client, userId, 24 * 30);
+}

@@ -69,6 +69,9 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
   const [defaultSummary, setDefaultSummary] = useState(
     initialData?.default_summary ?? "",
   );
+  const [voiceSample, setVoiceSample] = useState(
+    initialData?.voice_sample ?? "",
+  );
   const [education, setEducation] = useState<EducationDraft[]>(() =>
     parseEducation(initialData?.education),
   );
@@ -157,6 +160,7 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       certifications: certifications.map(({ _clientId: _b, ...rest }) => rest),
       visible_sections: visibleSections,
       is_projects_visible: isProjectsVisible,
+      voice_sample: voiceSample.trim() === "" ? null : voiceSample,
     };
     const result = await saveResume(payload);
     setSaving(false);
@@ -178,6 +182,31 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
             "text-sm focus:border-accent focus:outline-hidden",
           )}
         />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium">
+          Voice sample (Resume AI only)
+        </label>
+        <p className="mb-2 text-xs text-muted-foreground">
+          ~150–300 words in your own voice. The generator uses this as a
+          few-shot anchor so tailored resumes and cover letters sound like you,
+          not like an AI.
+        </p>
+        <textarea
+          value={voiceSample}
+          onChange={(e) => setVoiceSample(e.target.value)}
+          rows={8}
+          maxLength={3000}
+          placeholder="Paste a paragraph or two you've written in your own voice — a blog intro, a cover letter you liked, etc."
+          className={cn(
+            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
+            "text-sm focus:border-accent focus:outline-hidden",
+          )}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          {voiceSample.length}/3000
+        </p>
       </div>
 
       <div>
