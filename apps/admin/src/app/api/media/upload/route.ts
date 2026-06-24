@@ -1,35 +1,25 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { insertMedia } from "@portfolio/shared/supabase/queries";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getContentRepository, getMediaStore } from "@portfolio/data";
 import { mediaInsertSchema } from "@portfolio/shared/schemas";
 import { revalidateWeb } from "@/lib/revalidate-web";
-import {
-  assertR2Configured,
-  buildObjectKey,
-  buildPublicObjectUrl,
-  isAllowedImageMime,
-  uploadObjectToR2,
-} from "@/lib/r2";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  try {
-    assertR2Configured();
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "R2 not configured";
-    return NextResponse.json({ error: message }, { status: 503 });
+  const mediaStore = getMediaStore();
+  if (!mediaStore.isConfigured()) {
+    return NextResponse.json(
+      { error: "Media storage is not configured." },
+      { status: 503 },
+    );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   let formData: FormData;
@@ -41,34 +31,37 @@ export async function POST(request: Request) {
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Expected file field \"file\"" }, { status: 400 });
+    return NextResponse.json({ error: 'Expected file field "file"' }, { status: 400 });
   }
 
-  if (!isAllowedImageMime(file.type)) {
-    return NextResponse.json({ error: "Only PNG, JPEG, and WebP images are allowed" }, { status: 400 });
+  if (!mediaStore.isAllowedImageMime(file.type)) {
+    return NextResponse.json(
+      { error: "Only PNG, JPEG, and WebP images are allowed" },
+      { status: 400 },
+    );
   }
 
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const objectKey = buildObjectKey(file.name);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const objectKey = mediaStore.buildObjectKey(file.name);
 
   try {
-    await uploadObjectToR2(buffer, objectKey, file.type);
+    await mediaStore.uploadObject(bytes, objectKey, file.type);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload to storage failed";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
-  const publicUrl = buildPublicObjectUrl(objectKey);
+  const publicUrl = mediaStore.buildPublicObjectUrl(objectKey);
 
   const parsed = mediaInsertSchema.safeParse({
     filename: file.name,
     url: publicUrl,
     mime_type: file.type,
-    size: buffer.length,
+    size: bytes.length,
     alt_text: null,
   });
 
@@ -77,7 +70,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const row = await insertMedia(supabase, parsed.data);
+    const row = await getContentRepository().insertMedia(parsed.data);
     await revalidateWeb(["media"]);
     return NextResponse.json({ media: row });
   } catch (e) {
