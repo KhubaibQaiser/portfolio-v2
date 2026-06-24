@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
-import { createClient } from "@/lib/supabase/server";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { requireAdmin } from "@/lib/auth-guard";
 import { trimJobDescription } from "@portfolio/ai/context/trim-job-description";
 
 export const runtime = "nodejs";
@@ -27,21 +26,15 @@ async function withTimeout<T>(
   return await Promise.race([
     promise,
     new Promise<T>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms,
-      ),
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
     ),
   ]);
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   let formData: FormData;
@@ -53,17 +46,11 @@ export async function POST(request: Request) {
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json(
-      { error: 'Expected file field "file"' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Expected file field "file"' }, { status: 400 });
   }
 
   if (file.type !== "application/pdf") {
-    return NextResponse.json(
-      { error: "Only PDF files are supported" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Only PDF files are supported" }, { status: 400 });
   }
 
   if (file.size === 0) {
@@ -71,10 +58,7 @@ export async function POST(request: Request) {
   }
 
   if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "PDF exceeds 2MB limit" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "PDF exceeds 2MB limit" }, { status: 400 });
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -109,8 +93,7 @@ export async function POST(request: Request) {
       chars: text.length,
     });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to extract PDF text";
+    const message = err instanceof Error ? err.message : "Failed to extract PDF text";
     return NextResponse.json({ error: message }, { status: 422 });
   }
 }

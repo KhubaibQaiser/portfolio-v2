@@ -23,10 +23,7 @@ import {
   wrapUntrusted,
 } from "@portfolio/ai/guardrails/prompt-injection";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
-import {
-  collectTextForToneCheck,
-  scoreAiTone,
-} from "@portfolio/ai/guardrails/ai-tone";
+import { collectTextForToneCheck, scoreAiTone } from "@portfolio/ai/guardrails/ai-tone";
 import { validateFabrication } from "@portfolio/ai/guardrails/fabrication-check";
 import {
   buildResumeSystemPrompt,
@@ -37,10 +34,9 @@ import {
   buildCoverLetterUserPrompt,
 } from "@portfolio/ai/prompts/cover-letter";
 import type { CandidateFacts } from "@portfolio/ai/context/build-candidate-facts";
-import { createClient } from "@/lib/supabase/server";
-import { insertResumeGeneration } from "@portfolio/shared/supabase/queries";
-import type { Json } from "@portfolio/shared/supabase/database.types";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getContentRepository } from "@portfolio/data";
+import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
+import { requireAdmin } from "@/lib/auth-guard";
 import { loadCandidateFacts } from "@/lib/resume-ai/load-candidate-facts";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
@@ -88,12 +84,9 @@ function extractResumeAndCoverLetter(
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   let body: Body;
@@ -105,19 +98,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const rate = await checkResumeAiRateLimit(user.id);
+  const rate = await checkResumeAiRateLimit(auth.id);
   if (!rate.ok) {
     return NextResponse.json(
       {
-        error:
-          "Generation rate limit reached. Try again shortly or adjust the limit.",
+        error: "Generation rate limit reached. Try again shortly or adjust the limit.",
         retryAfterSeconds: rate.retryAfterSeconds,
       },
       { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
     );
   }
 
-  const cap = await checkCostCap(supabase, user.id);
+  let cap: Awaited<ReturnType<typeof checkCostCap>>;
+  try {
+    cap = await checkCostCap(auth.id);
+  } catch {
+    return NextResponse.json(
+      { error: "Unable to verify usage limits right now. Please try again shortly." },
+      { status: 503 },
+    );
+  }
   if (!cap.ok) {
     return NextResponse.json(
       {
@@ -194,11 +194,7 @@ export async function POST(request: Request) {
   const primary = modelFor(body.model);
   const fallbacks = fallbackChainFor(body.model);
 
-  async function runStream(
-    resolved: ResolvedModel,
-    system: string,
-    signal: AbortSignal,
-  ) {
+  async function runStream(resolved: ResolvedModel, system: string, signal: AbortSignal) {
     return streamObject({
       model: resolved.model,
       schema,
@@ -251,9 +247,7 @@ export async function POST(request: Request) {
         }
       }
       if (tailoredResume || coverLetter) {
-        const tone = scoreAiTone(
-          collectTextForToneCheck(tailoredResume ?? coverLetter),
-        );
+        const tone = scoreAiTone(collectTextForToneCheck(tailoredResume ?? coverLetter));
         aiToneScore = tone.score;
         toneHits = tone.hits;
       }
@@ -275,9 +269,9 @@ export async function POST(request: Request) {
       let retryToneScore: number | null = null;
       if (aiToneScore !== null && aiToneScore >= AI_TONE_THRESHOLD) {
         try {
-          const retryReason = `Previous draft sounded robotic/AI-generated. Tells detected: ${toneHits
-            .slice(0, 8)
-            .join(", ") || "generic corporate phrasing"}. Rewrite in a more human, conversational, concrete voice. Do NOT change factual content.`;
+          const retryReason = `Previous draft sounded robotic/AI-generated. Tells detected: ${
+            toneHits.slice(0, 8).join(", ") || "generic corporate phrasing"
+          }. Rewrite in a more human, conversational, concrete voice. Do NOT change factual content.`;
           const cheap = modelFor("cheap");
           const retryStartedAt = Date.now();
           const retryResult = await generateObject({
@@ -289,10 +283,7 @@ export async function POST(request: Request) {
             maxOutputTokens: 3000,
           });
           const retrySanitized = sanitizeLlmObject(retryResult.object);
-          const retryExtracted = extractResumeAndCoverLetter(
-            body.kind,
-            retrySanitized,
-          );
+          const retryExtracted = extractResumeAndCoverLetter(body.kind, retrySanitized);
           finalResume = retryExtracted.resume;
           finalCover = retryExtracted.coverLetter;
           retryApplied = true;
@@ -309,8 +300,8 @@ export async function POST(request: Request) {
         }
       }
 
-      await insertResumeGeneration(supabase, {
-        created_by: user.id,
+      await getContentRepository().insertResumeGeneration({
+        created_by: auth.id,
         company: body.company ?? null,
         role: body.role ?? null,
         hiring_manager: body.hiringManager ?? null,
@@ -319,10 +310,11 @@ export async function POST(request: Request) {
         length: body.length ?? null,
         jd_text: jdTrimmed,
         jd_source: body.jdSource,
+        jd_pdf_url: null,
         model: modelId,
         fallback_used: fallbackUsed,
-        resume: (finalResume as unknown as Json) ?? null,
-        cover_letter: (finalCover as unknown as Json) ?? null,
+        resume: (finalResume as unknown as Record<string, unknown>) ?? null,
+        cover_letter: (finalCover as unknown as Record<string, unknown>) ?? null,
         ats: null,
         usage: {
           ...usageRecord,
@@ -333,7 +325,11 @@ export async function POST(request: Request) {
           retryUsage,
           retryToneScore,
           regenerateFromId: body.regenerateFromId ?? null,
-        } as unknown as Json,
+        } as unknown as ResumeGenerationUsage,
+        resume_pdf_url: null,
+        cover_letter_pdf_url: null,
+        archived_at: null,
+        deleted_at: null,
       });
     } catch (err) {
       console.error("[resume-ai] persist failed", err);

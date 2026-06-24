@@ -22,18 +22,11 @@ import {
   parseJsonObjectFromLlm,
   sanitizeLlmObject,
 } from "@portfolio/ai/guardrails/output-sanitize";
-import {
-  buildAtsSystemPrompt,
-  buildAtsUserPrompt,
-} from "@portfolio/ai/prompts/ats";
+import { buildAtsSystemPrompt, buildAtsUserPrompt } from "@portfolio/ai/prompts/ats";
 import { refineAtsScore } from "@portfolio/ai/guardrails/ats-refine";
-import { createClient } from "@/lib/supabase/server";
-import {
-  getResumeGenerationById,
-  updateResumeGeneration,
-} from "@portfolio/shared/supabase/queries";
-import type { Json } from "@portfolio/shared/supabase/database.types";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getContentRepository } from "@portfolio/data";
+import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
+import { requireAdmin } from "@/lib/auth-guard";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
 
@@ -49,13 +42,11 @@ const bodySchema = z.object({
 type Body = z.infer<typeof bodySchema>;
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
+  const repo = getContentRepository();
 
   let body: Body;
   try {
@@ -72,7 +63,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rate = await checkResumeAiRateLimit(user.id);
+  const rate = await checkResumeAiRateLimit(auth.id);
   if (!rate.ok) {
     return NextResponse.json(
       { error: "Rate limit reached", retryAfterSeconds: rate.retryAfterSeconds },
@@ -80,7 +71,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const cap = await checkCostCap(supabase, user.id);
+  let cap: Awaited<ReturnType<typeof checkCostCap>>;
+  try {
+    cap = await checkCostCap(auth.id);
+  } catch {
+    return NextResponse.json(
+      { error: "Unable to verify usage limits right now. Please try again shortly." },
+      { status: 503 },
+    );
+  }
   if (!cap.ok) {
     return NextResponse.json(
       {
@@ -92,7 +91,7 @@ export async function POST(request: Request) {
 
   let tailored = body.resume;
   if (!tailored && body.generationId) {
-    const row = await getResumeGenerationById(supabase, body.generationId);
+    const row = await repo.getResumeGenerationById(body.generationId);
     if (!row || !row.resume) {
       return NextResponse.json(
         { error: "Generation not found or has no resume" },
@@ -170,9 +169,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const ats = refineAtsScore(
-    sanitizeLlmObject(result.object) as AtsScore,
-  );
+  const ats = refineAtsScore(sanitizeLlmObject(result.object) as AtsScore);
   const usageRecord = formatUsage(result.usage, chosen.modelId, {
     latencyMs: Date.now() - startedAt,
     fallbackUsed,
@@ -180,15 +177,14 @@ export async function POST(request: Request) {
 
   if (body.generationId) {
     try {
-      const row = await getResumeGenerationById(supabase, body.generationId);
-      const prevUsage =
-        (row?.usage as Record<string, unknown> | null | undefined) ?? {};
-      await updateResumeGeneration(supabase, body.generationId, {
-        ats: (ats as unknown as Json) ?? null,
+      const row = await repo.getResumeGenerationById(body.generationId);
+      const prevUsage = (row?.usage as Record<string, unknown> | null | undefined) ?? {};
+      await repo.updateResumeGeneration(body.generationId, {
+        ats: (ats as unknown as Record<string, unknown>) ?? null,
         usage: {
           ...prevUsage,
           ats: usageRecord,
-        } as unknown as Json,
+        } as unknown as ResumeGenerationUsage,
       });
     } catch (err) {
       console.error("[resume-ai] ats persist failed", err);

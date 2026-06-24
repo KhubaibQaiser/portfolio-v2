@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
-import { getResumeGenerations } from "@portfolio/shared/supabase/queries";
+import { getContentRepository } from "@portfolio/data";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   try {
-    const rows = await getResumeGenerations(supabase, { limit: 20 });
+    const rows = await getContentRepository().getResumeGenerations({ limit: 20 });
     return NextResponse.json({
       items: rows.map((r) => ({
         id: r.id,

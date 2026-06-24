@@ -14,8 +14,7 @@ import {
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
 import { getResumeData, type ResumeData } from "@portfolio/shared/resume-data";
 import { getContentRepository } from "@portfolio/data";
-import { createClient } from "@/lib/supabase/server";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -88,12 +87,9 @@ function applyTailoredResume(base: ResumeData, tailored: TailoredResume): Resume
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   let body: z.infer<typeof bodySchema>;

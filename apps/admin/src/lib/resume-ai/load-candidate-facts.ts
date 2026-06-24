@@ -1,23 +1,10 @@
 import { unstable_cache } from "next/cache";
-import {
-  createClient as createSupabaseClient,
-  type SupabaseClient,
-} from "@supabase/supabase-js";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-import {
-  getExperience,
-  getResume,
-  getSiteConfig,
-  getSkills,
-  getAbout,
-} from "@portfolio/shared/supabase/queries";
+import { getContentRepository } from "@portfolio/data";
 import {
   buildCandidateFacts,
   type CandidateFacts,
   type FactsInputSiteConfig,
 } from "@portfolio/ai/context/build-candidate-facts";
-
-type Client = SupabaseClient<Database>;
 
 /**
  * Load all rows the fact-sheet builder needs in parallel and hand them
@@ -28,15 +15,14 @@ type Client = SupabaseClient<Database>;
  * the `resume`, `experience`, `skills`, and `site-config` tags, which are
  * already revalidated by existing server actions.
  */
-export async function loadCandidateFactsUncached(
-  client: Client,
-): Promise<CandidateFacts> {
+export async function loadCandidateFactsUncached(): Promise<CandidateFacts> {
+  const repo = getContentRepository();
   const [siteConfig, resume, experience, skills, about] = await Promise.all([
-    getSiteConfig(client),
-    getResume(client),
-    getExperience(client),
-    getSkills(client),
-    getAbout(client).catch(() => null),
+    repo.getSiteConfig(),
+    repo.getResume(),
+    repo.getExperience(),
+    repo.getSkills(),
+    repo.getAbout().catch(() => null),
   ]);
 
   const mappedSiteConfig: FactsInputSiteConfig = {
@@ -44,22 +30,24 @@ export async function loadCandidateFactsUncached(
     title: siteConfig.title,
     email: siteConfig.email,
     location: siteConfig.location,
-    social_links: (siteConfig.social_links as unknown as Array<{
-      platform: string;
-      url: string;
-      label?: string;
-    }>) ?? [],
+    social_links:
+      (siteConfig.social_links as unknown as Array<{
+        platform: string;
+        url: string;
+        label?: string;
+      }>) ?? [],
   };
 
   return buildCandidateFacts({
     siteConfig: mappedSiteConfig,
     resume: {
       default_summary: resume.default_summary,
-      education: (resume.education as unknown as Array<{
-        degree: string;
-        institution: string;
-        year: string;
-      }>) ?? [],
+      education:
+        (resume.education as unknown as Array<{
+          degree: string;
+          institution: string;
+          year: string;
+        }>) ?? [],
       certifications:
         (resume.certifications as unknown as Array<{
           name: string;
@@ -90,21 +78,12 @@ export async function loadCandidateFactsUncached(
 }
 
 /**
- * Shared anonymous client — safe inside `unstable_cache` (no session state).
- * All candidate tables used by the fact sheet have public RLS reads.
- */
-const anonClient: SupabaseClient<Database> = createSupabaseClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
-/**
  * Cached fact-sheet loader. Keyed statically because candidate data is global.
  * Revalidated by existing tags when the admin edits resume/experience/skills/
  * site-config/about rows.
  */
 export const loadCandidateFacts = unstable_cache(
-  async (): Promise<CandidateFacts> => loadCandidateFactsUncached(anonClient),
+  async (): Promise<CandidateFacts> => loadCandidateFactsUncached(),
   ["resume-ai:candidate-facts"],
   {
     tags: ["resume", "experience", "skills", "site-config", "about"],

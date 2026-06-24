@@ -1,40 +1,22 @@
-import { createClient } from "@/lib/supabase/server";
-import {
-  getResumeGenerations,
-  sumDailyUsage,
-  sumMonthlyUsage,
-} from "@portfolio/shared/supabase/queries";
+import { redirect } from "next/navigation";
+import { getContentRepository } from "@portfolio/data";
+import { requireAdmin } from "@/lib/auth-guard";
 import { GeneratorClient } from "./_components/generator-client";
 import type { HistoryItem } from "./_components/types";
 
 export const dynamic = "force-dynamic";
 
-const DAILY_CAP = Number.parseFloat(
-  process.env.RESUME_GEN_DAILY_USD_CAP ?? "2",
-);
+const DAILY_CAP = Number.parseFloat(process.env.RESUME_GEN_DAILY_USD_CAP ?? "2");
 
 export default async function ResumeGeneratorPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAdmin();
+  if (!auth.ok) redirect("/login");
 
+  const repo = getContentRepository();
   const [historyRows, daily, monthly] = await Promise.all([
-    user
-      ? getResumeGenerations(supabase, { limit: 20 }).catch(() => [])
-      : Promise.resolve([]),
-    user
-      ? sumDailyUsage(supabase, user.id).catch(() => ({
-          totalUsd: 0,
-          count: 0,
-        }))
-      : Promise.resolve({ totalUsd: 0, count: 0 }),
-    user
-      ? sumMonthlyUsage(supabase, user.id).catch(() => ({
-          totalUsd: 0,
-          count: 0,
-        }))
-      : Promise.resolve({ totalUsd: 0, count: 0 }),
+    repo.getResumeGenerations({ limit: 20 }),
+    repo.sumDailyUsage(auth.id),
+    repo.sumMonthlyUsage(auth.id),
   ]);
 
   const history: HistoryItem[] = historyRows.map((r) => ({
@@ -54,9 +36,8 @@ export default async function ResumeGeneratorPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Resume AI</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Generate a JD-tailored resume and cover letter from your live
-            portfolio data.
+          <p className="text-muted-foreground mt-1 text-sm">
+            Generate a JD-tailored resume and cover letter from your live portfolio data.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-right text-xs">
@@ -70,11 +51,7 @@ export default async function ResumeGeneratorPage() {
             value={`$${monthly.totalUsd.toFixed(2)}`}
             sub={`${monthly.count} runs`}
           />
-          <Stat
-            label="History"
-            value={String(history.length)}
-            sub="recent"
-          />
+          <Stat label="History" value={String(history.length)} sub="recent" />
         </div>
       </div>
 
@@ -83,22 +60,14 @@ export default async function ResumeGeneratorPage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-left">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="border-border/60 bg-muted/20 rounded-lg border px-3 py-2 text-left">
+      <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
         {label}
       </p>
       <p className="mt-0.5 text-sm font-semibold">{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+      {sub && <p className="text-muted-foreground text-[10px]">{sub}</p>}
     </div>
   );
 }
