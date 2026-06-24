@@ -46,6 +46,17 @@ function writable(values: WriteValues): WriteValues {
   return out;
 }
 
+/**
+ * Drops null `url` from nested resume items. `writable` only strips top-level
+ * nulls, but these urls live inside list/map attributes whose ElectroDB schema
+ * types `url` as an (absent-or-string) value and rejects an explicit null.
+ */
+function stripNullUrl<T extends { url?: string | null }>(
+  items: readonly T[],
+): Array<Omit<T, "url"> & { url?: string }> {
+  return items.map(({ url, ...rest }) => (url == null ? rest : { ...rest, url }));
+}
+
 type ExperienceItem = EntityItem<PortfolioEntities["experience"]>;
 type ProjectItem = EntityItem<PortfolioEntities["project"]>;
 type SkillItem = EntityItem<PortfolioEntities["skill"]>;
@@ -347,10 +358,17 @@ export function createDynamoContentRepository(
       return toResume(data);
     },
     async upsertResume(values: Partial<ResumeFormData>) {
+      const sanitized: WriteValues = { ...values };
+      if (values.education) {
+        sanitized.education = stripNullUrl(values.education);
+      }
+      if (values.certifications) {
+        sanitized.certifications = stripNullUrl(values.certifications);
+      }
       await upsertSingleton(
         () => e.resume.get({}).go(),
         (item) => e.resume.put(item).go(),
-        values,
+        sanitized,
       );
     },
 
