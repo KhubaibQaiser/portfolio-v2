@@ -1,22 +1,25 @@
 # Portfolio — khubaibqaiser.com
 
-Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**’s site: **Turborepo** with a public Next.js app (`apps/web`), an admin app (`apps/admin`), and shared packages. Content lives in **Supabase**; media uploads go to **Cloudflare R2**.
+Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**'s portfolio: a **Turborepo** monorepo with a public Next.js site (`apps/web`), a content-editing admin (`apps/admin`), and shared packages — running **serverless on AWS**, defined end-to-end as **infrastructure-as-code with AWS CDK**.
+
+The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in a single **DynamoDB** table, admin auth is **Amazon Cognito**, media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
 
 ---
 
 ## Overview
 
-| Area | Notes |
-|------|-------|
-| **Monorepo** — Turborepo + pnpm | One repo, shared packages |
-| **Next.js App Router + RSC** | Server data, small client bundles where it matters |
-| **Supabase** — Postgres, Auth, RLS | Content and auth in one place |
-| **Vercel** | Web, admin, and Storybook deployed as separate projects |
-| **Env** | `apps/web/.env.example` and `apps/admin/.env.example` — [Environment setup](#environment-setup) |
-| **CI** | Lint, typecheck, build; Lighthouse on PRs for web |
-| **PostHog**, **Vercel Analytics / Speed Insights** | Product analytics, errors, alerts; aggregate traffic / Web Vitals |
+| Area                                          | Notes                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| **Monorepo** — Turborepo + pnpm               | One repo, shared packages, cached builds                                   |
+| **Next.js 16 (App Router, RSC)**              | Server data, streaming, ISR; small client bundles                          |
+| **Hosting** — OpenNext on Lambda + CloudFront | SSR/ISR, image optimization, streaming; no Vercel                          |
+| **Data** — DynamoDB single table (ElectroDB)  | Content + resume history + rate-limit/cost counters                        |
+| **Auth** — Amazon Cognito (Hosted UI + PKCE)  | Admin sign-in; email allowlist; `aws-jwt-verify`                           |
+| **IaC** — AWS CDK (TypeScript)                | Every resource in `packages/infra`; `cdk deploy`                           |
+| **CI/CD** — GitHub Actions + OIDC             | Lint/typecheck/build on PRs; deploy on push to `main` (no static AWS keys) |
+| **Observability** — CloudWatch + PostHog      | Alarms/dashboard/budget + product analytics & error tracking               |
 
-**Links:** [khubaibqaiser.com](https://khubaibqaiser.com) · [admin.khubaibqaiser.com](https://admin.khubaibqaiser.com) · [storybook.khubaibqaiser.com](https://storybook.khubaibqaiser.com)
+**Links:** [khubaibqaiser.com](https://khubaibqaiser.com) · admin and Storybook are deployed privately.
 
 ---
 
@@ -24,38 +27,60 @@ Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**’s site: **Turborepo
 
 ### Why these pieces
 
-- **Vercel:** Hosts the Next apps; previews on every branch; little ops overhead for a solo maintainer.
-- **Supabase:** Postgres holds structured content; Auth + RLS restrict who can write what (not only checks in Next.js).
-- **Cloudflare R2:** S3-style storage for uploads from admin; files are served from a public URL, not stored as blobs in Postgres.
-- **Groq + Vercel AI SDK:** Chat calls Groq’s API; the system prompt is built from profile data in Supabase so answers stay on topic.
-- **Upstash Redis (optional):** Server-side sliding-window limits on `POST /api/chat` per client IP so the Groq key is not abused; skipped when env vars are unset (e.g. local dev).
+- **OpenNext + Lambda + CloudFront:** full Next.js 16 feature support (SSR, ISR, RSC streaming, image optimization) on serverless AWS, behind a global CDN — no always-on servers, scale-to-zero, pay-per-request.
+- **DynamoDB (single table):** content, resume-generation history, and rate-limit/cost counters in one table with GSIs for the access patterns; on-demand billing, point-in-time recovery, and TTL for ephemeral counters.
+- **Cognito:** managed admin auth via Hosted UI (OAuth authorization code + PKCE). Tokens are verified server-side with `aws-jwt-verify`; access is gated by an email allowlist.
+- **S3 + CloudFront:** media uploads from admin (presigned), served from a public CDN URL rather than stored in the database.
+- **Ports & adapters:** the apps depend on interfaces (`ContentRepository`, `MediaStore`, `RateLimiter`, `CostCap`, `AuthProvider`), not on AWS SDKs directly — so the same code runs locally against fixtures / DynamoDB Local and in production against AWS.
+- **Groq + Anthropic via the Vercel AI SDK:** chat and the resume builder; the system prompt is built from DynamoDB-backed content so answers stay on topic.
 
-### Scope
-
-- **Stack:** Vercel, Supabase, Cloudflare, Groq, PostHog — separate vendors by design.
-- **Embeddings / RAG:** Migrations define a `content_embeddings` table (pgvector). The chat route today does **not** query embeddings; it uses a fixed prompt built from Supabase tables. Embeddings are there for a future retrieval step.
-
-### Data flow
+### Request flow
 
 ```mermaid
 flowchart LR
-  subgraph public [Public site - apps/web]
-    Pages[Server Components + cached queries]
-    API[Route Handlers - chat PDF revalidate]
+  user([Visitor])
+  admin_user([Admin])
+
+  subgraph aws [AWS]
+    cf[CloudFront]
+    subgraph web [apps/web]
+      webfn[Lambda - SSR/ISR + route handlers]
+    end
+    subgraph adm [apps/admin]
+      admfn[Lambda - dashboard + editors]
+    end
+    ddb[(DynamoDB single table)]
+    s3[(S3 media)]
+    cognito[Cognito Hosted UI]
   end
-  subgraph admin [Admin - apps/admin]
-    UI[Dashboard + forms]
-    R2[Cloudflare R2 uploads]
-  end
-  DB[(Supabase Postgres)]
-  UI --> DB
-  UI --> R2
-  UI -->|POST revalidate + secret| API
-  Pages --> DB
-  API --> DB
+
+  user --> cf --> webfn --> ddb
+  webfn --> s3
+  admin_user --> cf --> admfn
+  admfn -->|verify JWT| cognito
+  admfn --> ddb
+  admfn --> s3
+  admfn -->|POST revalidate + secret| webfn
 ```
 
-After saves in admin, the app calls the public site’s `POST /api/revalidate` with a shared secret so tagged caches refresh without redeploying.
+After a save in admin, it calls the public site's `POST /api/revalidate` with a shared secret so tagged caches refresh without a redeploy.
+
+### AWS infrastructure (CDK stacks)
+
+Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages/infra/bin/portfolio.ts).
+
+| Stack              | Region      | Contents                                                                                 |
+| ------------------ | ----------- | ---------------------------------------------------------------------------------------- |
+| `Portfolio-Data`   | `eu-west-1` | DynamoDB single table (GSIs, TTL, PITR) + S3 media bucket                                |
+| `Portfolio-Web`    | `eu-west-1` | OpenNext web app: Lambda(s) + CloudFront + asset/cache buckets                           |
+| `Portfolio-Auth`   | `eu-west-1` | Cognito user pool, app client (PKCE), Hosted UI, pre-token Lambda                        |
+| `Portfolio-Admin`  | `eu-west-1` | OpenNext admin app: Lambda(s) + CloudFront (wired to Auth + Data)                        |
+| `Portfolio-Shared` | `eu-west-1` | EventBridge bus, SNS alerts, SES identity, CloudWatch alarms + dashboard, AWS Budget     |
+| `Portfolio-Oidc`   | `eu-west-1` | GitHub Actions OIDC provider + least-privilege deploy role (opt-in via `-c githubRepo=`) |
+| `Portfolio-Dns`    | `us-east-1` | Route 53 public hosted zone for the apex domain                                          |
+| `Portfolio-Cert`   | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                      |
+
+The custom domain is **deferred**: until the registrar nameservers are delegated to Route 53 (`-c domainEnabled=true`), both apps run on their default `*.cloudfront.net` URLs.
 
 ---
 
@@ -64,26 +89,31 @@ After saves in admin, the app calls the public site’s `POST /api/revalidate` w
 ```
 portfolio-v2/
 ├── apps/
-│   ├── web/                 # Public site — Next.js, API routes, chat, PDF
-│   └── admin/               # CMS — auth, editors, R2, revalidation
+│   ├── web/                 # Public site — Next.js, route handlers, chat, resume PDF
+│   └── admin/               # CMS — Cognito auth, editors, media uploads, revalidation
 ├── packages/
-│   ├── shared/              # Types, Zod, Supabase queries, constants
+│   ├── shared/              # Types, Zod schemas, ports (interfaces), constants
+│   ├── data/                # DynamoDB single-table adapters (ElectroDB) + fixtures + seed
+│   ├── ai/                  # Model factory, prompts, Zod schemas, guardrails, telemetry
 │   ├── ui/                  # Design system + Storybook
+│   ├── infra/               # AWS CDK app — all stacks and constructs (OpenNext site)
 │   └── eslint-config/       # Shared ESLint
-├── supabase/migrations/     # Schema, RLS, pgvector
-├── .github/workflows/       # CI (+ Lighthouse on PRs for web)
+├── .github/workflows/       # CI (lint/typecheck/build, Lighthouse) + Deploy (OIDC → cdk)
+├── docker-compose.dev.yml   # DynamoDB Local for offline `dynamo` backend
 ├── turbo.json
 └── pnpm-workspace.yaml
 ```
 
-| Package | NPM name | Role |
-|---------|----------|------|
-| `apps/web` | `@portfolio/web` | Public site (port **3000**) |
-| `apps/admin` | `@portfolio/admin` | Admin (port **3001**) |
-| `packages/shared` | `@portfolio/shared` | Types, validation, data access |
-| `packages/ui` | `@portfolio/ui` | UI kit, Storybook (**6006**) |
-| `packages/ai` | `@portfolio/ai` | Shared AI logic — model factory, Zod schemas, prompts, guardrails, telemetry |
-| `packages/eslint-config` | `@portfolio/eslint-config` | Shared ESLint |
+| Package                  | NPM name                   | Role                                          |
+| ------------------------ | -------------------------- | --------------------------------------------- |
+| `apps/web`               | `@portfolio/web`           | Public site (port **3000**)                   |
+| `apps/admin`             | `@portfolio/admin`         | Admin (port **3001**)                         |
+| `packages/shared`        | `@portfolio/shared`        | Types, Zod, **ports**, constants              |
+| `packages/data`          | `@portfolio/data`          | DynamoDB adapters, fixtures, seed script      |
+| `packages/ai`            | `@portfolio/ai`            | Model factory, prompts, guardrails, telemetry |
+| `packages/ui`            | `@portfolio/ui`            | UI kit, Storybook (**6006**)                  |
+| `packages/infra`         | `@portfolio/infra`         | CDK app (stacks + constructs)                 |
+| `packages/eslint-config` | `@portfolio/eslint-config` | Shared ESLint                                 |
 
 ---
 
@@ -91,75 +121,67 @@ portfolio-v2/
 
 ### Core
 
-| Layer | Choice |
-|-------|--------|
-| Framework | **Next.js 16** (App Router, RSC) |
-| UI | **React 19**, **Tailwind CSS v4** |
-| Language | **TypeScript** (strict) |
-| Monorepo | **Turborepo** + **pnpm** |
-| Design system | **`@portfolio/ui`** — Radix, Storybook |
+| Layer     | Choice                                     |
+| --------- | ------------------------------------------ |
+| Framework | **Next.js 16** (App Router, RSC, ISR)      |
+| UI        | **React 19**, **Tailwind CSS v4**          |
+| Language  | **TypeScript** (strict)                    |
+| Monorepo  | **Turborepo** + **pnpm**                   |
+| Hosting   | **OpenNext** → **AWS Lambda + CloudFront** |
+| IaC       | **AWS CDK** (TypeScript)                   |
 
 ### Public site (`apps/web`)
 
-| Concern | Implementation |
-|---------|----------------|
-| Motion | Framer Motion, GSAP (ScrollTrigger) |
-| Scroll | Lenis (via shared UI wrapper) |
-| Theme | `next-themes` |
-| Command palette | `cmdk` |
-| Chat | **Vercel AI SDK** + **Groq** (Llama models; second model if the first hits rate limits) |
-| Resume PDF | `@react-pdf/renderer` (route handler) |
-| Content | Supabase on the server + Next cache tags + revalidate |
-| Analytics / errors | **PostHog** (events, `$exception`, alerts); **Vercel Analytics**, **Speed Insights** (aggregate) |
+| Concern            | Implementation                                                    |
+| ------------------ | ----------------------------------------------------------------- |
+| Motion             | Framer Motion                                                     |
+| Theme              | `next-themes`                                                     |
+| Command palette    | `cmdk`                                                            |
+| Chat               | **Vercel AI SDK** + **Groq** (prompt built from DynamoDB content) |
+| Resume PDF         | `@react-pdf/renderer` (route handler)                             |
+| Content            | DynamoDB (server) + Next cache tags + on-demand revalidate        |
+| Analytics / errors | **PostHog** (events, `$exception`, alerts)                        |
 
 ### Admin (`apps/admin`)
 
-| Concern | Implementation |
-|---------|----------------|
-| Forms | **React Hook Form** + **Zod** |
-| Auth | **Supabase Auth** (e.g. Google, magic link); middleware + email allowlist + RLS |
-| Media | **AWS SDK** → **Cloudflare R2** |
-| Resume AI | **Vercel AI SDK** + **Anthropic** (Claude Sonnet 4.5, primary) + **Groq** (fast draft + silent fallback + ATS); structured output via Zod; `streamObject` to the preview UI |
+| Concern   | Implementation                                                                                                                                           |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Forms     | **React Hook Form** + **Zod**                                                                                                                            |
+| Auth      | **Amazon Cognito** Hosted UI (OAuth code + PKCE), httpOnly cookies, `aws-jwt-verify`, email allowlist                                                    |
+| Media     | **AWS SDK** → **S3** (presigned), served via CloudFront                                                                                                  |
+| Resume AI | **Vercel AI SDK** + **Anthropic** (Claude Sonnet 4.5, primary) + **Groq** (draft + silent fallback + ATS); structured Zod output, `streamObject` preview |
 
-### Services
+### Data layer (`packages/data`)
 
-| Service | Role | Notes |
-|---------|------|-------|
-| **Vercel** | Hosting | Three projects: web, admin, Storybook (`packages/ui`) |
-| **Supabase** | DB + Auth | One project; SQL under `supabase/migrations/` |
-| **Cloudflare R2** | Uploads | Admin env; public base URL for assets |
-| **Groq** | Chat LLM | Optional key on web |
-| **Upstash Redis** | Chat rate limits | Sliding window per IP; `POST /api/chat` returns 429 + `Retry-After` when exceeded (omit env locally to disable limiting) |
-| **PostHog** | Analytics + error tracking + alerting | Web (`posthog-js`, `posthog-node`, `@posthog/nextjs-config` for source maps) |
-| **GitHub Actions** | CI | Lint, typecheck, build, Lighthouse on PRs |
+A **single DynamoDB table** modelled with **ElectroDB**. The apps talk to **ports** (interfaces in `@portfolio/shared/ports`); adapters implement them:
 
-### PostHog: events and user journeys
+- `ContentRepository` — hero, about, experience, projects, skills, resume, testimonials, site config, resume-generation history.
+- `MediaStore` — presigned S3 uploads + public URL resolution.
+- `RateLimiter` / `CostCap` — DynamoDB-backed sliding-window limits and a daily USD cap (TTL-expired counters).
+- `AuthProvider` — the admin identity contract (Cognito in prod).
 
-Custom event names live in one place: [`apps/web/src/lib/analytics/events.ts`](apps/web/src/lib/analytics/events.ts) (prefix `portfolio_*`). Client capture uses [`capture-client.ts`](apps/web/src/lib/analytics/capture-client.ts); route handlers use [`capture-server.ts`](apps/web/src/lib/analytics/capture-server.ts).
+Backend is selected by `DATA_BACKEND`:
 
-| Area | Events (examples) |
-|------|-------------------|
-| Navigation | `portfolio_primary_nav_click`, `portfolio_command_palette_opened`, `portfolio_command_palette_action` |
-| Outbound | `portfolio_outbound_link` (footer, resume, project demo/source links — includes `destination`, `location`, `link_domain` where applicable) |
-| Content | `portfolio_resume_view`, `portfolio_resume_pdf_download`, `portfolio_project_viewed`, `portfolio_blog_post_viewed` (with `slug`) |
-| Theme | `portfolio_theme_changed` |
-| AI chat | `portfolio_chat_*` (open/close/message/errors); server: `portfolio_chat_api_request`, `portfolio_chat_api_error` |
-| Contact | `portfolio_contact_submit` (client outcomes); `portfolio_contact_api_error` (validation/server) |
-| GitHub API | `portfolio_github_api`, `portfolio_github_api_error` |
+- `fixture` (default) — static fixtures, no AWS, instant local UI work.
+- `dynamo` — real DynamoDB; point `DYNAMODB_LOCAL_ENDPOINT` at DynamoDB Local for offline, or leave unset in Lambda (uses the function's IAM role).
 
-PostHog also receives **`$pageview`** (client-side route changes) and **`$exception`** (error boundaries, optional JS autocapture, server `onRequestError` — see env section below).
+Seed the table from fixtures (idempotent):
 
-**User journeys** are not hard-coded in the app: define them in the **PostHog** project using **Funnel** insights, **User paths**, **Retention**, and other dashboard widgets. Typical combinations use `$pageview` plus relevant `portfolio_*` steps (for example: landing → `portfolio_project_viewed` → `portfolio_outbound_link` with `destination=github`).
+```bash
+pnpm --filter @portfolio/data seed
+```
 
 ---
 
-## Security
+## Observability, cost & security
 
-- Default **security headers** on the public app: [`apps/web/next.config.ts`](apps/web/next.config.ts).
-- **Revalidate:** `REVALIDATE_SECRET` must match between admin and web. Do not put Supabase **service role** keys in `NEXT_PUBLIC_*`; the app uses the **anon** key with RLS.
-- **Admin:** Session in middleware, allowlisted emails, RLS on the database.
-- **Chat:** The model only sees the prompt built from your Supabase-backed copy; Groq still runs inference on their side (see their terms). **Application rate limiting** (Upstash, per IP) runs before calling Groq; the UI shows a short cooldown when limited.
-- **Resume AI (admin):** Admin-allowlist + middleware + RLS gate every route. Prompt-injection stripping on JD input, structured Zod output validation, fabrication check (rejects invented employers/bullets), output sanitization, regex-based AI-tone detector with silent retry via the cheap model, per-user sliding-window rate limit, and a daily USD cost cap (`RESUME_GEN_DAILY_USD_CAP`). PDF uploads are size-capped (2 MB) + magic-byte checked before parsing with `unpdf`.
+- **CloudWatch** (in `Portfolio-Shared`): DynamoDB throttle/system-error alarms (scoped to the operations actually used), a dashboard, and an **AWS Budget** — all wired to an **SNS** topic that emails `alertEmail`.
+- **PostHog**: product events (`portfolio_*`), `$pageview`, and `$exception` capture with source-map upload on production builds. Custom event names live in [`apps/web/src/lib/analytics/events.ts`](apps/web/src/lib/analytics/events.ts).
+- **Error policy:** no silent swallowing — build-time errors throw; runtime errors surface to PostHog / CloudWatch alarms rather than being treated as success.
+- **Auth:** Cognito tokens verified server-side with `aws-jwt-verify`; `requireAdmin()` re-checks the allowlist at **every mutation boundary** (the middleware route guard is for UX, not the sole gate).
+- **Admin IAM:** the admin Lambda is granted only read/write to the content table and media bucket.
+- **Headers:** default security headers on the public app ([`apps/web/next.config.ts`](apps/web/next.config.ts)).
+- **Resume AI:** prompt-injection stripping, Zod-validated structured output, fabrication checks, AI-tone retry, per-user rate limit, and a daily USD cost cap (`RESUME_GEN_DAILY_USD_CAP`); PDF uploads size-capped + magic-byte checked.
 
 ---
 
@@ -168,7 +190,8 @@ PostHog also receives **`$pageview`** (client-side route changes) and **`$except
 ### Prerequisites
 
 - **Node.js** ≥ 20 (CI uses 22)
-- **pnpm** 10.x — enable with `corepack enable` (see [`package.json`](package.json) `packageManager`)
+- **pnpm** 10.x — `corepack enable` (see [`package.json`](package.json) `packageManager`)
+- **Docker** (only for the `dynamo` backend via DynamoDB Local)
 
 ### Install
 
@@ -176,159 +199,202 @@ PostHog also receives **`$pageview`** (client-side route changes) and **`$except
 git clone https://github.com/khubaibqaiser/portfolio-v2.git
 cd portfolio-v2
 pnpm install
-```
-
-### Environment files
-
-```bash
 cp apps/web/.env.example apps/web/.env.local
 cp apps/admin/.env.example apps/admin/.env.local
 ```
 
-Values: [Environment setup](#environment-setup).
+With `DATA_BACKEND=fixture` (the default) you can run the UI immediately — no AWS, no Docker.
+
+### Working against DynamoDB locally (optional)
+
+```bash
+pnpm ddb:up                              # DynamoDB Local on :8000
+# set in .env.local: DATA_BACKEND=dynamo  DYNAMODB_LOCAL_ENDPOINT=http://localhost:8000
+pnpm --filter @portfolio/data seed       # load fixtures into the local table
+pnpm ddb:down                            # stop it
+```
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | All apps (Turborepo) |
-| `pnpm dev:web` | Web only — http://localhost:3000 |
-| `pnpm dev:admin` | Admin only — http://localhost:3001 |
-| `pnpm storybook` | Storybook — http://localhost:6006 |
-| `pnpm build` | Production build |
-| `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
-| `pnpm format` / `pnpm format:check` | Prettier |
-| `pnpm db:types` | Regenerate Supabase types (Supabase CLI linked to project) |
-| `pnpm db:reset` | Reset local DB (Supabase CLI) |
+| Command                               | Description                            |
+| ------------------------------------- | -------------------------------------- |
+| `pnpm dev`                            | All apps (Turborepo)                   |
+| `pnpm dev:web`                        | Web only — http://localhost:3000       |
+| `pnpm dev:admin`                      | Admin only — http://localhost:3001     |
+| `pnpm storybook`                      | Storybook — http://localhost:6006      |
+| `pnpm build`                          | Production build                       |
+| `pnpm lint` / `pnpm typecheck`        | ESLint / `tsc --noEmit`                |
+| `pnpm test` / `pnpm test:integration` | Vitest (unit / against DynamoDB Local) |
+| `pnpm format` / `pnpm format:check`   | Prettier                               |
+| `pnpm ddb:up` / `pnpm ddb:down`       | DynamoDB Local via Docker Compose      |
 
 ---
 
-## Deployment (Vercel)
+## Deploying to AWS (getting started)
 
-Three Vercel projects, one repo:
+Everything is CDK. You need an AWS account and the AWS CLI configured (e.g. an IAM user named `portfolio-deployer` with admin or scoped deploy rights). Region is **`eu-west-1`** by default.
 
-| Project | Root | Build | Domain (example) |
-|---------|------|-------|-------------------|
-| Portfolio | `apps/web` | Next default | `khubaibqaiser.com` |
-| Admin | `apps/admin` | Next default | `admin.khubaibqaiser.com` |
-| Storybook | `packages/ui` | `pnpm build-storybook` → `storybook-static` | `storybook.khubaibqaiser.com` |
+### 1. One-time bootstrap
 
-Storybook: framework preset **Other** (static export). Set env per project in Vercel.
+CDK needs a bootstrap stack per account/region it deploys into (here `eu-west-1`, plus `us-east-1` only when you enable the custom domain):
+
+```bash
+cd packages/infra
+pnpm exec cdk bootstrap aws://<ACCOUNT_ID>/eu-west-1
+```
+
+### 2. Deploy the platform
+
+From `packages/infra` (run with your real values). The first deploy creates DynamoDB, the Cognito pool, both OpenNext apps, and shared services:
+
+```bash
+# Build the OpenNext bundles the app stacks reference:
+pnpm --filter @portfolio/web exec open-next build
+pnpm --filter @portfolio/admin exec open-next build
+
+# Deploy (adminUrls = the admin's CloudFront URL, needed for Cognito callback URLs):
+pnpm exec cdk deploy \
+  Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared \
+  --require-approval never \
+  -c adminUrls=https://<admin-distribution>.cloudfront.net \
+  -c alertEmail=you@example.com \
+  -c contactEmail=you@example.com
+```
+
+> Chicken-and-egg note: the admin CloudFront URL isn't known until the distribution exists. On the very first deploy, deploy `Portfolio-Admin` once to mint the URL, then re-run with `-c adminUrls=<that URL>` so Cognito's callback/logout URLs and the app's `APP_ORIGIN` match.
+
+### 3. Create an admin user
+
+Self-signup is disabled. Create the allow-listed admin in the pool (they set a permanent password at first Hosted UI login):
+
+```bash
+aws cognito-idp admin-create-user \
+  --user-pool-id <USER_POOL_ID> \
+  --username you@example.com \
+  --user-attributes Name=email,Value=you@example.com Name=email_verified,Value=true \
+  --message-action SUPPRESS \
+  --temporary-password '<TempPass#12+chars>'
+```
+
+Add allowed emails in [`packages/shared/src/constants.ts`](packages/shared/src/constants.ts) (`ADMIN_ALLOWED_EMAILS`).
+
+### 4. Seed content
+
+```bash
+DATA_BACKEND=dynamo DYNAMO_TABLE_NAME=portfolio AWS_REGION=eu-west-1 \
+  pnpm --filter @portfolio/data seed
+```
+
+### 5. (Later) Custom domain
+
+Delegate the registrar's nameservers to Route 53, then redeploy with the domain enabled:
+
+```bash
+pnpm exec cdk deploy Portfolio-Dns          # prints the 4 Route 53 nameservers
+# paste those into your registrar, then:
+pnpm exec cdk deploy --all -c domainEnabled=true
+```
+
+### Optional services to enable
+
+- **Google sign-in:** put the Google OAuth client id/secret in SSM and deploy Auth with `-c googleAuthEnabled=true`.
+- **CI deploy role:** deploy `Portfolio-Oidc` with `-c githubRepo=owner/name` (see CI/CD below).
 
 ---
 
-## CI pipeline
+## CI/CD (GitHub Actions + OIDC)
 
-On push to `main` and on every PR:
+Two workflows in [`.github/workflows`](.github/workflows):
 
-1. Lint  
-2. Typecheck (`tsc --noEmit`)  
-3. Turborepo build — uses GitHub **Variables** for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`  
+**`ci.yml`** — on every PR and push to `main`: lint → typecheck → build. PRs also run **Lighthouse CI** on the web app. No AWS credentials needed.
 
-PRs also run **Lighthouse CI** on the built web app ([`apps/web/lighthouserc.json`](apps/web/lighthouserc.json)).
+**`deploy.yml`** — on push to `main`: builds both OpenNext bundles and runs `cdk deploy` for the six regional stacks. Authentication uses **GitHub OIDC** — GitHub mints a short-lived token and assumes the `Portfolio-gha-deploy` role; **there are no long-lived AWS keys in GitHub**. The role's trust policy is pinned to this repo's `main` branch / `production` environment, and it can only assume the CDK bootstrap roles (CloudFormation does the actual work).
+
+It runs under the `production` GitHub Environment, so you can optionally add **required reviewers** for a manual approval gate; without reviewers it deploys automatically on every merge to `main`.
+
+### One-time GitHub setup
+
+1. Deploy the OIDC stack: `cdk deploy Portfolio-Oidc -c githubRepo=owner/name` and copy the `DeployRoleArn` output.
+2. In **Settings → Environments**, create an environment named **`production`** (add required reviewers here if you want a gate).
+3. In **Settings → Secrets and variables → Actions → Variables**, add repository **Variables**:
+
+   | Variable               | Example                                            |
+   | ---------------------- | -------------------------------------------------- |
+   | `AWS_REGION`           | `eu-west-1`                                        |
+   | `AWS_DEPLOY_ROLE_ARN`  | `arn:aws:iam::<account>:role/Portfolio-gha-deploy` |
+   | `ADMIN_URLS`           | `https://<admin-distribution>.cloudfront.net`      |
+   | `ALERT_EMAIL`          | `you@example.com`                                  |
+   | `CONTACT_EMAIL`        | `you@example.com`                                  |
+   | `NEXT_PUBLIC_SITE_URL` | `https://khubaibqaiser.com`                        |
+
+After that, every push to `main` builds and deploys.
 
 ---
 
 ## Environment setup
 
-Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.local`** in each app (Next loads `.env.local` in dev).
+Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.local`** in each app (Next loads `.env.local` in dev). All vars are optional at build time; the relevant ones are required at runtime.
 
 ### Web — `apps/web`
 
-| Variable | Purpose |
-|----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (server reads, RLS applies) |
-| `NEXT_PUBLIC_SITE_URL` | Canonical URL (metadata, sitemap, robots) |
-| `REVALIDATE_SECRET` | Header secret for `POST /api/revalidate` — same as admin |
-| `GROQ_API_KEY` | Groq — chat returns 503 if missing |
-| `GITHUB_TOKEN` | Optional — higher GitHub API limits for `/api/github` |
-| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | PostHog project API key |
-| `NEXT_PUBLIC_POSTHOG_HOST` | Ingestion host (`https://us.i.posthog.com` or EU `https://eu.i.posthog.com`) |
-| `NEXT_PUBLIC_POSTHOG_UI_HOST` | PostHog app URL for toolbar links (`https://us.posthog.com` or EU) |
-| `NEXT_PUBLIC_POSTHOG_ENVIRONMENT` | Optional tag (e.g. `production`, `preview`) |
-| `POSTHOG_ENVIRONMENT` | Optional server-side environment property for API analytics |
-| `POSTHOG_API_KEY` | Personal API key — source map upload to PostHog (production builds) |
-| `POSTHOG_PROJECT_ID` | Numeric project id (PostHog project settings) — pair with `POSTHOG_API_KEY` for maps |
-| `POSTHOG_APP_HOST` | Optional; PostHog app host for `@posthog/nextjs-config` (default `https://us.posthog.com`) |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — enables chat rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash token (pair with URL) |
-| `CHAT_RATE_LIMIT_MAX` | Max chat requests per IP per window (default `10`) |
-| `CHAT_RATE_LIMIT_WINDOW_SEC` | Window length in seconds (default `60`) |
-
-**Supabase:** [Dashboard](https://supabase.com/dashboard) → project → **Settings → API** → Project URL + **anon** key.
-
-**Site URL:** Dev: `http://localhost:3000`. Prod: `https://your-domain.com` (no trailing slash).
-
-**Revalidation secret:** e.g. `openssl rand -hex 32`. Same string in web, admin, and Vercel for both apps.
-
-**Groq:** [console.groq.com](https://console.groq.com/) → API keys.
-
-**GitHub:** [github.com/settings/tokens](https://github.com/settings/tokens) — scopes for what `/api/github` calls (public repo stats often need no auth or minimal scope).
-
-**PostHog:** [Project settings](https://app.posthog.com/) → project API key + region (US/EU). Enable **exception autocapture** and configure **error tracking alerts** (Slack, webhooks, spike detection) in PostHog. For **readable stack traces** in production, add `POSTHOG_API_KEY` (personal API key with error-tracking write) and `POSTHOG_PROJECT_ID` so [`@posthog/nextjs-config`](https://posthog.com/docs/error-tracking/upload-source-maps/nextjs) can upload source maps on `next build`. The site proxies ingestion through `/ph/*` ([`apps/web/next.config.ts`](apps/web/next.config.ts)) to reduce ad-blocker impact.
-
-**Upstash (chat limits):** [console.upstash.com](https://console.upstash.com/) → Redis → REST URL + token. Without both, chat works but **no** app-level rate limit (still subject to Groq limits).
+| Variable                                                      | Purpose                                                  |
+| ------------------------------------------------------------- | -------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                        | Canonical URL (metadata, sitemap, robots)                |
+| `REVALIDATE_SECRET`                                           | Header secret for `POST /api/revalidate` — same as admin |
+| `GROQ_API_KEY`                                                | Groq — chat returns 503 if missing                       |
+| `GITHUB_TOKEN`                                                | Optional — higher GitHub API limits for `/api/github`    |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`                           | PostHog project API key                                  |
+| `NEXT_PUBLIC_POSTHOG_HOST`                                    | Ingestion host (US/EU)                                   |
+| `NEXT_PUBLIC_POSTHOG_UI_HOST`                                 | PostHog app URL for toolbar links                        |
+| `NEXT_PUBLIC_POSTHOG_ENVIRONMENT` / `POSTHOG_ENVIRONMENT`     | Optional environment tag                                 |
+| `POSTHOG_API_KEY` / `POSTHOG_PROJECT_ID` / `POSTHOG_APP_HOST` | Source-map upload on production builds                   |
+| `CHAT_RATE_LIMIT_MAX` / `CHAT_RATE_LIMIT_WINDOW_SEC`          | Chat rate limit (per IP, via the RateLimiter port)       |
+| `DATA_BACKEND`                                                | `fixture` (default) or `dynamo`                          |
+| `DYNAMO_TABLE_NAME`                                           | Single-table name (default `portfolio`)                  |
+| `DYNAMODB_LOCAL_ENDPOINT`                                     | DynamoDB Local endpoint (local only)                     |
+| `AWS_REGION`                                                  | Primary region (default `eu-west-1`)                     |
+| `MEDIA_PUBLIC_BASE_URL`                                       | Public base URL media is served from (S3/CloudFront)     |
+| `S3_MEDIA_BUCKET` / `S3_ENDPOINT`                             | Media bucket; optional local S3 endpoint                 |
 
 ### Admin — `apps/admin`
 
-| Variable | Purpose |
-|----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Same as web |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as web |
-| `NEXT_PUBLIC_WEB_URL` | Public site base URL (for revalidate calls) |
-| `REVALIDATE_SECRET` | Same as web |
-| `R2_ACCOUNT_ID` | Cloudflare account ID |
-| `R2_ACCESS_KEY_ID` | S3 access key id |
-| `R2_SECRET_ACCESS_KEY` | S3 secret |
-| `R2_BUCKET_NAME` | Bucket name |
-| `R2_PUBLIC_BASE_URL` | Public URL for objects (no trailing slash) |
-| `ANTHROPIC_API_KEY` | Resume AI — Claude Sonnet 4.5 (primary model) |
-| `GROQ_API_KEY` | Resume AI — Groq (fast draft, silent fallback, ATS scoring) |
-| `UPSTASH_REDIS_REST_URL` | Optional — per-user rate limiting (10/hr + 40/day per admin) |
-| `UPSTASH_REDIS_REST_TOKEN` | Optional — pair with URL |
-| `RESUME_GEN_DAILY_USD_CAP` | Optional — daily spend cap in USD per admin (default `5`) |
+| Variable                                                         | Purpose                                                                      |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `COGNITO_REGION`                                                 | Cognito region (default `eu-west-1`)                                         |
+| `COGNITO_USER_POOL_ID`                                           | Cognito user pool id                                                         |
+| `COGNITO_CLIENT_ID`                                              | App client id (public, PKCE)                                                 |
+| `COGNITO_DOMAIN`                                                 | Hosted UI base URL                                                           |
+| `APP_ORIGIN`                                                     | Public app origin for OAuth redirect/logout (unset locally → request origin) |
+| `NEXT_PUBLIC_WEB_URL`                                            | Public site base URL (for revalidate calls)                                  |
+| `REVALIDATE_SECRET`                                              | Same as web                                                                  |
+| `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` / `S3_ENDPOINT`      | Media uploads + public URL                                                   |
+| `AWS_REGION`                                                     | Primary region                                                               |
+| `ANTHROPIC_API_KEY`                                              | Resume AI — Claude Sonnet 4.5 (primary)                                      |
+| `GROQ_API_KEY`                                                   | Resume AI — Groq (draft, fallback, ATS)                                      |
+| `RESUME_GEN_DAILY_USD_CAP`                                       | Daily spend cap per admin (default `5`)                                      |
+| `DATA_BACKEND` / `DYNAMO_TABLE_NAME` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                          |
 
-**R2:** [Cloudflare dashboard](https://dash.cloudflare.com/) → **R2** → bucket. Account ID on the R2 screen. **Manage R2 API Tokens** → token with read/write on that bucket → map to `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`. `R2_PUBLIC_BASE_URL` = how the browser loads files (`*.r2.dev` or your domain).
-
-**Anthropic:** [console.anthropic.com](https://console.anthropic.com/) → API keys. Primary quality model for Resume AI; Groq is used as the silent fallback on provider 429/5xx.
-
-**Resume AI cost cap:** per-admin daily USD cap; the generator blocks with HTTP 402 once exceeded. Tune via `RESUME_GEN_DAILY_USD_CAP`.
-
-### Vercel and GitHub Actions
-
-- **Vercel:** Add the same keys as in `.env.example`. Production values for `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_WEB_URL`. Treat `REVALIDATE_SECRET`, R2 secrets, `POSTHOG_API_KEY`, and `POSTHOG_PROJECT_ID` as secrets.
-- **GitHub Actions:** Set repository **Variables** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` under **Settings → Secrets and variables → Actions → Variables** so CI can build without committing keys.
-
----
-
-## Performance targets (public site)
-
-Rough goals; tune as the site grows.
-
-| Metric | Target |
-|--------|--------|
-| TTFB | &lt; 100ms where edge cache applies |
-| LCP | &lt; 2.5s |
-| Lighthouse (CI) | Tracked on PRs |
+In production these are injected by CDK (`Portfolio-Admin` sets the `COGNITO_*`, `APP_ORIGIN`, and data-layer vars on the Lambda; the IAM role supplies AWS credentials). Set them in `.env.local` only to exercise the real backends locally.
 
 ---
 
 ## Roadmap
 
-- **Contact:** Turnstile, Resend, optional Supabase persistence  
-- **RAG:** Use `content_embeddings` in the chat route  
-- **Analytics:** Add or refine PostHog **funnels** and dashboard widgets using the events in [`events.ts`](apps/web/src/lib/analytics/events.ts); feature flags if needed  
+- **Contact form:** wire to SES (identity already provisioned in `Portfolio-Shared`).
+- **EventBridge-driven revalidation:** emit content-change events to refresh ISR instead of the direct revalidate call.
+- **Custom domain:** delegate nameservers → Route 53, deploy `Dns`+`Cert` with `-c domainEnabled=true`.
+- **CI tests job:** run Vitest (and the DynamoDB-Local integration suite) in CI.
+- **Analytics:** PostHog funnels / dashboards from the `portfolio_*` events.
 
 ---
 
 ## Author
 
-**Khubaib Qaiser** — Senior Software Engineer  
+**Khubaib Qaiser** — Senior Software Engineer
 
-- [khubaibqaiser.com](https://khubaibqaiser.com)  
-- [github.com/khubaibqaiser](https://github.com/khubaibqaiser)  
-- [linkedin.com/in/khubaib-qaiser](https://linkedin.com/in/khubaib-qaiser)  
+- [khubaibqaiser.com](https://khubaibqaiser.com)
+- [github.com/khubaibqaiser](https://github.com/khubaibqaiser)
+- [linkedin.com/in/khubaib-qaiser](https://linkedin.com/in/khubaib-qaiser)
 
 ---
 
