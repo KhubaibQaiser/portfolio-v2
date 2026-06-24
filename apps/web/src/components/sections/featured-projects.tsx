@@ -4,9 +4,7 @@ import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { cn } from "@/lib/utils";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type Project = Database["public"]["Tables"]["projects"]["Row"];
+import type { Project } from "@portfolio/shared/schemas";
 
 type FeaturedProjectsSectionProps = {
   projects: Project[];
@@ -28,19 +26,17 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
       className="py-(--section-padding-y)"
       aria-label="Featured Projects"
     >
-      <div className="mx-auto max-w-container px-(--container-padding)">
+      <div className="max-w-container mx-auto px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
-            <span className="font-mono text-base font-normal text-accent">
-              04.
-            </span>
+          <h2 className="text-h2 flex items-center gap-3 font-semibold tracking-tight">
+            <span className="text-accent font-mono text-base font-normal">04.</span>
             Featured Projects
-            <span className="ml-4 h-px flex-1 bg-border" aria-hidden />
+            <span className="bg-border ml-4 h-px flex-1" aria-hidden />
           </h2>
 
           <div className="mt-10 space-y-20">
@@ -63,24 +59,26 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                     isOdd && "md:[direction:rtl] md:*:[direction:ltr]",
                   )}
                 >
-                  <div className="aspect-video overflow-hidden rounded-xl bg-muted">
+                  <div className="bg-muted aspect-video overflow-hidden rounded-xl">
                     {project.cover_url ? (
-                      <img src={project.cover_url} alt={project.title} className="h-full w-full object-cover" />
+                      <img
+                        src={project.cover_url}
+                        alt={project.title}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground/30">
+                      <div className="text-muted-foreground/30 flex h-full items-center justify-center">
                         Project Screenshot
                       </div>
                     )}
                   </div>
 
                   <div className={cn(isOdd && "md:text-right")}>
-                    <p className="font-mono text-sm text-accent">
-                      Featured Project
-                    </p>
-                    <h3 className="mt-1 text-h3 font-semibold tracking-tight">
+                    <p className="text-accent font-mono text-sm">Featured Project</p>
+                    <h3 className="text-h3 mt-1 font-semibold tracking-tight">
                       {project.title}
                     </h3>
-                    <div className="mt-4 rounded-xl bg-muted/50 p-5 text-sm leading-relaxed text-muted-foreground">
+                    <div className="bg-muted/50 text-muted-foreground mt-4 rounded-xl p-5 text-sm leading-relaxed">
                       {project.description}
                     </div>
                     <div
@@ -90,10 +88,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                       )}
                     >
                       {project.tech_tags.map((t) => (
-                        <span
-                          key={t}
-                          className="font-mono text-xs text-muted-foreground"
-                        >
+                        <span key={t} className="text-muted-foreground font-mono text-xs">
                           {t}
                         </span>
                       ))}
@@ -109,7 +104,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                           href={project.github_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground transition-colors hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
                           aria-label={`${project.title} GitHub`}
                         >
                           <GitHubIcon className="h-5 w-5" />
@@ -120,7 +115,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                           href={project.live_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground transition-colors hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
                           aria-label={`${project.title} Live Demo`}
                         >
                           <ExternalLink className="h-5 w-5" />
