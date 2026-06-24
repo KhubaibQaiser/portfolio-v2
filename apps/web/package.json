@@ -15,6 +15,7 @@
     "@ai-sdk/react": "^3.0.160",
     "@gsap/react": "^2.1.2",
     "@portfolio/ai": "workspace:*",
+    "@portfolio/data": "workspace:*",
     "@portfolio/shared": "workspace:*",
     "@portfolio/ui": "workspace:*",
     "@posthog/nextjs-config": "^1.9.2",

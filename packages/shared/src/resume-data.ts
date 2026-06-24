@@ -1,15 +1,12 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { SKILL_CATEGORIES } from "./constants";
+import type { ContentRepository } from "./ports/content-repository";
 import { getContractTypeLabel } from "./schemas/experience";
-import type { Database } from "./supabase/database.types";
-import {
-  getExperience,
-  getResume,
-  getSiteConfig,
-  getSkills,
-} from "./supabase/queries";
 
-type Client = SupabaseClient<Database>;
+/** The read slice of {@link ContentRepository} the resume loader needs. */
+export type ResumeContentSource = Pick<
+  ContentRepository,
+  "getSiteConfig" | "getResume" | "getExperience" | "getSkills"
+>;
 
 export type ResumeSocialLink = {
   platform: string;
@@ -64,25 +61,24 @@ export type GetResumeDataOptions = {
 
 /**
  * Shared loader used by the web PDF route and the admin Resume AI page.
- * Accepts a Supabase client so the calling app controls caching
- * (`unstable_cache` on the web, a plain call on the admin).
+ * Accepts a content repository so the calling app controls both the backend
+ * and caching (`unstable_cache` on the web, a plain call on the admin).
  */
 export async function getResumeData(
-  client: Client,
+  repo: ResumeContentSource,
   opts: GetResumeDataOptions = {},
 ): Promise<ResumeData> {
   const [siteConfig, resume, experience, skills] = await Promise.all([
-    getSiteConfig(client),
-    getResume(client),
-    getExperience(client),
-    getSkills(client),
+    repo.getSiteConfig(),
+    repo.getResume(),
+    repo.getExperience(),
+    repo.getSkills(),
   ]);
 
   const socialLinks = (siteConfig.social_links as unknown as ResumeSocialLink[]) ?? [];
   const phoneEntry = socialLinks.find((l) => l.platform === "phone");
 
-  const education =
-    (resume.education as unknown as ResumeDataEducation[]) ?? [];
+  const education = (resume.education as unknown as ResumeDataEducation[]) ?? [];
 
   const certifications =
     (resume.certifications as unknown as Array<{
@@ -92,8 +88,7 @@ export async function getResumeData(
 
   const grouped = skills.reduce<Record<string, string[]>>((acc, s) => {
     const label =
-      SKILL_CATEGORIES[s.category as keyof typeof SKILL_CATEGORIES] ??
-      s.category;
+      SKILL_CATEGORIES[s.category as keyof typeof SKILL_CATEGORIES] ?? s.category;
     if (!acc[label]) acc[label] = [];
     acc[label]!.push(s.name);
     return acc;
@@ -109,13 +104,12 @@ export async function getResumeData(
   const allSkillNames = skillGroups.flatMap((g) => g.items);
   const keywords = [siteConfig.title, ...allSkillNames.slice(0, 30)].join(", ");
 
-  const visibleSections =
-    (resume.visible_sections as unknown as string[]) ?? [
-      "experience",
-      "skills",
-      "education",
-      "certifications",
-    ];
+  const visibleSections = (resume.visible_sections as unknown as string[]) ?? [
+    "experience",
+    "skills",
+    "education",
+    "certifications",
+  ];
 
   return {
     name: siteConfig.name,

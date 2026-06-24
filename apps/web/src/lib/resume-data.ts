@@ -1,5 +1,5 @@
 import { unstable_cache as cache } from "next/cache";
-import { supabase } from "@/lib/supabase-server";
+import { getContentRepository } from "@portfolio/data";
 import {
   getResumeData as sharedGetResumeData,
   type ResumeData,
@@ -17,7 +17,7 @@ const websiteHost = (
  */
 export const getResumeData = cache(
   async (): Promise<ResumeData> =>
-    sharedGetResumeData(supabase, { websiteHost }),
+    sharedGetResumeData(getContentRepository(), { websiteHost }),
   ["resume-data"],
   { tags: ["resume", "experience", "skills", "site-config"] },
 );
