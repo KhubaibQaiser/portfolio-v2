@@ -13,6 +13,7 @@ import {
 } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
 import { getResumeData, type ResumeData } from "@portfolio/shared/resume-data";
+import { getContentRepository } from "@portfolio/data";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
 
@@ -50,10 +51,7 @@ function safeFileName(parts: (string | undefined)[]): string {
  * from the DB (authoritative), and overlay summary/experience bullets/skills
  * from the tailored payload.
  */
-function applyTailoredResume(
-  base: ResumeData,
-  tailored: TailoredResume,
-): ResumeData {
+function applyTailoredResume(base: ResumeData, tailored: TailoredResume): ResumeData {
   const tailoredBulletsByExpId = new Map<string, string[]>();
   for (const e of tailored.experiences) {
     tailoredBulletsByExpId.set(
@@ -78,9 +76,7 @@ function applyTailoredResume(
       : base.skills;
 
   const keywords =
-    tailored.keywords.length > 0
-      ? tailored.keywords.join(", ")
-      : base.keywords;
+    tailored.keywords.length > 0 ? tailored.keywords.join(", ") : base.keywords;
 
   return {
     ...base,
@@ -108,15 +104,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const base = await getResumeData(supabase);
+  const base = await getResumeData(getContentRepository());
 
   try {
     if (body.kind === "resume") {
       const tailored = sanitizeLlmObject(body.resume);
       const data = applyTailoredResume(base, tailored);
       const buffer = await renderToBuffer(<ResumeDocument data={data} />);
-      const filename =
-        safeFileName([base.name, base.title, "Resume"]) + ".pdf";
+      const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
       return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
@@ -136,12 +131,8 @@ export async function POST(request: Request) {
       <CoverLetterDocument contact={base} letter={letter} meta={meta} />,
     );
     const filename =
-      safeFileName([
-        base.name,
-        body.meta?.company,
-        body.meta?.role,
-        "Cover_Letter",
-      ]) + ".pdf";
+      safeFileName([base.name, body.meta?.company, body.meta?.role, "Cover_Letter"]) +
+      ".pdf";
     return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
@@ -152,8 +143,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[resume-ai] export failed", err);
-    const message =
-      err instanceof Error ? err.message : "Failed to render PDF";
+    const message = err instanceof Error ? err.message : "Failed to render PDF";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

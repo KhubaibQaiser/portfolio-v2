@@ -62,6 +62,9 @@ importers:
       '@portfolio/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@portfolio/data':
+        specifier: workspace:*
+        version: link:../../packages/data
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -150,6 +153,9 @@ importers:
       '@portfolio/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@portfolio/data':
+        specifier: workspace:*
+        version: link:../../packages/data
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared

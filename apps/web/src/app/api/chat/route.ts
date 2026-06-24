@@ -2,27 +2,16 @@ import type { LanguageModel } from "ai";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
-import {
-  MODEL_IDS,
-  isProviderRateLimitError,
-  modelFor,
-} from "@portfolio/ai";
+import { MODEL_IDS, isProviderRateLimitError, modelFor } from "@portfolio/ai";
 import { stripPromptInjection } from "@portfolio/ai/guardrails/prompt-injection";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { getDistinctIdFromRequest } from "@/lib/analytics/request";
 import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
-import { supabase } from "@/lib/supabase-server";
+import { getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { groq } from "@ai-sdk/groq";
-import {
-  getHero,
-  getAbout,
-  getExperience,
-  getSkills,
-  getSiteConfig,
-} from "@portfolio/shared/supabase/queries";
 
 export const maxDuration = 30;
 
@@ -47,12 +36,13 @@ function jsonResponse(body: ChatApiErrorBody, status: number) {
 
 const buildSystemPrompt = cache(
   async () => {
+    const repo = getContentRepository();
     const [hero, about, experience, skills, config] = await Promise.all([
-      getHero(supabase),
-      getAbout(supabase),
-      getExperience(supabase),
-      getSkills(supabase),
-      getSiteConfig(supabase),
+      repo.getHero(),
+      repo.getAbout(),
+      repo.getExperience(),
+      repo.getSkills(),
+      repo.getSiteConfig(),
     ]);
 
     const companiesFromExperience = uniqueCompanyCount(experience);
@@ -126,9 +116,7 @@ function sanitizeUserMessages(messages: UIMessage[]): UIMessage[] {
     return {
       ...m,
       parts: m.parts.map((p) =>
-        p.type === "text"
-          ? { ...p, text: stripPromptInjection(p.text) }
-          : p,
+        p.type === "text" ? { ...p, text: stripPromptInjection(p.text) } : p,
       ),
     };
   });
