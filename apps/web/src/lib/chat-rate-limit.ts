@@ -1,8 +1,8 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { getRateLimiter } from "@portfolio/data";
 
 const DEFAULT_MAX = 10;
 const DEFAULT_WINDOW_SEC = 60;
+const PREFIX = "chat";
 
 type ChatRateLimitOk = { ok: true };
 export type ChatRateLimitDenied = {
@@ -19,31 +19,7 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-let ratelimit: Ratelimit | null | undefined;
-
-function getRatelimit(): Ratelimit | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-
-  if (ratelimit === undefined) {
-    const redis = new Redis({ url, token });
-    const max = parsePositiveInt(process.env.CHAT_RATE_LIMIT_MAX, DEFAULT_MAX);
-    const windowSec = parsePositiveInt(
-      process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
-      DEFAULT_WINDOW_SEC,
-    );
-    ratelimit = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(max, `${windowSec} s`),
-      prefix: "portfolio:chat",
-      analytics: false,
-    });
-  }
-  return ratelimit;
-}
-
-/** First public IP from proxy headers (Vercel, etc.). */
+/** First public IP from proxy headers (CloudFront, etc.). */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -56,32 +32,23 @@ export function getClientIp(request: Request): string {
 }
 
 /**
- * Application-level chat rate limit (sliding window per IP).
- * No-op when Upstash is not configured (e.g. local dev without Redis).
+ * Application-level chat rate limit (fixed window per IP) via the RateLimiter
+ * port. The no-op adapter (fixture/local backend) always allows, so dev works
+ * without DynamoDB. Store errors propagate to the caller rather than being
+ * swallowed here.
  */
-export async function checkChatRateLimit(
-  request: Request,
-): Promise<ChatRateLimitResult> {
-  const rl = getRatelimit();
-  if (!rl) return { ok: true };
-
+export async function checkChatRateLimit(request: Request): Promise<ChatRateLimitResult> {
   const ip = getClientIp(request);
   const id = ip === "unknown" ? "unknown:chat" : `ip:${ip}`;
 
-  const result = await rl.limit(id);
-  void result.pending.catch(() => undefined);
+  const result = await getRateLimiter().check(id, {
+    max: parsePositiveInt(process.env.CHAT_RATE_LIMIT_MAX, DEFAULT_MAX),
+    windowSec: parsePositiveInt(
+      process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
+      DEFAULT_WINDOW_SEC,
+    ),
+    prefix: PREFIX,
+  });
 
-  if (result.success) return { ok: true };
-
-  const retryAfterSeconds = Math.max(
-    1,
-    Math.ceil((result.reset - Date.now()) / 1000),
-  );
-
-  return {
-    ok: false,
-    retryAfterSeconds,
-    limit: result.limit,
-    remaining: result.remaining,
-  };
+  return result;
 }

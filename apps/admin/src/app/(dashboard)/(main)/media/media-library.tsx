@@ -85,15 +85,12 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
     <>
       {!storageReady ? (
         <p className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Uploads are disabled until R2 is configured. Set{" "}
-          <code className="bg-muted rounded px-1 py-0.5 text-xs">R2_ACCOUNT_ID</code>,{" "}
-          <code className="bg-muted rounded px-1 py-0.5 text-xs">R2_ACCESS_KEY_ID</code>,{" "}
-          <code className="bg-muted rounded px-1 py-0.5 text-xs">
-            R2_SECRET_ACCESS_KEY
-          </code>
-          , <code className="bg-muted rounded px-1 py-0.5 text-xs">R2_BUCKET_NAME</code>,
+          Uploads are disabled until S3 storage is configured. Set{" "}
+          <code className="bg-muted rounded px-1 py-0.5 text-xs">S3_MEDIA_BUCKET</code>{" "}
           and{" "}
-          <code className="bg-muted rounded px-1 py-0.5 text-xs">R2_PUBLIC_BASE_URL</code>{" "}
+          <code className="bg-muted rounded px-1 py-0.5 text-xs">
+            MEDIA_PUBLIC_BASE_URL
+          </code>{" "}
           in <code className="bg-muted rounded px-1 py-0.5 text-xs">.env.local</code>.
         </p>
       ) : null}
