@@ -1,72 +1,139 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: {}
 
+# One run per ref. Cancel superseded PR runs, but never cancel a main run — a
+# half-applied deploy is worse than a queued one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
-  ci:
-    name: Lint, Type Check & Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
 
-      - uses: pnpm/action-setup@v5
+  typecheck:
+    name: Type check
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
+  test:
+    name: Unit tests
+    needs: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm test
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  integration:
+    name: Integration tests (DynamoDB Local)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - name: Start DynamoDB Local
+        run: docker compose -f docker-compose.dev.yml up -d
+      - name: Wait for DynamoDB Local
+        run: |
+          for i in $(seq 1 15); do
+            curl -s -o /dev/null http://localhost:8000 && exit 0
+            sleep 1
+          done
+          echo "DynamoDB Local did not become reachable" >&2
+          exit 1
+      - run: pnpm test:integration
+      - name: Stop DynamoDB Local
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down
 
-      - name: Lint
-        run: pnpm lint
-
-      - name: Type check
-        run: pnpm typecheck
-
-      - name: Build
-        run: pnpm build
+  build:
+    name: Build
+    needs: integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm build
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
 
   lighthouse:
     name: Lighthouse CI
-    needs: ci
-    runs-on: ubuntu-latest
+    needs: build
     if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      - uses: ./.github/actions/setup
       - name: Build web app
         run: pnpm --filter @portfolio/web build
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
-
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
           configPath: ./apps/web/lighthouserc.json
           uploadArtifacts: true
+
+  deploy:
+    name: Deploy to AWS
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Optional manual approval gate: add required reviewers to this environment.
+    environment: production
+    timeout-minutes: 30
+    # OIDC: GitHub mints a short-lived token that assumes the AWS deploy role.
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+
+      - name: Build OpenNext bundles
+        run: |
+          pnpm --filter @portfolio/web exec open-next build
+          pnpm --filter @portfolio/admin exec open-next build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: CDK deploy
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy
+          Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Oidc
+          --require-approval never --concurrency 4
+          -c adminUrls=${{ vars.ADMIN_URLS }}
+          -c alertEmail=${{ vars.ALERT_EMAIL }}
+          -c contactEmail=${{ vars.CONTACT_EMAIL }}
+          -c githubRepo=${{ github.repository }}

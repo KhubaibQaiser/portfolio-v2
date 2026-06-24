@@ -98,7 +98,7 @@ portfolio-v2/
 │   ├── ui/                  # Design system + Storybook
 │   ├── infra/               # AWS CDK app — all stacks and constructs (OpenNext site)
 │   └── eslint-config/       # Shared ESLint
-├── .github/workflows/       # CI (lint/typecheck/build, Lighthouse) + Deploy (OIDC → cdk)
+├── .github/workflows/       # Sequential pipeline: lint→typecheck→test→build→deploy (OIDC)
 ├── docker-compose.dev.yml   # DynamoDB Local for offline `dynamo` backend
 ├── turbo.json
 └── pnpm-workspace.yaml
@@ -304,13 +304,22 @@ pnpm exec cdk deploy --all -c domainEnabled=true
 
 ## CI/CD (GitHub Actions + OIDC)
 
-Two workflows in [`.github/workflows`](.github/workflows):
+A single **sequential pipeline** in [`.github/workflows/ci.yml`](.github/workflows/ci.yml), with one responsibility per stage. Each stage gates the next via `needs`, so the Actions graph reads top-to-bottom:
 
-**`ci.yml`** — on every PR and push to `main`: lint → typecheck → build. PRs also run **Lighthouse CI** on the web app. No AWS credentials needed.
+```
+lint → typecheck → test → integration → build → ┬ lighthouse (PRs only)
+                                                 └ deploy     (push to main only)
+```
 
-**`deploy.yml`** — on push to `main`: builds both OpenNext bundles and runs `cdk deploy` for the six regional stacks. Authentication uses **GitHub OIDC** — GitHub mints a short-lived token and assumes the `Portfolio-gha-deploy` role; **there are no long-lived AWS keys in GitHub**. The role's trust policy is pinned to this repo's `main` branch / `production` environment, and it can only assume the CDK bootstrap roles (CloudFormation does the actual work).
+- **lint / typecheck / test** — ESLint, `tsc --noEmit`, Vitest unit tests.
+- **integration** — spins up **DynamoDB Local** (via [`docker-compose.dev.yml`](docker-compose.dev.yml)) and runs the adapter integration suite.
+- **build** — Turborepo build across the monorepo.
+- **lighthouse** — Lighthouse CI on the web app (pull requests only).
+- **deploy** — builds both OpenNext bundles and runs `cdk deploy` for the six regional stacks; **only on push to `main`**, after every prior stage passes.
 
-It runs under the `production` GitHub Environment, so you can optionally add **required reviewers** for a manual approval gate; without reviewers it deploys automatically on every merge to `main`.
+Shared setup (pnpm + Node + cached install) lives in a composite action, [`.github/actions/setup`](.github/actions/setup/action.yml), so the stages stay DRY.
+
+Deploy authenticates with **GitHub OIDC** — GitHub mints a short-lived token and assumes the `Portfolio-gha-deploy` role; **there are no long-lived AWS keys in GitHub**. The role's trust policy is pinned to this repo's `main` branch / `production` environment, and it can only assume the CDK bootstrap roles (CloudFormation does the actual work). The `deploy` stage runs under the `production` GitHub Environment, so adding **required reviewers** turns it into a manual approval gate.
 
 ### One-time GitHub setup
 
