@@ -1,0 +1,10 @@
+# Local development dependencies. Start with:
+#   docker compose -f docker-compose.dev.yml up -d
+# DynamoDB Local backs the `dynamo` data backend without any AWS account.
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: portfolio-dynamodb-local
+    command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
+    ports:
+      - "8000:8000"

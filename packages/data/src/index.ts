@@ -1,7 +1,14 @@
 import type { ContentRepository } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
+import { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+import { createDynamoClient } from "./dynamo/client";
+import { resolveTableName } from "./dynamo/table";
 
 export { createFixtureContentRepository } from "./adapters/fixture-content-repository";
+export { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+export { createDynamoClient } from "./dynamo/client";
+export { resolveTableName, buildCreateTableInput } from "./dynamo/table";
+export { ensureTable } from "./dynamo/create-table";
 
 export type DataBackend = "fixture" | "dynamo";
 
@@ -16,9 +23,7 @@ function createContentRepository(): ContentRepository {
     case "fixture":
       return createFixtureContentRepository();
     case "dynamo":
-      throw new Error(
-        "DynamoDB content repository is not wired yet. Set DATA_BACKEND=fixture for local development.",
-      );
+      return createDynamoContentRepository(createDynamoClient(), resolveTableName());
   }
 }
 
