@@ -5,10 +5,7 @@ import { Save, Loader2 } from "lucide-react";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveAbout } from "@/lib/actions";
-import type { AboutFormData } from "@portfolio/shared/schemas";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type About = Database["public"]["Tables"]["about"]["Row"];
+import type { About, AboutFormData } from "@portfolio/shared/schemas";
 
 type AboutFormProps = {
   initialData: About | null;
@@ -33,7 +30,10 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
     languages: initialData?.languages ?? [],
   });
 
-  function handleChange<K extends keyof AboutFormData>(field: K, value: AboutFormData[K]) {
+  function handleChange<K extends keyof AboutFormData>(
+    field: K,
+    value: AboutFormData[K],
+  ) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -54,8 +54,8 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           onChange={(e) => handleChange("bio", e.target.value)}
           rows={6}
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       </div>
@@ -66,8 +66,8 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           value={form.photo_url}
           onChange={(e) => handleChange("photo_url", e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       </div>
@@ -93,8 +93,8 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           <label className="mb-1.5 block text-sm font-medium">Companies</label>
           <div
             className={cn(
-              "flex min-h-[42px] items-center rounded-lg border border-border bg-muted/20 px-4 py-2.5",
-              "text-sm text-muted-foreground",
+              "border-border bg-muted/20 flex min-h-[42px] items-center rounded-lg border px-4 py-2.5",
+              "text-muted-foreground text-sm",
             )}
           >
             {derivedCompaniesCount}{" "}
@@ -117,21 +117,22 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
             <input
               value={form[key]}
               onChange={(e) => {
-                const v = key === "users_impacted" || key === "timezone"
-                  ? e.target.value
-                  : parseInt(e.target.value) || 0;
+                const v =
+                  key === "users_impacted" || key === "timezone"
+                    ? e.target.value
+                    : parseInt(e.target.value) || 0;
                 handleChange(key, v);
               }}
               className={cn(
-                "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                "text-sm focus:border-accent focus:outline-hidden",
+                "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+                "focus:border-accent text-sm focus:outline-hidden",
               )}
             />
             {key === "countries_count" && (
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Manual count for how many countries you’ve worked across (there is no per-job country
-                field yet). Used with Companies in the “Companies across N countries” line on the
-                site.
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                Manual count for how many countries you’ve worked across (there is no
+                per-job country field yet). Used with Companies in the “Companies across N
+                countries” line on the site.
               </p>
             )}
           </div>
@@ -139,35 +140,56 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium">Industries (comma-separated)</label>
+        <label className="mb-1.5 block text-sm font-medium">
+          Industries (comma-separated)
+        </label>
         <input
           value={form.industries.join(", ")}
           onChange={(e) =>
-            handleChange("industries", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
+            handleChange(
+              "industries",
+              e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            )
           }
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium">Languages (comma-separated)</label>
+        <label className="mb-1.5 block text-sm font-medium">
+          Languages (comma-separated)
+        </label>
         <input
           value={form.languages.join(", ")}
           onChange={(e) =>
-            handleChange("languages", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
+            handleChange(
+              "languages",
+              e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            )
           }
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       </div>
 
       {message && (
-        <p className={cn("text-sm", message === "Saved!" ? "text-green-600" : "text-red-500")}>
+        <p
+          className={cn(
+            "text-sm",
+            message === "Saved!" ? "text-green-600" : "text-red-500",
+          )}
+        >
           {message}
         </p>
       )}
@@ -176,12 +198,16 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
         onClick={handleSave}
         disabled={saving}
         className={cn(
-          "flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5",
-          "text-sm font-medium text-accent-foreground transition-opacity",
+          "bg-accent flex items-center gap-2 rounded-lg px-5 py-2.5",
+          "text-accent-foreground text-sm font-medium transition-opacity",
           "hover:opacity-90 disabled:opacity-50",
         )}
       >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
         {saving ? "Saving..." : "Save & Publish"}
       </button>
     </div>

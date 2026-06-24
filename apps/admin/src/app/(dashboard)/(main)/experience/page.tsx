@@ -1,17 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
-import { getExperience } from "@portfolio/shared/supabase/queries";
+import { getContentRepository } from "@portfolio/data";
 import { ExperienceList } from "./experience-list";
 
 export default async function ExperienceListPage() {
-  const client = await createClient();
-  const experience = await getExperience(client);
+  const experience = await getContentRepository().getExperience();
 
   return (
     <>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Experience</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             Manage your work experience entries.
           </p>
         </div>

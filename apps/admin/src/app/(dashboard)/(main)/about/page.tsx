@@ -1,20 +1,19 @@
-import { createClient } from "@/lib/supabase/server";
-import { getAbout, getExperience } from "@portfolio/shared/supabase/queries";
+import { getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { AboutForm } from "./about-form";
 
 export default async function AboutEditPage() {
-  const client = await createClient();
+  const repo = getContentRepository();
   const [about, experience] = await Promise.all([
-    getAbout(client).catch(() => null),
-    getExperience(client).catch(() => []),
+    repo.getAbout().catch(() => null),
+    repo.getExperience().catch(() => []),
   ]);
   const derivedCompaniesCount = uniqueCompanyCount(experience);
 
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight">Edit About Section</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-1 text-sm">
         Update your bio, stats, and availability status.
       </p>
       <AboutForm initialData={about} derivedCompaniesCount={derivedCompaniesCount} />
