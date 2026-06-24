@@ -1,6 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 // Validate environment at build/start (throws on malformed values).
 import "./src/lib/env";
+
+// Trace from the monorepo root so the standalone/OpenNext bundle includes deps
+// hoisted to the workspace root (required for pnpm + Turborepo).
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /** Derive an image remote pattern from the configured media base URL. */
 function mediaRemotePatterns() {
@@ -20,6 +26,8 @@ function mediaRemotePatterns() {
 }
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: repoRoot,
+  skipTrailingSlashRedirect: true,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
