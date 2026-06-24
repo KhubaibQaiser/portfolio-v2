@@ -13,7 +13,11 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@portfolio/shared": "workspace:*"
+    "@aws-sdk/client-dynamodb": "^3.1075.0",
+    "@aws-sdk/lib-dynamodb": "^3.1075.0",
+    "@portfolio/shared": "workspace:*",
+    "electrodb": "^3.9.1",
+    "ulid": "^3.0.2"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
