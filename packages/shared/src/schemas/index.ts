@@ -1,3 +1,5 @@
+// Barrel for all domain Zod schemas and their inferred types. These are the
+// single source of truth for content types across the web and admin apps.
 export { heroSchema, heroRowSchema, type HeroFormData, type Hero } from "./hero";
 export { aboutSchema, aboutRowSchema, type AboutFormData, type About } from "./about";
 export {
@@ -37,9 +39,24 @@ export {
   type ResumeFormData,
   type Resume,
   type ResumeVariant,
+  type ResumeVariantFormData,
   type Education,
   type Certification,
 } from "./resume";
+export {
+  resumeGenLanguageEnum,
+  resumeGenToneEnum,
+  resumeGenLengthEnum,
+  resumeGenSourceEnum,
+  type ResumeGenLanguage,
+  type ResumeGenTone,
+  type ResumeGenLength,
+  type ResumeGenSource,
+  type ResumeGenerationUsage,
+  type ResumeGeneration,
+  type ResumeGenerationInsert,
+  type ResumeGenerationUpdate,
+} from "./resume-generation";
 export {
   testimonialSchema,
   testimonialRowSchema,
@@ -63,4 +80,4 @@ export {
   type NavLink,
 } from "./site-config";
 export { contactSchema, type ContactFormData } from "./contact";
-export { mediaInsertSchema, type MediaInsert } from "./media";
+export { mediaInsertSchema, mediaRowSchema, type MediaInsert, type Media } from "./media";

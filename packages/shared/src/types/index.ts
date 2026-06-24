@@ -15,8 +15,11 @@ export type {
   SiteConfig,
   SocialLink,
   NavLink,
+  Media,
+  ResumeGeneration,
+  ResumeGenerationUsage,
+  ResumeGenerationInsert,
+  ResumeGenerationUpdate,
 } from "../schemas";
 
-export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type Result<T> = { success: true; data: T } | { success: false; error: string };
