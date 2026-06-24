@@ -1,11 +1,17 @@
-import type { ContentRepository } from "@portfolio/shared/ports";
+import type { ContentRepository, CostCap, RateLimiter } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
+import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { resolveTableName } from "./dynamo/table";
 
 export { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 export { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+export { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
+export { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
 export { resolveTableName, buildCreateTableInput } from "./dynamo/table";
 export { ensureTable } from "./dynamo/create-table";
@@ -37,4 +43,19 @@ let cached: ContentRepository | undefined;
 export function getContentRepository(): ContentRepository {
   cached ??= createContentRepository();
   return cached;
+}
+
+/**
+ * Returns the rate limiter for the active backend: DynamoDB when `dynamo` is
+ * selected, otherwise a no-op limiter for local dev.
+ */
+export function getRateLimiter(): RateLimiter {
+  return resolveDataBackend() === "dynamo"
+    ? createDynamoRateLimiter(createDynamoClient(), resolveTableName())
+    : createNoopRateLimiter();
+}
+
+/** Returns the cost cap bound to the active content repository. */
+export function getCostCap(): CostCap {
+  return createContentCostCap(getContentRepository());
 }
