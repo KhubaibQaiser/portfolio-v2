@@ -1,8 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { getMediaById, deleteMediaRow } from "@portfolio/shared/supabase/queries";
-import { getContentRepository } from "@portfolio/data";
+import { getContentRepository, getMediaStore } from "@portfolio/data";
 import {
   heroSchema,
   aboutSchema,
@@ -16,8 +14,6 @@ import {
 import type { z } from "zod";
 import { revalidateWeb } from "@/lib/revalidate-web";
 import { requireAdmin } from "@/lib/auth-guard";
-import { isAllowedAdmin } from "@portfolio/shared/constants";
-import { deleteObjectFromR2, isR2Configured, publicUrlToObjectKey } from "@/lib/r2";
 
 type ActionResult = { success: true } | { success: false; error: string };
 
@@ -292,29 +288,17 @@ export async function saveResume(
 // ---------------------------------------------------------------------------
 
 export async function deleteMediaAsset(id: string): Promise<ActionResult> {
-  const client = await createClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  if (!user?.email || !isAllowedAdmin(user.email)) {
-    return { success: false, error: "Unauthorized" };
-  }
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
 
   try {
-    const row = await getMediaById(client, id);
-    if (isR2Configured()) {
-      const key = publicUrlToObjectKey(row.url);
-      if (key) {
-        try {
-          await deleteObjectFromR2(key);
-        } catch (e) {
-          if (process.env.NODE_ENV === "development") {
-            console.warn("[admin] R2 delete failed (continuing with DB delete):", e);
-          }
-        }
-      }
+    const row = await repo.getMediaById(id);
+    const mediaStore = getMediaStore();
+    if (mediaStore.isConfigured()) {
+      const key = mediaStore.publicUrlToObjectKey(row.url);
+      if (key) await mediaStore.deleteObject(key);
     }
-    await deleteMediaRow(client, id);
+    await repo.deleteMediaRow(id);
     await revalidateWeb(["media"]);
     return { success: true };
   } catch (e) {
