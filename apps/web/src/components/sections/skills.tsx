@@ -6,9 +6,7 @@ import {
   SKILL_CATEGORIES,
   getSkillCategorySortWeight,
 } from "@portfolio/shared/constants";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type Skill = Database["public"]["Tables"]["skills"]["Row"];
+import type { Skill } from "@portfolio/shared/schemas";
 
 type SkillsSectionProps = {
   skills: Skill[];
@@ -73,19 +71,17 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
       className="bg-muted/30 py-(--section-padding-y)"
       aria-label="Skills"
     >
-      <div className="mx-auto max-w-container px-(--container-padding)">
+      <div className="max-w-container mx-auto px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
-            <span className="font-mono text-base font-normal text-accent">
-              02.
-            </span>
+          <h2 className="text-h2 flex items-center gap-3 font-semibold tracking-tight">
+            <span className="text-accent font-mono text-base font-normal">02.</span>
             Skills & Expertise
-            <span className="ml-4 h-px flex-1 bg-border" aria-hidden />
+            <span className="bg-border ml-4 h-px flex-1" aria-hidden />
           </h2>
 
           <div className="mt-9 grid grid-cols-1 gap-7 md:grid-cols-2 md:gap-x-8 md:gap-y-7 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-7">
@@ -98,8 +94,9 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                 viewport={{ once: true, margin: "-50px" }}
                 className="space-y-3"
               >
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">
-                  {SKILL_CATEGORIES[category as keyof typeof SKILL_CATEGORIES] ?? category}
+                <h3 className="text-accent text-sm font-semibold tracking-wider uppercase">
+                  {SKILL_CATEGORIES[category as keyof typeof SKILL_CATEGORIES] ??
+                    category}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {categorySkills.map((skill) => (
@@ -107,8 +104,8 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
                       key={skill.id}
                       variants={tagVariants}
                       className={cn(
-                        "inline-flex items-center rounded-full border border-border/60 px-2.5 py-1",
-                        "text-sm font-medium text-foreground/90",
+                        "border-border/60 inline-flex items-center rounded-full border px-2.5 py-1",
+                        "text-foreground/90 text-sm font-medium",
                         "transition-all duration-200",
                         "hover:border-accent/40 hover:bg-accent/5 hover:text-accent",
                       )}

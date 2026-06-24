@@ -4,9 +4,7 @@ import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
 import { Badge } from "@portfolio/ui/badge";
 import { getContractTypeLabel } from "@portfolio/shared/schemas";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type Experience = Database["public"]["Tables"]["experience"]["Row"];
+import type { Experience } from "@portfolio/shared/schemas";
 
 type ExperienceSectionProps = {
   experience: Experience[];
@@ -23,29 +21,23 @@ const sectionVariants = {
 
 export function ExperienceSection({ experience }: ExperienceSectionProps) {
   return (
-    <section
-      id="experience"
-      className="py-(--section-padding-y)"
-      aria-label="Experience"
-    >
-      <div className="mx-auto max-w-container px-(--container-padding)">
+    <section id="experience" className="py-(--section-padding-y)" aria-label="Experience">
+      <div className="max-w-container mx-auto px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="flex items-center gap-3 text-h2 font-semibold tracking-tight">
-            <span className="font-mono text-base font-normal text-accent">
-              03.
-            </span>
+          <h2 className="text-h2 flex items-center gap-3 font-semibold tracking-tight">
+            <span className="text-accent font-mono text-base font-normal">03.</span>
             Where I&apos;ve Worked
-            <span className="ml-4 h-px flex-1 bg-border" aria-hidden />
+            <span className="bg-border ml-4 h-px flex-1" aria-hidden />
           </h2>
 
           <div className="relative mt-10">
             <div
-              className="absolute left-4 top-0 hidden h-full w-px bg-border md:left-8 md:block"
+              className="bg-border absolute top-0 left-4 hidden h-full w-px md:left-8 md:block"
               aria-hidden
             />
 
@@ -53,7 +45,8 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
               {experience.map((exp, i) => {
                 const period = `${exp.start_date} – ${exp.end_date ?? "Present"}`;
                 const bullets = exp.description.split("\n").filter(Boolean);
-                const locationType = exp.location_type.charAt(0).toUpperCase() + exp.location_type.slice(1);
+                const locationType =
+                  exp.location_type.charAt(0).toUpperCase() + exp.location_type.slice(1);
                 const jobType = getContractTypeLabel(exp.contract_type);
 
                 return (
@@ -70,30 +63,36 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                     className="relative pl-0 md:pl-20"
                   >
                     <div
-                      className="absolute left-2.5 top-2 hidden h-3 w-3 rounded-full border-2 border-accent bg-background md:left-6.5 md:block"
+                      className="border-accent bg-background absolute top-2 left-2.5 hidden h-3 w-3 rounded-full border-2 md:left-6.5 md:block"
                       aria-hidden
                     />
 
-                    <div className="rounded-xl border border-border/50 bg-muted/20 p-6 transition-all duration-200 hover:border-accent/20 hover:shadow-sm">
+                    <div className="border-border/50 bg-muted/20 hover:border-accent/20 rounded-xl border p-6 transition-all duration-200 hover:shadow-sm">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <h3 className="text-lg font-semibold">{exp.role}</h3>
                           <p className="text-accent">{exp.company}</p>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-3 text-sm">
                           <span className="font-mono">{period}</span>
                         </div>
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-sm">
                         <span className="inline-flex items-center gap-2">
                           <MapPin className="h-3.5 w-3.5 shrink-0" />
                           {exp.location}
                         </span>
-                        <Badge variant="default" className="border-transparent font-normal">
+                        <Badge
+                          variant="default"
+                          className="border-transparent font-normal"
+                        >
                           {locationType}
                         </Badge>
-                        <Badge variant="default" className="border-transparent font-normal">
+                        <Badge
+                          variant="default"
+                          className="border-transparent font-normal"
+                        >
                           {jobType}
                         </Badge>
                       </div>
@@ -102,9 +101,9 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                         {bullets.map((item, idx) => (
                           <li
                             key={idx}
-                            className="flex gap-2 text-sm leading-relaxed text-muted-foreground"
+                            className="text-muted-foreground flex gap-2 text-sm leading-relaxed"
                           >
-                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                            <span className="bg-accent mt-1.5 h-1 w-1 shrink-0 rounded-full" />
                             {item}
                           </li>
                         ))}
@@ -112,7 +111,11 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
 
                       <div className="mt-4 flex flex-wrap gap-1.5">
                         {exp.tech_tags.map((t) => (
-                          <Badge key={t} variant="accent" className="font-mono font-normal">
+                          <Badge
+                            key={t}
+                            variant="accent"
+                            className="font-mono font-normal"
+                          >
                             {t}
                           </Badge>
                         ))}

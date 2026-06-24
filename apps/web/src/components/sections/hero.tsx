@@ -6,9 +6,7 @@ import { cn } from "@/lib/utils";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { HeroTechCarousel } from "@portfolio/ui/hero-tech-carousel";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type Hero = Database["public"]["Tables"]["hero"]["Row"];
+import type { Hero } from "@portfolio/shared/schemas";
 
 type HeroSectionProps = {
   hero: Hero;
@@ -38,7 +36,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
       aria-label="Hero"
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-linear-to-b from-accent/5 via-transparent to-transparent"
+        className="from-accent/5 pointer-events-none absolute inset-0 bg-linear-to-b via-transparent to-transparent"
         aria-hidden
       />
 
@@ -46,18 +44,18 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mx-auto w-full min-w-0 max-w-container px-(--container-padding) py-16 text-center sm:py-24 md:py-32"
+        className="max-w-container relative z-10 mx-auto w-full min-w-0 px-(--container-padding) py-16 text-center sm:py-24 md:py-32"
       >
         <motion.p
           variants={itemVariants}
-          className="font-mono text-sm text-accent md:text-base"
+          className="text-accent font-mono text-sm md:text-base"
         >
           {hero.greeting}
         </motion.p>
 
         <motion.h1
           variants={itemVariants}
-          className="mt-5 text-balance text-display font-bold leading-[1.1] tracking-tight"
+          className="text-display mt-5 leading-[1.1] font-bold tracking-tight text-balance"
         >
           {hero.name}
           <span className="text-accent">.</span>
@@ -65,14 +63,14 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
 
         <motion.h2
           variants={itemVariants}
-          className="mt-3 text-balance text-h1 font-semibold leading-tight tracking-tight text-muted-foreground"
+          className="text-h1 text-muted-foreground mt-3 leading-tight font-semibold tracking-tight text-balance"
         >
           {hero.headline}
         </motion.h2>
 
         <motion.p
           variants={itemVariants}
-          className="mx-auto mt-6 max-w-2xl text-body-lg leading-relaxed text-muted-foreground"
+          className="text-body-lg text-muted-foreground mx-auto mt-6 max-w-2xl leading-relaxed"
         >
           {hero.value_proposition}
         </motion.p>
@@ -94,7 +92,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
               })
             }
             className={cn(
-              "rounded-full bg-accent px-8 py-3 text-sm font-medium text-accent-foreground",
+              "bg-accent text-accent-foreground rounded-full px-8 py-3 text-sm font-medium",
               "transition-all duration-200 hover:opacity-90 active:scale-95",
               "shadow-md hover:shadow-lg",
             )}
@@ -110,8 +108,8 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
               })
             }
             className={cn(
-              "flex items-center gap-2 rounded-full border border-border px-8 py-3",
-              "text-sm font-medium text-foreground transition-all duration-200",
+              "border-border flex items-center gap-2 rounded-full border px-8 py-3",
+              "text-foreground text-sm font-medium transition-all duration-200",
               "hover:border-accent hover:text-accent active:scale-95",
             )}
           >
@@ -123,31 +121,25 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
         <motion.div variants={itemVariants} className="mt-16">
           <div
             className={cn(
-              "mx-auto max-w-4xl rounded-2xl border border-border/80",
+              "border-border/80 mx-auto max-w-4xl rounded-2xl border",
               "bg-muted/50 px-5 py-6 shadow-sm",
               "dark:border-border/60 dark:bg-muted/35",
             )}
           >
             <div className="mb-5 flex items-center justify-center gap-3">
-              <span
-                className="h-px w-10 shrink-0 bg-border sm:w-14"
-                aria-hidden
-              />
-              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/90">
+              <span className="bg-border h-px w-10 shrink-0 sm:w-14" aria-hidden />
+              <p className="text-foreground/90 text-center text-[11px] font-semibold tracking-[0.2em] uppercase">
                 Trusted by teams at
               </p>
-              <span
-                className="h-px w-10 shrink-0 bg-border sm:w-14"
-                aria-hidden
-              />
+              <span className="bg-border h-px w-10 shrink-0 sm:w-14" aria-hidden />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-10">
               {companies.map((company) => (
                 <span
                   key={company}
                   className={cn(
-                    "text-sm font-semibold tracking-tight text-foreground/85",
-                    "transition-colors duration-200 hover:text-accent sm:text-base",
+                    "text-foreground/85 text-sm font-semibold tracking-tight",
+                    "hover:text-accent transition-colors duration-200 sm:text-base",
                   )}
                 >
                   {company}
@@ -167,7 +159,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ArrowDown className="h-5 w-5 text-muted-foreground/40" />
+            <ArrowDown className="text-muted-foreground/40 h-5 w-5" />
           </motion.div>
         </motion.div>
       </motion.div>

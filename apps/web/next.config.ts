@@ -1,8 +1,26 @@
 import type { NextConfig } from "next";
 import { withPostHogConfig } from "@posthog/nextjs-config";
+// Validate environment at build/start (throws on malformed values).
+import "./src/lib/env";
 
-const ingestionHost =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+const ingestionHost = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+
+/** Derive an image remote pattern from the configured media base URL. */
+function mediaRemotePatterns() {
+  const base = process.env.MEDIA_PUBLIC_BASE_URL;
+  if (!base) return [];
+  try {
+    const url = new URL(base);
+    return [
+      {
+        protocol: url.protocol.replace(":", "") as "http" | "https",
+        hostname: url.hostname,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
 
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
@@ -13,10 +31,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
       },
-      {
-        protocol: "https",
-        hostname: "*.r2.cloudflarestorage.com",
-      },
+      ...mediaRemotePatterns(),
     ],
   },
   headers: async () => [
