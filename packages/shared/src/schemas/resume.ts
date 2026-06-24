@@ -43,6 +43,8 @@ export const resumeVariantSchema = z.object({
   hidden_skill_ids: z.array(z.string()),
 });
 
+export type ResumeVariantFormData = z.infer<typeof resumeVariantSchema>;
+
 export const resumeVariantRowSchema = resumeVariantSchema.extend({
   id: z.string(),
   created_at: z.string(),
