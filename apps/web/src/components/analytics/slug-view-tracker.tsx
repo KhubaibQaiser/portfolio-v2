@@ -5,18 +5,13 @@ import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 
 type SlugViewTrackerProps = {
-  kind: "project" | "blog";
   slug: string;
 };
 
-export function SlugViewTracker({ kind, slug }: SlugViewTrackerProps) {
+export function SlugViewTracker({ slug }: SlugViewTrackerProps) {
   useEffect(() => {
-    const event =
-      kind === "project"
-        ? PortfolioEvents.projectViewed
-        : PortfolioEvents.blogPostViewed;
-    capturePortfolioEvent(event, { slug });
-  }, [kind, slug]);
+    capturePortfolioEvent(PortfolioEvents.projectViewed, { slug });
+  }, [slug]);
 
   return null;
 }
