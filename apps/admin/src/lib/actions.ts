@@ -1,26 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import {
-  upsertHero,
-  upsertAbout,
-  insertExperience,
-  updateExperience,
-  deleteExperience as deleteExp,
-  syncCompaniesCountFromExperience,
-  insertProject,
-  updateProject,
-  deleteProject as deleteProj,
-  batchUpsertSkills,
-  deleteSkill as deleteSk,
-  insertTestimonial,
-  updateTestimonial,
-  deleteTestimonial as deleteTest,
-  upsertSiteConfig,
-  upsertResume,
-  getMediaById,
-  deleteMediaRow,
-} from "@portfolio/shared/supabase/queries";
+import { getMediaById, deleteMediaRow } from "@portfolio/shared/supabase/queries";
+import { getContentRepository } from "@portfolio/data";
 import {
   heroSchema,
   aboutSchema,
@@ -33,22 +15,29 @@ import {
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
 import { revalidateWeb } from "@/lib/revalidate-web";
+import { requireAdmin } from "@/lib/auth-guard";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
 import { deleteObjectFromR2, isR2Configured, publicUrlToObjectKey } from "@/lib/r2";
 
 type ActionResult = { success: true } | { success: false; error: string };
 
+const repo = getContentRepository();
+
 // ---------------------------------------------------------------------------
 // Hero
 // ---------------------------------------------------------------------------
 
-export async function saveHero(values: z.infer<typeof heroSchema>): Promise<ActionResult> {
+export async function saveHero(
+  values: z.infer<typeof heroSchema>,
+): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = heroSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
-    await upsertHero(client, parsed.data);
+    await repo.upsertHero(parsed.data);
     await revalidateWeb(["hero"]);
     return { success: true };
   } catch (e) {
@@ -60,14 +49,18 @@ export async function saveHero(values: z.infer<typeof heroSchema>): Promise<Acti
 // About
 // ---------------------------------------------------------------------------
 
-export async function saveAbout(values: z.infer<typeof aboutSchema>): Promise<ActionResult> {
+export async function saveAbout(
+  values: z.infer<typeof aboutSchema>,
+): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = aboutSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
-    await upsertAbout(client, parsed.data);
-    await syncCompaniesCountFromExperience(client);
+    await repo.upsertAbout(parsed.data);
+    await repo.syncCompaniesCountFromExperience();
     await revalidateWeb(["about"]);
     return { success: true };
   } catch (e) {
@@ -83,17 +76,19 @@ export async function saveExperience(
   id: string | null,
   values: z.infer<typeof experienceSchema>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = experienceSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
     if (id) {
-      await updateExperience(client, id, parsed.data);
+      await repo.updateExperience(id, parsed.data);
     } else {
-      await insertExperience(client, parsed.data);
+      await repo.insertExperience(parsed.data);
     }
-    await syncCompaniesCountFromExperience(client);
+    await repo.syncCompaniesCountFromExperience();
     await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {
@@ -102,10 +97,12 @@ export async function saveExperience(
 }
 
 export async function deleteExperience(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   try {
-    const client = await createClient();
-    await deleteExp(client, id);
-    await syncCompaniesCountFromExperience(client);
+    await repo.deleteExperience(id);
+    await repo.syncCompaniesCountFromExperience();
     await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {
@@ -121,15 +118,17 @@ export async function saveProject(
   id: string | null,
   values: z.infer<typeof projectSchema>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = projectSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
     if (id) {
-      await updateProject(client, id, parsed.data);
+      await repo.updateProject(id, parsed.data);
     } else {
-      await insertProject(client, parsed.data);
+      await repo.insertProject(parsed.data);
     }
     await revalidateWeb(["projects"]);
     return { success: true };
@@ -139,9 +138,11 @@ export async function saveProject(
 }
 
 export async function deleteProject(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   try {
-    const client = await createClient();
-    await deleteProj(client, id);
+    await repo.deleteProject(id);
     await revalidateWeb(["projects"]);
     return { success: true };
   } catch (e) {
@@ -156,14 +157,20 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 export async function saveSkills(
   skills: Array<{ id?: string } & z.infer<typeof skillSchema>>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   for (const skill of skills) {
     const parsed = skillSchema.safeParse(skill);
-    if (!parsed.success) return { success: false, error: `Invalid skill "${skill.name}": ${parsed.error.message}` };
+    if (!parsed.success)
+      return {
+        success: false,
+        error: `Invalid skill "${skill.name}": ${parsed.error.message}`,
+      };
   }
 
   try {
-    const client = await createClient();
-    await batchUpsertSkills(client, skills);
+    await repo.batchUpsertSkills(skills);
     await revalidateWeb(["skills"]);
     return { success: true };
   } catch (e) {
@@ -172,9 +179,11 @@ export async function saveSkills(
 }
 
 export async function deleteSkill(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   try {
-    const client = await createClient();
-    await deleteSk(client, id);
+    await repo.deleteSkill(id);
     await revalidateWeb(["skills"]);
     return { success: true };
   } catch (e) {
@@ -190,15 +199,17 @@ export async function saveTestimonial(
   id: string | null,
   values: z.infer<typeof testimonialSchema>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = testimonialSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
     if (id) {
-      await updateTestimonial(client, id, parsed.data);
+      await repo.updateTestimonial(id, parsed.data);
     } else {
-      await insertTestimonial(client, parsed.data);
+      await repo.insertTestimonial(parsed.data);
     }
     await revalidateWeb(["testimonials"]);
     return { success: true };
@@ -208,9 +219,11 @@ export async function saveTestimonial(
 }
 
 export async function deleteTestimonialAction(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   try {
-    const client = await createClient();
-    await deleteTest(client, id);
+    await repo.deleteTestimonial(id);
     await revalidateWeb(["testimonials"]);
     return { success: true };
   } catch (e) {
@@ -225,12 +238,14 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
 export async function saveSiteConfig(
   values: z.infer<typeof siteConfigSchema>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const parsed = siteConfigSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
-    await upsertSiteConfig(client, parsed.data);
+    await repo.upsertSiteConfig(parsed.data);
     await revalidateWeb(["site-config"]);
     return { success: true };
   } catch (e) {
@@ -245,21 +260,18 @@ export async function saveSiteConfig(
 export async function saveResume(
   values: z.infer<typeof resumeSchema>,
 ): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const normalized = {
     ...values,
     education: values.education.map((e) => ({
       ...e,
-      url:
-        e.url != null && String(e.url).trim() !== ""
-          ? String(e.url).trim()
-          : null,
+      url: e.url != null && String(e.url).trim() !== "" ? String(e.url).trim() : null,
     })),
     certifications: values.certifications.map((c) => ({
       ...c,
-      url:
-        c.url != null && String(c.url).trim() !== ""
-          ? String(c.url).trim()
-          : null,
+      url: c.url != null && String(c.url).trim() !== "" ? String(c.url).trim() : null,
     })),
   };
 
@@ -267,8 +279,7 @@ export async function saveResume(
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    const client = await createClient();
-    await upsertResume(client, parsed.data);
+    await repo.upsertResume(parsed.data);
     await revalidateWeb(["resume"]);
     return { success: true };
   } catch (e) {
