@@ -4,9 +4,7 @@ import { useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveHero } from "@/lib/actions";
-import type { Database } from "@portfolio/shared/supabase/database.types";
-
-type Hero = Database["public"]["Tables"]["hero"]["Row"];
+import type { Hero } from "@portfolio/shared/schemas";
 
 type HeroFormProps = {
   initialData: Hero | null;
@@ -39,35 +37,42 @@ export function HeroForm({ initialData }: HeroFormProps) {
 
   return (
     <div className="mt-8 space-y-5">
-      {(["greeting", "name", "headline", "value_proposition", "cta_primary_text", "cta_secondary_text"] as const).map(
-        (key) => (
-          <div key={key}>
-            <label className="mb-1.5 block text-sm font-medium capitalize">
-              {key.replace(/_/g, " ")}
-            </label>
-            {String(form[key]).length > 80 ? (
-              <textarea
-                value={form[key] as string}
-                onChange={(e) => handleChange(key, e.target.value)}
-                rows={3}
-                className={cn(
-                  "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                  "text-sm focus:border-accent focus:outline-hidden",
-                )}
-              />
-            ) : (
-              <input
-                value={form[key] as string}
-                onChange={(e) => handleChange(key, e.target.value)}
-                className={cn(
-                  "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-                  "text-sm focus:border-accent focus:outline-hidden",
-                )}
-              />
-            )}
-          </div>
-        ),
-      )}
+      {(
+        [
+          "greeting",
+          "name",
+          "headline",
+          "value_proposition",
+          "cta_primary_text",
+          "cta_secondary_text",
+        ] as const
+      ).map((key) => (
+        <div key={key}>
+          <label className="mb-1.5 block text-sm font-medium capitalize">
+            {key.replace(/_/g, " ")}
+          </label>
+          {String(form[key]).length > 80 ? (
+            <textarea
+              value={form[key] as string}
+              onChange={(e) => handleChange(key, e.target.value)}
+              rows={3}
+              className={cn(
+                "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+                "focus:border-accent text-sm focus:outline-hidden",
+              )}
+            />
+          ) : (
+            <input
+              value={form[key] as string}
+              onChange={(e) => handleChange(key, e.target.value)}
+              className={cn(
+                "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+                "focus:border-accent text-sm focus:outline-hidden",
+              )}
+            />
+          )}
+        </div>
+      ))}
 
       <div>
         <label className="mb-1.5 block text-sm font-medium">
@@ -83,14 +88,19 @@ export function HeroForm({ initialData }: HeroFormProps) {
           }
           rows={3}
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       </div>
 
       {message && (
-        <p className={cn("text-sm", message === "Saved!" ? "text-green-600" : "text-red-500")}>
+        <p
+          className={cn(
+            "text-sm",
+            message === "Saved!" ? "text-green-600" : "text-red-500",
+          )}
+        >
           {message}
         </p>
       )}
@@ -99,12 +109,16 @@ export function HeroForm({ initialData }: HeroFormProps) {
         onClick={handleSave}
         disabled={saving}
         className={cn(
-          "flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5",
-          "text-sm font-medium text-accent-foreground transition-opacity",
+          "bg-accent flex items-center gap-2 rounded-lg px-5 py-2.5",
+          "text-accent-foreground text-sm font-medium transition-opacity",
           "hover:opacity-90 disabled:opacity-50",
         )}
       >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
         {saving ? "Saving..." : "Save & Publish"}
       </button>
     </div>
