@@ -1,5 +1,5 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { getRateLimiter } from "@portfolio/data";
+import type { RateLimitOptions } from "@portfolio/shared/ports";
 
 type LimitOk = { ok: true };
 type LimitDenied = {
@@ -11,71 +11,39 @@ type LimitDenied = {
 };
 export type ResumeAiRateLimitResult = LimitOk | LimitDenied;
 
-let hourly: Ratelimit | null | undefined;
-let daily: Ratelimit | null | undefined;
-
-function getRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  return new Redis({ url, token });
-}
-
-function getHourly(): Ratelimit | null {
-  if (hourly !== undefined) return hourly;
-  const redis = getRedis();
-  if (!redis) {
-    hourly = null;
-    return null;
-  }
-  hourly = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(10, "1 h"),
-    prefix: "portfolio:resume-ai:gen:h",
-    analytics: false,
-  });
-  return hourly;
-}
-
-function getDaily(): Ratelimit | null {
-  if (daily !== undefined) return daily;
-  const redis = getRedis();
-  if (!redis) {
-    daily = null;
-    return null;
-  }
-  daily = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(40, "24 h"),
-    prefix: "portfolio:resume-ai:gen:d",
-    analytics: false,
-  });
-  return daily;
-}
+const HOURLY: RateLimitOptions = {
+  max: 10,
+  windowSec: 60 * 60,
+  prefix: "resume-ai:gen:h",
+};
+const DAILY: RateLimitOptions = {
+  max: 40,
+  windowSec: 24 * 60 * 60,
+  prefix: "resume-ai:gen:d",
+};
 
 /**
- * 10 generations/hr + 40 generations/day per admin user.
- * No-op when Upstash isn't configured so local dev still works.
+ * 10 generations/hr + 40 generations/day per admin user, enforced through the
+ * RateLimiter port (DynamoDB fixed-window). The no-op limiter (local/fixture
+ * backend) always allows, so dev still works without DynamoDB.
  */
 export async function checkResumeAiRateLimit(
   userId: string,
 ): Promise<ResumeAiRateLimitResult> {
-  const h = getHourly();
-  const d = getDaily();
-  if (!h || !d) return { ok: true };
+  const limiter = getRateLimiter();
+  const [hourly, daily] = await Promise.all([
+    limiter.check(userId, HOURLY),
+    limiter.check(userId, DAILY),
+  ]);
 
-  const [hr, dr] = await Promise.all([h.limit(userId), d.limit(userId)]);
-  void hr.pending.catch(() => undefined);
-  void dr.pending.catch(() => undefined);
-
-  if (!hr.success || !dr.success) {
-    const reset = hr.success ? dr.reset : hr.reset;
+  const denied = !hourly.ok ? hourly : !daily.ok ? daily : null;
+  if (denied) {
     return {
       ok: false,
       reason: "rate-limit",
-      retryAfterSeconds: Math.max(1, Math.ceil((reset - Date.now()) / 1000)),
-      limit: hr.success ? dr.limit : hr.limit,
-      remaining: hr.success ? dr.remaining : hr.remaining,
+      retryAfterSeconds: denied.retryAfterSeconds,
+      limit: denied.limit,
+      remaining: denied.remaining,
     };
   }
 

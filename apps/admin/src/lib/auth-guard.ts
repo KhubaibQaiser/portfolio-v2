@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
 
-export type AdminAuth = { ok: true; email: string } | { ok: false; error: string };
+export type AdminAuth =
+  | { ok: true; id: string; email: string }
+  | { ok: false; error: string };
 
 /**
  * Authorizes the current request as an allow-listed admin.
@@ -20,5 +22,5 @@ export async function requireAdmin(): Promise<AdminAuth> {
   if (!user?.email || !isAllowedAdmin(user.email)) {
     return { ok: false, error: "Unauthorized" };
   }
-  return { ok: true, email: user.email };
+  return { ok: true, id: user.id, email: user.email };
 }
