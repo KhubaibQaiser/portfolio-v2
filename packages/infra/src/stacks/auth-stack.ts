@@ -31,6 +31,8 @@ const lambdaDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 export class AuthStack extends cdk.Stack {
   readonly userPool: cognito.UserPool;
   readonly userPoolClient: cognito.UserPoolClient;
+  /** Hosted UI base URL (`https://<prefix>.auth.<region>.amazoncognito.com`). */
+  readonly hostedUiDomain: string;
 
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
@@ -111,6 +113,7 @@ export class AuthStack extends cdk.Stack {
         domainPrefix: `${config.appName.toLowerCase()}-admin-${this.account}`,
       },
     });
+    this.hostedUiDomain = domain.baseUrl();
 
     new cdk.CfnOutput(this, "UserPoolId", { value: this.userPool.userPoolId });
     new cdk.CfnOutput(this, "UserPoolClientId", {

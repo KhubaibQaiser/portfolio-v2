@@ -43,11 +43,6 @@ Thumbs.db
 # storybook
 storybook-static/
 
-# supabase (CLI — local link state, temp, branching)
-.supabase/
-supabase/.branches
-supabase/.temp
-
 # misc
 *.tsbuildinfo
 next-env.d.ts

@@ -28,15 +28,12 @@ function mediaRemotePatterns() {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
+  // aws-jwt-verify ships strict ESM `exports` that @vercel/nft can't trace into
+  // the standalone bundle; keep it external so Next copies it into node_modules.
+  serverExternalPackages: ["aws-jwt-verify"],
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "*.supabase.co",
-      },
-      ...mediaRemotePatterns(),
-    ],
+    remotePatterns: mediaRemotePatterns(),
   },
 };
 

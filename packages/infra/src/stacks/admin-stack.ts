@@ -13,6 +13,12 @@ export type AdminStackProps = cdk.StackProps & {
   table: dynamodb.ITable;
   /** Media bucket from the DataStack (same region). */
   mediaBucket: s3.IBucket;
+  /** Cognito wiring from the AuthStack for admin sign-in. */
+  auth: {
+    userPoolId: string;
+    userPoolClientId: string;
+    hostedUiDomain: string;
+  };
 };
 
 /**
@@ -26,7 +32,17 @@ export type AdminStackProps = cdk.StackProps & {
 export class AdminStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AdminStackProps) {
     super(scope, id, props);
-    const { config, table, mediaBucket } = props;
+    const { config, table, mediaBucket, auth } = props;
+
+    // Public origin for OAuth redirect/logout URIs. The CloudFront Host header
+    // is stripped before the Lambda origin, so the app can't derive this at
+    // runtime — and referencing the distribution domain here would create a
+    // Function↔Distribution cycle. Instead use the registered admin origin
+    // (custom domain when enabled, else the CloudFront URL from `adminUrls`),
+    // which must match a Cognito callback origin anyway.
+    const appOrigin = config.domainEnabled
+      ? `https://admin.${config.domainName}`
+      : config.adminUrls.find((u) => u.startsWith("https://"));
 
     new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
@@ -35,6 +51,11 @@ export class AdminStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_NAME: table.tableName,
         S3_MEDIA_BUCKET: mediaBucket.bucketName,
+        COGNITO_REGION: config.region,
+        COGNITO_USER_POOL_ID: auth.userPoolId,
+        COGNITO_CLIENT_ID: auth.userPoolClientId,
+        COGNITO_DOMAIN: auth.hostedUiDomain,
+        ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
       },
       grantServer: (fn) => {
         table.grantReadWriteData(fn);

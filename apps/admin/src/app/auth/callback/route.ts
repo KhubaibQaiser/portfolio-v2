@@ -1,62 +1,56 @@
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { exchangeCodeForTokens } from "@/lib/auth/oauth";
+import {
+  clearSessionCookies,
+  setSessionCookies,
+  verifyIdToken,
+} from "@/lib/auth/session";
+import { OAUTH_STATE_COOKIE, PKCE_VERIFIER_COOKIE } from "@/lib/auth/tokens";
+
+function resolveOrigin(request: NextRequest): string {
+  return process.env.APP_ORIGIN ?? request.nextUrl.origin;
+}
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const origin = resolveOrigin(request);
+  const loginWithError = (code: string) =>
+    NextResponse.redirect(`${origin}/login?error=${code}`);
+
+  const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as "email" | "magiclink" | null;
+  const state = searchParams.get("state");
 
-  const cookieStore = await cookies();
+  const store = await cookies();
+  const expectedState = store.get(OAUTH_STATE_COOKIE)?.value;
+  const codeVerifier = store.get(PKCE_VERIFIER_COOKIE)?.value;
+  store.delete(OAUTH_STATE_COOKIE);
+  store.delete(PKCE_VERIFIER_COOKIE);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    },
-  );
+  if (!code) return loginWithError("missing_code");
+  if (!state || !expectedState || state !== expectedState) {
+    return loginWithError("invalid_state");
+  }
+  if (!codeVerifier) return loginWithError("invalid_state");
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      return NextResponse.redirect(
-        `${origin}/login?error=auth_code_exchange_failed`,
-      );
-    }
-  } else if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type,
+  try {
+    const tokens = await exchangeCodeForTokens({
+      code,
+      redirectUri: `${origin}/auth/callback`,
+      codeVerifier,
     });
-    if (error) {
-      return NextResponse.redirect(
-        `${origin}/login?error=invalid_magic_link`,
-      );
+
+    const identity = await verifyIdToken(tokens.idToken);
+    if (!isAllowedAdmin(identity.email)) {
+      await clearSessionCookies();
+      return loginWithError("unauthorized");
     }
-  } else {
-    return NextResponse.redirect(`${origin}/login?error=missing_auth_params`);
+
+    await setSessionCookies(tokens);
+    return NextResponse.redirect(`${origin}/`);
+  } catch (error) {
+    console.error("Auth callback failed:", error);
+    return loginWithError("auth_failed");
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAllowedAdmin(user.email)) {
-    await supabase.auth.signOut();
-    return NextResponse.redirect(`${origin}/login?error=unauthorized`);
-  }
-
-  return NextResponse.redirect(`${origin}/`);
 }
