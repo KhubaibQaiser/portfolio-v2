@@ -6,7 +6,6 @@ export const PortfolioEvents = {
   resumeView: "portfolio_resume_view",
   resumePdfDownload: "portfolio_resume_pdf_download",
   projectViewed: "portfolio_project_viewed",
-  blogPostViewed: "portfolio_blog_post_viewed",
   themeChanged: "portfolio_theme_changed",
   chatOpened: "portfolio_chat_opened",
   chatClosed: "portfolio_chat_closed",

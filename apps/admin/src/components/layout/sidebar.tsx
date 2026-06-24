@@ -11,7 +11,6 @@ import {
   Zap,
   FileText,
   MessageSquare,
-  PenTool,
   Settings,
   Image,
   LogOut,
@@ -33,7 +32,6 @@ const navItems = [
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
   { href: "/testimonials", label: "Testimonials", icon: MessageSquare },
-  { href: "/blog", label: "Blog", icon: PenTool },
   { href: "/site-config", label: "Site Config", icon: Settings },
   { href: "/media", label: "Media", icon: Image },
 ];

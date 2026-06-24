@@ -64,12 +64,6 @@ export {
   type Testimonial,
 } from "./testimonial";
 export {
-  blogPostSchema,
-  blogPostRowSchema,
-  type BlogPostFormData,
-  type BlogPost,
-} from "./blog";
-export {
   siteConfigSchema,
   siteConfigRowSchema,
   socialLinkSchema,

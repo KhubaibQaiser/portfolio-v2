@@ -97,7 +97,7 @@ export default async function ProjectCaseStudy({
 
   return (
     <div className="py-32">
-      <SlugViewTracker kind="project" slug={slug} />
+      <SlugViewTracker slug={slug} />
       <div className="mx-auto max-w-3xl px-(--container-padding)">
         <Link
           href="/projects"

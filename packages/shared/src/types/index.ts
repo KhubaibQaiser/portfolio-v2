@@ -19,7 +19,6 @@ export type {
   Certification,
   Testimonial,
   TestimonialFormData,
-  BlogPost,
   SiteConfig,
   SiteConfigFormData,
   SocialLink,
