@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getCurrentIdentity } from "@/lib/auth/session";
 
 export type AdminAuth =
   | { ok: true; id: string; email: string }
@@ -10,17 +10,14 @@ export type AdminAuth =
  *
  * The data layer (DynamoDB) has no row-level security, so authorization must be
  * enforced explicitly at every mutation boundary rather than relying on the
- * middleware route guard alone. This wraps the current (Supabase) session; when
- * Cognito lands it becomes the single place that swaps to the AuthProvider port.
+ * middleware route guard alone. This is the single place that resolves the
+ * verified Cognito identity and checks the email allowlist.
  */
 export async function requireAdmin(): Promise<AdminAuth> {
-  const client = await createClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+  const identity = await getCurrentIdentity();
 
-  if (!user?.email || !isAllowedAdmin(user.email)) {
+  if (!identity?.email || !isAllowedAdmin(identity.email)) {
     return { ok: false, error: "Unauthorized" };
   }
-  return { ok: true, id: user.id, email: user.email };
+  return { ok: true, id: identity.sub, email: identity.email };
 }

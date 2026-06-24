@@ -45,19 +45,24 @@ new WebStack(app, `${config.appName}-Web`, {
   description: "Web app (OpenNext on Lambda + CloudFront)",
 });
 
+const auth = new AuthStack(app, `${config.appName}-Auth`, {
+  env: primaryEnv,
+  config,
+  description: "Cognito user pool + Hosted UI for the admin dashboard",
+});
+
 new AdminStack(app, `${config.appName}-Admin`, {
   env: primaryEnv,
   config,
   openNextDir: path.join(repoRoot, "apps/admin/.open-next"),
   table: data.table,
   mediaBucket: data.mediaBucket,
+  auth: {
+    userPoolId: auth.userPool.userPoolId,
+    userPoolClientId: auth.userPoolClient.userPoolClientId,
+    hostedUiDomain: auth.hostedUiDomain,
+  },
   description: "Admin dashboard (OpenNext on Lambda + CloudFront)",
-});
-
-new AuthStack(app, `${config.appName}-Auth`, {
-  env: primaryEnv,
-  config,
-  description: "Cognito user pool + Hosted UI for the admin dashboard",
 });
 
 new SharedStack(app, `${config.appName}-Shared`, {

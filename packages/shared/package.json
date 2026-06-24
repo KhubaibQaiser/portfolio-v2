@@ -10,7 +10,6 @@
     "./schemas/*": "./src/schemas/*.ts",
     "./ports": "./src/ports/index.ts",
     "./ports/*": "./src/ports/*.ts",
-    "./supabase/*": "./src/supabase/*.ts",
     "./constants": "./src/constants.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",
@@ -22,7 +21,6 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.103.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "tailwind-merge": "^3.5.0",
