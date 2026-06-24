@@ -12,6 +12,7 @@ export default defineConfig({
           environment: "node",
           include: [
             "packages/shared/**/*.{test,spec}.ts",
+            "packages/data/**/*.{test,spec}.ts",
             "packages/ai/**/*.{test,spec}.ts",
             "apps/*/src/lib/**/*.{test,spec}.ts",
           ],
