@@ -1,0 +1,8 @@
+{
+  "app": "tsx bin/portfolio.ts",
+  "output": "cdk.out",
+  "watch": {
+    "include": ["bin/**", "src/**"],
+    "exclude": ["cdk.out/**", "node_modules/**"]
+  }
+}
