@@ -1,18 +1,29 @@
-import type { ContentRepository, CostCap, RateLimiter } from "@portfolio/shared/ports";
+import type {
+  ContentRepository,
+  CostCap,
+  MediaStore,
+  RateLimiter,
+} from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
 import { createContentCostCap } from "./adapters/content-cost-cap";
+import { createS3MediaStore } from "./adapters/s3-media-store";
+import { createNoopMediaStore } from "./adapters/noop-media-store";
 import { createDynamoClient } from "./dynamo/client";
 import { resolveTableName } from "./dynamo/table";
+import { createS3Client } from "./s3/client";
 
 export { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 export { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
 export { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 export { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
 export { createContentCostCap } from "./adapters/content-cost-cap";
+export { createS3MediaStore } from "./adapters/s3-media-store";
+export { createNoopMediaStore } from "./adapters/noop-media-store";
 export { createDynamoClient } from "./dynamo/client";
+export { createS3Client } from "./s3/client";
 export { resolveTableName, buildCreateTableInput } from "./dynamo/table";
 export { ensureTable } from "./dynamo/create-table";
 
@@ -58,4 +69,21 @@ export function getRateLimiter(): RateLimiter {
 /** Returns the cost cap bound to the active content repository. */
 export function getCostCap(): CostCap {
   return createContentCostCap(getContentRepository());
+}
+
+/**
+ * Returns the media store: S3 when `S3_MEDIA_BUCKET` and `MEDIA_PUBLIC_BASE_URL`
+ * are configured, otherwise a no-op store that keeps uploads disabled in dev.
+ */
+export function getMediaStore(): MediaStore {
+  const bucket = process.env.S3_MEDIA_BUCKET;
+  const publicBaseUrl = process.env.MEDIA_PUBLIC_BASE_URL;
+  if (bucket && publicBaseUrl) {
+    return createS3MediaStore({
+      client: createS3Client(),
+      bucket,
+      publicBaseUrl,
+    });
+  }
+  return createNoopMediaStore();
 }
