@@ -7,7 +7,7 @@ import { S3Client } from "@aws-sdk/client-s3";
  */
 export function createS3Client(): S3Client {
   const endpoint = process.env.S3_ENDPOINT;
-  const region = process.env.AWS_REGION ?? "us-east-1";
+  const region = process.env.AWS_REGION ?? "eu-west-1";
 
   return new S3Client({
     region,
