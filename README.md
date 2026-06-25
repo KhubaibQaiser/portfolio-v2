@@ -76,6 +76,7 @@ Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages
 | `Portfolio-Auth`   | `eu-west-1` | Cognito user pool, app client (PKCE), Hosted UI, pre-token Lambda                        |
 | `Portfolio-Admin`  | `eu-west-1` | OpenNext admin app: Lambda(s) + CloudFront (wired to Auth + Data)                        |
 | `Portfolio-Shared` | `eu-west-1` | EventBridge bus, SNS alerts, SES identity, CloudWatch alarms + dashboard, AWS Budget     |
+| `Portfolio-Storybook` | `eu-west-1` | Static Storybook design-system showcase: private S3 + CloudFront (OAC)                |
 | `Portfolio-Oidc`   | `eu-west-1` | GitHub Actions OIDC provider + least-privilege deploy role (opt-in via `-c githubRepo=`) |
 | `Portfolio-Dns`    | `us-east-1` | Route 53 public hosted zone for the apex domain                                          |
 | `Portfolio-Cert`   | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                      |
@@ -248,13 +249,14 @@ pnpm exec cdk bootstrap aws://<ACCOUNT_ID>/eu-west-1
 From `packages/infra` (run with your real values). The first deploy creates DynamoDB, the Cognito pool, both OpenNext apps, and shared services:
 
 ```bash
-# Build the OpenNext bundles the app stacks reference:
+# Build the artifacts the stacks reference (OpenNext bundles + Storybook):
 pnpm --filter @portfolio/web exec open-next build
 pnpm --filter @portfolio/admin exec open-next build
+pnpm --filter @portfolio/ui build-storybook
 
 # Deploy (adminUrls = the admin's CloudFront URL, needed for Cognito callback URLs):
 pnpm exec cdk deploy \
-  Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared \
+  Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Storybook \
   --require-approval never \
   -c adminUrls=https://<admin-distribution>.cloudfront.net \
   -c alertEmail=you@example.com \
@@ -315,7 +317,7 @@ lint → typecheck → test → integration → build → ┬ lighthouse (PRs on
 - **integration** — spins up **DynamoDB Local** (via [`docker-compose.dev.yml`](docker-compose.dev.yml)) and runs the adapter integration suite.
 - **build** — Turborepo build across the monorepo.
 - **lighthouse** — Lighthouse CI on the web app (pull requests only).
-- **deploy** — builds both OpenNext bundles and runs `cdk deploy` for the six regional stacks; **only on push to `main`**, after every prior stage passes.
+- **deploy** — builds the OpenNext bundles + Storybook and runs `cdk deploy` for the regional stacks; **only on push to `main`**, after every prior stage passes.
 
 Shared setup (pnpm + Node + cached install) lives in a composite action, [`.github/actions/setup`](.github/actions/setup/action.yml), so the stages stay DRY.
 

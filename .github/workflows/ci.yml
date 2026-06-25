@@ -116,10 +116,11 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
 
-      - name: Build OpenNext bundles
+      - name: Build deploy artifacts (OpenNext bundles + Storybook)
         run: |
           pnpm --filter @portfolio/web exec open-next build
           pnpm --filter @portfolio/admin exec open-next build
+          pnpm --filter @portfolio/ui build-storybook
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
@@ -131,7 +132,7 @@ jobs:
         working-directory: packages/infra
         run: >
           pnpm exec cdk deploy
-          Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Oidc
+          Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Storybook Portfolio-Oidc
           --require-approval never --concurrency 4
           -c adminUrls=${{ vars.ADMIN_URLS }}
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
