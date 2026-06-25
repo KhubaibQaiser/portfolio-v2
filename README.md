@@ -297,7 +297,7 @@ pnpm exec cdk deploy --all -c domainEnabled=true
 
 ### Optional services to enable
 
-- **Google sign-in (on by default):** the Google identity provider is enabled unless you pass `-c googleAuthEnabled=false`. It requires the Google OAuth client id/secret in SSM at `/portfolio/google/client-id` and `/portfolio/google/client-secret` — **the `Portfolio-Auth` deploy fails if they're missing.** Set the Google client's redirect URI to `<hosted-ui-domain>/oauth2/idpresponse`.
+- **Google sign-in (on by default):** the Google identity provider is enabled unless you pass `-c googleAuthEnabled=false`. It requires the Google OAuth client id/secret as plain SSM **`String`** params at `/portfolio/google/client-id` and `/portfolio/google/client-secret` — **the `Portfolio-Auth` deploy fails if they're missing.** (They must be `String`, not `SecureString`: Cognito rejects `ssm-secure` references for the client secret.) Set the Google client's redirect URI to `<hosted-ui-domain>/oauth2/idpresponse`.
 - **CI deploy role:** deploy `Portfolio-Oidc` with `-c githubRepo=owner/name` (see CI/CD below).
 
 ---

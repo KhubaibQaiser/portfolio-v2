@@ -12,8 +12,10 @@ export type AuthStackProps = cdk.StackProps & {
 };
 
 // SSM parameter names the Google OAuth credentials are read from when
-// `googleAuthEnabled` is set. Populate these manually (the secret as a
-// SecureString) before enabling Google federation.
+// `googleAuthEnabled` is set. Populate these manually before enabling Google
+// federation. Both are plain `String` params (NOT SecureString): Cognito's
+// UserPoolIdentityProvider rejects `ssm-secure` dynamic references for
+// client_secret, so the secret is referenced as a non-secure SSM string.
 const GOOGLE_CLIENT_ID_PARAM = "/portfolio/google/client-id";
 const GOOGLE_CLIENT_SECRET_PARAM = "/portfolio/google/client-secret";
 
@@ -75,7 +77,10 @@ export class AuthStack extends cdk.Stack {
           this,
           GOOGLE_CLIENT_ID_PARAM,
         ),
-        clientSecretValue: cdk.SecretValue.ssmSecure(GOOGLE_CLIENT_SECRET_PARAM),
+        clientSecret: ssm.StringParameter.valueForStringParameter(
+          this,
+          GOOGLE_CLIENT_SECRET_PARAM,
+        ),
         scopes: ["openid", "email", "profile"],
         attributeMapping: {
           email: cognito.ProviderAttribute.GOOGLE_EMAIL,
