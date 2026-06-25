@@ -1,8 +1,8 @@
 {
   "ci": {
     "collect": {
-      "startServerCommand": "pnpm start",
-      "startServerReadyPattern": "started server on",
+      "startServerCommand": "pnpm --filter @portfolio/web start",
+      "startServerReadyPattern": "Ready in|- Local:",
       "url": [
         "http://localhost:3000",
         "http://localhost:3000/resume",
