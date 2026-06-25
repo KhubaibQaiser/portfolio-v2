@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getAllowedAdminEmails } from "@/lib/admin-emails";
 import { exchangeCodeForTokens } from "@/lib/auth/oauth";
 import {
   clearSessionCookies,
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     });
 
     const identity = await verifyIdToken(tokens.idToken);
-    if (!isAllowedAdmin(identity.email)) {
+    if (!isAllowedAdmin(identity.email, getAllowedAdminEmails())) {
       await clearSessionCookies();
       return loginWithError("unauthorized");
     }

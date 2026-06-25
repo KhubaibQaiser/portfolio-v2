@@ -30,9 +30,17 @@ export type InfraConfig = {
    */
   adminUrls: string[];
   /**
+   * Emails granted admin dashboard access, injected into the admin Lambda as
+   * `ADMIN_ALLOWED_EMAILS`. Pass via `-c adminAllowedEmails=a@x.com,b@y.com`
+   * (csv, typically from a GitHub variable). When empty the app falls back to
+   * the in-repo default allowlist.
+   */
+  adminAllowedEmails: string[];
+  /**
    * Enables the Google identity provider on the user pool. Requires the Google
-   * OAuth client id/secret to exist in SSM (see GOOGLE_* param names). Off by
-   * default so the pool deploys with email/password before Google is set up.
+   * OAuth client id/secret to exist in SSM (see GOOGLE_* param names) — the
+   * AuthStack deploy fails if they are missing. Enabled by default; disable with
+   * `-c googleAuthEnabled=false`.
    */
   googleAuthEnabled: boolean;
   /**
@@ -105,7 +113,8 @@ export function resolveConfig(app: App): InfraConfig {
     tableName: ctx("tableName") ?? DEFAULTS.tableName,
     mediaCorsOrigins: corsRaw ? csv(corsRaw) : ["*"],
     adminUrls: [...new Set(adminUrls)],
-    googleAuthEnabled: ctx("googleAuthEnabled") === "true",
+    adminAllowedEmails: csv(ctx("adminAllowedEmails")),
+    googleAuthEnabled: ctx("googleAuthEnabled") !== "false",
     alertEmail: ctx("alertEmail"),
     contactEmail: ctx("contactEmail"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),

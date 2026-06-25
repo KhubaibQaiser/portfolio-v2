@@ -20,6 +20,11 @@ export const env = createEnv({
     COGNITO_DOMAIN: z.string().url().optional(),
     // Public app origin behind CloudFront (for OAuth redirect/logout URIs)
     APP_ORIGIN: z.string().url().optional(),
+    // Admin allowlist (CSV of emails). Set per-deploy from a GitHub variable;
+    // resolved at runtime via lib/admin-emails.ts (reads process.env to stay
+    // edge-safe in middleware), which throws when unset — there is no fallback.
+    // Optional here so build-only steps don't require it; enforced at runtime.
+    ADMIN_ALLOWED_EMAILS: z.string().optional(),
     // Resume AI
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     GROQ_API_KEY: z.string().min(1).optional(),
@@ -44,6 +49,7 @@ export const env = createEnv({
     COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
     COGNITO_DOMAIN: process.env.COGNITO_DOMAIN,
     APP_ORIGIN: process.env.APP_ORIGIN,
+    ADMIN_ALLOWED_EMAILS: process.env.ADMIN_ALLOWED_EMAILS,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     RESUME_GEN_DAILY_USD_CAP: process.env.RESUME_GEN_DAILY_USD_CAP,
