@@ -69,6 +69,7 @@ export class AuthStack extends cdk.Stack {
     });
 
     const supportedIdps = [cognito.UserPoolClientIdentityProvider.COGNITO];
+    const identityProviders: cognito.IUserPoolIdentityProvider[] = [];
 
     if (config.googleAuthEnabled) {
       const google = new cognito.UserPoolIdentityProviderGoogle(this, "Google", {
@@ -90,6 +91,7 @@ export class AuthStack extends cdk.Stack {
       });
       this.userPool.registerIdentityProvider(google);
       supportedIdps.push(cognito.UserPoolClientIdentityProvider.GOOGLE);
+      identityProviders.push(google);
     }
 
     this.userPoolClient = this.userPool.addClient("AdminClient", {
@@ -112,6 +114,13 @@ export class AuthStack extends cdk.Stack {
       idTokenValidity: cdk.Duration.hours(1),
       refreshTokenValidity: cdk.Duration.days(30),
     });
+
+    // The client lists these providers in `supportedIdentityProviders`, but CDK
+    // does not infer the CloudFormation dependency — without this the client can
+    // be updated before the IdP exists ("provider Google does not exist").
+    for (const idp of identityProviders) {
+      this.userPoolClient.node.addDependency(idp);
+    }
 
     const domain = this.userPool.addDomain("HostedUi", {
       cognitoDomain: {
