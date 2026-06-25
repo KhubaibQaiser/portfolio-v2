@@ -51,6 +51,9 @@ export class AdminStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_NAME: table.tableName,
         S3_MEDIA_BUCKET: mediaBucket.bucketName,
+        // Powertools structured logger (see @portfolio/observability).
+        POWERTOOLS_SERVICE_NAME: "portfolio-admin",
+        POWERTOOLS_LOG_LEVEL: "INFO",
         COGNITO_REGION: config.region,
         COGNITO_USER_POOL_ID: auth.userPoolId,
         COGNITO_CLIENT_ID: auth.userPoolClientId,

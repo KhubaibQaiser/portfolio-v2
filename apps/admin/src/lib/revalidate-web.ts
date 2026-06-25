@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 /** Notifies the public site to revalidate cached content for the given tags. */
 export async function revalidateWeb(tags: string[]) {
   const webUrl = process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/$/, "");
@@ -14,12 +16,21 @@ export async function revalidateWeb(tags: string[]) {
       },
       body: JSON.stringify({ tags }),
     });
-    if (!res.ok && process.env.NODE_ENV === "development") {
-      console.warn("[admin] Web revalidate failed:", res.status, await res.text());
+    if (res.ok) {
+      logger.info("web revalidation triggered", { tags });
+    } else {
+      // Best-effort: a failed revalidation must not break the admin write, but
+      // it should be visible (not silently dropped in production).
+      logger.warn("web revalidation failed", {
+        tags,
+        status: res.status,
+        body: await res.text(),
+      });
     }
   } catch (e) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[admin] Web revalidate request failed:", e);
-    }
+    logger.warn("web revalidation request failed", {
+      tags,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }

@@ -65,6 +65,9 @@ importers:
       '@portfolio/data':
         specifier: workspace:*
         version: link:../../packages/data
+      '@portfolio/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -153,6 +156,9 @@ importers:
       '@portfolio/data':
         specifier: workspace:*
         version: link:../../packages/data
+      '@portfolio/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -349,6 +355,16 @@ importers:
       tsx:
         specifier: ^4.20.0
         version: 4.22.4
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  packages/observability:
+    dependencies:
+      '@aws-lambda-powertools/logger':
+        specifier: ^2.33.1
+        version: 2.33.1
+    devDependencies:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -604,6 +620,20 @@ packages:
 
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
+
+  '@aws-lambda-powertools/commons@2.33.1':
+    resolution: {integrity: sha512-edzvz+zqBl8p9J2Cgo1rFmhd+3ANqr0PQDqowElS3CJ10ioHN2wUYiANGxfalcgbB8ulZxGkRbK3wvEEziV/5w==}
+
+  '@aws-lambda-powertools/logger@2.33.1':
+    resolution: {integrity: sha512-DDnKcv2zghslh2AtrVsa4wHcAuI5M7+JlX65CgdXLk2th0Nr0octJQq0f4Bnp+DzuwFynmH4GJqsBe33rZapAw==}
+    peerDependencies:
+      '@aws-lambda-powertools/jmespath': 2.33.1
+      '@middy/core': 4.x || 5.x || 6.x || 7.x
+    peerDependenciesMeta:
+      '@aws-lambda-powertools/jmespath':
+        optional: true
+      '@middy/core':
+        optional: true
 
   '@aws-sdk/checksums@3.1000.8':
     resolution: {integrity: sha512-v0U9S7gBIme3OTgt1LdbAF4RpvavCc+4GK1+1xqAcqtbrHsEhjQo6R45LKcjhs/+WrRJij1Y0Gztw7QPAIeUfA==}
@@ -6558,6 +6588,15 @@ snapshots:
       '@aws-sdk/types': 3.973.7
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
+
+  '@aws-lambda-powertools/commons@2.33.1':
+    dependencies:
+      '@aws/lambda-invoke-store': 0.2.4
+
+  '@aws-lambda-powertools/logger@2.33.1':
+    dependencies:
+      '@aws-lambda-powertools/commons': 2.33.1
+      '@aws/lambda-invoke-store': 0.2.4
 
   '@aws-sdk/checksums@3.1000.8':
     dependencies:

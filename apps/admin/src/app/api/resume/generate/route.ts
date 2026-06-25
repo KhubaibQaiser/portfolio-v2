@@ -37,6 +37,7 @@ import type { CandidateFacts } from "@portfolio/ai/context/build-candidate-facts
 import { getContentRepository } from "@portfolio/data";
 import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 import { loadCandidateFacts } from "@/lib/resume-ai/load-candidate-facts";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
@@ -194,6 +195,17 @@ export async function POST(request: Request) {
   const primary = modelFor(body.model);
   const fallbacks = fallbackChainFor(body.model);
 
+  logger.info("resume generation requested", {
+    userId: auth.id,
+    kind: body.kind,
+    modelMode: body.model,
+    model: primary.modelId,
+    jdSource: body.jdSource,
+    jdLength: jdTrimmed.length,
+    hasCompany: Boolean(body.company),
+    hasRole: Boolean(body.role),
+  });
+
   async function runStream(resolved: ResolvedModel, system: string, signal: AbortSignal) {
     return streamObject({
       model: resolved.model,
@@ -216,12 +228,29 @@ export async function POST(request: Request) {
       const fb = fallbacks[0]!;
       chosen = fb;
       fallbackUsed = true;
+      logger.warn("primary model rate-limited, falling back", {
+        userId: auth.id,
+        primary: primary.modelId,
+        fallback: fb.modelId,
+      });
       result = await runStream(fb, buildSystem(), request.signal);
     } else {
+      logger.error("resume generation failed to start", {
+        userId: auth.id,
+        model: primary.modelId,
+        kind: body.kind,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
       const message = err instanceof Error ? err.message : "Generator failed";
       return NextResponse.json({ error: message }, { status: 500 });
     }
   }
+
+  logger.info("resume generation streaming", {
+    userId: auth.id,
+    model: chosen.modelId,
+    fallbackUsed,
+  });
 
   // `onFinish` via Response callback: rather than using the streamObject
   // onFinish option (not strongly typed across AI SDK versions), we attach
@@ -243,7 +272,10 @@ export async function POST(request: Request) {
       if (tailoredResume) {
         const res = validateFabrication(tailoredResume, facts.idMap);
         if (!res.ok) {
-          console.warn("[resume-ai] fabrication warnings:", res.offending);
+          logger.warn("resume fabrication warnings", {
+            userId: auth.id,
+            offending: res.offending,
+          });
         }
       }
       if (tailoredResume || coverLetter) {
@@ -296,7 +328,10 @@ export async function POST(request: Request) {
           );
           retryToneScore = retryTone.score;
         } catch (err) {
-          console.warn("[resume-ai] tone retry failed", err);
+          logger.warn("resume tone retry failed", {
+            userId: auth.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
 
@@ -331,8 +366,21 @@ export async function POST(request: Request) {
         archived_at: null,
         deleted_at: null,
       });
+
+      logger.info("resume generation persisted", {
+        userId: auth.id,
+        model: modelId,
+        fallbackUsed,
+        latencyMs,
+        costUsd: usageRecord.costUsd,
+        retryApplied,
+        aiToneScore,
+      });
     } catch (err) {
-      console.error("[resume-ai] persist failed", err);
+      logger.error("resume generation persist failed", {
+        userId: auth.id,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
     }
   })();
 

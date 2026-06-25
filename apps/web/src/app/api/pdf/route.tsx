@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ResumeDocument } from "@portfolio/ui/resume-pdf";
 import { getResumeData } from "@/lib/resume-data";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export async function GET() {
     const safeName = data.name.replace(/\s+/g, "_");
     const filename = `${safeName}_${data.title.replace(/\s+/g, "_")}_Resume.pdf`;
 
+    logger.info("resume pdf generated", { bytes: bytes.byteLength });
+
     return new Response(bytes, {
       status: 200,
       headers: {
@@ -25,7 +28,9 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("PDF generation failed:", error);
+    logger.error("resume pdf generation failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return Response.json(
       { error: "Failed to generate PDF. Please try again." },
       { status: 500 },
