@@ -4,6 +4,16 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "NODE_ENV",
+        "NEXT_PUBLIC_*",
+        "MEDIA_PUBLIC_BASE_URL",
+        "POSTHOG_API_KEY",
+        "POSTHOG_PROJECT_ID",
+        "POSTHOG_APP_HOST",
+        "POSTHOG_ENVIRONMENT",
+        "SKIP_ENV_VALIDATION"
+      ],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
