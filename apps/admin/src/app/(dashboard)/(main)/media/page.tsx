@@ -1,4 +1,5 @@
-import { getContentRepository, getMediaStore } from "@portfolio/data";
+import { getContentRepository } from "@portfolio/data";
+import { getMediaStore } from "@portfolio/data/media";
 import { MediaLibrary } from "./media-library";
 
 export default async function MediaPage() {
