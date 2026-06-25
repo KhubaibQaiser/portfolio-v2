@@ -10,6 +10,7 @@ import { WebStack } from "../src/stacks/web-stack";
 import { AdminStack } from "../src/stacks/admin-stack";
 import { AuthStack } from "../src/stacks/auth-stack";
 import { SharedStack } from "../src/stacks/shared-stack";
+import { StorybookStack } from "../src/stacks/storybook-stack";
 import { OidcStack } from "../src/stacks/oidc-stack";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -71,6 +72,13 @@ new SharedStack(app, `${config.appName}-Shared`, {
   table: data.table,
   description:
     "Shared platform services: EventBridge bus, SNS alerts, SES, budget, alarms, dashboard",
+});
+
+new StorybookStack(app, `${config.appName}-Storybook`, {
+  env: primaryEnv,
+  config,
+  assetDir: path.join(repoRoot, "packages/ui/storybook-static"),
+  description: "Storybook design-system showcase (static S3 + CloudFront)",
 });
 
 // CI deploy role. Opt-in: only when the GitHub repo is configured.
