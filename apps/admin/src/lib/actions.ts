@@ -1,6 +1,6 @@
 "use server";
 
-import { getContentRepository, getMediaStore } from "@portfolio/data";
+import { getContentRepository } from "@portfolio/data";
 import {
   heroSchema,
   aboutSchema,
@@ -293,6 +293,9 @@ export async function deleteMediaAsset(id: string): Promise<ActionResult> {
 
   try {
     const row = await repo.getMediaById(id);
+    // Lazy import so the S3 SDK isn't pulled into every editor page that imports
+    // these server actions (it lives in @portfolio/data/media for that reason).
+    const { getMediaStore } = await import("@portfolio/data/media");
     const mediaStore = getMediaStore();
     if (mediaStore.isConfigured()) {
       const key = mediaStore.publicUrlToObjectKey(row.url);

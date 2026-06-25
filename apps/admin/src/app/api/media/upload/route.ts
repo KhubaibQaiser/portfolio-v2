@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getContentRepository, getMediaStore } from "@portfolio/data";
+import { getContentRepository } from "@portfolio/data";
+import { getMediaStore } from "@portfolio/data/media";
 import { mediaInsertSchema } from "@portfolio/shared/schemas";
 import { revalidateWeb } from "@/lib/revalidate-web";
 import { requireAdmin } from "@/lib/auth-guard";
