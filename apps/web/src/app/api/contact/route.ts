@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { contactSchema } from "@portfolio/shared/schemas/contact";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -24,10 +25,14 @@ export async function POST(request: Request) {
     }
 
     // TODO: Phase 4 — Turnstile verification, Resend email, Supabase storage, rate limiting
-    console.log("Contact form submission:", parsed.data);
+    // Avoid logging the submission contents (PII); record receipt only.
+    logger.info("contact form submission received");
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    logger.error("contact form submission failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     await captureServerEvent(undefined, PortfolioEvents.contactApiError, {
       phase: "unhandled",
       status: 500,

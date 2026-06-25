@@ -27,6 +27,7 @@ import { refineAtsScore } from "@portfolio/ai/guardrails/ats-refine";
 import { getContentRepository } from "@portfolio/data";
 import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
 
@@ -153,6 +154,12 @@ export async function POST(request: Request) {
     };
   }
 
+  logger.info("ats scoring requested", {
+    userId: auth.id,
+    model: primary.modelId,
+    fromGenerationId: Boolean(body.generationId),
+  });
+
   let chosen = primary;
   let fallbackUsed = false;
   let result: Awaited<ReturnType<typeof runGen>>;
@@ -162,8 +169,18 @@ export async function POST(request: Request) {
     if (isProviderRateLimitError(err) && fallbacks.length > 0) {
       chosen = fallbacks[0]!;
       fallbackUsed = true;
+      logger.warn("ats primary model rate-limited, falling back", {
+        userId: auth.id,
+        primary: primary.modelId,
+        fallback: chosen.modelId,
+      });
       result = await runGen(chosen);
     } else {
+      logger.error("ats scoring failed", {
+        userId: auth.id,
+        model: primary.modelId,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
       const message = err instanceof Error ? err.message : "ATS failed";
       return NextResponse.json({ error: message }, { status: 500 });
     }
@@ -187,9 +204,20 @@ export async function POST(request: Request) {
         } as unknown as ResumeGenerationUsage,
       });
     } catch (err) {
-      console.error("[resume-ai] ats persist failed", err);
+      logger.error("ats persist failed", {
+        userId: auth.id,
+        generationId: body.generationId,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
     }
   }
+
+  logger.info("ats scoring completed", {
+    userId: auth.id,
+    model: chosen.modelId,
+    fallbackUsed,
+    score: ats.score,
+  });
 
   return NextResponse.json({
     ats,

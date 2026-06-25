@@ -9,6 +9,7 @@ import {
   verifyIdToken,
 } from "@/lib/auth/session";
 import { OAUTH_STATE_COOKIE, PKCE_VERIFIER_COOKIE } from "@/lib/auth/tokens";
+import { logger } from "@/lib/logger";
 
 function resolveOrigin(request: NextRequest): string {
   return process.env.APP_ORIGIN ?? request.nextUrl.origin;
@@ -44,14 +45,20 @@ export async function GET(request: NextRequest) {
 
     const identity = await verifyIdToken(tokens.idToken);
     if (!isAllowedAdmin(identity.email, getAllowedAdminEmails())) {
+      logger.warn("admin sign-in rejected: email not allow-listed", {
+        sub: identity.sub,
+      });
       await clearSessionCookies();
       return loginWithError("unauthorized");
     }
 
     await setSessionCookies(tokens);
+    logger.info("admin signed in", { sub: identity.sub });
     return NextResponse.redirect(`${origin}/`);
   } catch (error) {
-    console.error("Auth callback failed:", error);
+    logger.error("auth callback failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return loginWithError("auth_failed");
   }
 }

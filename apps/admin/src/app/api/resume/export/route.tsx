@@ -15,6 +15,7 @@ import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
 import { getResumeData, type ResumeData } from "@portfolio/shared/resume-data";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -102,6 +103,11 @@ export async function POST(request: Request) {
 
   const base = await getResumeData(getContentRepository());
 
+  logger.info("resume pdf export requested", {
+    userId: auth.id,
+    kind: body.kind,
+  });
+
   try {
     if (body.kind === "resume") {
       const tailored = sanitizeLlmObject(body.resume);
@@ -138,7 +144,11 @@ export async function POST(request: Request) {
       },
     });
   } catch (err) {
-    console.error("[resume-ai] export failed", err);
+    logger.error("resume pdf export failed", {
+      userId: auth.id,
+      kind: body.kind,
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
     const message = err instanceof Error ? err.message : "Failed to render PDF";
     return NextResponse.json({ error: message }, { status: 500 });
   }

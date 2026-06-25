@@ -28,9 +28,11 @@ function mediaRemotePatterns() {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
-  // aws-jwt-verify ships strict ESM `exports` that @vercel/nft can't trace into
-  // the standalone bundle; keep it external so Next copies it into node_modules.
-  serverExternalPackages: ["aws-jwt-verify"],
+  // Keep Node-native deps external so OpenNext traces them into the Lambda
+  // bundle instead of letting the bundler choke on their ESM `exports`:
+  //  - aws-jwt-verify: strict ESM exports @vercel/nft can't trace when bundled
+  //  - @aws-lambda-powertools/logger: runtime logger, no value in bundling
+  serverExternalPackages: ["aws-jwt-verify", "@aws-lambda-powertools/logger"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),

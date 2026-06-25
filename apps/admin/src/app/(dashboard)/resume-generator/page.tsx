@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 import { GeneratorClient } from "./_components/generator-client";
 import type { HistoryItem } from "./_components/types";
 
@@ -13,11 +14,31 @@ export default async function ResumeGeneratorPage() {
   if (!auth.ok) redirect("/login");
 
   const repo = getContentRepository();
-  const [historyRows, daily, monthly] = await Promise.all([
-    repo.getResumeGenerations({ limit: 20 }),
-    repo.sumDailyUsage(auth.id),
-    repo.sumMonthlyUsage(auth.id),
-  ]);
+  let historyRows: Awaited<ReturnType<typeof repo.getResumeGenerations>>;
+  let daily: Awaited<ReturnType<typeof repo.sumDailyUsage>>;
+  let monthly: Awaited<ReturnType<typeof repo.sumMonthlyUsage>>;
+  try {
+    [historyRows, daily, monthly] = await Promise.all([
+      repo.getResumeGenerations({ limit: 20 }),
+      repo.sumDailyUsage(auth.id),
+      repo.sumMonthlyUsage(auth.id),
+    ]);
+  } catch (err) {
+    // Capture the real cause (the page otherwise surfaces only a bare 500),
+    // then rethrow so Next still renders its error boundary.
+    logger.error("resume-generator page data load failed", {
+      userId: auth.id,
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
+    throw err;
+  }
+
+  logger.info("resume-generator page loaded", {
+    userId: auth.id,
+    historyCount: historyRows.length,
+    dailyUsd: daily.totalUsd,
+    monthlyRuns: monthly.count,
+  });
 
   const history: HistoryItem[] = historyRows.map((r) => ({
     id: r.id,

@@ -1,0 +1,19 @@
+{
+  "name": "@portfolio/observability",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.33.1"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

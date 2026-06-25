@@ -33,6 +33,9 @@ export class WebStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_NAME: table.tableName,
         S3_MEDIA_BUCKET: mediaBucket.bucketName,
+        // Powertools structured logger (see @portfolio/observability).
+        POWERTOOLS_SERVICE_NAME: "portfolio-web",
+        POWERTOOLS_LOG_LEVEL: "INFO",
       },
       grantServer: (fn) => {
         table.grantReadWriteData(fn);
