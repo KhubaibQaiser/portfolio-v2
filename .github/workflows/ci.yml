@@ -134,6 +134,7 @@ jobs:
           Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Oidc
           --require-approval never --concurrency 4
           -c adminUrls=${{ vars.ADMIN_URLS }}
+          -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
           -c alertEmail=${{ vars.ALERT_EMAIL }}
           -c contactEmail=${{ vars.CONTACT_EMAIL }}
           -c githubRepo=${{ github.repository }}

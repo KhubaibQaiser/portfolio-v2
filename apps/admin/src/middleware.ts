@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getAllowedAdminEmails } from "@/lib/admin-emails";
 import { refreshTokens } from "@/lib/auth/oauth";
 import {
   ACCESS_TOKEN_COOKIE,
@@ -61,7 +62,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const isAuthed = !!claims && !isExpired(claims) && isAllowedAdmin(claims.email);
+  const isAuthed =
+    !!claims && !isExpired(claims) && isAllowedAdmin(claims.email, getAllowedAdminEmails());
 
   if (!isAuthed && !isLoginPage) {
     const url = request.nextUrl.clone();

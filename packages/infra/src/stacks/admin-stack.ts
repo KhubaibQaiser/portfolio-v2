@@ -56,6 +56,9 @@ export class AdminStack extends cdk.Stack {
         COGNITO_CLIENT_ID: auth.userPoolClientId,
         COGNITO_DOMAIN: auth.hostedUiDomain,
         ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
+        // No fallback in-app: the admin throws if this is empty. Passed via
+        // `-c adminAllowedEmails=...` (GitHub variable) at deploy.
+        ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
       },
       grantServer: (fn) => {
         table.grantReadWriteData(fn);

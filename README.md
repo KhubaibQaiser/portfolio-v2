@@ -276,7 +276,7 @@ aws cognito-idp admin-create-user \
   --temporary-password '<TempPass#12+chars>'
 ```
 
-Add allowed emails in [`packages/shared/src/constants.ts`](packages/shared/src/constants.ts) (`ADMIN_ALLOWED_EMAILS`).
+Manage who can access the dashboard with the **`ADMIN_ALLOWED_EMAILS`** GitHub repository variable (CSV of emails) — it's passed to `cdk deploy` as `-c adminAllowedEmails=...` and injected into the admin Lambda, so adding/removing admins is a variable edit + redeploy, no code change. It is **required**: there is no fallback, and the admin throws loudly on sign-in if it's unset (set it in `.env.local` for local dev). This allowlist is the authoritative gate and applies to Google sign-ins too.
 
 ### 4. Seed content
 
@@ -297,7 +297,7 @@ pnpm exec cdk deploy --all -c domainEnabled=true
 
 ### Optional services to enable
 
-- **Google sign-in:** put the Google OAuth client id/secret in SSM and deploy Auth with `-c googleAuthEnabled=true`.
+- **Google sign-in (on by default):** the Google identity provider is enabled unless you pass `-c googleAuthEnabled=false`. It requires the Google OAuth client id/secret in SSM at `/portfolio/google/client-id` and `/portfolio/google/client-secret` — **the `Portfolio-Auth` deploy fails if they're missing.** Set the Google client's redirect URI to `<hosted-ui-domain>/oauth2/idpresponse`.
 - **CI deploy role:** deploy `Portfolio-Oidc` with `-c githubRepo=owner/name` (see CI/CD below).
 
 ---

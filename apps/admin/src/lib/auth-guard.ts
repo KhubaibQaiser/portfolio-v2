@@ -1,4 +1,5 @@
 import { isAllowedAdmin } from "@portfolio/shared/constants";
+import { getAllowedAdminEmails } from "@/lib/admin-emails";
 import { getCurrentIdentity } from "@/lib/auth/session";
 
 export type AdminAuth =
@@ -16,7 +17,7 @@ export type AdminAuth =
 export async function requireAdmin(): Promise<AdminAuth> {
   const identity = await getCurrentIdentity();
 
-  if (!identity?.email || !isAllowedAdmin(identity.email)) {
+  if (!identity?.email || !isAllowedAdmin(identity.email, getAllowedAdminEmails())) {
     return { ok: false, error: "Unauthorized" };
   }
   return { ok: true, id: identity.sub, email: identity.email };

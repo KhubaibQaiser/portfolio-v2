@@ -79,18 +79,27 @@ export const HERO_TOP_TECHS: HeroTopTech[] = [
 ] as const;
 
 /**
- * Admin email allowlist — enforced by admin middleware.
- * Add emails here to grant dashboard access.
+ * Parse a CSV of admin emails into a normalised (trimmed, lowercased, non-empty)
+ * list. Lowercasing here keeps the comparison in {@link isAllowedAdmin} correct
+ * regardless of how the source variable is cased.
  */
-export const ADMIN_ALLOWED_EMAILS = [
-  "khubaib.dev@gmail.com",
-] as const;
+export function parseAdminEmails(raw: string | undefined | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
 
-export type AdminAllowedEmail = (typeof ADMIN_ALLOWED_EMAILS)[number];
-
-export function isAllowedAdmin(email: string | undefined | null): boolean {
+/**
+ * Whether `email` is in the provided allowlist. Pure by design — callers pass
+ * the resolved list (env-driven in the admin app) so this stays testable and
+ * free of runtime-env coupling.
+ */
+export function isAllowedAdmin(
+  email: string | undefined | null,
+  allowedEmails: readonly string[],
+): boolean {
   if (!email) return false;
-  return (ADMIN_ALLOWED_EMAILS as readonly string[]).includes(
-    email.toLowerCase(),
-  );
+  return allowedEmails.includes(email.toLowerCase());
 }
