@@ -36,9 +36,9 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroSection hero={hero} companies={companies} />
+      <HeroSection hero={hero} name={siteConfig.name} companies={companies} />
       <AboutSection about={about} location={siteConfig.location} companiesCount={companiesCount} />
-      <WhyHireMeSection />
+      <WhyHireMeSection highlights={about.highlights} />
       <StatDivider
         stat={`${about.years_experience}+`}
         label="Years of shipping production code"
@@ -58,7 +58,7 @@ export default async function HomePage() {
       />
       <FeaturedProjectsSection projects={featuredProjects} />
       <Testimonials testimonials={testimonials} />
-      <BuiltWithSection />
+      <BuiltWithSection techStack={siteConfig.tech_stack} />
       <ContactSection email={siteConfig.email} />
     </>
   );

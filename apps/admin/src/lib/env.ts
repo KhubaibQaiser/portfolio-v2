@@ -31,7 +31,7 @@ export const env = createEnv({
     RESUME_GEN_DAILY_USD_CAP: z.string().optional(),
     // Data layer (consumed by @portfolio/data)
     DATA_BACKEND: z.enum(["fixture", "dynamo"]).optional(),
-    DYNAMO_TABLE_NAME: z.string().min(1).optional(),
+    DYNAMO_TABLE_PREFIX: z.string().min(1).optional(),
     DYNAMODB_LOCAL_ENDPOINT: z.string().url().optional(),
     AWS_REGION: z.string().min(1).optional(),
     S3_ENDPOINT: z.string().url().optional(),
@@ -54,7 +54,7 @@ export const env = createEnv({
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     RESUME_GEN_DAILY_USD_CAP: process.env.RESUME_GEN_DAILY_USD_CAP,
     DATA_BACKEND: process.env.DATA_BACKEND,
-    DYNAMO_TABLE_NAME: process.env.DYNAMO_TABLE_NAME,
+    DYNAMO_TABLE_PREFIX: process.env.DYNAMO_TABLE_PREFIX,
     DYNAMODB_LOCAL_ENDPOINT: process.env.DYNAMODB_LOCAL_ENDPOINT,
     AWS_REGION: process.env.AWS_REGION,
     S3_ENDPOINT: process.env.S3_ENDPOINT,

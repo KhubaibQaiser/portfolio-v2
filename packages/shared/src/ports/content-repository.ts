@@ -55,8 +55,6 @@ export type ContentRepository = {
   // About (singleton)
   getAbout(): Promise<About>;
   upsertAbout(values: Partial<AboutFormData>): Promise<void>;
-  /** Recomputes the cached "companies worked at" count from experience rows. */
-  syncCompaniesCountFromExperience(): Promise<void>;
 
   // Experience
   getExperience(): Promise<Experience[]>;

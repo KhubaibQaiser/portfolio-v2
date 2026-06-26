@@ -308,12 +308,6 @@ importers:
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../shared
-      electrodb:
-        specifier: ^3.9.1
-        version: 3.9.1(@aws-sdk/client-dynamodb@3.1075.0)
-      ulid:
-        specifier: ^3.0.2
-        version: 3.0.2
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -3981,9 +3975,6 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electrodb@3.9.1:
-    resolution: {integrity: sha512-Z1y19yQWuZq0pI7kmDfzMbSzTAImCHLqjmTCML1kYHuSSvK+yZZYY2RyDAefpe2xJ0RkGTmFjuH4y/AWL1nJPQ==}
-
   electron-to-chromium@1.5.335:
     resolution: {integrity: sha512-q9n5T4BR4Xwa2cwbrwcsDJtHD/enpQ5S1xF1IAtdqf5AAgqDFmR/aakqH3ChFdqd/QXJhS3rnnXFtexU7rax6Q==}
 
@@ -4761,9 +4752,6 @@ packages:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
     hasBin: true
-
-  jsonschema@1.5.0:
-    resolution: {integrity: sha512-K+A9hhqbn0f3pJX17Q/7H6yQfD/5OXgdrR5UE12gMXCiN9D5Xq2o5mddV2QEcX/bjla99ASsAAQUyMCCRWAEhw==}
 
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
@@ -6036,10 +6024,6 @@ packages:
   typescript@6.0.2:
     resolution: {integrity: sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==}
     engines: {node: '>=14.17'}
-    hasBin: true
-
-  ulid@3.0.2:
-    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
     hasBin: true
 
   unbox-primitive@1.1.0:
@@ -9998,14 +9982,6 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electrodb@3.9.1(@aws-sdk/client-dynamodb@3.1075.0):
-    dependencies:
-      '@aws-sdk/lib-dynamodb': 3.1075.0(@aws-sdk/client-dynamodb@3.1075.0)
-      '@aws-sdk/util-dynamodb': 3.996.5(@aws-sdk/client-dynamodb@3.1075.0)
-      jsonschema: 1.5.0
-    transitivePeerDependencies:
-      - '@aws-sdk/client-dynamodb'
-
   electron-to-chromium@1.5.335: {}
 
   emoji-regex-xs@1.0.0: {}
@@ -11047,8 +11023,6 @@ snapshots:
       minimist: 1.2.8
 
   json5@2.2.3: {}
-
-  jsonschema@1.5.0: {}
 
   jsx-ast-utils@3.3.5:
     dependencies:
@@ -12615,8 +12589,6 @@ snapshots:
       - supports-color
 
   typescript@6.0.2: {}
-
-  ulid@3.0.2: {}
 
   unbox-primitive@1.1.0:
     dependencies:

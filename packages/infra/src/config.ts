@@ -19,8 +19,8 @@ export type InfraConfig = {
    * once the registrar nameservers have been delegated to Route 53.
    */
   domainEnabled: boolean;
-  /** Physical DynamoDB single-table name (matches DYNAMO_TABLE_NAME). */
-  tableName: string;
+  /** Prefix for the per-entity DynamoDB table names (matches DYNAMO_TABLE_PREFIX). */
+  tablePrefix: string;
   /** Browser origins allowed to upload directly to the media bucket. */
   mediaCorsOrigins: string[];
   /**
@@ -73,7 +73,7 @@ const DEFAULTS = {
   region: "eu-west-1",
   appName: "Portfolio",
   domainName: "khubaibqaiser.com",
-  tableName: "portfolio",
+  tablePrefix: "portfolio",
   adminDevUrl: "http://localhost:3001",
   monthlyBudgetUsd: 25,
 } as const;
@@ -110,7 +110,7 @@ export function resolveConfig(app: App): InfraConfig {
     appName: ctx("appName") ?? DEFAULTS.appName,
     domainName,
     domainEnabled,
-    tableName: ctx("tableName") ?? DEFAULTS.tableName,
+    tablePrefix: ctx("tablePrefix") ?? DEFAULTS.tablePrefix,
     mediaCorsOrigins: corsRaw ? csv(corsRaw) : ["*"],
     adminUrls: [...new Set(adminUrls)],
     adminAllowedEmails: csv(ctx("adminAllowedEmails")),

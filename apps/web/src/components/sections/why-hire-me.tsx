@@ -3,33 +3,15 @@
 import { motion } from "framer-motion";
 import { Layers, Bot, Globe, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Highlight } from "@portfolio/shared/schemas";
 
-const differentiators = [
-  {
-    icon: Layers,
-    title: "I Ship End-to-End",
-    description:
-      "From AWS CDK infrastructure to pixel-perfect React UIs. No handoff friction.",
-  },
-  {
-    icon: Bot,
-    title: "AI-Augmented, Not AI-Dependent",
-    description:
-      "I use AI to ship 3x faster while writing code I can defend in any review.",
-  },
-  {
-    icon: Globe,
-    title: "Battle-Tested Globally",
-    description:
-      "11 years across Ad-Tech, E-Commerce, SaaS, and EdTech. Teams across SF, Austin, Jakarta, and more.",
-  },
-  {
-    icon: Users,
-    title: "I Elevate Teams",
-    description:
-      "Created design systems used by 40+ engineers. Mentored juniors into mid-levels.",
-  },
-];
+type WhyHireMeSectionProps = {
+  /** Differentiator cards sourced from About (managed in the admin). */
+  highlights: Highlight[];
+};
+
+// Decorative icons cycled by position — content lives in the database.
+const ICONS = [Layers, Bot, Globe, Users] as const;
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -44,7 +26,8 @@ const cardVariants = {
   }),
 };
 
-export function WhyHireMeSection() {
+export function WhyHireMeSection({ highlights }: WhyHireMeSectionProps) {
+  if (highlights.length === 0) return null;
   return (
     <section className="py-(--section-padding-y)" aria-label="Why Hire Me">
       <div className="mx-auto max-w-container px-(--container-padding)">
@@ -68,7 +51,9 @@ export function WhyHireMeSection() {
         </motion.p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {differentiators.map(({ icon: Icon, title, description }, i) => (
+          {highlights.map(({ title, description }, i) => {
+            const Icon = ICONS[i % ICONS.length]!;
+            return (
             <motion.div
               key={title}
               custom={i}
@@ -92,7 +77,8 @@ export function WhyHireMeSection() {
                 {description}
               </p>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const heroSchema = z.object({
   greeting: z.string().min(1).max(100),
-  name: z.string().min(1).max(100),
   headline: z.string().min(1).max(200),
   subtitle: z.array(z.string().min(1)).min(1).max(5),
   value_proposition: z.string().min(1).max(300),

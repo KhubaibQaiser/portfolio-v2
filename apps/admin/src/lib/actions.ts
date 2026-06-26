@@ -56,7 +56,6 @@ export async function saveAbout(
 
   try {
     await repo.upsertAbout(parsed.data);
-    await repo.syncCompaniesCountFromExperience();
     await revalidateWeb(["about"]);
     return { success: true };
   } catch (e) {
@@ -84,7 +83,8 @@ export async function saveExperience(
     } else {
       await repo.insertExperience(parsed.data);
     }
-    await repo.syncCompaniesCountFromExperience();
+    // The public "companies" stat is derived from Experience at read time, so
+    // revalidate About too — no stored count to sync.
     await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {
@@ -98,7 +98,6 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteExperience(id);
-    await repo.syncCompaniesCountFromExperience();
     await revalidateWeb(["experience", "about"]);
     return { success: true };
   } catch (e) {

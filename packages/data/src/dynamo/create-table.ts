@@ -4,24 +4,27 @@ import {
   type DynamoDBClient,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
-import { buildCreateTableInput } from "./table";
+import { buildCreateTableInputs, buildTableNames, type TableNames } from "./tables";
 
 /**
- * Creates the single table if it does not already exist. Intended for local
- * development and tests against DynamoDB Local; production tables are managed
- * by the CDK infrastructure stack.
+ * Creates any missing tables. Intended for local development and tests against
+ * DynamoDB Local; production tables are managed by the CDK infrastructure stack
+ * (which must keep the schema in `tables.ts` in sync). Idempotent: existing
+ * tables are left untouched.
  */
-export async function ensureTable(
+export async function ensureTables(
   client: DynamoDBClient,
-  tableName: string,
+  names: TableNames = buildTableNames(),
 ): Promise<void> {
-  try {
-    await client.send(new DescribeTableCommand({ TableName: tableName }));
-  } catch (error) {
-    if (error instanceof ResourceNotFoundException) {
-      await client.send(new CreateTableCommand(buildCreateTableInput(tableName)));
-      return;
+  for (const input of buildCreateTableInputs(names)) {
+    try {
+      await client.send(new DescribeTableCommand({ TableName: input.TableName }));
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) {
+        await client.send(new CreateTableCommand(input));
+        continue;
+      }
+      throw error;
     }
-    throw error;
   }
 }

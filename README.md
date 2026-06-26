@@ -2,7 +2,7 @@
 
 Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**'s portfolio: a **Turborepo** monorepo with a public Next.js site (`apps/web`), a content-editing admin (`apps/admin`), and shared packages — running **serverless on AWS**, defined end-to-end as **infrastructure-as-code with AWS CDK**.
 
-The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in a single **DynamoDB** table, admin auth is **Amazon Cognito**, media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
+The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in **DynamoDB** (one table per aggregate), admin auth is **Amazon Cognito**, media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
 
 ---
 
@@ -13,7 +13,7 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 | **Monorepo** — Turborepo + pnpm               | One repo, shared packages, cached builds                                   |
 | **Next.js 16 (App Router, RSC)**              | Server data, streaming, ISR; small client bundles                          |
 | **Hosting** — OpenNext on Lambda + CloudFront | SSR/ISR, image optimization, streaming; no Vercel                          |
-| **Data** — DynamoDB single table (ElectroDB)  | Content + resume history + rate-limit/cost counters                        |
+| **Data** — DynamoDB, one table per entity     | Clean key schemas; content + resume history + rate-limit/cost counters     |
 | **Auth** — Amazon Cognito (Hosted UI + PKCE)  | Admin sign-in; email allowlist; `aws-jwt-verify`                           |
 | **IaC** — AWS CDK (TypeScript)                | Every resource in `packages/infra`; `cdk deploy`                           |
 | **CI/CD** — GitHub Actions + OIDC             | Lint/typecheck/build on PRs; deploy on push to `main` (no static AWS keys) |
@@ -28,7 +28,7 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 ### Why these pieces
 
 - **OpenNext + Lambda + CloudFront:** full Next.js 16 feature support (SSR, ISR, RSC streaming, image optimization) on serverless AWS, behind a global CDN — no always-on servers, scale-to-zero, pay-per-request.
-- **DynamoDB (single table):** content, resume-generation history, and rate-limit/cost counters in one table with GSIs for the access patterns; on-demand billing, point-in-time recovery, and TTL for ephemeral counters.
+- **DynamoDB (table-per-entity):** each aggregate gets its own table with a clean, readable key schema (singletons keyed by `section`; collections by `id`; GSIs for `project` by slug and `resume-generation` by user) — easy to browse and manage, no opaque composite keys. On-demand billing, point-in-time recovery on durable tables, and TTL on the ephemeral rate-limit table.
 - **Cognito:** managed admin auth via Hosted UI (OAuth authorization code + PKCE). Tokens are verified server-side with `aws-jwt-verify`; access is gated by an email allowlist.
 - **S3 + CloudFront:** media uploads from admin (presigned), served from a public CDN URL rather than stored in the database.
 - **Ports & adapters:** the apps depend on interfaces (`ContentRepository`, `MediaStore`, `RateLimiter`, `CostCap`, `AuthProvider`), not on AWS SDKs directly — so the same code runs locally against fixtures / DynamoDB Local and in production against AWS.
@@ -49,7 +49,7 @@ flowchart LR
     subgraph adm [apps/admin]
       admfn[Lambda - dashboard + editors]
     end
-    ddb[(DynamoDB single table)]
+    ddb[(DynamoDB tables)]
     s3[(S3 media)]
     cognito[Cognito Hosted UI]
   end
@@ -71,7 +71,7 @@ Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages
 
 | Stack              | Region      | Contents                                                                                 |
 | ------------------ | ----------- | ---------------------------------------------------------------------------------------- |
-| `Portfolio-Data`   | `eu-west-1` | DynamoDB single table (GSIs, TTL, PITR) + S3 media bucket                                |
+| `Portfolio-Data`   | `eu-west-1` | DynamoDB tables (one per entity; GSIs, TTL, PITR) + S3 media bucket                       |
 | `Portfolio-Web`    | `eu-west-1` | OpenNext web app: Lambda(s) + CloudFront + asset/cache buckets                           |
 | `Portfolio-Auth`   | `eu-west-1` | Cognito user pool, app client (PKCE), Hosted UI, pre-token Lambda                        |
 | `Portfolio-Admin`  | `eu-west-1` | OpenNext admin app: Lambda(s) + CloudFront (wired to Auth + Data)                        |
@@ -94,7 +94,7 @@ portfolio-v2/
 │   └── admin/               # CMS — Cognito auth, editors, media uploads, revalidation
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, ports (interfaces), constants
-│   ├── data/                # DynamoDB single-table adapters (ElectroDB) + fixtures + seed
+│   ├── data/                # DynamoDB table-per-entity adapter + fixtures + seed
 │   ├── ai/                  # Model factory, prompts, Zod schemas, guardrails, telemetry
 │   ├── ui/                  # Design system + Storybook
 │   ├── infra/               # AWS CDK app — all stacks and constructs (OpenNext site)
@@ -154,19 +154,23 @@ portfolio-v2/
 
 ### Data layer (`packages/data`)
 
-A **single DynamoDB table** modelled with **ElectroDB**. The apps talk to **ports** (interfaces in `@portfolio/shared/ports`); adapters implement them:
+**DynamoDB with one table per aggregate** (plain Document client, no ORM). Singletons (`hero`, `about`, `site-config`, `resume`) live as one item each in the `content` table keyed by `section`; every collection gets its own table keyed by `id`, with GSIs where an access pattern needs one (`project` by `slug`, `resume-generation` by user). Keys are human-readable, so the data is trivial to browse and edit. Table names are `<DYNAMO_TABLE_PREFIX>-<entity>` (default prefix `portfolio`) — see `packages/data/src/dynamo/tables.ts`.
+
+The apps talk to **ports** (interfaces in `@portfolio/shared/ports`); adapters implement them:
 
 - `ContentRepository` — hero, about, experience, projects, skills, resume, testimonials, site config, resume-generation history.
 - `MediaStore` — presigned S3 uploads + public URL resolution.
 - `RateLimiter` / `CostCap` — DynamoDB-backed sliding-window limits and a daily USD cap (TTL-expired counters).
 - `AuthProvider` — the admin identity contract (Cognito in prod).
 
+Derived values are never stored: the public "companies" stat is computed from Experience at read time, and the user's name lives only in Site Config. Editorial content (tech stack pills, "Why Hire Me" cards) is managed in the admin, not hardcoded in components.
+
 Backend is selected by `DATA_BACKEND`:
 
 - `fixture` (default) — static fixtures, no AWS, instant local UI work.
 - `dynamo` — real DynamoDB; point `DYNAMODB_LOCAL_ENDPOINT` at DynamoDB Local for offline, or leave unset in Lambda (uses the function's IAM role).
 
-Seed the table from fixtures (idempotent):
+Seed the tables from fixtures (idempotent):
 
 ```bash
 pnpm --filter @portfolio/data seed
@@ -211,7 +215,7 @@ With `DATA_BACKEND=fixture` (the default) you can run the UI immediately — no 
 ```bash
 pnpm ddb:up                              # DynamoDB Local on :8000
 # set in .env.local: DATA_BACKEND=dynamo  DYNAMODB_LOCAL_ENDPOINT=http://localhost:8000
-pnpm --filter @portfolio/data seed       # load fixtures into the local table
+pnpm --filter @portfolio/data seed       # load fixtures into the local tables
 pnpm ddb:down                            # stop it
 ```
 
@@ -283,7 +287,7 @@ Manage who can access the dashboard with the **`ADMIN_ALLOWED_EMAILS`** GitHub r
 ### 4. Seed content
 
 ```bash
-DATA_BACKEND=dynamo DYNAMO_TABLE_NAME=portfolio AWS_REGION=eu-west-1 \
+DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
   pnpm --filter @portfolio/data seed
 ```
 
@@ -361,7 +365,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `POSTHOG_API_KEY` / `POSTHOG_PROJECT_ID` / `POSTHOG_APP_HOST` | Source-map upload on production builds                   |
 | `CHAT_RATE_LIMIT_MAX` / `CHAT_RATE_LIMIT_WINDOW_SEC`          | Chat rate limit (per IP, via the RateLimiter port)       |
 | `DATA_BACKEND`                                                | `fixture` (default) or `dynamo`                          |
-| `DYNAMO_TABLE_NAME`                                           | Single-table name (default `portfolio`)                  |
+| `DYNAMO_TABLE_PREFIX`                                         | Table-name prefix (default `portfolio`)                  |
 | `DYNAMODB_LOCAL_ENDPOINT`                                     | DynamoDB Local endpoint (local only)                     |
 | `AWS_REGION`                                                  | Primary region (default `eu-west-1`)                     |
 | `MEDIA_PUBLIC_BASE_URL`                                       | Public base URL media is served from (S3/CloudFront)     |
@@ -383,7 +387,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `ANTHROPIC_API_KEY`                                              | Resume AI — Claude Sonnet 4.5 (primary)                                      |
 | `GROQ_API_KEY`                                                   | Resume AI — Groq (draft, fallback, ATS)                                      |
 | `RESUME_GEN_DAILY_USD_CAP`                                       | Daily spend cap per admin (default `5`)                                      |
-| `DATA_BACKEND` / `DYNAMO_TABLE_NAME` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                          |
+| `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                        |
 
 In production these are injected by CDK (`Portfolio-Admin` sets the `COGNITO_*`, `APP_ORIGIN`, and data-layer vars on the Lambda; the IAM role supplies AWS credentials). Set them in `.env.local` only to exercise the real backends locally.
 

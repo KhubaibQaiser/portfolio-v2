@@ -19,7 +19,6 @@ const TS = "2024-01-01T00:00:00.000Z";
 export const heroFixture: Hero = {
   id: "hero",
   greeting: "Hi, my name is",
-  name: "Khubaib Qaiser",
   headline: "I build things for the web & beyond.",
   subtitle: [
     "Senior Software Engineer",
@@ -41,12 +40,33 @@ export const aboutFixture: About = {
   status: "available",
   timezone: "GMT+5",
   years_experience: 11,
-  companies_count: 6,
   countries_count: 4,
-  projects_count: 30,
+  projects_count: 20,
   users_impacted: "500K+",
-  industries: ["Ad-Tech", "E-Commerce", "SaaS", "EdTech", "FinTech"],
+  industries: ["Ad-Tech", "E-Commerce", "SaaS", "EdTech"],
   languages: ["English", "Urdu"],
+  highlights: [
+    {
+      title: "I Ship End-to-End",
+      description:
+        "From AWS CDK infrastructure to pixel-perfect React UIs. No handoff friction.",
+    },
+    {
+      title: "AI-Augmented, Not AI-Dependent",
+      description:
+        "I use AI to ship 3x faster while writing code I can defend in any review.",
+    },
+    {
+      title: "Battle-Tested Globally",
+      description:
+        "11 years across Ad-Tech, E-Commerce, SaaS, and EdTech. Teams across SF, Austin, Jakarta, and more.",
+    },
+    {
+      title: "I Elevate Teams",
+      description:
+        "Created design systems used by 40+ engineers. Mentored juniors into mid-levels.",
+    },
+  ],
   created_at: TS,
   updated_at: TS,
 };
@@ -531,6 +551,23 @@ export const siteConfigFixture: SiteConfig = {
     { label: "Experience", href: "#experience" },
     { label: "Projects", href: "#projects" },
     { label: "Contact", href: "#contact" },
+  ],
+  tech_stack: [
+    "Next.js 16",
+    "React 19",
+    "TypeScript",
+    "Tailwind CSS v4",
+    "Turborepo",
+    "pnpm",
+    "AWS CDK",
+    "AWS Lambda",
+    "Amazon DynamoDB",
+    "Amazon S3 + CloudFront",
+    "Amazon Cognito",
+    "OpenNext",
+    "Vercel AI SDK",
+    "Groq",
+    "PostHog",
   ],
   created_at: TS,
   updated_at: TS,

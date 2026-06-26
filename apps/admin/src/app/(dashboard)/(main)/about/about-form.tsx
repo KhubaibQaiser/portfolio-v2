@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveAbout } from "@/lib/actions";
-import type { About, AboutFormData } from "@portfolio/shared/schemas";
+import type { About, AboutFormData, Highlight } from "@portfolio/shared/schemas";
 
 type AboutFormProps = {
   initialData: About | null;
@@ -22,12 +22,12 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
     status: (initialData?.status as AboutFormData["status"] | undefined) ?? "available",
     timezone: initialData?.timezone ?? "GMT+5",
     years_experience: initialData?.years_experience ?? 0,
-    companies_count: derivedCompaniesCount,
     countries_count: initialData?.countries_count ?? 0,
     projects_count: initialData?.projects_count ?? 0,
     users_impacted: initialData?.users_impacted ?? "0",
     industries: initialData?.industries ?? [],
     languages: initialData?.languages ?? [],
+    highlights: initialData?.highlights ?? [],
   });
 
   function handleChange<K extends keyof AboutFormData>(
@@ -37,10 +37,33 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function handleHighlightChange(index: number, field: keyof Highlight, value: string) {
+    setForm((prev) => ({
+      ...prev,
+      highlights: prev.highlights.map((h, i) =>
+        i === index ? { ...h, [field]: value } : h,
+      ),
+    }));
+  }
+
+  function addHighlight() {
+    setForm((prev) => ({
+      ...prev,
+      highlights: [...prev.highlights, { title: "", description: "" }],
+    }));
+  }
+
+  function removeHighlight(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, i) => i !== index),
+    }));
+  }
+
   async function handleSave() {
     setSaving(true);
     setMessage("");
-    const result = await saveAbout({ ...form, companies_count: derivedCompaniesCount });
+    const result = await saveAbout(form);
     setSaving(false);
     setMessage(result.success ? "Saved!" : result.error);
   }
@@ -181,6 +204,74 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
             "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
+      </div>
+
+      <div>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-accent text-sm font-semibold tracking-wider uppercase">
+            Why Hire Me
+          </h3>
+          <button
+            type="button"
+            onClick={addHighlight}
+            className={cn(
+              "border-border bg-muted/30 flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5",
+              "text-foreground hover:bg-muted/50 text-sm font-medium transition-colors",
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            Add highlight
+          </button>
+        </div>
+        <p className="text-muted-foreground mt-1 text-xs">
+          Differentiator cards shown in the “Why Hire Me” section on the home page.
+        </p>
+
+        <div className="mt-3 space-y-3">
+          {form.highlights.length === 0 ? (
+            <p className="border-border/80 bg-muted/10 text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm">
+              No highlights yet. Click &quot;Add highlight&quot; to add one.
+            </p>
+          ) : (
+            form.highlights.map((highlight, index) => (
+              <div
+                key={index}
+                className="border-border/50 bg-muted/20 flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start"
+              >
+                <div className="grid flex-1 gap-3">
+                  <input
+                    value={highlight.title}
+                    onChange={(e) =>
+                      handleHighlightChange(index, "title", e.target.value)
+                    }
+                    placeholder="Title (e.g. I Ship End-to-End)"
+                    className="border-border bg-background focus:border-accent w-full rounded-md border px-3 py-2 text-sm focus:outline-hidden"
+                  />
+                  <textarea
+                    value={highlight.description}
+                    onChange={(e) =>
+                      handleHighlightChange(index, "description", e.target.value)
+                    }
+                    rows={2}
+                    placeholder="One or two sentences."
+                    className="border-border bg-background focus:border-accent w-full rounded-md border px-3 py-2 text-sm focus:outline-hidden"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeHighlight(index)}
+                  className={cn(
+                    "border-border flex shrink-0 items-center justify-center rounded-md border p-2",
+                    "text-muted-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-colors",
+                  )}
+                  aria-label="Remove highlight"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {message && (

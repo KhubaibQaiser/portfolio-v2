@@ -2,15 +2,15 @@
  * Seeds the DynamoDB content table from the static fixtures.
  *
  * Idempotent: singletons are upserted, list entities are cleared then
- * re-inserted, so re-running converges the table to the fixtures. Targets the
- * table/region resolved from the standard env (`DYNAMO_TABLE_NAME`/`AWS_REGION`,
+ * re-inserted, so re-running converges the tables to the fixtures. Targets the
+ * tables/region resolved from the standard env (`DYNAMO_TABLE_PREFIX`/`AWS_REGION`,
  * defaulting to `portfolio` in eu-west-1) using the ambient AWS credentials.
  *
  * Errors propagate and exit non-zero — never silently swallow a failed write.
  */
-import { createDynamoContentRepository } from "../src/adapters/dynamo-content-repository";
+import { createMultiTableContentRepository } from "../src/adapters/multi-table-content-repository";
 import { createDynamoClient } from "../src/dynamo/client";
-import { resolveTableName } from "../src/dynamo/table";
+import { buildTableNames } from "../src/dynamo/tables";
 import {
   aboutFixture,
   experienceFixtures,
@@ -44,9 +44,9 @@ async function clearList<T extends { id: string }>(
 }
 
 async function main(): Promise<void> {
-  const tableName = resolveTableName();
-  const repo = createDynamoContentRepository(createDynamoClient(), tableName);
-  console.log(`Seeding table "${tableName}"...`);
+  const tables = buildTableNames();
+  const repo = createMultiTableContentRepository(createDynamoClient(), tables);
+  console.log(`Seeding tables with prefix "${tables.content.replace(/-content$/, "")}"...`);
 
   // Singletons — upsert is naturally idempotent.
   await repo.upsertHero(toForm(heroFixture));
@@ -89,9 +89,6 @@ async function main(): Promise<void> {
     await repo.insertTestimonial(toForm(testimonial));
   }
   console.log(`  ${testimonialFixtures.length} testimonial rows`);
-
-  // Recompute the cached "companies worked at" count from the seeded rows.
-  await repo.syncCompaniesCountFromExperience();
 
   console.log("Seed complete.");
 }

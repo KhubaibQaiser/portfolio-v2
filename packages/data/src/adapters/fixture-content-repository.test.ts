@@ -10,8 +10,9 @@ describe("FixtureContentRepository", () => {
   });
 
   it("returns the seeded singletons", async () => {
-    expect((await repo.getHero()).name).toBe("Khubaib Qaiser");
+    expect((await repo.getHero()).greeting).toBe("Hi, my name is");
     expect((await repo.getSiteConfig()).email).toBe("khubaib.dev@gmail.com");
+    expect((await repo.getSiteConfig()).name).toBe("Khubaib Qaiser");
     expect((await repo.getResume()).education).toHaveLength(1);
   });
 
@@ -72,11 +73,6 @@ describe("FixtureContentRepository", () => {
     await expect(repo.getExperienceById(created.id)).rejects.toThrow(
       /Experience not found/,
     );
-  });
-
-  it("syncs the companies count from unique experience companies", async () => {
-    await repo.syncCompaniesCountFromExperience();
-    expect((await repo.getAbout()).companies_count).toBe(6);
   });
 
   it("sums daily usage from resume generations for a user", async () => {
