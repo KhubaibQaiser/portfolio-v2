@@ -37,12 +37,10 @@ const data = new DataStack(app, `${config.appName}-Data`, {
   description: "Per-entity DynamoDB tables + S3 media bucket for the portfolio",
 });
 
-new WebStack(app, `${config.appName}-Web`, {
+const web = new WebStack(app, `${config.appName}-Web`, {
   env: primaryEnv,
   config,
   openNextDir: path.join(repoRoot, "apps/web/.open-next"),
-  tables: data.tables,
-  mediaBucket: data.mediaBucket,
   description: "Web app (OpenNext on Lambda + CloudFront)",
 });
 
@@ -52,27 +50,29 @@ const auth = new AuthStack(app, `${config.appName}-Auth`, {
   description: "Cognito user pool + Hosted UI for the admin dashboard",
 });
 
-new AdminStack(app, `${config.appName}-Admin`, {
+const admin = new AdminStack(app, `${config.appName}-Admin`, {
   env: primaryEnv,
   config,
   openNextDir: path.join(repoRoot, "apps/admin/.open-next"),
-  tables: data.tables,
-  mediaBucket: data.mediaBucket,
-  auth: {
-    userPoolId: auth.userPool.userPoolId,
-    userPoolClientId: auth.userPoolClient.userPoolClientId,
-    hostedUiDomain: auth.hostedUiDomain,
-  },
   description: "Admin dashboard (OpenNext on Lambda + CloudFront)",
 });
 
-new SharedStack(app, `${config.appName}-Shared`, {
+const shared = new SharedStack(app, `${config.appName}-Shared`, {
   env: primaryEnv,
   config,
-  tables: data.tables,
   description:
     "Shared platform services: EventBridge bus, SNS alerts, SES, budget, alarms, dashboard",
 });
+
+// Stacks reference each other's resources by ARN/SSM, not CloudFormation
+// exports (see docs/adr/0001-cross-stack-references.md), so these are
+// ordering-only deps: they make `cdk deploy --all` create the DataStack tables
+// + bucket and the AuthStack SSM params before the consumers read them, without
+// creating any import that could deadlock on a future replacement.
+web.addDependency(data);
+admin.addDependency(data);
+admin.addDependency(auth);
+shared.addDependency(data);
 
 new StorybookStack(app, `${config.appName}-Storybook`, {
   env: primaryEnv,

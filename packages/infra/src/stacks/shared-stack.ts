@@ -2,19 +2,17 @@ import * as cdk from "aws-cdk-lib";
 import * as budgets from "aws-cdk-lib/aws-budgets";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as cwActions from "aws-cdk-lib/aws-cloudwatch-actions";
-import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ses from "aws-cdk-lib/aws-ses";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import { buildTableNames } from "@portfolio/data/tables";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
 
 export type SharedStackProps = cdk.StackProps & {
   config: InfraConfig;
-  /** Every DynamoDB table (from the DataStack) — each is alarmed individually. */
-  tables: dynamodb.ITable[];
 };
 
 /**
@@ -36,7 +34,7 @@ export class SharedStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: SharedStackProps) {
     super(scope, id, props);
-    const { config, tables } = props;
+    const { config } = props;
 
     // --- Messaging ---
     this.eventBus = new events.EventBus(this, "EventBus", {
@@ -65,31 +63,33 @@ export class SharedStack extends cdk.Stack {
 
     // --- Observability ---
     const alarmAction = new cwActions.SnsAction(this.alertsTopic);
+    const period = cdk.Duration.minutes(5);
 
-    // Operations the apps + rate limiter actually issue. Scoping the
-    // system-errors math expression keeps each alarm under the 10-metric limit.
-    const watchedOperations = [
-      dynamodb.Operation.GET_ITEM,
-      dynamodb.Operation.PUT_ITEM,
-      dynamodb.Operation.UPDATE_ITEM,
-      dynamodb.Operation.DELETE_ITEM,
-      dynamodb.Operation.QUERY,
-      dynamodb.Operation.SCAN,
-    ];
+    // Build metrics from the resolved table names (the convention) rather than
+    // from imported table constructs, so this stack never imports the DataStack.
+    const tableNames = Object.entries(buildTableNames(config.tablePrefix));
+
+    // Operations the apps + rate limiter actually issue (the CloudWatch
+    // "Operation" dimension values). Six metrics stays under the 10-metric
+    // alarm-math limit.
+    const watchedOperations = ["GetItem", "PutItem", "UpdateItem", "DeleteItem", "Query", "Scan"];
+
+    const ddbMetric = (metricName: string, dimensions: Record<string, string>) =>
+      new cloudwatch.Metric({
+        namespace: "AWS/DynamoDB",
+        metricName,
+        dimensionsMap: dimensions,
+        statistic: "Sum",
+        period,
+      });
 
     // Alarm every table uniformly: a throttle is a capacity signal, a system
     // error is an AWS-side fault — both must page rather than fail silently.
     // (~$0.20/table-month for the two standard alarms; trivial at this scale.)
-    for (const table of tables) {
-      const key = table.node.id;
-
-      table
-        .metric("ThrottledRequests", {
-          statistic: "Sum",
-          period: cdk.Duration.minutes(5),
-        })
+    for (const [key, name] of tableNames) {
+      ddbMetric("ThrottledRequests", { TableName: name })
         .createAlarm(this, `Throttle-${key}`, {
-          alarmName: `${config.appName}-ddb-throttles-${key}`,
+          alarmName: `${config.appName}-ddb-throttles-${name}`,
           threshold: 1,
           evaluationPeriods: 1,
           comparisonOperator:
@@ -98,12 +98,18 @@ export class SharedStack extends cdk.Stack {
         })
         .addAlarmAction(alarmAction);
 
+      const usingMetrics = Object.fromEntries(
+        watchedOperations.map((op, i) => [
+          `e${i}`,
+          ddbMetric("SystemErrors", { TableName: name, Operation: op }),
+        ]),
+      );
       new cloudwatch.Alarm(this, `SystemErrors-${key}`, {
-        alarmName: `${config.appName}-ddb-system-errors-${key}`,
-        metric: table.metricSystemErrorsForOperations({
-          operations: watchedOperations,
-          statistic: "Sum",
-          period: cdk.Duration.minutes(5),
+        alarmName: `${config.appName}-ddb-system-errors-${name}`,
+        metric: new cloudwatch.MathExpression({
+          expression: Object.keys(usingMetrics).join("+"),
+          usingMetrics,
+          period,
         }),
         threshold: 1,
         evaluationPeriods: 1,
