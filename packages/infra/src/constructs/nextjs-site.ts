@@ -4,6 +4,7 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import * as logs from "aws-cdk-lib/aws-logs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as sqs from "aws-cdk-lib/aws-sqs";
@@ -50,6 +51,9 @@ export class NextjsSite extends Construct {
   readonly distribution: cloudfront.Distribution;
   readonly serverFunction: lambda.Function;
   readonly bucket: s3.Bucket;
+  /** Server function log group — exposed so the app stack can attach an
+   *  error metric filter without importing across stacks. */
+  readonly serverLogGroup: logs.LogGroup;
 
   constructor(scope: Construct, id: string, props: NextjsSiteProps) {
     super(scope, id);
@@ -61,6 +65,16 @@ export class NextjsSite extends Construct {
 
     const runtime = lambda.Runtime.NODEJS_22_X;
     const architecture = lambda.Architecture.ARM_64;
+
+    // Explicit log groups with bounded retention: Lambda's default groups never
+    // expire, so storage accrues forever. Two weeks is plenty for a portfolio
+    // and keeps CloudWatch Logs storage near $0 (see ADR 0002).
+    const logGroupFor = (fnId: string): logs.LogGroup =>
+      new logs.LogGroup(this, `${fnId}Logs`, {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      });
+    this.serverLogGroup = logGroupFor("ServerFn");
 
     // Static assets + ISR cache live in one private bucket. Disposable: rebuilt
     // on every deploy, so DESTROY + auto-delete is safe.
@@ -99,6 +113,7 @@ export class NextjsSite extends Construct {
       code: lambda.Code.fromAsset(path.join(openNextDir, "server-functions", "default")),
       memorySize: 1024,
       timeout: cdk.Duration.seconds(30),
+      logGroup: this.serverLogGroup,
       environment: {
         CACHE_BUCKET_NAME: this.bucket.bucketName,
         CACHE_BUCKET_KEY_PREFIX: CACHE_PREFIX,
@@ -122,6 +137,7 @@ export class NextjsSite extends Construct {
       code: lambda.Code.fromAsset(path.join(openNextDir, "image-optimization-function")),
       memorySize: 1536,
       timeout: cdk.Duration.seconds(30),
+      logGroup: logGroupFor("ImageFn"),
       environment: {
         BUCKET_NAME: this.bucket.bucketName,
         BUCKET_KEY_PREFIX: ASSETS_PREFIX,
@@ -135,6 +151,7 @@ export class NextjsSite extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(path.join(openNextDir, "revalidation-function")),
       timeout: cdk.Duration.seconds(30),
+      logGroup: logGroupFor("RevalidationFn"),
     });
     revalidationFunction.addEventSource(
       new SqsEventSource(revalidationQueue, { batchSize: 5 }),

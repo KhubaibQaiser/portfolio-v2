@@ -75,7 +75,7 @@ Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages
 | `Portfolio-Web`    | `eu-west-1` | OpenNext web app: Lambda(s) + CloudFront + asset/cache buckets                           |
 | `Portfolio-Auth`   | `eu-west-1` | Cognito user pool, app client (PKCE), Hosted UI, pre-token Lambda                        |
 | `Portfolio-Admin`  | `eu-west-1` | OpenNext admin app: Lambda(s) + CloudFront (wired to Auth + Data)                        |
-| `Portfolio-Shared` | `eu-west-1` | EventBridge bus, SNS alerts, SES identity, CloudWatch alarms + dashboard, AWS Budget     |
+| `Portfolio-Shared` | `eu-west-1` | EventBridge bus, SNS alerts, SES identity, CloudWatch `AppErrors` alarm + dashboard, AWS Budget |
 | `Portfolio-Storybook` | `eu-west-1` | Static Storybook design-system showcase: private S3 + CloudFront (OAC)                |
 | `Portfolio-Oidc`   | `eu-west-1` | GitHub Actions OIDC provider + least-privilege deploy role (opt-in via `-c githubRepo=`) |
 | `Portfolio-Dns`    | `us-east-1` | Route 53 public hosted zone for the apex domain                                          |
@@ -180,9 +180,10 @@ pnpm --filter @portfolio/data seed
 
 ## Observability, cost & security
 
-- **CloudWatch** (in `Portfolio-Shared`): DynamoDB throttle/system-error alarms (scoped to the operations actually used), a dashboard, and an **AWS Budget** — all wired to an **SNS** topic that emails `alertEmail`.
+- **CloudWatch** (in `Portfolio-Shared`): a single **`AppErrors`** alarm fed by per-app log metric filters (`level=ERROR`), a free dashboard (DynamoDB capacity/throttles/errors via account-scoped `SEARCH`), and an **AWS Budget** — all wired to an **SNS** topic that emails `alertEmail`. Alarming on the user-facing error symptom (rather than per-table infra alarms) keeps the bill near $0; see [ADR 0002](docs/adr/0002-cost-optimization.md).
+- **Cost:** designed for **~$1.50–3/month** at portfolio traffic — variable services sit in always-free tiers, Lambda log groups have 14-day retention, and prod log level is `WARN` (set `POWERTOOLS_LOG_LEVEL=INFO` on a Lambda to trace a live issue). The `monthlyBudgetUsd` alarm ($25 default) is a runaway backstop.
 - **PostHog**: product events (`portfolio_*`), `$pageview`, and `$exception` capture with source-map upload on production builds. Custom event names live in [`apps/web/src/lib/analytics/events.ts`](apps/web/src/lib/analytics/events.ts).
-- **Error policy:** no silent swallowing — build-time errors throw; runtime errors surface to PostHog / CloudWatch alarms rather than being treated as success.
+- **Error policy:** no silent swallowing — build-time errors throw; runtime errors surface to PostHog / the CloudWatch `AppErrors` alarm rather than being treated as success.
 - **Auth:** Cognito tokens verified server-side with `aws-jwt-verify`; `requireAdmin()` re-checks the allowlist at **every mutation boundary** (the middleware route guard is for UX, not the sole gate).
 - **Admin IAM:** the admin Lambda is granted only read/write to the content table and media bucket.
 - **Headers:** default security headers on the public app ([`apps/web/next.config.ts`](apps/web/next.config.ts)).
