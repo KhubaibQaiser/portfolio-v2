@@ -330,6 +330,9 @@ importers:
 
   packages/infra:
     dependencies:
+      '@portfolio/data':
+        specifier: workspace:*
+        version: link:../data
       aws-cdk-lib:
         specifier: ^2.0.0
         version: 2.260.0(constructs@10.6.0)

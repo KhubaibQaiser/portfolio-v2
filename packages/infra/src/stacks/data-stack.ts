@@ -1,8 +1,11 @@
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as ssm from "aws-cdk-lib/aws-ssm";
+import { TABLE_SUFFIXES } from "@portfolio/data/tables";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
+import { ssmPaths } from "../naming";
 
 export type DataStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -15,21 +18,25 @@ const STRING = dynamodb.AttributeType.STRING;
  *
  * Each aggregate gets its own table with a clean, readable key schema — no
  * opaque composite keys — so content is easy to browse and manage. Table names
- * are `<tablePrefix>-<suffix>` and MUST stay in sync with
- * `packages/data/src/dynamo/tables.ts` (the apps resolve them from
- * `DYNAMO_TABLE_PREFIX`). Content/collection tables are RETAIN +
- * deletion-protected with PITR so a stack teardown never destroys content; the
- * rate-limit table is ephemeral (regenerable counters).
+ * come from the shared `TABLE_SUFFIXES` (`@portfolio/data/tables`) as
+ * `<tablePrefix>-<suffix>`, so the apps (which resolve them from
+ * `DYNAMO_TABLE_PREFIX`) and this stack can never drift. The `tablePrefix` is a
+ * versionable knob — bumping it (e.g. `portfolio` → `portfolio-v2`) stands up a
+ * fresh table set for a blue/green data migration.
+ *
+ * Nothing is exported across stacks: the media bucket is auto-named and its name
+ * is published to the SSM registry, while consumers grant DynamoDB by the
+ * deterministic `${tablePrefix}-*` ARN pattern. This avoids CloudFormation's
+ * "export in use" deadlock — see docs/adr/0001-cross-stack-references.md.
+ *
+ * Content/collection tables are RETAIN + deletion-protected with PITR so a stack
+ * teardown never destroys content; the rate-limit table is ephemeral.
  */
 export class DataStack extends cdk.Stack {
-  /** All content/collection + rate-limit tables (granted to the app Lambdas
-   *  and alarmed by the SharedStack). */
-  readonly tables: dynamodb.Table[];
-  readonly mediaBucket: s3.Bucket;
-
   constructor(scope: Construct, id: string, props: DataStackProps) {
     super(scope, id, props);
-    const prefix = props.config.tablePrefix;
+    const { config } = props;
+    const prefix = config.tablePrefix;
 
     /** A durable content/collection table: PITR + deletion protection + RETAIN. */
     const durableTable = (
@@ -46,17 +53,10 @@ export class DataStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.RETAIN,
       });
 
-    const contentTable = durableTable("ContentTable", "content", {
-      name: "section",
-      type: STRING,
-    });
+    durableTable("ContentTable", TABLE_SUFFIXES.content, { name: "section", type: STRING });
+    durableTable("ExperienceTable", TABLE_SUFFIXES.experience, { name: "id", type: STRING });
 
-    const experienceTable = durableTable("ExperienceTable", "experience", {
-      name: "id",
-      type: STRING,
-    });
-
-    const projectTable = durableTable("ProjectTable", "project", {
+    const projectTable = durableTable("ProjectTable", TABLE_SUFFIXES.project, {
       name: "id",
       type: STRING,
     });
@@ -66,20 +66,17 @@ export class DataStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    const skillTable = durableTable("SkillTable", "skill", { name: "id", type: STRING });
-    const testimonialTable = durableTable("TestimonialTable", "testimonial", {
+    durableTable("SkillTable", TABLE_SUFFIXES.skill, { name: "id", type: STRING });
+    durableTable("TestimonialTable", TABLE_SUFFIXES.testimonial, { name: "id", type: STRING });
+    durableTable("ResumeVariantTable", TABLE_SUFFIXES.resumeVariant, {
       name: "id",
       type: STRING,
     });
-    const resumeVariantTable = durableTable("ResumeVariantTable", "resume-variant", {
-      name: "id",
-      type: STRING,
-    });
-    const mediaTable = durableTable("MediaTable", "media", { name: "id", type: STRING });
+    durableTable("MediaTable", TABLE_SUFFIXES.media, { name: "id", type: STRING });
 
     const resumeGenerationTable = durableTable(
       "ResumeGenerationTable",
-      "resume-generation",
+      TABLE_SUFFIXES.resumeGeneration,
       { name: "id", type: STRING },
     );
     // Per-user usage window (cost cap).
@@ -98,8 +95,8 @@ export class DataStack extends cdk.Stack {
     });
 
     // Ephemeral rate-limiter counters: TTL sweep, no PITR, safe to recreate.
-    const rateLimitTable = new dynamodb.Table(this, "RateLimitTable", {
-      tableName: `${prefix}-rate-limit`,
+    new dynamodb.Table(this, "RateLimitTable", {
+      tableName: `${prefix}-${TABLE_SUFFIXES.rateLimit}`,
       partitionKey: { name: "pk", type: STRING },
       sortKey: { name: "sk", type: STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -107,19 +104,10 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    this.tables = [
-      contentTable,
-      experienceTable,
-      projectTable,
-      skillTable,
-      testimonialTable,
-      resumeVariantTable,
-      mediaTable,
-      resumeGenerationTable,
-      rateLimitTable,
-    ];
-
-    this.mediaBucket = new s3.Bucket(this, "MediaBucket", {
+    // Auto-named (no fixed bucketName) so it can be replaced/migrated cleanly;
+    // S3 names are global + immutable, so a deterministic name is the worst case
+    // for migration. Consumers discover the name from the SSM registry below.
+    const mediaBucket = new s3.Bucket(this, "MediaBucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
@@ -128,11 +116,18 @@ export class DataStack extends cdk.Stack {
         {
           // Direct browser uploads via presigned PUTs from the admin app.
           allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET, s3.HttpMethods.HEAD],
-          allowedOrigins: props.config.mediaCorsOrigins,
+          allowedOrigins: config.mediaCorsOrigins,
           allowedHeaders: ["*"],
           maxAge: 3000,
         },
       ],
+    });
+
+    // Publish the bucket name to the SSM registry for the apps to discover
+    // (instead of a cross-stack CloudFormation export).
+    new ssm.StringParameter(this, "MediaBucketNameParam", {
+      parameterName: ssmPaths(config).mediaBucketName,
+      stringValue: mediaBucket.bucketName,
     });
 
     new cdk.CfnOutput(this, "TablePrefix", {
@@ -140,8 +135,8 @@ export class DataStack extends cdk.Stack {
       description: "Set as DYNAMO_TABLE_PREFIX in the apps",
     });
     new cdk.CfnOutput(this, "MediaBucketName", {
-      value: this.mediaBucket.bucketName,
-      description: "Set as S3_MEDIA_BUCKET in the apps",
+      value: mediaBucket.bucketName,
+      description: "S3_MEDIA_BUCKET (also published to SSM for the apps)",
     });
   }
 }

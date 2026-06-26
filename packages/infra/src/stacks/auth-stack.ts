@@ -6,6 +6,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
+import { ssmPaths } from "../naming";
 
 export type AuthStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -128,6 +129,23 @@ export class AuthStack extends cdk.Stack {
       },
     });
     this.hostedUiDomain = domain.baseUrl();
+
+    // Publish the generated ids to the SSM registry so the AdminStack can
+    // discover them by path instead of importing a cross-stack export (which
+    // would couple the two stacks and deadlock on replacement).
+    const paths = ssmPaths(config);
+    new ssm.StringParameter(this, "UserPoolIdParam", {
+      parameterName: paths.authUserPoolId,
+      stringValue: this.userPool.userPoolId,
+    });
+    new ssm.StringParameter(this, "UserPoolClientIdParam", {
+      parameterName: paths.authUserPoolClientId,
+      stringValue: this.userPoolClient.userPoolClientId,
+    });
+    new ssm.StringParameter(this, "HostedUiDomainParam", {
+      parameterName: paths.authHostedUiDomain,
+      stringValue: this.hostedUiDomain,
+    });
 
     new cdk.CfnOutput(this, "UserPoolId", { value: this.userPool.userPoolId });
     new cdk.CfnOutput(this, "UserPoolClientId", {
