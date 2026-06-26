@@ -29,6 +29,43 @@ export function ssmPaths(config: InfraConfig) {
   } as const;
 }
 
+/** Secrets Manager secret names for runtime AI keys (values fetched in-app). */
+export function secretNames(config: InfraConfig) {
+  const base = config.appName.toLowerCase();
+  return {
+    groqApiKey: `${base}/groq-api-key`,
+    anthropicApiKey: `${base}/anthropic-api-key`,
+  } as const;
+}
+
+/**
+ * Deterministic Secrets Manager ARN (no random suffix). Valid as
+ * `GetSecretValue` SecretId and safe to pass in Lambda env — not the secret value.
+ */
+export function secretArnForName(scope: Construct, secretName: string): string {
+  const { account, region } = Stack.of(scope);
+  return `arn:aws:secretsmanager:${region}:${account}:secret:${secretName}`;
+}
+
+/** Least-privilege read on one secret (covers the suffixed physical ARN too). */
+export function grantSecretRead(
+  scope: Construct,
+  fn: lambda.Function,
+  secretName: string,
+): void {
+  const { account, region } = Stack.of(scope);
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: `SecretsManagerRead${secretName.replace(/[^A-Za-z0-9]/g, "")}`,
+      actions: ["secretsmanager:GetSecretValue"],
+      resources: [
+        secretArnForName(scope, secretName),
+        `arn:aws:secretsmanager:${region}:${account}:secret:${secretName}-*`,
+      ],
+    }),
+  );
+}
+
 /**
  * Shared definition of the application-error metric. The app stacks publish to
  * it via a Logs metric filter (one per app, no dimensions, so both apps roll up

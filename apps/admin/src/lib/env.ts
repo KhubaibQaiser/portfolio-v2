@@ -25,9 +25,9 @@ export const env = createEnv({
     // edge-safe in middleware), which throws when unset — there is no fallback.
     // Optional here so build-only steps don't require it; enforced at runtime.
     ADMIN_ALLOWED_EMAILS: z.string().optional(),
-    // Resume AI
-    ANTHROPIC_API_KEY: z.string().min(1).optional(),
-    GROQ_API_KEY: z.string().min(1).optional(),
+    // Resume AI — Secrets Manager ARNs only
+    GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
+    ANTHROPIC_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     RESUME_GEN_DAILY_USD_CAP: z.string().optional(),
     // Data layer (consumed by @portfolio/data)
     DATA_BACKEND: z.enum(["fixture", "dynamo"]).optional(),
@@ -50,8 +50,8 @@ export const env = createEnv({
     COGNITO_DOMAIN: process.env.COGNITO_DOMAIN,
     APP_ORIGIN: process.env.APP_ORIGIN,
     ADMIN_ALLOWED_EMAILS: process.env.ADMIN_ALLOWED_EMAILS,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
+    ANTHROPIC_API_KEY_SECRET_ARN: process.env.ANTHROPIC_API_KEY_SECRET_ARN,
     RESUME_GEN_DAILY_USD_CAP: process.env.RESUME_GEN_DAILY_USD_CAP,
     DATA_BACKEND: process.env.DATA_BACKEND,
     DYNAMO_TABLE_PREFIX: process.env.DYNAMO_TABLE_PREFIX,

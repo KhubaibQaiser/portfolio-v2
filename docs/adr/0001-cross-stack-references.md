@@ -117,6 +117,7 @@ is still by ARN.
   `domainEnabled` (currently off) and both live in `us-east-1`. When the domain
   is delegated, decouple via `HostedZone.fromHostedZoneAttributes` + an SSM
   `hosted-zone-id` param.
-- **Runtime secrets** (LLM API keys) should be fetched from Secrets Manager by
-  name at runtime with an ARN-scoped grant (`secret:portfolio/*`), not baked into
-  Lambda env via deploy-time resolution.
+- **Runtime secrets** (LLM API keys): Lambda env carries **ARNs only**
+  (`GROQ_API_KEY_SECRET_ARN`, `ANTHROPIC_API_KEY_SECRET_ARN`); the app fetches
+  values via `GetSecretValue` at request time with IAM scoped to each secret ARN.
+  To exercise AI locally, set the same `*_SECRET_ARN` vars and use AWS credentials.

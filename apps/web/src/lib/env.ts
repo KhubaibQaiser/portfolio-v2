@@ -11,8 +11,8 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
-    // AI
-    GROQ_API_KEY: z.string().min(1).optional(),
+    // AI — Secrets Manager ARN only (CDK sets in prod; copy into .env.local for sandbox testing)
+    GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     // Revalidation webhook shared secret (also set in apps/admin)
     REVALIDATE_SECRET: z.string().min(1).optional(),
     // Chat rate limit tuning (parsed as ints by chat-rate-limit.ts)
@@ -44,7 +44,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: z.string().optional(),
   },
   runtimeEnv: {
-    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
     REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
     CHAT_RATE_LIMIT_MAX: process.env.CHAT_RATE_LIMIT_MAX,
     CHAT_RATE_LIMIT_WINDOW_SEC: process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
