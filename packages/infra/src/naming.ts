@@ -26,6 +26,21 @@ export function ssmPaths(config: InfraConfig) {
 }
 
 /**
+ * Shared definition of the application-error metric. The app stacks publish to
+ * it via a Logs metric filter (one per app, no dimensions, so both apps roll up
+ * into a single time series); the SharedStack alarms on it by namespace/name.
+ * Referencing by name (not a construct/export) keeps the stacks decoupled — see
+ * docs/adr/0001-cross-stack-references.md — and a single one-metric alarm is far
+ * cheaper than per-resource metric-math alarms (docs/adr/0002-cost-optimization.md).
+ */
+export function appErrorMetric(config: InfraConfig) {
+  return {
+    namespace: `${config.appName}/Observability`,
+    metricName: "AppErrors",
+  } as const;
+}
+
+/**
  * Deterministic DynamoDB ARNs for the whole table set. Table names follow the
  * `${tablePrefix}-<suffix>` convention (the prefix is a versionable knob), so a
  * consumer grants the entire set with one wildcard instead of importing the

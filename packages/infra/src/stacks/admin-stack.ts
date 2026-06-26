@@ -1,9 +1,10 @@
 import * as cdk from "aws-cdk-lib";
+import * as logs from "aws-cdk-lib/aws-logs";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
-import { grantAppDataAccess, ssmPaths } from "../naming";
+import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -44,16 +45,17 @@ export class AdminStack extends cdk.Stack {
     const ssmGet = (path: string) =>
       ssm.StringParameter.valueForStringParameter(this, path);
 
-    new NextjsSite(this, "Site", {
+    const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
-        // Powertools structured logger (see @portfolio/observability).
+        // Powertools structured logger (see @portfolio/observability). WARN keeps
+        // ingestion low; the AppErrors metric filter below tracks ERROR lines.
         POWERTOOLS_SERVICE_NAME: "portfolio-admin",
-        POWERTOOLS_LOG_LEVEL: "INFO",
+        POWERTOOLS_LOG_LEVEL: "WARN",
         COGNITO_REGION: config.region,
         COGNITO_USER_POOL_ID: ssmGet(paths.authUserPoolId),
         COGNITO_CLIENT_ID: ssmGet(paths.authUserPoolClientId),
@@ -64,6 +66,18 @@ export class AdminStack extends cdk.Stack {
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
       },
       grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
+    });
+
+    // Runtime errors → shared AppErrors metric (same namespace/name as the web
+    // app, no dimensions, so the SharedStack alarms on both at once). ADR 0002.
+    const errorMetric = appErrorMetric(config);
+    new logs.MetricFilter(this, "AppErrorMetric", {
+      logGroup: site.serverLogGroup,
+      metricNamespace: errorMetric.namespace,
+      metricName: errorMetric.metricName,
+      filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+      metricValue: "1",
+      defaultValue: 0,
     });
   }
 }

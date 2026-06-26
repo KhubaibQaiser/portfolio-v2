@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as logs from "aws-cdk-lib/aws-logs";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
@@ -47,6 +48,11 @@ export class AuthStack extends cdk.Stack {
       handler: "index.handler",
       code: lambda.Code.fromAsset(path.join(lambdaDir, "pre-token")),
       timeout: cdk.Duration.seconds(5),
+      // Bounded retention so log storage never accrues indefinitely (ADR 0002).
+      logGroup: new logs.LogGroup(this, "PreTokenFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
     });
 
     this.userPool = new cognito.UserPool(this, "UserPool", {

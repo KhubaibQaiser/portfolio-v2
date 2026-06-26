@@ -7,9 +7,9 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as ses from "aws-cdk-lib/aws-ses";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
-import { buildTableNames } from "@portfolio/data/tables";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
+import { appErrorMetric } from "../naming";
 
 export type SharedStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -21,7 +21,7 @@ export type SharedStackProps = cdk.StackProps & {
  *  - an EventBridge bus for domain events (decoupled revalidation/automation)
  *  - an SNS alerts topic (CloudWatch alarms + AWS Budgets fan out to email)
  *  - a SES email identity for the contact form (when configured)
- *  - a monthly cost budget, per-table DynamoDB alarms, and an overview dashboard
+ *  - a monthly cost budget, a single application-error alarm, and a dashboard
  *
  * These were previously three micro-stacks; folding them into one keeps the
  * topic→alarm/budget wiring as in-process references instead of brittle
@@ -62,90 +62,78 @@ export class SharedStack extends cdk.Stack {
     }
 
     // --- Observability ---
+    // Cost-driven design (ADR 0002): a single application-error alarm replaces
+    // per-table DynamoDB alarms. CloudWatch bills alarms per referenced metric,
+    // and metric-math alarms multiply that — 18 per-table alarms (9 of them
+    // 6-metric math) cost ~$6.30/mo. Any DynamoDB/S3/AI fault that matters
+    // surfaces as a logged `ERROR` in the app, which the apps' metric filters
+    // roll up into one `AppErrors` metric — so we alarm on the user-facing
+    // symptom for ~$0.10/mo instead. The dashboard (one of 3 free) still shows
+    // DynamoDB via account-scoped SEARCH (no per-table cost).
     const alarmAction = new cwActions.SnsAction(this.alertsTopic);
     const period = cdk.Duration.minutes(5);
 
-    // Build metrics from the resolved table names (the convention) rather than
-    // from imported table constructs, so this stack never imports the DataStack.
-    const tableNames = Object.entries(buildTableNames(config.tablePrefix));
-
-    // Operations the apps + rate limiter actually issue (the CloudWatch
-    // "Operation" dimension values). Six metrics stays under the 10-metric
-    // alarm-math limit.
-    const watchedOperations = ["GetItem", "PutItem", "UpdateItem", "DeleteItem", "Query", "Scan"];
-
-    const ddbMetric = (metricName: string, dimensions: Record<string, string>) =>
-      new cloudwatch.Metric({
-        namespace: "AWS/DynamoDB",
-        metricName,
-        dimensionsMap: dimensions,
+    const errorMetric = appErrorMetric(config);
+    new cloudwatch.Alarm(this, "AppErrorsAlarm", {
+      alarmName: `${config.appName}-app-errors`,
+      alarmDescription:
+        "Application logged one or more ERROR lines (web or admin server function).",
+      metric: new cloudwatch.Metric({
+        namespace: errorMetric.namespace,
+        metricName: errorMetric.metricName,
         statistic: "Sum",
         period,
-      });
-
-    // Alarm every table uniformly: a throttle is a capacity signal, a system
-    // error is an AWS-side fault — both must page rather than fail silently.
-    // (~$0.20/table-month for the two standard alarms; trivial at this scale.)
-    for (const [key, name] of tableNames) {
-      ddbMetric("ThrottledRequests", { TableName: name })
-        .createAlarm(this, `Throttle-${key}`, {
-          alarmName: `${config.appName}-ddb-throttles-${name}`,
-          threshold: 1,
-          evaluationPeriods: 1,
-          comparisonOperator:
-            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-        })
-        .addAlarmAction(alarmAction);
-
-      const usingMetrics = Object.fromEntries(
-        watchedOperations.map((op, i) => [
-          `e${i}`,
-          ddbMetric("SystemErrors", { TableName: name, Operation: op }),
-        ]),
-      );
-      new cloudwatch.Alarm(this, `SystemErrors-${key}`, {
-        alarmName: `${config.appName}-ddb-system-errors-${name}`,
-        metric: new cloudwatch.MathExpression({
-          expression: Object.keys(usingMetrics).join("+"),
-          usingMetrics,
-          period,
-        }),
-        threshold: 1,
-        evaluationPeriods: 1,
-        comparisonOperator:
-          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-      }).addAlarmAction(alarmAction);
-    }
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    }).addAlarmAction(alarmAction);
 
     // Dashboard uses account-scoped SEARCH expressions so it auto-tracks every
     // DynamoDB table (this account is dedicated to the portfolio) without a
-    // per-table widget explosion.
-    const search = (metricName: string, label: string): cloudwatch.IMetric =>
+    // per-table widget — or per-metric alarm — cost.
+    const search = (
+      namespace: string,
+      metricName: string,
+      label: string,
+    ): cloudwatch.IMetric =>
       new cloudwatch.MathExpression({
-        expression: `SEARCH('{AWS/DynamoDB,TableName} MetricName="${metricName}"', 'Sum', 300)`,
+        expression: `SEARCH('{${namespace},TableName} MetricName="${metricName}"', 'Sum', 300)`,
         label,
-        period: cdk.Duration.minutes(5),
+        period,
       });
 
     const dashboard = new cloudwatch.Dashboard(this, "Dashboard", {
       dashboardName: `${config.appName}-overview`,
     });
     dashboard.addWidgets(
+      new cloudwatch.SingleValueWidget({
+        title: "Application errors (sum, 5m)",
+        metrics: [
+          new cloudwatch.Metric({
+            namespace: errorMetric.namespace,
+            metricName: errorMetric.metricName,
+            statistic: "Sum",
+            period,
+          }),
+        ],
+        width: 24,
+      }),
       new cloudwatch.GraphWidget({
         title: "DynamoDB capacity (RCU/WCU, all tables)",
         left: [
-          search("ConsumedReadCapacityUnits", "RCU"),
-          search("ConsumedWriteCapacityUnits", "WCU"),
+          search("AWS/DynamoDB", "ConsumedReadCapacityUnits", "RCU"),
+          search("AWS/DynamoDB", "ConsumedWriteCapacityUnits", "WCU"),
         ],
         width: 12,
       }),
       new cloudwatch.GraphWidget({
         title: "DynamoDB throttles & system errors (all tables)",
         left: [
-          search("ThrottledRequests", "Throttled"),
-          search("SystemErrors", "System errors"),
+          search("AWS/DynamoDB", "ThrottledRequests", "Throttled"),
+          search("AWS/DynamoDB", "SystemErrors", "System errors"),
         ],
         width: 12,
       }),

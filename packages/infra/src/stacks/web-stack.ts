@@ -1,9 +1,10 @@
 import * as cdk from "aws-cdk-lib";
+import * as logs from "aws-cdk-lib/aws-logs";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
-import { grantAppDataAccess, ssmPaths } from "../naming";
+import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -29,18 +30,32 @@ export class WebStack extends cdk.Stack {
       ssmPaths(config).mediaBucketName,
     );
 
-    new NextjsSite(this, "Site", {
+    const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
-        // Powertools structured logger (see @portfolio/observability).
+        // Powertools structured logger (see @portfolio/observability). WARN keeps
+        // ingestion low; the AppErrors metric filter below tracks ERROR lines.
         POWERTOOLS_SERVICE_NAME: "portfolio-web",
-        POWERTOOLS_LOG_LEVEL: "INFO",
+        POWERTOOLS_LOG_LEVEL: "WARN",
       },
       grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
+    });
+
+    // Surface runtime errors as one cheap, account-rolled-up metric (no
+    // dimensions, so web + admin share a single time series the SharedStack
+    // alarms on). See ADR 0002.
+    const errorMetric = appErrorMetric(config);
+    new logs.MetricFilter(this, "AppErrorMetric", {
+      logGroup: site.serverLogGroup,
+      metricNamespace: errorMetric.namespace,
+      metricName: errorMetric.metricName,
+      filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+      metricValue: "1",
+      defaultValue: 0,
     });
   }
 }
