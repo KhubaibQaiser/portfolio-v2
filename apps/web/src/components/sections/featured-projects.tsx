@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { GitHubIcon } from "@portfolio/ui/icons";
@@ -59,12 +60,14 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                     isOdd && "md:[direction:rtl] md:*:[direction:ltr]",
                   )}
                 >
-                  <div className="bg-muted aspect-video overflow-hidden rounded-xl">
+                  <div className="bg-muted relative aspect-video overflow-hidden rounded-xl">
                     {project.cover_url ? (
-                      <img
+                      <Image
                         src={project.cover_url}
                         alt={project.title}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="text-muted-foreground/30 flex h-full items-center justify-center">
