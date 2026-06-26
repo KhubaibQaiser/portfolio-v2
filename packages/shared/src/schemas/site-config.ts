@@ -34,6 +34,7 @@ export const siteConfigSchema = z.object({
   description: z.string().min(1).max(1000),
   social_links: z.array(socialLinkSchema),
   nav_links: z.array(navLinkSchema),
+  tech_stack: z.array(z.string().min(1)),
 });
 
 export type SiteConfigFormData = z.infer<typeof siteConfigSchema>;

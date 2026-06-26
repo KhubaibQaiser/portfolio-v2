@@ -3,7 +3,8 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { RateLimiter } from "@portfolio/shared/ports";
 import { createDynamoRateLimiter } from "./dynamo-rate-limiter";
-import { ensureTable } from "../dynamo/create-table";
+import { ensureTables } from "../dynamo/create-table";
+import { buildTableNames } from "../dynamo/tables";
 
 // Integration suite — requires DynamoDB Local. Skipped unless the endpoint is
 // set. Run with:
@@ -15,15 +16,15 @@ describe.skipIf(!endpoint)("createDynamoRateLimiter (integration)", () => {
   let limiter: RateLimiter;
 
   beforeAll(async () => {
-    const table = `portfolio-rl-${Date.now()}`;
+    const names = buildTableNames(`portfolio-rl-${Date.now()}`);
     const base = new DynamoDBClient({
       endpoint,
       region: "us-east-1",
       credentials: { accessKeyId: "local", secretAccessKey: "local" },
     });
-    await ensureTable(base, table);
+    await ensureTables(base, names);
     const doc = DynamoDBDocumentClient.from(base);
-    limiter = createDynamoRateLimiter(doc, table);
+    limiter = createDynamoRateLimiter(doc, names.rateLimit);
   });
 
   it("allows up to max requests, then denies within the window", async () => {

@@ -9,8 +9,8 @@ export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
   /** Absolute path to apps/admin/.open-next. */
   openNextDir: string;
-  /** Content table from the DataStack (same region). */
-  table: dynamodb.ITable;
+  /** Content/collection tables from the DataStack (same region). */
+  tables: dynamodb.ITable[];
   /** Media bucket from the DataStack (same region). */
   mediaBucket: s3.IBucket;
   /** Cognito wiring from the AuthStack for admin sign-in. */
@@ -32,7 +32,7 @@ export type AdminStackProps = cdk.StackProps & {
 export class AdminStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AdminStackProps) {
     super(scope, id, props);
-    const { config, table, mediaBucket, auth } = props;
+    const { config, tables, mediaBucket, auth } = props;
 
     // Public origin for OAuth redirect/logout URIs. The CloudFront Host header
     // is stripped before the Lambda origin, so the app can't derive this at
@@ -49,7 +49,7 @@ export class AdminStack extends cdk.Stack {
       region: config.region,
       environment: {
         DATA_BACKEND: "dynamo",
-        DYNAMO_TABLE_NAME: table.tableName,
+        DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucket.bucketName,
         // Powertools structured logger (see @portfolio/observability).
         POWERTOOLS_SERVICE_NAME: "portfolio-admin",
@@ -64,7 +64,7 @@ export class AdminStack extends cdk.Stack {
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
       },
       grantServer: (fn) => {
-        table.grantReadWriteData(fn);
+        for (const table of tables) table.grantReadWriteData(fn);
         mediaBucket.grantReadWrite(fn);
       },
     });

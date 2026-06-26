@@ -39,6 +39,7 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
     description: initialData?.description ?? "",
     social_links: withClientIds(socialLinks),
     nav_links: (initialData?.nav_links ?? []) as unknown as NavLink[],
+    tech_stack: initialData?.tech_stack ?? [],
   });
 
   function handleChange(field: string, value: string) {
@@ -110,6 +111,29 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
           value={form.description}
           onChange={(e) => handleChange("description", e.target.value)}
           rows={3}
+          className={cn(
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
+          )}
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium">
+          Tech Stack (one per line)
+        </label>
+        <p className="text-muted-foreground mb-1.5 text-xs">
+          Shown in the “How this was built” section on the home page.
+        </p>
+        <textarea
+          value={form.tech_stack.join("\n")}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              tech_stack: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+            }))
+          }
+          rows={5}
           className={cn(
             "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
             "focus:border-accent text-sm focus:outline-hidden",

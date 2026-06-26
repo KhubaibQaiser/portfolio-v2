@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
-import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import type {
   ContentRepository,
   ResumeGenerationListOptions,
@@ -93,13 +92,6 @@ export function createFixtureContentRepository(): ContentRepository {
     },
     async upsertAbout(values: Partial<AboutFormData>) {
       about = { ...about, ...values, updated_at: now() };
-    },
-    async syncCompaniesCountFromExperience() {
-      about = {
-        ...about,
-        companies_count: uniqueCompanyCount(experience),
-        updated_at: now(),
-      };
     },
 
     // Experience

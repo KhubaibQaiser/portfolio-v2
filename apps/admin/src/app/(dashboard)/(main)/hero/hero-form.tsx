@@ -15,7 +15,6 @@ export function HeroForm({ initialData }: HeroFormProps) {
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     greeting: initialData?.greeting ?? "Hi, my name is",
-    name: initialData?.name ?? "",
     headline: initialData?.headline ?? "",
     subtitle: initialData?.subtitle ?? [],
     value_proposition: initialData?.value_proposition ?? "",
@@ -40,7 +39,6 @@ export function HeroForm({ initialData }: HeroFormProps) {
       {(
         [
           "greeting",
-          "name",
           "headline",
           "value_proposition",
           "cta_primary_text",

@@ -34,14 +34,14 @@ cdk.Tags.of(app).add("managed-by", "cdk");
 const data = new DataStack(app, `${config.appName}-Data`, {
   env: primaryEnv,
   config,
-  description: "DynamoDB single-table + S3 media bucket for the portfolio",
+  description: "Per-entity DynamoDB tables + S3 media bucket for the portfolio",
 });
 
 new WebStack(app, `${config.appName}-Web`, {
   env: primaryEnv,
   config,
   openNextDir: path.join(repoRoot, "apps/web/.open-next"),
-  table: data.table,
+  tables: data.tables,
   mediaBucket: data.mediaBucket,
   description: "Web app (OpenNext on Lambda + CloudFront)",
 });
@@ -56,7 +56,7 @@ new AdminStack(app, `${config.appName}-Admin`, {
   env: primaryEnv,
   config,
   openNextDir: path.join(repoRoot, "apps/admin/.open-next"),
-  table: data.table,
+  tables: data.tables,
   mediaBucket: data.mediaBucket,
   auth: {
     userPoolId: auth.userPool.userPoolId,
@@ -69,7 +69,7 @@ new AdminStack(app, `${config.appName}-Admin`, {
 new SharedStack(app, `${config.appName}-Shared`, {
   env: primaryEnv,
   config,
-  table: data.table,
+  tables: data.tables,
   description:
     "Shared platform services: EventBridge bus, SNS alerts, SES, budget, alarms, dashboard",
 });

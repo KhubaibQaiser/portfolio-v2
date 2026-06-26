@@ -1,7 +1,14 @@
 // Barrel for all domain Zod schemas and their inferred types. These are the
 // single source of truth for content types across the web and admin apps.
 export { heroSchema, heroRowSchema, type HeroFormData, type Hero } from "./hero";
-export { aboutSchema, aboutRowSchema, type AboutFormData, type About } from "./about";
+export {
+  aboutSchema,
+  aboutRowSchema,
+  highlightSchema,
+  type AboutFormData,
+  type About,
+  type Highlight,
+} from "./about";
 export {
   experienceSchema,
   experienceRowSchema,

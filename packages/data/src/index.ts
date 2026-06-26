@@ -4,21 +4,28 @@ import type {
   RateLimiter,
 } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
-import { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+import { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
-import { resolveTableName } from "./dynamo/table";
+import { buildTableNames } from "./dynamo/tables";
 
 export { createFixtureContentRepository } from "./adapters/fixture-content-repository";
-export { createDynamoContentRepository } from "./adapters/dynamo-content-repository";
+export { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 export { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 export { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
 export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
-export { resolveTableName, buildCreateTableInput } from "./dynamo/table";
-export { ensureTable } from "./dynamo/create-table";
+export {
+  buildTableNames,
+  resolveTablePrefix,
+  buildCreateTableInputs,
+  TABLE_SUFFIXES,
+  type TableNames,
+  type TableKey,
+} from "./dynamo/tables";
+export { ensureTables } from "./dynamo/create-table";
 
 // Media/S3 helpers live in `@portfolio/data/media` so content-only pages don't
 // bundle the AWS S3 SDK. See ./media.ts.
@@ -36,7 +43,7 @@ function createContentRepository(): ContentRepository {
     case "fixture":
       return createFixtureContentRepository();
     case "dynamo":
-      return createDynamoContentRepository(createDynamoClient(), resolveTableName());
+      return createMultiTableContentRepository(createDynamoClient(), buildTableNames());
   }
 }
 
@@ -58,7 +65,7 @@ export function getContentRepository(): ContentRepository {
  */
 export function getRateLimiter(): RateLimiter {
   return resolveDataBackend() === "dynamo"
-    ? createDynamoRateLimiter(createDynamoClient(), resolveTableName())
+    ? createDynamoRateLimiter(createDynamoClient(), buildTableNames().rateLimit)
     : createNoopRateLimiter();
 }
 

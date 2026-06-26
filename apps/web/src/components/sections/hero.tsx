@@ -10,6 +10,8 @@ import type { Hero } from "@portfolio/shared/schemas";
 
 type HeroSectionProps = {
   hero: Hero;
+  /** Name comes from Site Config (single source of truth). */
+  name: string;
   companies: string[];
 };
 
@@ -29,7 +31,7 @@ const itemVariants = {
   },
 };
 
-export function HeroSection({ hero, companies }: HeroSectionProps) {
+export function HeroSection({ hero, name, companies }: HeroSectionProps) {
   return (
     <section
       className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16"
@@ -57,7 +59,7 @@ export function HeroSection({ hero, companies }: HeroSectionProps) {
           variants={itemVariants}
           className="text-display mt-5 leading-[1.1] font-bold tracking-tight text-balance"
         >
-          {hero.name}
+          {name}
           <span className="text-accent">.</span>
         </motion.h1>
 

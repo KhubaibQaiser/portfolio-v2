@@ -3,23 +3,10 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const techStack = [
-  "Next.js 15",
-  "React 19",
-  "TypeScript",
-  "Tailwind CSS v4",
-  "Framer Motion",
-  "Supabase",
-  "Vercel",
-  "Turborepo",
-  "pnpm",
-  "shadcn/ui",
-  "Vercel AI SDK",
-  "Groq",
-  "PostHog",
-  "Cloudflare R2",
-  "Upstash Redis",
-];
+type BuiltWithSectionProps = {
+  /** Tech pills sourced from Site Config (managed in the admin). */
+  techStack: string[];
+};
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -30,7 +17,7 @@ const sectionVariants = {
   },
 };
 
-export function BuiltWithSection() {
+export function BuiltWithSection({ techStack }: BuiltWithSectionProps) {
   return (
     <section
       className="bg-muted/30 py-(--section-padding-y)"

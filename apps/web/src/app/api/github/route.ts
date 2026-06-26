@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { getContentRepository } from "@portfolio/data";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 
-const GITHUB_USERNAME = "khubaibqaiser";
+/** Extracts the GitHub handle from the `github` social link (e.g. .../<user>). */
+function resolveGitHubUsername(
+  socialLinks: { platform: string; url: string }[],
+): string | null {
+  const link = socialLinks.find((l) => l.platform.toLowerCase() === "github");
+  const match = link?.url.match(/github\.com\/([^/?#]+)/i);
+  return match?.[1] ?? null;
+}
 
 type GitHubStats = {
   totalRepos: number;
@@ -14,8 +22,20 @@ type GitHubStats = {
 
 export async function GET() {
   try {
+    const siteConfig = await getContentRepository().getSiteConfig();
+    const username = resolveGitHubUsername(siteConfig.social_links);
+    if (!username) {
+      await captureServerEvent(undefined, PortfolioEvents.githubApiError, {
+        reason: "no_github_social_link",
+      });
+      return NextResponse.json(
+        { success: false, error: "No GitHub profile configured" },
+        { status: 404 },
+      );
+    }
+
     const res = await fetch(
-      `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
+      `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
       {
         headers: {
           Accept: "application/vnd.github.v3+json",

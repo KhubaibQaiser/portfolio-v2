@@ -13,8 +13,8 @@ import type { InfraConfig } from "../config";
 
 export type SharedStackProps = cdk.StackProps & {
   config: InfraConfig;
-  /** Content table to alarm on (from the DataStack). */
-  table: dynamodb.ITable;
+  /** Every DynamoDB table (from the DataStack) — each is alarmed individually. */
+  tables: dynamodb.ITable[];
 };
 
 /**
@@ -23,7 +23,7 @@ export type SharedStackProps = cdk.StackProps & {
  *  - an EventBridge bus for domain events (decoupled revalidation/automation)
  *  - an SNS alerts topic (CloudWatch alarms + AWS Budgets fan out to email)
  *  - a SES email identity for the contact form (when configured)
- *  - a monthly cost budget, DynamoDB alarms, and an overview dashboard
+ *  - a monthly cost budget, per-table DynamoDB alarms, and an overview dashboard
  *
  * These were previously three micro-stacks; folding them into one keeps the
  * topic→alarm/budget wiring as in-process references instead of brittle
@@ -36,7 +36,7 @@ export class SharedStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: SharedStackProps) {
     super(scope, id, props);
-    const { config, table } = props;
+    const { config, tables } = props;
 
     // --- Messaging ---
     this.eventBus = new events.EventBus(this, "EventBus", {
@@ -66,68 +66,80 @@ export class SharedStack extends cdk.Stack {
     // --- Observability ---
     const alarmAction = new cwActions.SnsAction(this.alertsTopic);
 
-    // The operations the app performs (ElectroDB + rate limiter). Scoping the
-    // system-errors math expression keeps it under the 10-metric alarm limit.
+    // Operations the apps + rate limiter actually issue. Scoping the
+    // system-errors math expression keeps each alarm under the 10-metric limit.
     const watchedOperations = [
       dynamodb.Operation.GET_ITEM,
       dynamodb.Operation.PUT_ITEM,
       dynamodb.Operation.UPDATE_ITEM,
       dynamodb.Operation.DELETE_ITEM,
       dynamodb.Operation.QUERY,
-      dynamodb.Operation.BATCH_GET_ITEM,
-      dynamodb.Operation.BATCH_WRITE_ITEM,
+      dynamodb.Operation.SCAN,
     ];
 
-    const throttleAlarm = table
-      .metric("ThrottledRequests", {
-        statistic: "Sum",
-        period: cdk.Duration.minutes(5),
-      })
-      .createAlarm(this, "TableThrottleAlarm", {
-        alarmName: `${config.appName}-ddb-throttles`,
+    // Alarm every table uniformly: a throttle is a capacity signal, a system
+    // error is an AWS-side fault — both must page rather than fail silently.
+    // (~$0.20/table-month for the two standard alarms; trivial at this scale.)
+    for (const table of tables) {
+      const key = table.node.id;
+
+      table
+        .metric("ThrottledRequests", {
+          statistic: "Sum",
+          period: cdk.Duration.minutes(5),
+        })
+        .createAlarm(this, `Throttle-${key}`, {
+          alarmName: `${config.appName}-ddb-throttles-${key}`,
+          threshold: 1,
+          evaluationPeriods: 1,
+          comparisonOperator:
+            cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        })
+        .addAlarmAction(alarmAction);
+
+      new cloudwatch.Alarm(this, `SystemErrors-${key}`, {
+        alarmName: `${config.appName}-ddb-system-errors-${key}`,
+        metric: table.metricSystemErrorsForOperations({
+          operations: watchedOperations,
+          statistic: "Sum",
+          period: cdk.Duration.minutes(5),
+        }),
         threshold: 1,
         evaluationPeriods: 1,
         comparisonOperator:
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-      });
-    throttleAlarm.addAlarmAction(alarmAction);
+      }).addAlarmAction(alarmAction);
+    }
 
-    const systemErrorsAlarm = new cloudwatch.Alarm(this, "TableSystemErrorsAlarm", {
-      alarmName: `${config.appName}-ddb-system-errors`,
-      metric: table.metricSystemErrorsForOperations({
-        operations: watchedOperations,
-        statistic: "Sum",
+    // Dashboard uses account-scoped SEARCH expressions so it auto-tracks every
+    // DynamoDB table (this account is dedicated to the portfolio) without a
+    // per-table widget explosion.
+    const search = (metricName: string, label: string): cloudwatch.IMetric =>
+      new cloudwatch.MathExpression({
+        expression: `SEARCH('{AWS/DynamoDB,TableName} MetricName="${metricName}"', 'Sum', 300)`,
+        label,
         period: cdk.Duration.minutes(5),
-      }),
-      threshold: 1,
-      evaluationPeriods: 1,
-      comparisonOperator:
-        cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    systemErrorsAlarm.addAlarmAction(alarmAction);
+      });
 
     const dashboard = new cloudwatch.Dashboard(this, "Dashboard", {
       dashboardName: `${config.appName}-overview`,
     });
     dashboard.addWidgets(
       new cloudwatch.GraphWidget({
-        title: "DynamoDB capacity (RCU/WCU)",
+        title: "DynamoDB capacity (RCU/WCU, all tables)",
         left: [
-          table.metricConsumedReadCapacityUnits(),
-          table.metricConsumedWriteCapacityUnits(),
+          search("ConsumedReadCapacityUnits", "RCU"),
+          search("ConsumedWriteCapacityUnits", "WCU"),
         ],
         width: 12,
       }),
       new cloudwatch.GraphWidget({
-        title: "DynamoDB throttles & errors",
+        title: "DynamoDB throttles & system errors (all tables)",
         left: [
-          table.metric("ThrottledRequests", { statistic: "Sum" }),
-          table.metricSystemErrorsForOperations({
-            operations: watchedOperations,
-            statistic: "Sum",
-          }),
+          search("ThrottledRequests", "Throttled"),
+          search("SystemErrors", "System errors"),
         ],
         width: 12,
       }),
