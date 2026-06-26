@@ -25,7 +25,7 @@ export const env = createEnv({
     // edge-safe in middleware), which throws when unset — there is no fallback.
     // Optional here so build-only steps don't require it; enforced at runtime.
     ADMIN_ALLOWED_EMAILS: z.string().optional(),
-    // Resume AI — Secrets Manager ARNs only
+    // Resume AI — Secrets Manager complete ARNs only
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     ANTHROPIC_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     RESUME_GEN_DAILY_USD_CAP: z.string().optional(),

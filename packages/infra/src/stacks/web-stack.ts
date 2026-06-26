@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
@@ -8,9 +9,6 @@ import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "..
 import {
   appErrorMetric,
   grantAppDataAccess,
-  grantSecretRead,
-  secretArnForName,
-  secretNames,
   ssmPaths,
 } from "../naming";
 
@@ -33,12 +31,20 @@ export class WebStack extends cdk.Stack {
     super(scope, id, props);
     const { config } = props;
 
+    const paths = ssmPaths(config);
     const mediaBucketName = ssm.StringParameter.valueForStringParameter(
       this,
-      ssmPaths(config).mediaBucketName,
+      paths.mediaBucketName,
     );
 
-    const groqSecretArn = secretArnForName(this, secretNames(config).groqApiKey);
+    // Import the CDK-owned secret by its complete ARN (published to SSM by the
+    // DataStack). grantRead scopes IAM to exactly that ARN, and we pass the same
+    // complete ARN to the app — no hand-built or partial ARNs anywhere.
+    const groqSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "GroqSecret",
+      ssm.StringParameter.valueForStringParameter(this, paths.groqApiKeyArn),
+    );
 
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
@@ -62,11 +68,11 @@ export class WebStack extends cdk.Stack {
         ...(config.domainEnabled
           ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
           : {}),
-        GROQ_API_KEY_SECRET_ARN: groqSecretArn,
+        GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
-        grantSecretRead(this, fn, secretNames(config).groqApiKey);
+        groqSecret.grantRead(fn);
       },
     });
 

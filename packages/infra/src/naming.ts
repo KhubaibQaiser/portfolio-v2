@@ -26,6 +26,9 @@ export function ssmPaths(config: InfraConfig) {
     hostedZoneId: `${base}/dns/hosted-zone-id`,
     /** us-east-1 ACM certificate ARN for CloudFront (from the Cert stack). */
     certificateArn: `${base}/dns/certificate-arn`,
+    /** Complete ARNs (incl. random suffix) of the CDK-owned AI key secrets. */
+    groqApiKeyArn: `${base}/ai/groq-api-key-arn`,
+    anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,
   } as const;
 }
 
@@ -36,34 +39,6 @@ export function secretNames(config: InfraConfig) {
     groqApiKey: `${base}/groq-api-key`,
     anthropicApiKey: `${base}/anthropic-api-key`,
   } as const;
-}
-
-/**
- * Deterministic Secrets Manager ARN (no random suffix). Valid as
- * `GetSecretValue` SecretId and safe to pass in Lambda env — not the secret value.
- */
-export function secretArnForName(scope: Construct, secretName: string): string {
-  const { account, region } = Stack.of(scope);
-  return `arn:aws:secretsmanager:${region}:${account}:secret:${secretName}`;
-}
-
-/** Least-privilege read on one secret (covers the suffixed physical ARN too). */
-export function grantSecretRead(
-  scope: Construct,
-  fn: lambda.Function,
-  secretName: string,
-): void {
-  const { account, region } = Stack.of(scope);
-  fn.addToRolePolicy(
-    new iam.PolicyStatement({
-      sid: `SecretsManagerRead${secretName.replace(/[^A-Za-z0-9]/g, "")}`,
-      actions: ["secretsmanager:GetSecretValue"],
-      resources: [
-        secretArnForName(scope, secretName),
-        `arn:aws:secretsmanager:${region}:${account}:secret:${secretName}-*`,
-      ],
-    }),
-  );
 }
 
 /**

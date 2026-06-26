@@ -1,11 +1,12 @@
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { TABLE_SUFFIXES } from "@portfolio/data/tables";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
-import { ssmPaths } from "../naming";
+import { secretNames, ssmPaths } from "../naming";
 
 export type DataStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -129,6 +130,38 @@ export class DataStack extends cdk.Stack {
       parameterName: ssmPaths(config).mediaBucketName,
       stringValue: mediaBucket.bucketName,
     });
+
+    // --- Runtime AI key secrets ---
+    // CDK owns the secret *resources* (existence + RETAIN + IAM contract); the
+    // actual key values are injected out-of-band (`aws secretsmanager
+    // put-secret-value`) so plaintext never lives in code or templates. The
+    // auto-generated complete ARN (incl. the random suffix) is published to the
+    // SSM registry for the apps to import — never a hand-built partial ARN.
+    const names = secretNames(config);
+    const paths = ssmPaths(config);
+    const aiSecret = (
+      construct: string,
+      secretName: string,
+      arnParamName: string,
+      label: string,
+    ) => {
+      const secret = new secretsmanager.Secret(this, construct, {
+        secretName,
+        description: `${label} (value set out-of-band via put-secret-value)`,
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+      });
+      new ssm.StringParameter(this, `${construct}ArnParam`, {
+        parameterName: arnParamName,
+        stringValue: secret.secretArn,
+      });
+    };
+    aiSecret("GroqApiKeySecret", names.groqApiKey, paths.groqApiKeyArn, "Groq API key");
+    aiSecret(
+      "AnthropicApiKeySecret",
+      names.anthropicApiKey,
+      paths.anthropicApiKeyArn,
+      "Anthropic API key",
+    );
 
     new cdk.CfnOutput(this, "TablePrefix", {
       value: prefix,

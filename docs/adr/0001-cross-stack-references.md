@@ -117,7 +117,12 @@ is still by ARN.
   `domainEnabled` (currently off) and both live in `us-east-1`. When the domain
   is delegated, decouple via `HostedZone.fromHostedZoneAttributes` + an SSM
   `hosted-zone-id` param.
-- **Runtime secrets** (LLM API keys): Lambda env carries **ARNs only**
-  (`GROQ_API_KEY_SECRET_ARN`, `ANTHROPIC_API_KEY_SECRET_ARN`); the app fetches
-  values via `GetSecretValue` at request time with IAM scoped to each secret ARN.
-  To exercise AI locally, set the same `*_SECRET_ARN` vars and use AWS credentials.
+- **Runtime secrets** (LLM API keys): the `DataStack` owns the secret resources
+  and publishes each **complete ARN** (incl. the random suffix) to SSM
+  (`/portfolio/ai/*-api-key-arn`). The apps import via
+  `Secret.fromSecretCompleteArn(<ssm value>)`, `grantRead` (IAM scoped to that
+  ARN), and pass the same complete ARN to the Lambda env (`GROQ_API_KEY_SECRET_ARN`,
+  `ANTHROPIC_API_KEY_SECRET_ARN`). The app fetches values via `GetSecretValue` at
+  request time. Values are injected out-of-band (`put-secret-value`) so plaintext
+  never enters code/templates, and no partial ARN is ever hand-built. To exercise
+  AI locally, copy the complete ARN from SSM and use AWS credentials.

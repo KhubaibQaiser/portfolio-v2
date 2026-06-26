@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
-    // AI — Secrets Manager ARN only (CDK sets in prod; copy into .env.local for sandbox testing)
+    // AI — Secrets Manager complete ARN (CDK sets in prod; copy into .env.local for sandbox testing)
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     // Revalidation webhook shared secret (also set in apps/admin)
     REVALIDATE_SECRET: z.string().min(1).optional(),

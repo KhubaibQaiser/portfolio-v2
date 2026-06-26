@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
@@ -8,9 +9,6 @@ import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "..
 import {
   appErrorMetric,
   grantAppDataAccess,
-  grantSecretRead,
-  secretArnForName,
-  secretNames,
   ssmPaths,
 } from "../naming";
 
@@ -53,9 +51,19 @@ export class AdminStack extends cdk.Stack {
     const ssmGet = (path: string) =>
       ssm.StringParameter.valueForStringParameter(this, path);
 
-    const secrets = secretNames(config);
-    const groqSecretArn = secretArnForName(this, secrets.groqApiKey);
-    const anthropicSecretArn = secretArnForName(this, secrets.anthropicApiKey);
+    // Import the CDK-owned secrets by their complete ARNs (published to SSM by
+    // the DataStack). grantRead scopes IAM to exactly those ARNs, and we pass the
+    // same complete ARNs to the app — no hand-built or partial ARNs anywhere.
+    const groqSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "GroqSecret",
+      ssmGet(paths.groqApiKeyArn),
+    );
+    const anthropicSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "AnthropicSecret",
+      ssmGet(paths.anthropicApiKeyArn),
+    );
 
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
@@ -84,13 +92,13 @@ export class AdminStack extends cdk.Stack {
         // No fallback in-app: the admin throws if this is empty. Passed via
         // `-c adminAllowedEmails=...` (GitHub variable) at deploy.
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
-        GROQ_API_KEY_SECRET_ARN: groqSecretArn,
-        ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecretArn,
+        GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
+        ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
-        grantSecretRead(this, fn, secrets.groqApiKey);
-        grantSecretRead(this, fn, secrets.anthropicApiKey);
+        groqSecret.grantRead(fn);
+        anthropicSecret.grantRead(fn);
       },
     });
 
