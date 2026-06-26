@@ -5,7 +5,14 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "../domain";
-import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
+import {
+  appErrorMetric,
+  grantAppDataAccess,
+  grantSecretRead,
+  secretArnForName,
+  secretNames,
+  ssmPaths,
+} from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -31,6 +38,8 @@ export class WebStack extends cdk.Stack {
       ssmPaths(config).mediaBucketName,
     );
 
+    const groqSecretArn = secretArnForName(this, secretNames(config).groqApiKey);
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -53,8 +62,12 @@ export class WebStack extends cdk.Stack {
         ...(config.domainEnabled
           ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
           : {}),
+        GROQ_API_KEY_SECRET_ARN: groqSecretArn,
       },
-      grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
+      grantServer: (fn) => {
+        grantAppDataAccess(this, fn, config, mediaBucketName);
+        grantSecretRead(this, fn, secretNames(config).groqApiKey);
+      },
     });
 
     if (config.domainEnabled) {

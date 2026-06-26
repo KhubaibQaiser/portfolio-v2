@@ -292,7 +292,39 @@ DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
   pnpm --filter @portfolio/data seed
 ```
 
-### 5. Custom domain (`khubaibqaiser.com`)
+### 5. AI API keys (Secrets Manager)
+
+Chat and resume AI load keys **at runtime** from Secrets Manager. Lambda env carries **ARNs only** — never the key values. CDK grants `secretsmanager:GetSecretValue` on each secret.
+
+Create secrets in `eu-west-1` before deploying `Portfolio-Web` / `Portfolio-Admin`. Each secret must be a **plain text string** (the API key itself):
+
+| Secret name | Lambda env (set by CDK) | Used by |
+| ----------- | ----------------------- | ------- |
+| `portfolio/groq-api-key` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
+| `portfolio/anthropic-api-key` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
+
+```bash
+aws secretsmanager create-secret \
+  --region eu-west-1 \
+  --name portfolio/groq-api-key \
+  --secret-string "YOUR_GROQ_KEY"
+
+aws secretsmanager create-secret \
+  --region eu-west-1 \
+  --name portfolio/anthropic-api-key \
+  --secret-string "YOUR_ANTHROPIC_KEY"
+```
+
+Redeploy app stacks after secrets exist:
+
+```bash
+cd packages/infra
+pnpm exec cdk deploy Portfolio-Web Portfolio-Admin --require-approval never
+```
+
+**Local / sandbox testing:** set the same `*_SECRET_ARN` vars in `.env.local` and use AWS credentials with `secretsmanager:GetSecretValue` — or test against a deployed environment.
+
+### 6. Custom domain (`khubaibqaiser.com`)
 
 Until this is done, both apps run on their default `*.cloudfront.net` URLs. When ready:
 
@@ -394,7 +426,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | ------------------------------------------------------------- | -------------------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                        | Canonical URL (metadata, sitemap, robots)                |
 | `REVALIDATE_SECRET`                                           | Header secret for `POST /api/revalidate` — same as admin |
-| `GROQ_API_KEY`                                                | Groq — chat returns 503 if missing                       |
+| `GROQ_API_KEY_SECRET_ARN`                                     | Groq — Secrets Manager ARN; chat returns 503 if unset or unreadable |
 | `GITHUB_TOKEN`                                                | Optional — higher GitHub API limits for `/api/github`    |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`                           | PostHog project API key                                  |
 | `NEXT_PUBLIC_POSTHOG_HOST`                                    | Ingestion host (US/EU)                                   |
@@ -422,8 +454,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `REVALIDATE_SECRET`                                              | Same as web                                                                  |
 | `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` / `S3_ENDPOINT`      | Media uploads + public URL                                                   |
 | `AWS_REGION`                                                     | Primary region                                                               |
-| `ANTHROPIC_API_KEY`                                              | Resume AI — Claude Sonnet 4.5 (primary)                                      |
-| `GROQ_API_KEY`                                                   | Resume AI — Groq (draft, fallback, ATS)                                      |
+| `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN`       | Resume AI — Secrets Manager ARNs (Groq + Anthropic)                          |
 | `RESUME_GEN_DAILY_USD_CAP`                                       | Daily spend cap per admin (default `5`)                                      |
 | `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                        |
 

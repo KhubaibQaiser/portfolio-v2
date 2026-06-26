@@ -5,7 +5,14 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "../domain";
-import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
+import {
+  appErrorMetric,
+  grantAppDataAccess,
+  grantSecretRead,
+  secretArnForName,
+  secretNames,
+  ssmPaths,
+} from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -46,6 +53,10 @@ export class AdminStack extends cdk.Stack {
     const ssmGet = (path: string) =>
       ssm.StringParameter.valueForStringParameter(this, path);
 
+    const secrets = secretNames(config);
+    const groqSecretArn = secretArnForName(this, secrets.groqApiKey);
+    const anthropicSecretArn = secretArnForName(this, secrets.anthropicApiKey);
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -73,8 +84,14 @@ export class AdminStack extends cdk.Stack {
         // No fallback in-app: the admin throws if this is empty. Passed via
         // `-c adminAllowedEmails=...` (GitHub variable) at deploy.
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
+        GROQ_API_KEY_SECRET_ARN: groqSecretArn,
+        ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecretArn,
       },
-      grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
+      grantServer: (fn) => {
+        grantAppDataAccess(this, fn, config, mediaBucketName);
+        grantSecretRead(this, fn, secrets.groqApiKey);
+        grantSecretRead(this, fn, secrets.anthropicApiKey);
+      },
     });
 
     if (config.domainEnabled) {

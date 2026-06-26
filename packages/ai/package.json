@@ -25,13 +25,15 @@
     "./guardrails/output-sanitize": "./src/guardrails/output-sanitize.ts",
     "./guardrails/ai-tone": "./src/guardrails/ai-tone.ts",
     "./guardrails/fabrication-check": "./src/guardrails/fabrication-check.ts",
-    "./guardrails/ats-refine": "./src/guardrails/ats-refine.ts"
+    "./guardrails/ats-refine": "./src/guardrails/ats-refine.ts",
+    "./load-api-keys": "./src/load-api-keys.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1075.0",
     "@ai-sdk/anthropic": "^2.0.55",
     "@ai-sdk/groq": "^3.0.35",
     "ai": "^6.0.158",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateObject, streamObject } from "ai";
 import { z } from "zod";
 import {
+  ensureAiApiKeys,
   fallbackChainFor,
   formatUsage,
   isProviderRateLimitError,
@@ -125,6 +126,18 @@ export async function POST(request: Request) {
         error: `Daily cost cap reached ($${cap.spentUsd.toFixed(2)} / $${cap.capUsd.toFixed(2)}). Try again tomorrow or raise RESUME_GEN_DAILY_USD_CAP.`,
       },
       { status: 402 },
+    );
+  }
+
+  try {
+    await ensureAiApiKeys();
+  } catch (error) {
+    logger.error("failed to load AI API keys from Secrets Manager", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return NextResponse.json(
+      { error: "Resume AI is not configured yet. Please try again later." },
+      { status: 503 },
     );
   }
 

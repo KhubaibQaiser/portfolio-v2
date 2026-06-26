@@ -2,13 +2,14 @@ import type { LanguageModel } from "ai";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
-import { MODEL_IDS, isProviderRateLimitError, modelFor } from "@portfolio/ai";
+import { MODEL_IDS, ensureGroqApiKey, isProviderRateLimitError, modelFor } from "@portfolio/ai";
 import { stripPromptInjection } from "@portfolio/ai/guardrails/prompt-injection";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { getDistinctIdFromRequest } from "@/lib/analytics/request";
 import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
+import { logger } from "@/lib/logger";
 import { getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { groq } from "@ai-sdk/groq";
@@ -152,7 +153,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!process.env.GROQ_API_KEY) {
+    try {
+      await ensureGroqApiKey();
+    } catch (error) {
+      logger.error("failed to load Groq API key from Secrets Manager", {
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
       await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
         reason: "missing_groq_key",
         status: 503,
