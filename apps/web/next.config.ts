@@ -11,21 +11,26 @@ const ingestionHost = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.post
 // hoisted to the workspace root (required for pnpm + Turborepo).
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
-/** Derive an image remote pattern from the configured media base URL. */
+/** Derive image remote patterns from the configured media base URL. */
 function mediaRemotePatterns() {
+  const patterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
   const base = process.env.MEDIA_PUBLIC_BASE_URL;
-  if (!base) return [];
-  try {
-    const url = new URL(base);
-    return [
-      {
+  if (base) {
+    try {
+      const url = new URL(base);
+      patterns.push({
         protocol: url.protocol.replace(":", "") as "http" | "https",
         hostname: url.hostname,
-      },
-    ];
-  } catch {
-    return [];
+      });
+    } catch {
+      // ignore malformed URL
+    }
   }
+  // Fixture data uses placehold.co in local dev only.
+  if (process.env.NODE_ENV === "development") {
+    patterns.push({ protocol: "https", hostname: "placehold.co" });
+  }
+  return patterns;
 }
 
 const nextConfig: NextConfig = {

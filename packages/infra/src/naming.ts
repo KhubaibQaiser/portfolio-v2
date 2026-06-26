@@ -22,6 +22,10 @@ export function ssmPaths(config: InfraConfig) {
     authUserPoolId: `${base}/auth/user-pool-id`,
     authUserPoolClientId: `${base}/auth/user-pool-client-id`,
     authHostedUiDomain: `${base}/auth/hosted-ui-domain`,
+    /** Route 53 public hosted zone id (from the Dns stack). */
+    hostedZoneId: `${base}/dns/hosted-zone-id`,
+    /** us-east-1 ACM certificate ARN for CloudFront (from the Cert stack). */
+    certificateArn: `${base}/dns/certificate-arn`,
   } as const;
 }
 

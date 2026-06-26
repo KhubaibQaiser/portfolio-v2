@@ -1,7 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import * as route53 from "aws-cdk-lib/aws-route53";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
+import { ssmPaths } from "../naming";
 
 export type DnsStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -30,6 +32,13 @@ export class DnsStack extends cdk.Stack {
     new cdk.CfnOutput(this, "NameServers", {
       description: "Set these as the custom nameservers at your registrar",
       value: cdk.Fn.join(", ", this.hostedZone.hostedZoneNameServers ?? []),
+    });
+
+    // Publish the zone id to the SSM registry so Cert/Web/Admin stacks can
+    // create validation records and aliases without importing this stack.
+    new ssm.StringParameter(this, "HostedZoneIdParam", {
+      parameterName: ssmPaths(props.config).hostedZoneId,
+      stringValue: this.hostedZone.hostedZoneId,
     });
   }
 }

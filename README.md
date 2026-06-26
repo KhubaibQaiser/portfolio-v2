@@ -81,7 +81,7 @@ Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages
 | `Portfolio-Dns`    | `us-east-1` | Route 53 public hosted zone for the apex domain                                          |
 | `Portfolio-Cert`   | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                      |
 
-The custom domain is **deferred**: until the registrar nameservers are delegated to Route 53 (`-c domainEnabled=true`), both apps run on their default `*.cloudfront.net` URLs.
+The custom domain is **deferred by default** (`domainEnabled=false`): both apps run on their default `*.cloudfront.net` URLs until you delegate nameservers and redeploy with `-c domainEnabled=true`. See [Custom domain](#5-custom-domain-khubaibqaisercom) below.
 
 ---
 
@@ -292,15 +292,51 @@ DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
   pnpm --filter @portfolio/data seed
 ```
 
-### 5. (Later) Custom domain
+### 5. Custom domain (`khubaibqaiser.com`)
 
-Delegate the registrar's nameservers to Route 53, then redeploy with the domain enabled:
+Until this is done, both apps run on their default `*.cloudfront.net` URLs. When ready:
+
+**A. Delegate DNS to AWS (Namecheap → Route 53)**
 
 ```bash
-pnpm exec cdk deploy Portfolio-Dns          # prints the 4 Route 53 nameservers
-# paste those into your registrar, then:
+cd packages/infra
+pnpm exec cdk deploy Portfolio-Dns
+```
+
+Copy the **four nameservers** from the stack output. In **Namecheap → Domain → Nameservers**, choose **Custom DNS** and paste them. Wait for propagation (minutes to 48 hours).
+
+**B. Issue the TLS certificate**
+
+```bash
+pnpm exec cdk deploy Portfolio-Cert -c domainEnabled=true
+```
+
+In **ACM (us-east-1)**, wait until the certificate status is **Issued**.
+
+**C. Wire CloudFront + Route 53 aliases and redeploy the apps**
+
+```bash
 pnpm exec cdk deploy --all -c domainEnabled=true
 ```
+
+This attaches the cert to CloudFront, creates alias records for `khubaibqaiser.com`, `www.khubaibqaiser.com`, `admin.khubaibqaiser.com`, and `storybook.khubaibqaiser.com`, and redeploys Auth so Cognito accepts the admin callback URL.
+
+**D. Update GitHub / app config**
+
+| Setting | Value |
+| ------- | ----- |
+| `NEXT_PUBLIC_SITE_URL` (GitHub variable + build) | `https://khubaibqaiser.com` |
+| `DOMAIN_ENABLED` (GitHub variable) | `true` |
+| `ADMIN_URLS` (GitHub variable) | leave empty or remove the old CloudFront URL — `admin.khubaibqaiser.com` is added automatically when `domainEnabled=true` |
+| `MEDIA_PUBLIC_BASE_URL` | your public media URL (S3/CloudFront) if using optimized images |
+
+**E. Verify**
+
+- `https://khubaibqaiser.com` — public site with padlock
+- `https://admin.khubaibqaiser.com` — admin + Google login
+- `https://storybook.khubaibqaiser.com` — design-system showcase
+
+Cross-stack wiring uses the **SSM registry** (hosted zone id + cert ARN), not CloudFormation exports — see [ADR 0001](docs/adr/0001-cross-stack-references.md).
 
 ### Optional services to enable
 
@@ -338,7 +374,8 @@ Deploy authenticates with **GitHub OIDC** — GitHub mints a short-lived token a
    | ---------------------- | -------------------------------------------------- |
    | `AWS_REGION`           | `eu-west-1`                                        |
    | `AWS_DEPLOY_ROLE_ARN`  | `arn:aws:iam::<account>:role/Portfolio-gha-deploy` |
-   | `ADMIN_URLS`           | `https://<admin-distribution>.cloudfront.net`      |
+   | `ADMIN_URLS`           | (optional) extra admin origins; when `DOMAIN_ENABLED=true`, `https://admin.<domain>` is added automatically |
+   | `DOMAIN_ENABLED`       | `true` once nameservers are delegated and you want the custom domain |
    | `ALERT_EMAIL`          | `you@example.com`                                  |
    | `CONTACT_EMAIL`        | `you@example.com`                                  |
    | `NEXT_PUBLIC_SITE_URL` | `https://khubaibqaiser.com`                        |

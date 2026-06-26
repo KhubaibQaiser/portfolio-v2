@@ -4,6 +4,7 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
+import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "../domain";
 import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
@@ -18,7 +19,7 @@ export type WebStackProps = cdk.StackProps & {
  * `${tablePrefix}-*` ARN pattern) and the media bucket (discovered from the SSM
  * registry). It imports nothing from the DataStack — see
  * docs/adr/0001-cross-stack-references.md. Runs on the default CloudFront domain
- * until `domainEnabled` is set.
+ * until `-c domainEnabled=true` (custom domain + Route 53 aliases).
  */
 export class WebStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: WebStackProps) {
@@ -33,6 +34,14 @@ export class WebStack extends cdk.Stack {
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
+      ...(config.domainEnabled
+        ? {
+            domain: {
+              domainNames: [config.domainName, `www.${config.domainName}`],
+              certificate: resolveSiteCertificate(this, config),
+            },
+          }
+        : {}),
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
@@ -41,9 +50,18 @@ export class WebStack extends cdk.Stack {
         // ingestion low; the AppErrors metric filter below tracks ERROR lines.
         POWERTOOLS_SERVICE_NAME: "portfolio-web",
         POWERTOOLS_LOG_LEVEL: "WARN",
+        ...(config.domainEnabled
+          ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
+          : {}),
       },
       grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
     });
+
+    if (config.domainEnabled) {
+      const zone = resolveHostedZone(this, config);
+      aliasToCloudFront(this, zone, site.distribution, "ApexAlias");
+      aliasToCloudFront(this, zone, site.distribution, "WwwAlias", "www");
+    }
 
     // Surface runtime errors as one cheap, account-rolled-up metric (no
     // dimensions, so web + admin share a single time series the SharedStack

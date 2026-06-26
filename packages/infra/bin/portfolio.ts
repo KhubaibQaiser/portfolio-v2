@@ -74,7 +74,7 @@ admin.addDependency(data);
 admin.addDependency(auth);
 shared.addDependency(data);
 
-new StorybookStack(app, `${config.appName}-Storybook`, {
+const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {
   env: primaryEnv,
   config,
   assetDir: path.join(repoRoot, "packages/ui/storybook-static"),
@@ -98,13 +98,20 @@ const dns = new DnsStack(app, `${config.appName}-Dns`, {
 
 // The cert can only validate once registrar nameservers are delegated, so it
 // is opt-in. Until then sites run on their default CloudFront URLs.
+let cert: CertStack | undefined;
 if (config.domainEnabled) {
-  new CertStack(app, `${config.appName}-Cert`, {
+  cert = new CertStack(app, `${config.appName}-Cert`, {
     env: edgeEnv,
     config,
-    hostedZone: dns.hostedZone,
     description: "us-east-1 ACM certificate for CloudFront",
   });
+  cert.addDependency(dns);
+  web.addDependency(dns);
+  admin.addDependency(dns);
+  storybook.addDependency(dns);
+  web.addDependency(cert);
+  admin.addDependency(cert);
+  storybook.addDependency(cert);
 }
 
 app.synth();

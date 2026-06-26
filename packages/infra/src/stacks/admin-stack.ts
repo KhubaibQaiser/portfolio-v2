@@ -4,6 +4,7 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
+import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "../domain";
 import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
@@ -48,6 +49,14 @@ export class AdminStack extends cdk.Stack {
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
+      ...(config.domainEnabled
+        ? {
+            domain: {
+              domainNames: [`admin.${config.domainName}`],
+              certificate: resolveSiteCertificate(this, config),
+            },
+          }
+        : {}),
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
@@ -67,6 +76,11 @@ export class AdminStack extends cdk.Stack {
       },
       grantServer: (fn) => grantAppDataAccess(this, fn, config, mediaBucketName),
     });
+
+    if (config.domainEnabled) {
+      const zone = resolveHostedZone(this, config);
+      aliasToCloudFront(this, zone, site.distribution, "AdminAlias", "admin");
+    }
 
     // Runtime errors → shared AppErrors metric (same namespace/name as the web
     // app, no dimensions, so the SharedStack alarms on both at once). ADR 0002.
