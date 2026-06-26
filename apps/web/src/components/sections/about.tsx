@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Briefcase, Globe, Users, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -87,12 +88,14 @@ export function AboutSection({ about, location, companiesCount }: AboutSectionPr
 
             <div className="flex items-start justify-center">
               <div className="relative">
-                <div className="bg-muted aspect-square w-64 overflow-hidden rounded-2xl md:w-72">
+                <div className="bg-muted relative aspect-square w-64 overflow-hidden rounded-2xl md:w-72">
                   {about.photo_url ? (
-                    <img
+                    <Image
                       src={about.photo_url}
                       alt="Portrait"
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="(min-width: 768px) 288px, 256px"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="text-muted-foreground/30 flex h-full items-center justify-center">
