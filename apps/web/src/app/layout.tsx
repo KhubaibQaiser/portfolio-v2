@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PostHogAnalyticsProvider } from "@/components/analytics/posthog-provider";
 import { PostHogPageView } from "@/components/analytics/posthog-pageview";
 import { PostHogThemeCapture } from "@/components/analytics/posthog-theme-capture";
@@ -183,8 +181,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </SmoothScroll>
           </PostHogAnalyticsProvider>
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );

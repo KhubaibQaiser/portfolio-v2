@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
               LCP, INP, CLS from real users
             </p>
             <div className="mt-6 flex h-48 items-center justify-center text-sm text-muted-foreground/50">
-              Gauge charts from Vercel Analytics — Phase 4
+              Core Web Vitals gauges — Phase 4
             </div>
           </div>
         </div>
