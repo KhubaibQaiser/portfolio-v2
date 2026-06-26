@@ -111,7 +111,16 @@ export function resolveConfig(app: App): InfraConfig {
     domainName,
     domainEnabled,
     tablePrefix: ctx("tablePrefix") ?? DEFAULTS.tablePrefix,
-    mediaCorsOrigins: corsRaw ? csv(corsRaw) : ["*"],
+    mediaCorsOrigins: corsRaw
+      ? csv(corsRaw)
+      : domainEnabled
+        ? [
+            `https://${domainName}`,
+            `https://www.${domainName}`,
+            `https://admin.${domainName}`,
+            DEFAULTS.adminDevUrl,
+          ]
+        : ["*"],
     adminUrls: [...new Set(adminUrls)],
     adminAllowedEmails: csv(ctx("adminAllowedEmails")),
     googleAuthEnabled: ctx("googleAuthEnabled") !== "false",

@@ -131,9 +131,9 @@ jobs:
       - name: CDK deploy
         working-directory: packages/infra
         run: >
-          pnpm exec cdk deploy
-          Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Storybook Portfolio-Oidc
+          pnpm exec cdk deploy --all
           --require-approval never --concurrency 4
+          -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
           -c adminUrls=${{ vars.ADMIN_URLS }}
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
           -c alertEmail=${{ vars.ALERT_EMAIL }}
