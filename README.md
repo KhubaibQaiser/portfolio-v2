@@ -300,18 +300,18 @@ Create secrets in `eu-west-1` before deploying `Portfolio-Web` / `Portfolio-Admi
 
 | Secret name | Lambda env (set by CDK) | Used by |
 | ----------- | ----------------------- | ------- |
-| `portfolio/groq-api-key` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
-| `portfolio/anthropic-api-key` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
+| `/portfolio/groq-api-key` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
+| `/portfolio/anthropic-api-key` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
 
 ```bash
 aws secretsmanager create-secret \
   --region eu-west-1 \
-  --name portfolio/groq-api-key \
+  --name "/portfolio/groq-api-key" \
   --secret-string "YOUR_GROQ_KEY"
 
 aws secretsmanager create-secret \
   --region eu-west-1 \
-  --name portfolio/anthropic-api-key \
+  --name "/portfolio/anthropic-api-key" \
   --secret-string "YOUR_ANTHROPIC_KEY"
 ```
 

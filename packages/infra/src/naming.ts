@@ -31,7 +31,7 @@ export function ssmPaths(config: InfraConfig) {
 
 /** Secrets Manager secret names for runtime AI keys (values fetched in-app). */
 export function secretNames(config: InfraConfig) {
-  const base = config.appName.toLowerCase();
+  const base = `/${config.appName.toLowerCase()}`;
   return {
     groqApiKey: `${base}/groq-api-key`,
     anthropicApiKey: `${base}/anthropic-api-key`,
