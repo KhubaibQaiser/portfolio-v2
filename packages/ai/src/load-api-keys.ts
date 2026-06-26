@@ -8,22 +8,26 @@ const secretCache = new Map<string, string>();
 let groqLoaded = false;
 let anthropicLoaded = false;
 
-async function fetchSecretString(secretArn: string): Promise<string> {
-  const cached = secretCache.get(secretArn);
+/**
+ * `secretId` is the secret's complete ARN (incl. the random suffix) passed by
+ * CDK from the SSM-published value, or the friendly name. Never a partial ARN.
+ */
+async function fetchSecretString(secretId: string): Promise<string> {
+  const cached = secretCache.get(secretId);
   if (cached !== undefined) return cached;
 
   const region = process.env.AWS_REGION ?? "eu-west-1";
   const client = new SecretsManagerClient({ region });
   const response = await client.send(
-    new GetSecretValueCommand({ SecretId: secretArn }),
+    new GetSecretValueCommand({ SecretId: secretId }),
   );
 
   const value = response.SecretString?.trim();
   if (!value) {
-    throw new Error(`Secret ${secretArn} has no SecretString value`);
+    throw new Error(`Secret ${secretId} has no SecretString value`);
   }
 
-  secretCache.set(secretArn, value);
+  secretCache.set(secretId, value);
   return value;
 }
 

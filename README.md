@@ -294,35 +294,55 @@ DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
 
 ### 5. AI API keys (Secrets Manager)
 
-Chat and resume AI load keys **at runtime** from Secrets Manager. Lambda env carries **ARNs only** — never the key values. CDK grants `secretsmanager:GetSecretValue` on each secret.
+Chat and resume AI load keys **at runtime** from Secrets Manager. The secret **resources** are owned by CDK (in `Portfolio-Data`); only the **values** are injected out-of-band, so plaintext keys never live in code or CloudFormation. Each secret's complete ARN is published to SSM and imported by the apps; the Lambda env carries the **complete ARN** (incl. random suffix) — never the key value. CDK grants `secretsmanager:GetSecretValue` on each secret.
 
-Create secrets in `eu-west-1` before deploying `Portfolio-Web` / `Portfolio-Admin`. Each secret must be a **plain text string** (the API key itself):
+| Secret name (CDK-owned) | SSM ARN param | Lambda env | Used by |
+| ----------------------- | ------------- | ---------- | ------- |
+| `/portfolio/groq-api-key` | `/portfolio/ai/groq-api-key-arn` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
+| `/portfolio/anthropic-api-key` | `/portfolio/ai/anthropic-api-key-arn` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
 
-| Secret name | Lambda env (set by CDK) | Used by |
-| ----------- | ----------------------- | ------- |
-| `/portfolio/groq-api-key` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
-| `/portfolio/anthropic-api-key` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
-
-```bash
-aws secretsmanager create-secret \
-  --region eu-west-1 \
-  --name "/portfolio/groq-api-key" \
-  --secret-string "YOUR_GROQ_KEY"
-
-aws secretsmanager create-secret \
-  --region eu-west-1 \
-  --name "/portfolio/anthropic-api-key" \
-  --secret-string "YOUR_ANTHROPIC_KEY"
-```
-
-Redeploy app stacks after secrets exist:
+**Step 1 — deploy `Portfolio-Data`** so CDK creates the secret resources (with a placeholder value):
 
 ```bash
 cd packages/infra
+pnpm exec cdk deploy Portfolio-Data --require-approval never
+```
+
+**Step 2 — inject the real key values** (idempotent; safe to re-run on key rotation):
+
+```bash
+aws secretsmanager put-secret-value \
+  --region eu-west-1 \
+  --secret-id /portfolio/groq-api-key \
+  --secret-string "YOUR_GROQ_KEY"
+
+aws secretsmanager put-secret-value \
+  --region eu-west-1 \
+  --secret-id /portfolio/anthropic-api-key \
+  --secret-string "YOUR_ANTHROPIC_KEY"
+```
+
+**Step 3 — deploy the apps** (they read the ARNs from SSM):
+
+```bash
 pnpm exec cdk deploy Portfolio-Web Portfolio-Admin --require-approval never
 ```
 
-**Local / sandbox testing:** set the same `*_SECRET_ARN` vars in `.env.local` and use AWS credentials with `secretsmanager:GetSecretValue` — or test against a deployed environment.
+> **Migrating from manually-created secrets:** if `/portfolio/groq-api-key` already exists (created by hand), CDK can't create a resource with the same name. Delete the manual ones first so the name is freed immediately, then run Step 1:
+>
+> ```bash
+> aws secretsmanager delete-secret --region eu-west-1 \
+>   --secret-id /portfolio/groq-api-key --force-delete-without-recovery
+> aws secretsmanager delete-secret --region eu-west-1 \
+>   --secret-id /portfolio/anthropic-api-key --force-delete-without-recovery
+> ```
+
+**Local / sandbox testing:** copy the complete ARN from SSM into `.env.local` and use AWS credentials with `secretsmanager:GetSecretValue`:
+
+```bash
+aws ssm get-parameter --region eu-west-1 \
+  --name /portfolio/ai/groq-api-key-arn --query Parameter.Value --output text
+```
 
 ### 6. Custom domain (`khubaibqaiser.com`)
 
@@ -426,7 +446,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | ------------------------------------------------------------- | -------------------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                        | Canonical URL (metadata, sitemap, robots)                |
 | `REVALIDATE_SECRET`                                           | Header secret for `POST /api/revalidate` — same as admin |
-| `GROQ_API_KEY_SECRET_ARN`                                     | Groq — Secrets Manager ARN; chat returns 503 if unset or unreadable |
+| `GROQ_API_KEY_SECRET_ARN`                                     | Groq — Secrets Manager complete ARN; chat returns 503 if unset or unreadable |
 | `GITHUB_TOKEN`                                                | Optional — higher GitHub API limits for `/api/github`    |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`                           | PostHog project API key                                  |
 | `NEXT_PUBLIC_POSTHOG_HOST`                                    | Ingestion host (US/EU)                                   |
@@ -454,7 +474,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `REVALIDATE_SECRET`                                              | Same as web                                                                  |
 | `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` / `S3_ENDPOINT`      | Media uploads + public URL                                                   |
 | `AWS_REGION`                                                     | Primary region                                                               |
-| `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN`       | Resume AI — Secrets Manager ARNs (Groq + Anthropic)                          |
+| `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN`       | Resume AI — Secrets Manager complete ARNs (Groq + Anthropic)                 |
 | `RESUME_GEN_DAILY_USD_CAP`                                       | Daily spend cap per admin (default `5`)                                      |
 | `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                        |
 
