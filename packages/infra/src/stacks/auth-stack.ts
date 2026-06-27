@@ -72,6 +72,10 @@ export class AuthStack extends cdk.Stack {
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       lambdaTriggers: { preTokenGeneration: preTokenFn },
+      // Deliberate exception to the "only DynamoDB tables + S3 buckets survive a
+      // teardown" rule: the pool holds identity state (admin users + MFA
+      // enrollments) with no fixture/re-seed story, so it's as precious as the
+      // content data. Everything else in this stack is DESTROY.
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
