@@ -10,6 +10,7 @@ import { getDistinctIdFromRequest } from "@/lib/analytics/request";
 import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
 import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 import { getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { groq } from "@ai-sdk/groq";
@@ -95,9 +96,10 @@ Guidelines:
   { tags: ["hero", "about", "experience", "skills", "site-config"], revalidate: 3600 },
 );
 
-async function createStream(
+function createStream(
   systemPrompt: string,
   model: LanguageModel,
+  modelId: string,
   messages: Awaited<ReturnType<typeof convertToModelMessages>>,
   originalMessages: UIMessage[],
 ) {
@@ -107,6 +109,12 @@ async function createStream(
     messages,
     maxOutputTokens: 1000,
     experimental_transform: smoothStream({ chunking: "word" }),
+    onError: ({ error }) => {
+      logger.error("chat stream failed", {
+        modelId,
+        error: toError(error),
+      });
+    },
   });
   return result.toUIMessageStreamResponse({ originalMessages });
 }
@@ -131,6 +139,7 @@ export async function POST(req: Request) {
     const { messages } = body;
 
     if (!messages?.length) {
+      logger.warn("chat api rejected: missing messages");
       await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
         reason: "missing_messages",
         status: 400,
@@ -140,6 +149,9 @@ export async function POST(req: Request) {
 
     const rate = await checkChatRateLimit(req);
     if (!rate.ok) {
+      logger.warn("chat api rate limited", {
+        retryAfterSeconds: rate.retryAfterSeconds,
+      });
       await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
         reason: "rate_limited",
         status: 429,
@@ -157,7 +169,7 @@ export async function POST(req: Request) {
       await ensureGroqApiKey();
     } catch (error) {
       logger.error("failed to load Groq API key from Secrets Manager", {
-        error: error instanceof Error ? error : new Error(String(error)),
+        error: toError(error),
       });
       await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
         reason: "missing_groq_key",
@@ -183,15 +195,32 @@ export async function POST(req: Request) {
     const fallback = groq(MODEL_IDS.groqLlama8bInstant);
 
     try {
-      return await createStream(systemPrompt, primary.model, modelMessages, messages);
+      return createStream(
+        systemPrompt,
+        primary.model,
+        primary.modelId,
+        modelMessages,
+        messages,
+      );
     } catch (primaryError) {
       if (isProviderRateLimitError(primaryError)) {
-        return await createStream(systemPrompt, fallback, modelMessages, messages);
+        logger.warn("chat primary model rate limited, using fallback", {
+          primaryModelId: primary.modelId,
+          fallbackModelId: MODEL_IDS.groqLlama8bInstant,
+        });
+        return createStream(
+          systemPrompt,
+          fallback,
+          MODEL_IDS.groqLlama8bInstant,
+          modelMessages,
+          messages,
+        );
       }
       throw primaryError;
     }
   } catch (error) {
     if (isProviderRateLimitError(error)) {
+      logger.warn("chat provider rate limited after fallback exhausted");
       await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
         reason: "provider_rate_limited",
         status: 429,
@@ -205,6 +234,10 @@ export async function POST(req: Request) {
       );
     }
 
+    logger.error("chat api failed", {
+      error: toError(error),
+      distinctId,
+    });
     await captureServerEvent(distinctId, PortfolioEvents.chatApiError, {
       reason: "unhandled",
       status: 500,

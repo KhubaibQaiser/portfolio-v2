@@ -3,6 +3,7 @@ import { contactSchema } from "@portfolio/shared/schemas/contact";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error("contact form submission failed", {
-      error: error instanceof Error ? error : new Error(String(error)),
+      error: toError(error),
     });
     await captureServerEvent(undefined, PortfolioEvents.contactApiError, {
       phase: "unhandled",

@@ -2,6 +2,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { ResumeDocument } from "@portfolio/ui/resume-pdf";
 import { getResumeData } from "@/lib/resume-data";
 import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export async function GET() {
     });
   } catch (error) {
     logger.error("resume pdf generation failed", {
-      error: error instanceof Error ? error : new Error(String(error)),
+      error: toError(error),
     });
     return Response.json(
       { error: "Failed to generate PDF. Please try again." },

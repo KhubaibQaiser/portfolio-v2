@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getContentRepository } from "@portfolio/data";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";
+import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 
 /** Extracts the GitHub handle from the `github` social link (e.g. .../<user>). */
 function resolveGitHubUsername(
@@ -87,7 +89,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ success: true, data: stats });
-  } catch {
+  } catch (error) {
+    logger.error("github api failed", { error: toError(error) });
     await captureServerEvent(undefined, PortfolioEvents.githubApiError, {
       reason: "exception",
     });
