@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +40,8 @@ export async function POST(request: Request) {
       revalidated: { paths, tags },
       now: Date.now(),
     });
-  } catch {
+  } catch (error) {
+    logger.error("revalidate api failed", { error: toError(error) });
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 },
