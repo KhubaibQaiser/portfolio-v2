@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -16,6 +17,11 @@ import { Construct } from "constructs";
 
 const CACHE_PREFIX = "_cache";
 const ASSETS_PREFIX = "_assets";
+
+const lambdaDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../lambda",
+);
 
 export type NextjsSiteDomain = {
   domainNames: string[];
@@ -202,12 +208,33 @@ export class NextjsSite extends Construct {
       enableAcceptEncodingGzip: true,
     });
 
+    // OAC signs origin requests with SigV4, but Lambda function URLs reject
+    // unsigned payloads: for requests WITH a body (POST/PUT — chat, contact,
+    // revalidate) the caller must send `x-amz-content-sha256` = SHA-256 of the
+    // body, which CloudFront OAC does not compute. Without it every POST fails at
+    // the function URL with "signature does not match" before reaching the app.
+    // This origin-request Lambda@Edge computes the hash and injects the header so
+    // OAC signs with the correct payload hash. GETs (no body) are untouched.
+    // See AWS: "Restrict access to an AWS Lambda function URL origin".
+    const signBodyFn = new cloudfront.experimental.EdgeFunction(this, "SignPostBodyFn", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "index.handler",
+      code: lambda.Code.fromAsset(path.join(lambdaDir, "sign-post-body")),
+    });
+
     const serverBehavior: cloudfront.BehaviorOptions = {
       origin: serverOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
       cachePolicy: serverCachePolicy,
       originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      edgeLambdas: [
+        {
+          functionVersion: signBodyFn.currentVersion,
+          eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
+          includeBody: true,
+        },
+      ],
     };
     const staticBehavior: cloudfront.BehaviorOptions = {
       origin: s3Origin,
