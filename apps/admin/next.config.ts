@@ -32,11 +32,7 @@ const nextConfig: NextConfig = {
   // bundle instead of letting the bundler choke on their ESM `exports`:
   //  - aws-jwt-verify: strict ESM exports @vercel/nft can't trace when bundled
   //  - @aws-lambda-powertools/logger: runtime logger, no value in bundling
-  serverExternalPackages: [
-    "aws-jwt-verify",
-    "@aws-lambda-powertools/logger",
-    "@aws-sdk/client-secrets-manager",
-  ],
+  serverExternalPackages: ["aws-jwt-verify", "@aws-lambda-powertools/logger"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
