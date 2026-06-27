@@ -132,11 +132,16 @@ export class DataStack extends cdk.Stack {
     });
 
     // --- Runtime AI key secrets ---
-    // CDK owns the secret *resources* (existence + RETAIN + IAM contract); the
-    // actual key values are injected out-of-band (`aws secretsmanager
+    // CDK owns the secret *resources* (existence + IAM contract) so the set of
+    // keys the app needs is explicit in IaC, not discovered by reading code; the
+    // actual values are injected out-of-band (`aws secretsmanager
     // put-secret-value`) so plaintext never lives in code or templates. The
     // auto-generated complete ARN (incl. the random suffix) is published to the
     // SSM registry for the apps to import — never a hand-built partial ARN.
+    // DESTROY (unlike the tables/bucket): the values are externally injected and
+    // trivially re-creatable, so they shouldn't outlive the stack. CloudFormation
+    // schedules the delete with a recovery window — to immediately reuse the name
+    // (e.g. teardown + redeploy) run `delete-secret --force-delete-without-recovery`.
     const names = secretNames(config);
     const paths = ssmPaths(config);
     const aiSecret = (
@@ -148,7 +153,7 @@ export class DataStack extends cdk.Stack {
       const secret = new secretsmanager.Secret(this, construct, {
         secretName,
         description: `${label} (value set out-of-band via put-secret-value)`,
-        removalPolicy: cdk.RemovalPolicy.RETAIN,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
       });
       new ssm.StringParameter(this, `${construct}ArnParam`, {
         parameterName: arnParamName,

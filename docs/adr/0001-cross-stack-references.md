@@ -117,12 +117,23 @@ is still by ARN.
   `domainEnabled` (currently off) and both live in `us-east-1`. When the domain
   is delegated, decouple via `HostedZone.fromHostedZoneAttributes` + an SSM
   `hosted-zone-id` param.
-- **Runtime secrets** (LLM API keys): the `DataStack` owns the secret resources
-  and publishes each **complete ARN** (incl. the random suffix) to SSM
-  (`/portfolio/ai/*-api-key-arn`). The apps import via
+- **Runtime secrets** (LLM API keys): the `DataStack` **creates** the secret
+  resources (so the set of keys the app needs is explicit in IaC, not discovered
+  by grepping the code) and publishes each **complete ARN** (incl. the random
+  suffix) to SSM (`/portfolio/ai/*-api-key-arn`). The apps import via
   `Secret.fromSecretCompleteArn(<ssm value>)`, `grantRead` (IAM scoped to that
   ARN), and pass the same complete ARN to the Lambda env (`GROQ_API_KEY_SECRET_ARN`,
   `ANTHROPIC_API_KEY_SECRET_ARN`). The app fetches values via `GetSecretValue` at
   request time. Values are injected out-of-band (`put-secret-value`) so plaintext
-  never enters code/templates, and no partial ARN is ever hand-built. To exercise
-  AI locally, copy the complete ARN from SSM and use AWS credentials.
+  never enters code/templates, and no partial ARN is ever hand-built. The secrets
+  use `RemovalPolicy.DESTROY` (externally injected + trivially re-creatable, so
+  they shouldn't outlive the stack); the deletion is scheduled with a recovery
+  window, so reusing a name immediately needs
+  `delete-secret --force-delete-without-recovery`. To exercise AI locally, copy
+  the complete ARN from SSM and use AWS credentials.
+
+- **Removal policy rule:** only the **DynamoDB content tables** and the **S3 media
+  bucket** survive a `cdk destroy` (`RETAIN` + deletion protection / PITR);
+  everything else is `DESTROY`. The single **deliberate exception** is the Cognito
+  **User Pool** (`AuthStack`), kept `RETAIN` because it holds identity state (admin
+  users + MFA) with no re-seed story — as precious as the content data.
