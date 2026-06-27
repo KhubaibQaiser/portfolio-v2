@@ -38,10 +38,7 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   // Keep the Powertools logger external so OpenNext traces it into the Lambda
   // bundle (it's a runtime Node dependency, no value in bundling it).
-  serverExternalPackages: [
-    "@aws-lambda-powertools/logger",
-    "@aws-sdk/client-secrets-manager",
-  ],
+  serverExternalPackages: ["@aws-lambda-powertools/logger"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
