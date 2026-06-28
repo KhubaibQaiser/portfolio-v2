@@ -6,6 +6,8 @@ import { MonthYearPicker } from "@portfolio/ui/date-picker";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveExperience, deleteExperience } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import {
   experienceSchema,
   getContractTypeLabel,
@@ -39,6 +41,7 @@ function experienceRowToForm(row: Experience): ExperienceFormData & { id: string
 }
 
 export function ExperienceList({ initialData }: ExperienceListProps) {
+  const toast = useToast();
   const [items, setItems] = useState(initialData);
   const [editing, setEditing] = useState<(ExperienceFormData & { id?: string }) | null>(
     null,
@@ -46,7 +49,6 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
   /** Raw text so commas/spaces while typing are preserved; parsed on save only. */
   const [techTagsInput, setTechTagsInput] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   function beginEdit(entry: ExperienceFormData & { id?: string }) {
     setEditing(entry);
@@ -56,29 +58,32 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
   async function handleSave() {
     if (!editing) return;
     setSaving(true);
-    setMessage("");
     const { id, ...values } = editing;
     const tech_tags = techTagsInput
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const result = await saveExperience(id ?? null, { ...values, tech_tags });
+    const result = await runServerAction(
+      () => saveExperience(id ?? null, { ...values, tech_tags }),
+      toast,
+      {
+        onSuccess: () => {
+          setEditing(null);
+          window.location.reload();
+        },
+      },
+    );
     setSaving(false);
-    if (result.success) {
-      setMessage("Saved!");
-      setEditing(null);
-      if (typeof window !== "undefined") window.location.reload();
-    } else {
-      setMessage(result.error);
-    }
+    if (!result.success) return;
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this experience entry?")) return;
-    const result = await deleteExperience(id);
-    if (result.success) {
-      setItems((prev) => prev.filter((e) => e.id !== id));
-    }
+    const result = await runServerAction(() => deleteExperience(id), toast, {
+      successMessage: "Deleted",
+      onSuccess: () => setItems((prev) => prev.filter((e) => e.id !== id)),
+    });
+    if (!result.success) return;
   }
 
   if (editing) {
@@ -209,17 +214,6 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
             className="border-border bg-muted/30 focus:border-accent w-32 rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
           />
         </div>
-
-        {message && (
-          <p
-            className={cn(
-              "text-sm",
-              message === "Saved!" ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {message}
-          </p>
-        )}
 
         <button
           type="button"

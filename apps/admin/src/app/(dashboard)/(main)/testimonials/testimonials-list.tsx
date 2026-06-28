@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Save, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveTestimonial, deleteTestimonialAction } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import type { Testimonial } from "@portfolio/shared/schemas";
 
 type TestimonialsListProps = {
@@ -20,31 +22,35 @@ const EMPTY: Omit<Testimonial, "id" | "created_at" | "updated_at"> = {
 };
 
 export function TestimonialsList({ initialData }: TestimonialsListProps) {
+  const toast = useToast();
   const [items, setItems] = useState(initialData);
   const [editing, setEditing] = useState<(typeof EMPTY & { id?: string }) | null>(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   async function handleSave() {
     if (!editing) return;
     setSaving(true);
-    setMessage("");
     const { id, ...values } = editing;
-    const result = await saveTestimonial(id ?? null, values);
+    const result = await runServerAction(
+      () => saveTestimonial(id ?? null, values),
+      toast,
+      {
+        onSuccess: () => {
+          setEditing(null);
+          window.location.reload();
+        },
+      },
+    );
     setSaving(false);
-    if (result.success) {
-      setMessage("Saved!");
-      setEditing(null);
-      if (typeof window !== "undefined") window.location.reload();
-    } else {
-      setMessage(result.error);
-    }
+    if (!result.success) return;
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this testimonial?")) return;
-    const result = await deleteTestimonialAction(id);
-    if (result.success) setItems((prev) => prev.filter((t) => t.id !== id));
+    await runServerAction(() => deleteTestimonialAction(id), toast, {
+      successMessage: "Deleted",
+      onSuccess: () => setItems((prev) => prev.filter((t) => t.id !== id)),
+    });
   }
 
   if (editing) {
@@ -93,16 +99,6 @@ export function TestimonialsList({ initialData }: TestimonialsListProps) {
             className="border-border bg-muted/30 focus:border-accent w-32 rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
           />
         </div>
-        {message && (
-          <p
-            className={cn(
-              "text-sm",
-              message === "Saved!" ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {message}
-          </p>
-        )}
         <button
           onClick={handleSave}
           disabled={saving}
