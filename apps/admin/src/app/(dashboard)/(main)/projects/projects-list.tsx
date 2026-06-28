@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, Save, Loader2, X, Star } from "lucide-react";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveProject, deleteProject } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import {
   projectSchema,
   type Project,
@@ -38,33 +40,37 @@ function projectRowToForm(row: Project): ProjectFormData & { id: string } {
 }
 
 export function ProjectsList({ initialData }: ProjectsListProps) {
+  const toast = useToast();
   const [items, setItems] = useState(initialData);
   const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(
     null,
   );
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   async function handleSave() {
     if (!editing) return;
     setSaving(true);
-    setMessage("");
     const { id, ...values } = editing;
-    const result = await saveProject(id ?? null, values);
+    const result = await runServerAction(
+      () => saveProject(id ?? null, values),
+      toast,
+      {
+        onSuccess: () => {
+          setEditing(null);
+          window.location.reload();
+        },
+      },
+    );
     setSaving(false);
-    if (result.success) {
-      setMessage("Saved!");
-      setEditing(null);
-      if (typeof window !== "undefined") window.location.reload();
-    } else {
-      setMessage(result.error);
-    }
+    if (!result.success) return;
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this project?")) return;
-    const result = await deleteProject(id);
-    if (result.success) setItems((prev) => prev.filter((p) => p.id !== id));
+    await runServerAction(() => deleteProject(id), toast, {
+      successMessage: "Deleted",
+      onSuccess: () => setItems((prev) => prev.filter((p) => p.id !== id)),
+    });
   }
 
   if (editing) {
@@ -179,17 +185,6 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
             />
           </div>
         </div>
-
-        {message && (
-          <p
-            className={cn(
-              "text-sm",
-              message === "Saved!" ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {message}
-          </p>
-        )}
 
         <button
           onClick={handleSave}

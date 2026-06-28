@@ -5,6 +5,8 @@ import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { saveAbout } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import type { About, AboutFormData, Highlight } from "@portfolio/shared/schemas";
 
 type AboutFormProps = {
@@ -14,8 +16,8 @@ type AboutFormProps = {
 };
 
 export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps) {
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [form, setForm] = useState<AboutFormData>({
     bio: initialData?.bio ?? "",
     photo_url: initialData?.photo_url ?? "",
@@ -62,10 +64,8 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
 
   async function handleSave() {
     setSaving(true);
-    setMessage("");
-    const result = await saveAbout(form);
+    await runServerAction(() => saveAbout(form), toast);
     setSaving(false);
-    setMessage(result.success ? "Saved!" : result.error);
   }
 
   return (
@@ -273,17 +273,6 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
           )}
         </div>
       </div>
-
-      {message && (
-        <p
-          className={cn(
-            "text-sm",
-            message === "Saved!" ? "text-green-600" : "text-red-500",
-          )}
-        >
-          {message}
-        </p>
-      )}
 
       <button
         onClick={handleSave}

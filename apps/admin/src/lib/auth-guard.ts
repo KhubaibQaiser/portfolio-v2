@@ -17,7 +17,18 @@ export type AdminAuth =
 export async function requireAdmin(): Promise<AdminAuth> {
   const identity = await getCurrentIdentity();
 
-  if (!identity?.email || !isAllowedAdmin(identity.email, getAllowedAdminEmails())) {
+  let allowed: readonly string[];
+  try {
+    allowed = getAllowedAdminEmails();
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Admin allowlist is not configured",
+    };
+  }
+
+  if (!identity?.email || !isAllowedAdmin(identity.email, allowed)) {
     return { ok: false, error: "Unauthorized" };
   }
   return { ok: true, id: identity.sub, email: identity.email };

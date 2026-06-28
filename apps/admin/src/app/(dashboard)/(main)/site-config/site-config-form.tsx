@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveSiteConfig } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import type { SiteConfig, SocialLink, NavLink } from "@portfolio/shared/schemas";
 
 type SocialLinkDraft = SocialLink & { _clientId: string };
@@ -26,8 +28,8 @@ type SiteConfigFormProps = {
 };
 
 export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   const socialLinks = (initialData?.social_links ?? []) as unknown as SocialLink[];
 
@@ -71,13 +73,15 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
 
   async function handleSave() {
     setSaving(true);
-    setMessage("");
-    const result = await saveSiteConfig({
-      ...form,
-      social_links: form.social_links.map(({ _clientId: _c, ...rest }) => rest),
-    });
+    await runServerAction(
+      () =>
+        saveSiteConfig({
+          ...form,
+          social_links: form.social_links.map(({ _clientId: _c, ...rest }) => rest),
+        }),
+      toast,
+    );
     setSaving(false);
-    setMessage(result.success ? "Saved!" : result.error);
   }
 
   return (
@@ -234,17 +238,6 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
           )}
         </div>
       </div>
-
-      {message && (
-        <p
-          className={cn(
-            "text-sm",
-            message === "Saved!" ? "text-green-600" : "text-red-500",
-          )}
-        >
-          {message}
-        </p>
-      )}
 
       <button
         type="button"

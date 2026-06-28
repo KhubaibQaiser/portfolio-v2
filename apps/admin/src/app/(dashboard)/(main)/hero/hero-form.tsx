@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveHero } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import type { Hero } from "@portfolio/shared/schemas";
 
 type HeroFormProps = {
@@ -11,8 +13,8 @@ type HeroFormProps = {
 };
 
 export function HeroForm({ initialData }: HeroFormProps) {
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     greeting: initialData?.greeting ?? "Hi, my name is",
     headline: initialData?.headline ?? "",
@@ -28,10 +30,8 @@ export function HeroForm({ initialData }: HeroFormProps) {
 
   async function handleSave() {
     setSaving(true);
-    setMessage("");
-    const result = await saveHero(form);
+    await runServerAction(() => saveHero(form), toast);
     setSaving(false);
-    setMessage(result.success ? "Saved!" : result.error);
   }
 
   return (
@@ -91,17 +91,6 @@ export function HeroForm({ initialData }: HeroFormProps) {
           )}
         />
       </div>
-
-      {message && (
-        <p
-          className={cn(
-            "text-sm",
-            message === "Saved!" ? "text-green-600" : "text-red-500",
-          )}
-        >
-          {message}
-        </p>
-      )}
 
       <button
         onClick={handleSave}

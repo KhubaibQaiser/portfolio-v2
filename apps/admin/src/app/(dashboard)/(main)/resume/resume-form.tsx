@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveResume } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import type {
   Resume as ResumeRow,
   Education,
@@ -64,8 +66,8 @@ type ResumeFormProps = {
 };
 
 export function ResumeForm({ initialData }: ResumeFormProps) {
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   const [defaultSummary, setDefaultSummary] = useState(
     initialData?.default_summary ?? "",
@@ -148,7 +150,6 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
 
   async function handleSave() {
     setSaving(true);
-    setMessage("");
     const payload = {
       default_summary: defaultSummary,
       education: education.map(({ _clientId: _a, ...rest }) => rest),
@@ -157,9 +158,8 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       is_projects_visible: isProjectsVisible,
       voice_sample: voiceSample.trim() === "" ? null : voiceSample,
     };
-    const result = await saveResume(payload);
+    await runServerAction(() => saveResume(payload), toast);
     setSaving(false);
-    setMessage(result.success ? "Saved!" : result.error);
   }
 
   return (
@@ -406,17 +406,6 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
         />
         Projects visible on site (portfolio flag)
       </label>
-
-      {message && (
-        <p
-          className={cn(
-            "text-sm",
-            message === "Saved!" ? "text-green-600" : "text-red-500",
-          )}
-        >
-          {message}
-        </p>
-      )}
 
       <button
         type="button"

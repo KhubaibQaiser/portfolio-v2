@@ -15,7 +15,7 @@ import type { z } from "zod";
 import { revalidateWeb } from "@/lib/revalidate-web";
 import { requireAdmin } from "@/lib/auth-guard";
 
-type ActionResult = { success: true } | { success: false; error: string };
+export type ActionResult = { success: true } | { success: false; error: string };
 
 const repo = getContentRepository();
 

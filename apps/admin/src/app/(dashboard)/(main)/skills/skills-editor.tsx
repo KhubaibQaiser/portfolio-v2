@@ -5,6 +5,8 @@ import { Select } from "@portfolio/ui/select";
 import { Plus, Save, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveSkills, deleteSkill } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
 import type { Skill, SkillCategory } from "@portfolio/shared/schemas";
 
@@ -13,9 +15,9 @@ type SkillsEditorProps = {
 };
 
 export function SkillsEditor({ initialData }: SkillsEditorProps) {
+  const toast = useToast();
   const [skills, setSkills] = useState(initialData);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
   function addSkill() {
     setSkills((prev) => [
@@ -43,13 +45,14 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
       setSkills((prev) => prev.filter((s) => s.id !== id));
       return;
     }
-    const result = await deleteSkill(id);
-    if (result.success) setSkills((prev) => prev.filter((s) => s.id !== id));
+    await runServerAction(() => deleteSkill(id), toast, {
+      successMessage: "Deleted",
+      onSuccess: () => setSkills((prev) => prev.filter((s) => s.id !== id)),
+    });
   }
 
   async function handleSave() {
     setSaving(true);
-    setMessage("");
     const payload = skills.map((s) => ({
       id: s.id.startsWith("new-") ? undefined : s.id,
       name: s.name,
@@ -59,14 +62,11 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
       years: s.years,
       sort_order: s.sort_order,
     }));
-    const result = await saveSkills(payload);
+    const result = await runServerAction(() => saveSkills(payload), toast, {
+      onSuccess: () => window.location.reload(),
+    });
     setSaving(false);
-    if (result.success) {
-      setMessage("Saved!");
-      if (typeof window !== "undefined") window.location.reload();
-    } else {
-      setMessage(result.error);
-    }
+    if (!result.success) return;
   }
 
   return (
@@ -138,17 +138,6 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
           </div>
         ))}
       </div>
-
-      {message && (
-        <p
-          className={cn(
-            "mt-4 text-sm",
-            message === "Saved!" ? "text-green-600" : "text-red-500",
-          )}
-        >
-          {message}
-        </p>
-      )}
 
       <button
         onClick={handleSave}

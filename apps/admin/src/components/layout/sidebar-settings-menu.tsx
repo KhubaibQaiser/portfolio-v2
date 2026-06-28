@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, LogOut, RefreshCw, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { purgeWebCache } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 
 export function SidebarSettingsMenu() {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [purging, setPurging] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,10 +39,10 @@ export function SidebarSettingsMenu() {
 
   async function handlePurgeCache() {
     setPurging(true);
-    setFeedback(null);
-    const result = await purgeWebCache();
+    const result = await runServerAction(() => purgeWebCache(), toast, {
+      successMessage: "Site cache refreshed",
+    });
     setPurging(false);
-    setFeedback(result.success ? "Site cache refreshed" : result.error);
     if (result.success) setOpen(false);
   }
 
@@ -49,10 +50,7 @@ export function SidebarSettingsMenu() {
     <div ref={menuRef} className="relative">
       <button
         type="button"
-        onClick={() => {
-          setOpen((prev) => !prev);
-          setFeedback(null);
-        }}
+        onClick={() => setOpen((prev) => !prev)}
         className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -61,19 +59,6 @@ export function SidebarSettingsMenu() {
         <Settings className="h-4 w-4" />
         Settings
       </button>
-
-      {feedback && !open ? (
-        <p
-          className={cn(
-            "mt-1 px-3 text-xs",
-            feedback === "Site cache refreshed"
-              ? "text-green-600 dark:text-green-400"
-              : "text-destructive",
-          )}
-        >
-          {feedback}
-        </p>
-      ) : null}
 
       {open ? (
         <div

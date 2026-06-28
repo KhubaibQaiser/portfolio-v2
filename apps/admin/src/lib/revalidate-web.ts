@@ -19,7 +19,15 @@ export type RevalidateWebResult = { ok: true } | { ok: false; error: string };
 /** Notifies the public site to revalidate cached content for the given tags. */
 export async function revalidateWeb(tags: readonly string[]): Promise<RevalidateWebResult> {
   const webUrl = process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/$/, "");
-  const secret = await getRevalidateSecret();
+
+  let secret: string | undefined;
+  try {
+    secret = await getRevalidateSecret();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.warn("revalidation secret load failed", { tags, error: message });
+    return { ok: false, error: message };
+  }
 
   if (!webUrl) {
     return { ok: false, error: "NEXT_PUBLIC_WEB_URL is not configured" };

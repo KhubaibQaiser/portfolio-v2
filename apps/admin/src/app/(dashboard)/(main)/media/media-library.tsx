@@ -7,6 +7,8 @@ import { MediaDropzone } from "@portfolio/ui/media-dropzone";
 import { formatBytes } from "@portfolio/shared/utils";
 import type { Media as MediaRow } from "@portfolio/shared/schemas";
 import { deleteMediaAsset } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 
 type MediaLibraryProps = {
   initialItems: MediaRow[];
@@ -20,22 +22,27 @@ function formatUploadedAt(iso: string): string {
 }
 
 export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) {
+  const toast = useToast();
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
       if (!storageReady) return;
       setUploading(true);
-      setMessage("");
       try {
         for (const file of files) {
           const fd = new FormData();
           fd.set("file", file);
-          const res = await fetch("/api/media/upload", { method: "POST", body: fd });
+          let res: Response;
+          try {
+            res = await fetch("/api/media/upload", { method: "POST", body: fd });
+          } catch {
+            toast.error("Upload failed. Please try again.");
+            break;
+          }
           const data: unknown = await res.json().catch(() => ({}));
           const err =
             typeof data === "object" &&
@@ -45,7 +52,7 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
               ? (data as { error: string }).error
               : null;
           if (!res.ok) {
-            setMessage(err ?? "Upload failed");
+            toast.error(err ?? "Upload failed");
             break;
           }
           const media =
@@ -54,6 +61,7 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
               : null;
           if (media) {
             setItems((prev) => [media, ...prev]);
+            toast.success("Upload complete");
           }
         }
         router.refresh();
@@ -61,7 +69,7 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
         setUploading(false);
       }
     },
-    [router, storageReady],
+    [router, storageReady, toast],
   );
 
   async function handleCopy(id: string, url: string) {
@@ -72,13 +80,13 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this asset from storage and the library?")) return;
-    const result = await deleteMediaAsset(id);
-    if (result.success) {
-      setItems((prev) => prev.filter((m) => m.id !== id));
-      router.refresh();
-    } else {
-      setMessage(result.error);
-    }
+    await runServerAction(() => deleteMediaAsset(id), toast, {
+      successMessage: "Deleted",
+      onSuccess: () => {
+        setItems((prev) => prev.filter((m) => m.id !== id));
+        router.refresh();
+      },
+    });
   }
 
   return (
@@ -100,8 +108,6 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
         disabled={uploading || !storageReady}
         className="mt-6"
       />
-
-      {message ? <p className="text-destructive mt-4 text-sm">{message}</p> : null}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         {items.map((item) => (
