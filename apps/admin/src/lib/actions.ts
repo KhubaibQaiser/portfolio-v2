@@ -307,3 +307,18 @@ export async function deleteMediaAsset(id: string): Promise<ActionResult> {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Cache
+// ---------------------------------------------------------------------------
+
+/** Purges all public-site content caches (e.g. after a direct DDB seed). */
+export async function purgeWebCache(): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const { revalidateWeb, WEB_CONTENT_TAGS } = await import("@/lib/revalidate-web");
+  const result = await revalidateWeb(WEB_CONTENT_TAGS);
+  if (!result.ok) return { success: false, error: result.error };
+  return { success: true };
+}

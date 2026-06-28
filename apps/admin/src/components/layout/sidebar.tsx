@@ -13,13 +13,13 @@ import {
   MessageSquare,
   Settings,
   Image,
-  LogOut,
   Menu,
   X,
   Wand2,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { SidebarSettingsMenu } from "@/components/layout/sidebar-settings-menu";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -38,12 +38,6 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  function handleSignOut() {
-    // Full navigation so the server logout route can clear cookies + redirect
-    // through the Cognito Hosted UI sign-out.
-    window.location.assign("/auth/logout");
-  }
 
   return (
     <>
@@ -101,13 +95,7 @@ export function Sidebar() {
         </nav>
 
         <div className="border-border border-t p-2">
-          <button
-            onClick={handleSignOut}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </button>
+          <SidebarSettingsMenu />
         </div>
       </aside>
 
