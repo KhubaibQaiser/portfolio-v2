@@ -25,7 +25,8 @@ describe("FixtureContentRepository", () => {
   it("returns only featured projects, ordered by sort_order", async () => {
     const featured = await repo.getFeaturedProjects();
     expect(featured.every((p) => p.is_featured)).toBe(true);
-    expect(featured.map((p) => p.sort_order)).toEqual([0, 1, 2, 3]);
+    // Achieve Web Platform (sort_order 2) is not featured in seed/content.json.
+    expect(featured.map((p) => p.sort_order)).toEqual([0, 1, 3, 4]);
   });
 
   it("looks up a project by slug", async () => {
