@@ -300,6 +300,9 @@ Chat and resume AI load keys **at runtime** from Secrets Manager. The secret **r
 | ----------------------- | ------------- | ---------- | ------- |
 | `/portfolio/groq-api-key` | `/portfolio/ai/groq-api-key-arn` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
 | `/portfolio/anthropic-api-key` | `/portfolio/ai/anthropic-api-key-arn` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
+| `/portfolio/revalidate-secret` | `/portfolio/revalidate/secret-arn` | `REVALIDATE_SECRET_ARN` | Web + Admin |
+
+The revalidate secret value is **CDK-generated** on first deploy (`generateSecretString`) — no `put-secret-value` step. Admin discovers the public site URL from SSM (`/portfolio/web/site-url`, published by `Portfolio-Web`) as `NEXT_PUBLIC_WEB_URL`.
 
 **Step 1 — deploy `Portfolio-Data`** so CDK creates the secret resources (with a placeholder value):
 
@@ -322,7 +325,7 @@ aws secretsmanager put-secret-value \
   --secret-string "YOUR_ANTHROPIC_KEY"
 ```
 
-**Step 3 — deploy the apps** (they read the ARNs from SSM):
+**Step 3 — deploy the apps** (Web before Admin — Admin reads the web site URL from SSM):
 
 ```bash
 pnpm exec cdk deploy Portfolio-Web Portfolio-Admin --require-approval never
@@ -445,7 +448,8 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | Variable                                                      | Purpose                                                  |
 | ------------------------------------------------------------- | -------------------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                        | Canonical URL (metadata, sitemap, robots)                |
-| `REVALIDATE_SECRET`                                           | Header secret for `POST /api/revalidate` — same as admin |
+| `REVALIDATE_SECRET`                                           | Local dev: header secret for `POST /api/revalidate`      |
+| `REVALIDATE_SECRET_ARN`                                       | Prod (CDK): Secrets Manager ARN; value auto-generated      |
 | `GROQ_API_KEY_SECRET_ARN`                                     | Groq — Secrets Manager complete ARN; chat returns 503 if unset or unreadable |
 | `GITHUB_TOKEN`                                                | Optional — higher GitHub API limits for `/api/github`    |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`                           | PostHog project API key                                  |
@@ -470,15 +474,16 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `COGNITO_CLIENT_ID`                                              | App client id (public, PKCE)                                                 |
 | `COGNITO_DOMAIN`                                                 | Hosted UI base URL                                                           |
 | `APP_ORIGIN`                                                     | Public app origin for OAuth redirect/logout (unset locally → request origin) |
-| `NEXT_PUBLIC_WEB_URL`                                            | Public site base URL (for revalidate calls)                                  |
-| `REVALIDATE_SECRET`                                              | Same as web                                                                  |
+| `NEXT_PUBLIC_WEB_URL`                                            | Public site base URL for revalidate calls (prod: from SSM)                   |
+| `REVALIDATE_SECRET`                                              | Local dev: same as web                                                       |
+| `REVALIDATE_SECRET_ARN`                                          | Prod (CDK): Secrets Manager ARN; value auto-generated                        |
 | `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` / `S3_ENDPOINT`      | Media uploads + public URL                                                   |
 | `AWS_REGION`                                                     | Primary region                                                               |
 | `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN`       | Resume AI — Secrets Manager complete ARNs (Groq + Anthropic)                 |
 | `RESUME_GEN_DAILY_USD_CAP`                                       | Daily spend cap per admin (default `5`)                                      |
 | `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX` / `DYNAMODB_LOCAL_ENDPOINT` | Data layer (as web)                                                        |
 
-In production these are injected by CDK (`Portfolio-Admin` sets the `COGNITO_*`, `APP_ORIGIN`, and data-layer vars on the Lambda; the IAM role supplies AWS credentials). Set them in `.env.local` only to exercise the real backends locally.
+In production these are injected by CDK (`Portfolio-Admin` sets the `COGNITO_*`, `APP_ORIGIN`, `NEXT_PUBLIC_WEB_URL`, `REVALIDATE_SECRET_ARN`, and data-layer vars on the Lambda; the IAM role supplies AWS credentials). Set them in `.env.local` only to exercise the real backends locally.
 
 ---
 

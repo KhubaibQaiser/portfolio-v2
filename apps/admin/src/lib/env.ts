@@ -13,6 +13,7 @@ export const env = createEnv({
   server: {
     // Revalidation webhook shared secret (matches apps/web)
     REVALIDATE_SECRET: z.string().min(1).optional(),
+    REVALIDATE_SECRET_ARN: z.string().min(1).optional(),
     // Cognito auth (Hosted UI + OAuth code flow)
     COGNITO_REGION: z.string().min(1).optional(),
     COGNITO_USER_POOL_ID: z.string().min(1).optional(),
@@ -44,6 +45,7 @@ export const env = createEnv({
   },
   runtimeEnv: {
     REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
+    REVALIDATE_SECRET_ARN: process.env.REVALIDATE_SECRET_ARN,
     COGNITO_REGION: process.env.COGNITO_REGION,
     COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID,
     COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,

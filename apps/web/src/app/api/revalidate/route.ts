@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { getRevalidateSecret } from "@portfolio/ai/load-api-keys";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
 
 export async function POST(request: Request) {
   try {
     const secret = request.headers.get("x-revalidate-secret");
-    const expectedSecret = process.env.REVALIDATE_SECRET;
+    const expectedSecret = await getRevalidateSecret();
 
     if (!expectedSecret || secret !== expectedSecret) {
       return NextResponse.json(

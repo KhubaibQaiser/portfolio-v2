@@ -29,6 +29,10 @@ export function ssmPaths(config: InfraConfig) {
     /** Complete ARNs (incl. random suffix) of the CDK-owned AI key secrets. */
     groqApiKeyArn: `${base}/ai/groq-api-key-arn`,
     anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,
+    /** Complete ARN of the CDK-generated revalidate webhook secret. */
+    revalidateSecretArn: `${base}/revalidate/secret-arn`,
+    /** Public web site origin (CloudFront or custom domain) for admin revalidation calls. */
+    webSiteUrl: `${base}/web/site-url`,
   } as const;
 }
 
@@ -38,6 +42,8 @@ export function secretNames(config: InfraConfig) {
   return {
     groqApiKey: `${base}/groq-api-key`,
     anthropicApiKey: `${base}/anthropic-api-key`,
+    /** CDK-generated; value never injected out-of-band. */
+    revalidateSecret: `${base}/revalidate-secret`,
   } as const;
 }
 
