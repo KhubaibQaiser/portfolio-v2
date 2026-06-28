@@ -13,6 +13,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "seed:generate": "python3 scripts/generate-seed-from-export.py",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {

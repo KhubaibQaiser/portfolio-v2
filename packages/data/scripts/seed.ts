@@ -1,5 +1,6 @@
 /**
- * Seeds the DynamoDB content table from the static fixtures.
+ * Seeds DynamoDB from `seed/content.json` (via fixtures). Regenerate that file
+ * from admin CSV exports with `pnpm --filter @portfolio/data seed:generate`.
  *
  * Idempotent: singletons are upserted, list entities are cleared then
  * re-inserted, so re-running converges the tables to the fixtures. Targets the
@@ -15,6 +16,7 @@ import {
   aboutFixture,
   experienceFixtures,
   heroFixture,
+  mediaFixtures,
   projectFixtures,
   resumeFixture,
   siteConfigFixture,
@@ -89,6 +91,21 @@ async function main(): Promise<void> {
     await repo.insertTestimonial(toForm(testimonial));
   }
   console.log(`  ${testimonialFixtures.length} testimonial rows`);
+
+  await clearList(
+    () => repo.getMedia(),
+    (id) => repo.deleteMediaRow(id),
+  );
+  for (const media of mediaFixtures) {
+    await repo.insertMedia({
+      filename: media.filename,
+      url: media.url,
+      mime_type: media.mime_type,
+      size: media.size,
+      alt_text: media.alt_text,
+    });
+  }
+  console.log(`  ${mediaFixtures.length} media rows`);
 
   console.log("Seed complete.");
 }

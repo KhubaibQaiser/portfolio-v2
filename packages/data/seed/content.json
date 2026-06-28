@@ -1,0 +1,939 @@
+{
+  "hero": {
+    "greeting": "Hi, my name is",
+    "headline": "I build things for the web & beyond.",
+    "subtitle": [
+      "Senior Software Engineer",
+      "React & TypeScript Expert",
+      "AWS Serverless Architect"
+    ],
+    "value_proposition": "11 years. 7 companies. 4 countries. I ship production systems that scale — from pixel-perfect React UIs to serverless AWS infrastructure.",
+    "cta_primary_text": "View My Work",
+    "cta_secondary_text": "Download Resume"
+  },
+  "about": {
+    "bio": "I'm a Senior Software Engineer with over a decade of experience building high-performance web and mobile applications across Ad-Tech, E-Commerce, SaaS, and EdTech industries. Currently at Shopsense AI, where I architect serverless systems on AWS handling 50K+ daily ad impressions.\n\nMy expertise spans the full stack — from crafting pixel-perfect React interfaces to designing cloud infrastructure with AWS CDK, Lambda, and DynamoDB. I've led teams, built design systems used by 40+ engineers, and consistently delivered measurable performance improvements (60% CWV boost, 20%+ engagement increase).\n\nI use AI as a force multiplier — not a crutch. It helps me ship 3x faster while maintaining code quality I can defend in any review. This portfolio was built with AI assistance, and every line is production-grade.",
+    "photo_url": "https://pub-22656635402b446b8d3ef37bc1be7feb.r2.dev/media/a824f062-6600-42af-bdc7-6203e551ee22-1773651718282.jpeg",
+    "status": "available",
+    "timezone": "GMT+5",
+    "years_experience": 11,
+    "countries_count": 4,
+    "projects_count": 20,
+    "users_impacted": "500K+",
+    "industries": [
+      "Ad-Tech",
+      "E-Commerce",
+      "SaaS",
+      "EdTech"
+    ],
+    "languages": [
+      "English",
+      "Urdu"
+    ],
+    "highlights": [
+      {
+        "title": "I Ship End-to-End",
+        "description": "From AWS CDK infrastructure to pixel-perfect React UIs. No handoff friction."
+      },
+      {
+        "title": "AI-Augmented, Not AI-Dependent",
+        "description": "I use AI to ship 3x faster while writing code I can defend in any review."
+      },
+      {
+        "title": "Battle-Tested Globally",
+        "description": "11 years across Ad-Tech, E-Commerce, SaaS, and EdTech. Teams across SF, Austin, Jakarta, and more."
+      },
+      {
+        "title": "I Elevate Teams",
+        "description": "Created design systems used by 40+ engineers. Mentored juniors into mid-levels."
+      }
+    ]
+  },
+  "siteConfig": {
+    "name": "Khubaib Qaiser",
+    "email": "khubaib.dev@gmail.com",
+    "location": "Islamabad, Pakistan",
+    "title": "Senior Software Engineer",
+    "description": "Senior Software Engineer with 11+ years of experience specializing in React, Next.js, TypeScript, React Native, and cloud infrastructure (AWS, GCP). Available for senior/staff engineering roles, remote worldwide.",
+    "social_links": [
+      {
+        "url": "https://github.com/khubaibqaiser",
+        "label": "GitHub",
+        "platform": "github"
+      },
+      {
+        "url": "https://linkedin.com/in/khubaib-qaiser",
+        "label": "LinkedIn",
+        "platform": "linkedin"
+      },
+      {
+        "url": "https://twitter.com/khubaibqaiser",
+        "label": "Twitter",
+        "platform": "twitter"
+      },
+      {
+        "url": "https://instagram.com/khubaibqaiser",
+        "label": "Instagram",
+        "platform": "instagram"
+      },
+      {
+        "url": "tel:+923365532933",
+        "label": "Phone",
+        "platform": "phone"
+      }
+    ],
+    "nav_links": [
+      {
+        "href": "#about",
+        "label": "About"
+      },
+      {
+        "href": "#skills",
+        "label": "Skills"
+      },
+      {
+        "href": "#experience",
+        "label": "Experience"
+      },
+      {
+        "href": "#projects",
+        "label": "Projects"
+      },
+      {
+        "href": "#contact",
+        "label": "Contact"
+      }
+    ],
+    "tech_stack": [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS v4",
+      "Turborepo",
+      "pnpm",
+      "AWS CDK",
+      "AWS Lambda",
+      "Amazon DynamoDB",
+      "Amazon S3 + CloudFront",
+      "Amazon Cognito",
+      "OpenNext",
+      "Vercel AI SDK",
+      "Groq",
+      "PostHog"
+    ]
+  },
+  "resume": {
+    "default_summary": "Senior software engineer with 11 years building web and mobile products in ad tech, e-commerce, SaaS, and edtech. Day-to-day stack: React, Next.js, TypeScript, and AWS serverless (Lambda, CDK, DynamoDB). Recent scope includes systems serving 50K+ daily impressions, a 60% Core Web Vitals improvement, and technical leadership across six employers in four countries. Uses AI-assisted coding to shorten delivery cycles; keeps quality through code review, tests, and operational monitoring.",
+    "education": [
+      {
+        "url": null,
+        "year": "2015",
+        "degree": "BS Computer Science",
+        "institution": "Quaid-i-Azam University, Islamabad"
+      }
+    ],
+    "certifications": [
+      {
+        "url": null,
+        "name": "Problem Solving (Advanced)",
+        "issuer": "HackerRank"
+      },
+      {
+        "url": null,
+        "name": "JavaScript (Intermediate)",
+        "issuer": "HackerRank"
+      },
+      {
+        "url": null,
+        "name": "REST API (Intermediate)",
+        "issuer": "HackerRank"
+      },
+      {
+        "url": null,
+        "name": "React (Basic)",
+        "issuer": "HackerRank"
+      }
+    ],
+    "visible_sections": [
+      "experience",
+      "skills",
+      "education"
+    ],
+    "is_projects_visible": true,
+    "voice_sample": null
+  },
+  "experience": [
+    {
+      "id": "c827167e-9e9f-477b-b2fc-05fdeefe0655",
+      "company": "Shopsense AI",
+      "role": "Senior Software Engineer",
+      "location": "San Francisco, CA",
+      "location_type": "remote",
+      "contract_type": "full_time",
+      "start_date": "Aug 2024",
+      "end_date": null,
+      "description": "Launched Embed Generator, Shopsense’s first publisher embed commerce product and a new line of business that monetized editorial content through shoppable templates on partner sites.\nBuilt the original serverless stack (CDK, Lambda, DynamoDB, SQS, S3, CloudFront, LLM/Supabase product flows) and a lightweight injector used in production on publisher pages.\nMigrated and upgraded the platform into Shoppability: self-serve admin dashboard, more embed types, per-publisher branding, and async processing for faster, easier publisher onboarding.\nScaled the architecture in a Turborepo monorepo with shared types, review/reprocess workflows, analytics dashboards, and CI/CD across preview, staging, and production environments.",
+      "tech_tags": [
+        "TypeScript",
+        "React",
+        "Vite",
+        "Turborepo",
+        "TanStack Router",
+        "TanStack Query",
+        "TanStack Table",
+        "Recharts",
+        "Tailwind CSS",
+        "Radix UI",
+        "Zod",
+        "AWS CDK",
+        "Lambda",
+        "DynamoDB",
+        "SQS",
+        "API Gateway",
+        "S3",
+        "CloudFront",
+        "Fastly Edge",
+        "Docker",
+        "Supabase",
+        "LLM APIs",
+        "Google Vision",
+        "PostHog",
+        "Amplitude",
+        "GitHub Actions"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 0
+    },
+    {
+      "id": "7553549d-0f82-46b6-bf20-81e2db3f78d7",
+      "company": "Achieve",
+      "role": "Senior Web Developer",
+      "location": "Jersey City, NJ",
+      "location_type": "remote",
+      "contract_type": "full_time",
+      "start_date": "Jun 2023",
+      "end_date": "Aug 2024",
+      "description": "Led CRA to Vite migration, reducing build times by 70% and improving developer experience\nImplemented React 18 features (Suspense, React Query) achieving 60% Core Web Vitals improvement\nMentored team of 5 on performance optimization best practices and modern React patterns",
+      "tech_tags": [
+        "React 18",
+        "Vite",
+        "TypeScript",
+        "React Query",
+        "Suspense",
+        "Tailwind CSS"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 1
+    },
+    {
+      "id": "0cf31600-e69d-41b2-8fdf-5a8b7ffecaf2",
+      "company": "Tradeblock.us",
+      "role": "Senior React Native Engineer",
+      "location": "Austin, TX",
+      "location_type": "remote",
+      "contract_type": "contract",
+      "start_date": "Jan 2023",
+      "end_date": "Jun 2023",
+      "description": "Shipped cross-platform trading app with React Native, Next.js, and shared web/mobile codebase\nIntegrated Apollo GraphQL, Auth0, and Storybook for a cohesive full-stack development experience\nImplemented E2E testing with Detox (mobile) and Playwright (web) ensuring release stability",
+      "tech_tags": [
+        "React Native",
+        "Next.js",
+        "Apollo GraphQL",
+        "Auth0",
+        "Storybook",
+        "Detox",
+        "Playwright"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 2
+    },
+    {
+      "id": "86f52337-6b68-451b-a006-e37ca18ad565",
+      "company": "GudangAda",
+      "role": "Senior Software Engineer",
+      "location": "Jakarta, Indonesia",
+      "location_type": "remote",
+      "contract_type": "full_time",
+      "start_date": "Sep 2020",
+      "end_date": "Jan 2023",
+      "description": "Created private npm design system adopted by 40+ engineers across 8 product teams\nLaunched company profile with Next.js + Contentful + Tailwind, achieving 70% Core Web Vitals improvement\nLed marketplace feature development for B2B e-commerce platform serving Indonesian market",
+      "tech_tags": [
+        "React",
+        "Next.js",
+        "Contentful",
+        "Tailwind CSS",
+        "npm",
+        "TypeScript",
+        "Storybook"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 3
+    },
+    {
+      "id": "30f159f4-970e-4dc5-a542-ae6fd7e22d9d",
+      "company": "STOQO",
+      "role": "Senior Software Engineer",
+      "location": "Jakarta, Indonesia",
+      "location_type": "remote",
+      "contract_type": "full_time",
+      "start_date": "Feb 2019",
+      "end_date": "Aug 2020",
+      "description": "Built transport management dashboards and driver tracking system for logistics operations\nDeveloped React Native driver app and rewrote Android app in Kotlin for improved performance\nMentored junior engineers and established code review processes for the engineering team",
+      "tech_tags": [
+        "React",
+        "React Native",
+        "Kotlin",
+        "Node.js",
+        "PostgreSQL"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 4
+    },
+    {
+      "id": "d5d49457-6f02-4e3b-ad2c-debe0f637f28",
+      "company": "Knowledge Platform",
+      "role": "Mobile App & Game Developer",
+      "location": "Islamabad, Pakistan",
+      "location_type": "onsite",
+      "contract_type": "full_time",
+      "start_date": "Sep 2015",
+      "end_date": "Feb 2019",
+      "description": "Developed educational games reaching 500K+ students across Pakistan and Middle East\nDelivered cross-platform mobile applications and interactive learning tools with HTML5 Canvas\nCreated survey application for CERP (Centre for Economic Research in Pakistan)",
+      "tech_tags": [
+        "JavaScript",
+        "HTML5 Canvas",
+        "Cordova",
+        "Unity",
+        "EaselJS",
+        "SQLite"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 5
+    },
+    {
+      "id": "53f0985c-b699-4d61-8a96-7c2e00a76c8c",
+      "company": "Powerful Web Design",
+      "role": "Senior Frontend Engineer",
+      "location": "Happy Valley, Oregon",
+      "location_type": "remote",
+      "contract_type": "part_time",
+      "start_date": "Oct 2023",
+      "end_date": null,
+      "description": "Built a white-label admin dashboard in React 19, TypeScript, and Vite. Each client can use their own brand (logo, legal name, invoice branding) on one shared platform.\nWorked on 20+ modules with role-based access: Companies, Contacts, Invoices, Accounts Receivable, Support Tickets, Email Templates, and Settings. Permissions are checked at route and feature level with Zod schemas.\nBuilt a custom dashboard with 25+ widgets (sales, finance, inventory, commissions, maps). Users can drag, resize, and save their layout. Used dnd-kit and React Query for state and persistence.\nImproved large data tables with TanStack Table and Virtual. Added virtual rows, infinite scroll, filters, bulk actions, and keyboard navigation for big client and invoice lists.\nBuilt invoice and AR features: split-pane views, invoice batches, email status tracking, and brand/client grouping. This helped finance teams work faster with less manual work.\nAdded support ticket flows inside Company and Contact pages, plus a main Support module. Built email templates with rich text (TinyMCE) and default templates for client emails.\nSet up frontend patterns for a large codebase (4,000+ files): lazy routes with TanStack Router, shared forms and tables, React Hook Form + Zod validation, query cache persistence, and Sentry for errors.",
+      "tech_tags": [
+        "React 19",
+        "TypeScript",
+        "Vite",
+        "TanStack Router",
+        "TanStack Query",
+        "TanStack Table",
+        "TanStack Virtual",
+        "Zod",
+        "React Hook Form",
+        "Tailwind CSS",
+        "Radix UI",
+        "Recharts",
+        "dnd-kit",
+        "TinyMCE",
+        "Google Maps API",
+        "Sentry",
+        "REST APIs"
+      ],
+      "logo_url": null,
+      "company_url": null,
+      "sort_order": 6
+    }
+  ],
+  "projects": [
+    {
+      "id": "3496e9a5-9bb3-4eaf-b4fa-e99b0476b341",
+      "title": "Shopsense AI Ad Platform",
+      "slug": "shopsense-ai-ad-platform",
+      "description": "Serverless ad delivery system on AWS handling 50K+ daily impressions. Built with CDK, Lambda, DynamoDB, and SQS with real-time analytics via CloudFront.",
+      "summary": "Serverless ad delivery system on AWS handling 50K+ daily impressions.",
+      "cover_url": null,
+      "tech_tags": [
+        "AWS CDK",
+        "Lambda",
+        "DynamoDB",
+        "SQS",
+        "React",
+        "TypeScript"
+      ],
+      "role": "Senior Software Engineer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": true,
+      "sort_order": 0
+    },
+    {
+      "id": "362762ec-4647-4cd0-94d1-bb843a7ca30e",
+      "title": "GudangAda Design System",
+      "slug": "gudangada-design-system",
+      "description": "Private npm design system adopted by 40+ engineers across 8 product teams. Component library with Storybook documentation and automated visual regression testing.",
+      "summary": "Private npm component library used by 40+ engineers across 8 teams.",
+      "cover_url": null,
+      "tech_tags": [
+        "React",
+        "TypeScript",
+        "Storybook",
+        "npm",
+        "styled-components"
+      ],
+      "role": "Senior Software Engineer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": true,
+      "sort_order": 1
+    },
+    {
+      "id": "d9dfb6c9-255e-4c1f-85df-4bf2dc77307f",
+      "title": "Achieve Web Platform",
+      "slug": "achieve-web-platform",
+      "description": "Enterprise financial wellness platform. Led CRA→Vite migration (70% faster builds) and React 18 upgrade achieving 60% Core Web Vitals improvement.",
+      "summary": "Financial wellness platform with React 18 and 60% CWV improvement.",
+      "cover_url": null,
+      "tech_tags": [
+        "React 18",
+        "Vite",
+        "TypeScript",
+        "React Query",
+        "Tailwind CSS"
+      ],
+      "role": "Senior Web Developer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 2
+    },
+    {
+      "id": "cec822c8-6c6b-4adb-be8c-974907bc9386",
+      "title": "GudangAda Company Profile",
+      "slug": "gudangada-company-profile",
+      "description": "Public-facing company website built with Next.js, Contentful CMS, and Tailwind CSS. Achieved 70% improvement in Core Web Vitals with SSG and ISR.",
+      "summary": "Next.js + Contentful website with 70% Core Web Vitals improvement.",
+      "cover_url": null,
+      "tech_tags": [
+        "Next.js",
+        "Contentful",
+        "Tailwind CSS",
+        "TypeScript",
+        "Vercel"
+      ],
+      "role": "Senior Software Engineer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": true,
+      "sort_order": 3
+    },
+    {
+      "id": "507da9c2-234e-438d-bdfa-945751ca6bba",
+      "title": "Tradeblock Trading App",
+      "slug": "tradeblock-trading-app",
+      "description": "Cross-platform sneaker trading app with shared React Native + web codebase.",
+      "summary": "Cross-platform sneaker trading app with shared React Native + web codebase.",
+      "cover_url": null,
+      "tech_tags": [
+        "React Native",
+        "Next.js",
+        "Apollo GraphQL"
+      ],
+      "role": "Senior React Native Engineer",
+      "type": "mobile",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": true,
+      "sort_order": 4
+    },
+    {
+      "id": "dc70904f-a8da-42bc-8e5c-e1c204b351b4",
+      "title": "STOQO Driver App",
+      "slug": "stoqo-driver-app",
+      "description": "React Native driver tracking app, later rewritten in native Kotlin.",
+      "summary": "React Native driver tracking app, later rewritten in native Kotlin.",
+      "cover_url": null,
+      "tech_tags": [
+        "React Native",
+        "Kotlin",
+        "Google Maps"
+      ],
+      "role": "Senior Software Engineer",
+      "type": "mobile",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 5
+    },
+    {
+      "id": "12ec8b35-a0ec-4be4-a15f-c2fae972ef3f",
+      "title": "Transport Management System",
+      "slug": "transport-management-system",
+      "description": "Dashboard for logistics operations with real-time driver tracking.",
+      "summary": "Dashboard for logistics operations with real-time driver tracking.",
+      "cover_url": null,
+      "tech_tags": [
+        "React",
+        "Node.js",
+        "PostgreSQL",
+        "Maps"
+      ],
+      "role": "Senior Software Engineer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 6
+    },
+    {
+      "id": "8cb14063-99cd-418e-8e00-8ef95c715d5c",
+      "title": "Geo Dashboard",
+      "slug": "geo-dashboard",
+      "description": "Geographic data visualization dashboard with interactive maps.",
+      "summary": "Geographic data visualization dashboard with interactive maps.",
+      "cover_url": null,
+      "tech_tags": [
+        "React",
+        "D3.js",
+        "Leaflet",
+        "Node.js"
+      ],
+      "role": "Software Engineer",
+      "type": "web",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 7
+    },
+    {
+      "id": "7d780f0e-71a4-45a1-9320-50adbc128a80",
+      "title": "CERP Survey App",
+      "slug": "cerp-survey-app",
+      "description": "Cross-platform survey application for economic research in Pakistan.",
+      "summary": "Cross-platform survey application for economic research in Pakistan.",
+      "cover_url": null,
+      "tech_tags": [
+        "Cordova",
+        "JavaScript",
+        "SQLite"
+      ],
+      "role": "Mobile App Developer",
+      "type": "mobile",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 8
+    },
+    {
+      "id": "8cf73906-7bdd-429e-ae07-db5f7e6ddaec",
+      "title": "Martian Multiples",
+      "slug": "martian-multiples",
+      "description": "Educational math game reaching 500K+ students across Pakistan.",
+      "summary": "Educational math game reaching 500K+ students across Pakistan.",
+      "cover_url": null,
+      "tech_tags": [
+        "EaselJS",
+        "HTML5 Canvas",
+        "JavaScript"
+      ],
+      "role": "Game Developer",
+      "type": "game",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 9
+    },
+    {
+      "id": "68b03956-4904-4919-8292-8e7b2f768bcc",
+      "title": "Maze Runner",
+      "slug": "maze-runner",
+      "description": "Interactive educational puzzle game for K-12 students.",
+      "summary": "Interactive educational puzzle game for K-12 students.",
+      "cover_url": null,
+      "tech_tags": [
+        "HTML5 Canvas",
+        "JavaScript",
+        "EaselJS"
+      ],
+      "role": "Game Developer",
+      "type": "game",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 10
+    },
+    {
+      "id": "937060a4-0ee9-4924-a4b8-a1dd16b8330d",
+      "title": "Number Battle",
+      "slug": "number-battle",
+      "description": "Competitive math game for classroom learning environments.",
+      "summary": "Competitive math game for classroom learning environments.",
+      "cover_url": null,
+      "tech_tags": [
+        "EaselJS",
+        "HTML5 Canvas",
+        "JavaScript"
+      ],
+      "role": "Game Developer",
+      "type": "game",
+      "github_url": null,
+      "live_url": null,
+      "playstore_url": null,
+      "appstore_url": null,
+      "is_featured": false,
+      "sort_order": 11
+    }
+  ],
+  "skills": [
+    {
+      "id": "e838c7db-113f-414c-8578-639be9ff5cef",
+      "name": "Node.js",
+      "category": "backend",
+      "proficiency": 85,
+      "icon": null,
+      "years": 7,
+      "sort_order": 0
+    },
+    {
+      "id": "d5484e82-02e6-410d-aab7-7bf0103b058d",
+      "name": "REST API",
+      "category": "backend",
+      "proficiency": 90,
+      "icon": null,
+      "years": 9,
+      "sort_order": 1
+    },
+    {
+      "id": "1e377739-c109-470d-a982-7c5ae88b1d07",
+      "name": "GraphQL",
+      "category": "backend",
+      "proficiency": 78,
+      "icon": null,
+      "years": 3,
+      "sort_order": 2
+    },
+    {
+      "id": "bb148269-10d4-4dbe-a9ec-4ae9ddd1c242",
+      "name": "AWS Lambda",
+      "category": "cloud",
+      "proficiency": 82,
+      "icon": null,
+      "years": 3,
+      "sort_order": 0
+    },
+    {
+      "id": "327fc01b-2c48-4633-89ba-1845046f7358",
+      "name": "AWS CDK",
+      "category": "cloud",
+      "proficiency": 78,
+      "icon": null,
+      "years": 2,
+      "sort_order": 1
+    },
+    {
+      "id": "5bca74ea-a4a6-49b6-b851-30839b1246fe",
+      "name": "DynamoDB",
+      "category": "cloud",
+      "proficiency": 75,
+      "icon": null,
+      "years": 2,
+      "sort_order": 2
+    },
+    {
+      "id": "440cb808-5b66-4c5d-86bd-310bf267d669",
+      "name": "S3 / CloudFront",
+      "category": "cloud",
+      "proficiency": 80,
+      "icon": null,
+      "years": 3,
+      "sort_order": 3
+    },
+    {
+      "id": "34bb8fc8-e567-4154-b450-05aad3f5b0c6",
+      "name": "Firebase",
+      "category": "cloud",
+      "proficiency": 75,
+      "icon": null,
+      "years": 4,
+      "sort_order": 4
+    },
+    {
+      "id": "44911485-4fb0-4104-af07-e3e2b5e5338a",
+      "name": "Vercel",
+      "category": "cloud",
+      "proficiency": 88,
+      "icon": null,
+      "years": 4,
+      "sort_order": 5
+    },
+    {
+      "id": "1899a918-d6b5-4246-9eb0-b6c54c58a879",
+      "name": "Docker",
+      "category": "devops",
+      "proficiency": 70,
+      "icon": null,
+      "years": 3,
+      "sort_order": 0
+    },
+    {
+      "id": "313109da-8a8f-44f6-812e-0ed11705b61e",
+      "name": "GitHub Actions",
+      "category": "devops",
+      "proficiency": 82,
+      "icon": null,
+      "years": 4,
+      "sort_order": 1
+    },
+    {
+      "id": "1c1f21f6-353d-4565-b7de-a4f4cafaa3fe",
+      "name": "Sentry",
+      "category": "devops",
+      "proficiency": 78,
+      "icon": null,
+      "years": 3,
+      "sort_order": 2
+    },
+    {
+      "id": "d6481e14-e44f-453b-88f7-812da52e1227",
+      "name": "React 18+",
+      "category": "frontend",
+      "proficiency": 95,
+      "icon": null,
+      "years": 8,
+      "sort_order": 0
+    },
+    {
+      "id": "bd3d62d7-e909-4d84-b5ff-df581d52bb6e",
+      "name": "Next.js",
+      "category": "frontend",
+      "proficiency": 92,
+      "icon": null,
+      "years": 5,
+      "sort_order": 1
+    },
+    {
+      "id": "8dfa30fb-1226-435e-ab41-a19cd0d80575",
+      "name": "TypeScript",
+      "category": "frontend",
+      "proficiency": 93,
+      "icon": null,
+      "years": 6,
+      "sort_order": 2
+    },
+    {
+      "id": "e80b4955-055a-47ba-b253-db60118dc0c7",
+      "name": "Tailwind CSS",
+      "category": "frontend",
+      "proficiency": 90,
+      "icon": null,
+      "years": 4,
+      "sort_order": 3
+    },
+    {
+      "id": "1024269b-2c5d-4a62-af9a-43f62a969ca6",
+      "name": "HTML5/CSS3",
+      "category": "frontend",
+      "proficiency": 95,
+      "icon": null,
+      "years": 11,
+      "sort_order": 4
+    },
+    {
+      "id": "3e93178a-eecc-4447-9867-d8071c0a95d4",
+      "name": "Framer Motion",
+      "category": "frontend",
+      "proficiency": 80,
+      "icon": null,
+      "years": 2,
+      "sort_order": 5
+    },
+    {
+      "id": "89d77f74-67e0-46fb-9fcf-acd1da599bd3",
+      "name": "React Native",
+      "category": "mobile",
+      "proficiency": 88,
+      "icon": null,
+      "years": 5,
+      "sort_order": 0
+    },
+    {
+      "id": "4f8bc953-8508-4900-8420-5de31f9d9692",
+      "name": "Expo",
+      "category": "mobile",
+      "proficiency": 82,
+      "icon": null,
+      "years": 3,
+      "sort_order": 1
+    },
+    {
+      "id": "79d32b86-496a-49c3-aee7-b80bd33a1649",
+      "name": "Kotlin",
+      "category": "mobile",
+      "proficiency": 55,
+      "icon": null,
+      "years": 2,
+      "sort_order": 2
+    },
+    {
+      "id": "b882e5ec-768a-4498-92f9-ba37ddaa45a0",
+      "name": "Redux / RTK",
+      "category": "state",
+      "proficiency": 88,
+      "icon": null,
+      "years": 6,
+      "sort_order": 0
+    },
+    {
+      "id": "fd4e506e-b3ba-4800-9e45-2cd26dad4e5a",
+      "name": "TanStack Query",
+      "category": "state",
+      "proficiency": 85,
+      "icon": null,
+      "years": 3,
+      "sort_order": 1
+    },
+    {
+      "id": "bcf09967-ce40-4dd1-bd6a-99312e8b8f59",
+      "name": "Zustand",
+      "category": "state",
+      "proficiency": 80,
+      "icon": null,
+      "years": 2,
+      "sort_order": 2
+    },
+    {
+      "id": "1e6fdb76-935c-42f6-974a-81929eeebb68",
+      "name": "Apollo GraphQL",
+      "category": "state",
+      "proficiency": 75,
+      "icon": null,
+      "years": 2,
+      "sort_order": 3
+    },
+    {
+      "id": "fbad4d02-124b-4564-aac3-51ba420a85f8",
+      "name": "Jest / RTL",
+      "category": "testing",
+      "proficiency": 80,
+      "icon": null,
+      "years": 5,
+      "sort_order": 0
+    },
+    {
+      "id": "3e858204-5d89-484e-a294-2fb4b8f9ec4c",
+      "name": "Playwright",
+      "category": "testing",
+      "proficiency": 70,
+      "icon": null,
+      "years": 2,
+      "sort_order": 1
+    },
+    {
+      "id": "caac984b-8d3f-47e9-8aa9-f9af7a898048",
+      "name": "Detox",
+      "category": "testing",
+      "proficiency": 65,
+      "icon": null,
+      "years": 1,
+      "sort_order": 2
+    },
+    {
+      "id": "61e8627c-215b-42bb-9cdd-4ab37be99a28",
+      "name": "Storybook",
+      "category": "tools",
+      "proficiency": 78,
+      "icon": null,
+      "years": 4,
+      "sort_order": 0
+    },
+    {
+      "id": "846a3696-3e9c-4f9f-9b9f-1786843d8063",
+      "name": "Figma",
+      "category": "tools",
+      "proficiency": 72,
+      "icon": null,
+      "years": 3,
+      "sort_order": 1
+    },
+    {
+      "id": "6ff3e185-7af9-4fa9-8e58-5165dec6501f",
+      "name": "Linear / JIRA",
+      "category": "tools",
+      "proficiency": 85,
+      "icon": null,
+      "years": 8,
+      "sort_order": 2
+    }
+  ],
+  "testimonials": [
+    {
+      "id": "102edd9d-e8ca-42c5-bab7-5a70fe223991",
+      "quote": "Khubaib is one of the most skilled frontend engineers I've worked with. He took ownership of our ad delivery platform and delivered a production-grade system that handles tens of thousands of impressions daily.",
+      "author_name": "Alex Rivera",
+      "author_title": "CTO",
+      "company": "Shopsense AI",
+      "avatar_url": null,
+      "sort_order": 0
+    },
+    {
+      "id": "9e87b769-0a44-461d-b8c8-7ad345f4546d",
+      "quote": "His work on migrating our legacy CRA apps to Vite was flawless. Build times dropped by 70% and developer satisfaction went through the roof. Khubaib consistently ships high-quality, well-tested code.",
+      "author_name": "Sarah Chen",
+      "author_title": "Engineering Manager",
+      "company": "Achieve",
+      "avatar_url": null,
+      "sort_order": 1
+    },
+    {
+      "id": "e92e4539-2de8-40ff-ad31-138e34a2476c",
+      "quote": "Khubaib created our entire design system from scratch as a private npm package. It unified the UI across 8 teams and 40+ engineers. His attention to DX and component API design is exceptional.",
+      "author_name": "Adi Prasetyo",
+      "author_title": "VP of Engineering",
+      "company": "GudangAda",
+      "avatar_url": null,
+      "sort_order": 2
+    }
+  ],
+  "media": [
+    {
+      "id": "f371cd72-66e9-49dd-999b-1c205bbeaffc",
+      "filename": "1773651718282.jpeg",
+      "url": "https://pub-22656635402b446b8d3ef37bc1be7feb.r2.dev/media/a824f062-6600-42af-bdc7-6203e551ee22-1773651718282.jpeg",
+      "alt_text": null,
+      "size": 79552,
+      "mime_type": "image/jpeg",
+      "uploaded_at": "2026-04-12T11:38:38.92653Z"
+    }
+  ]
+}
