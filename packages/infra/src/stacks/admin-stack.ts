@@ -64,6 +64,11 @@ export class AdminStack extends cdk.Stack {
       "AnthropicSecret",
       ssmGet(paths.anthropicApiKeyArn),
     );
+    const revalidateSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "RevalidateSecret",
+      ssmGet(paths.revalidateSecretArn),
+    );
 
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
@@ -94,11 +99,14 @@ export class AdminStack extends cdk.Stack {
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
+        REVALIDATE_SECRET_ARN: revalidateSecret.secretArn,
+        NEXT_PUBLIC_WEB_URL: ssmGet(paths.webSiteUrl),
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
         anthropicSecret.grantRead(fn);
+        revalidateSecret.grantRead(fn);
       },
     });
 

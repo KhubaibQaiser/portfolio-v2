@@ -1,9 +1,10 @@
+import { getRevalidateSecret } from "@portfolio/ai/load-api-keys";
 import { logger } from "@/lib/logger";
 
 /** Notifies the public site to revalidate cached content for the given tags. */
 export async function revalidateWeb(tags: string[]) {
   const webUrl = process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/$/, "");
-  const secret = process.env.REVALIDATE_SECRET;
+  const secret = await getRevalidateSecret();
   if (!webUrl || !secret) return;
 
   try {

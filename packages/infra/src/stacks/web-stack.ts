@@ -45,6 +45,11 @@ export class WebStack extends cdk.Stack {
       "GroqSecret",
       ssm.StringParameter.valueForStringParameter(this, paths.groqApiKeyArn),
     );
+    const revalidateSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "RevalidateSecret",
+      ssm.StringParameter.valueForStringParameter(this, paths.revalidateSecretArn),
+    );
 
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
@@ -69,11 +74,21 @@ export class WebStack extends cdk.Stack {
           ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
           : {}),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
+        REVALIDATE_SECRET_ARN: revalidateSecret.secretArn,
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
+        revalidateSecret.grantRead(fn);
       },
+    });
+
+    const webSiteUrl = config.domainEnabled
+      ? `https://${config.domainName}`
+      : `https://${site.distribution.distributionDomainName}`;
+    new ssm.StringParameter(this, "WebSiteUrlParam", {
+      parameterName: paths.webSiteUrl,
+      stringValue: webSiteUrl,
     });
 
     if (config.domainEnabled) {

@@ -15,6 +15,7 @@ export const env = createEnv({
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     // Revalidation webhook shared secret (also set in apps/admin)
     REVALIDATE_SECRET: z.string().min(1).optional(),
+    REVALIDATE_SECRET_ARN: z.string().min(1).optional(),
     // Chat rate limit tuning (parsed as ints by chat-rate-limit.ts)
     CHAT_RATE_LIMIT_MAX: z.string().optional(),
     CHAT_RATE_LIMIT_WINDOW_SEC: z.string().optional(),
@@ -46,6 +47,7 @@ export const env = createEnv({
   runtimeEnv: {
     GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
     REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
+    REVALIDATE_SECRET_ARN: process.env.REVALIDATE_SECRET_ARN,
     CHAT_RATE_LIMIT_MAX: process.env.CHAT_RATE_LIMIT_MAX,
     CHAT_RATE_LIMIT_WINDOW_SEC: process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
