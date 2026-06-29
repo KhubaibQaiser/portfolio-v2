@@ -38,9 +38,11 @@ export const env = createEnv({
     S3_ENDPOINT: z.string().url().optional(),
     S3_MEDIA_BUCKET: z.string().min(1).optional(),
     MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
+    // Public portfolio URL for server-side revalidation (prod: CDK from SSM)
+    WEB_SITE_URL: z.string().url().optional(),
   },
   client: {
-    // Public portfolio URL used to trigger revalidation
+    // Legacy local-dev alias; prefer WEB_SITE_URL in server code
     NEXT_PUBLIC_WEB_URL: z.string().url().optional(),
   },
   runtimeEnv: {
@@ -62,6 +64,7 @@ export const env = createEnv({
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_MEDIA_BUCKET: process.env.S3_MEDIA_BUCKET,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
+    WEB_SITE_URL: process.env.WEB_SITE_URL,
     NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

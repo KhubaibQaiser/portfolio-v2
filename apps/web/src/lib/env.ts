@@ -36,6 +36,10 @@ export const env = createEnv({
     // Public URL objects are served from (S3/CloudFront). Read server-side by
     // the media store and at build time for next.config image patterns.
     MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
+    // OpenNext / CloudFront on-demand revalidation (set by NextjsSite CDK)
+    CACHE_DYNAMO_TABLE: z.string().min(1).optional(),
+    OPEN_NEXT_BUILD_ID: z.string().min(1).optional(),
+    CLOUDFRONT_DISTRIBUTION_ID: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
@@ -67,6 +71,9 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
+    CACHE_DYNAMO_TABLE: process.env.CACHE_DYNAMO_TABLE,
+    OPEN_NEXT_BUILD_ID: process.env.OPEN_NEXT_BUILD_ID,
+    CLOUDFRONT_DISTRIBUTION_ID: process.env.CLOUDFRONT_DISTRIBUTION_ID,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
