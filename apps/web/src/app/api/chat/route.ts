@@ -93,7 +93,7 @@ Guidelines:
 - Never make up information not included in the context above`;
   },
   ["chat-system-prompt"],
-  { revalidate: 3600 },
+  { revalidate: 10 },
 );
 
 function createStream(

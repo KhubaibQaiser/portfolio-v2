@@ -19,5 +19,5 @@ export const getResumeData = cache(
   async (): Promise<ResumeData> =>
     sharedGetResumeData(getContentRepository(), { websiteHost }),
   ["resume-data"],
-  { revalidate: 3600 },
+  { revalidate: 10 },
 );

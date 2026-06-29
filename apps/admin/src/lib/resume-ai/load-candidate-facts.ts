@@ -82,5 +82,5 @@ export async function loadCandidateFactsUncached(): Promise<CandidateFacts> {
 export const loadCandidateFacts = unstable_cache(
   async (): Promise<CandidateFacts> => loadCandidateFactsUncached(),
   ["resume-ai:candidate-facts"],
-  { revalidate: 3600 },
+  { revalidate: 10 },
 );
