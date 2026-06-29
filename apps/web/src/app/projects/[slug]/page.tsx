@@ -1,73 +1,18 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
 import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
-
-type ProjectCase = {
-  slug: string;
-  title: string;
-  role: string;
-  company: string;
-  period: string;
-  summary: string;
-  problem: string;
-  solution: string;
-  impact: string[];
-  tech: string[];
-  github?: string;
-  live?: string;
-};
-
-const projectCases: Record<string, ProjectCase> = {
-  "shopsense-ai-ad-platform": {
-    slug: "shopsense-ai-ad-platform",
-    title: "Shopsense AI Ad Platform",
-    role: "Senior Software Engineer",
-    company: "Shopsense AI",
-    period: "Aug 2024 – Present",
-    summary:
-      "Serverless ad delivery system handling 50K+ daily impressions across enterprise clients.",
-    problem:
-      "Shopsense AI needed a scalable, cost-efficient ad delivery platform capable of handling tens of thousands of daily impressions with real-time analytics and sub-second response times.",
-    solution:
-      "Architected a fully serverless system using AWS CDK for infrastructure-as-code, Lambda for compute, DynamoDB for low-latency data access, and SQS for event processing. Implemented CloudFront edge caching for ad assets and built a real-time analytics pipeline.",
-    impact: [
-      "50K+ daily ad impressions served",
-      "20%+ engagement improvement through A/B testing pipeline",
-      "Sub-100ms ad delivery latency via CloudFront edge",
-      "Zero-downtime deployments with CDK-managed infrastructure",
-    ],
-    tech: ["AWS CDK", "Lambda", "DynamoDB", "SQS", "CloudFront", "React", "TypeScript"],
-  },
-  "gudangada-design-system": {
-    slug: "gudangada-design-system",
-    title: "GudangAda Design System",
-    role: "Senior Software Engineer",
-    company: "GudangAda",
-    period: "Sep 2020 – Jan 2023",
-    summary:
-      "Private npm component library adopted by 40+ engineers across 8 product teams.",
-    problem:
-      "GudangAda had 8 separate product teams building inconsistent UIs with duplicated components, leading to design drift, bugs, and wasted engineering time.",
-    solution:
-      "Created a centralized design system as a private npm package with Storybook documentation, automated visual regression testing, and semantic versioning. Established contribution guidelines and component API standards.",
-    impact: [
-      "Adopted by 40+ engineers across 8 teams",
-      "Reduced UI development time by ~40%",
-      "Consistent design language across all products",
-      "Automated visual regression testing caught 200+ UI bugs before production",
-    ],
-    tech: ["React", "TypeScript", "Storybook", "styled-components", "npm", "Jest"],
-  },
-};
+import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
 
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  return Object.keys(projectCases).map((slug) => ({ slug }));
+  const projects = await fetchAllProjects();
+  return projects.map((project) => ({ slug: project.slug }));
 }
 
 export async function generateMetadata({
@@ -76,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = projectCases[slug];
+  const project = await fetchProjectBySlug(slug);
   if (!project) return { title: "Project Not Found" };
 
   return {
@@ -85,13 +30,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProjectCaseStudy({
+export default async function ProjectDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = projectCases[slug];
+  const project = await fetchProjectBySlug(slug);
 
   if (!project) {
     notFound();
@@ -110,81 +55,85 @@ export default async function ProjectCaseStudy({
         </Link>
 
         <h1 className="text-h1 mt-6 font-bold tracking-tight">{project.title}</h1>
+        <p className="text-muted-foreground mt-3 text-lg leading-relaxed">{project.summary}</p>
         <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-sm">
-          <span className="text-accent font-medium">{project.company}</span>
+          <span className="text-accent font-medium">{project.role}</span>
           <span>·</span>
-          <span>{project.role}</span>
-          <span>·</span>
-          <span className="font-mono">{project.period}</span>
+          <span className="capitalize">{project.type.replace("-", " ")}</span>
         </div>
 
-        {/* Links */}
-        <div className="mt-4 flex items-center gap-3">
-          {project.github && (
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          {project.github_url && (
             <TrackedExternalLink
-              href={project.github}
+              href={project.github_url}
               destination="github"
-              location="project_case_study"
+              location="project_detail"
               className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
             >
               <GitHubIcon className="h-4 w-4" />
               Source
             </TrackedExternalLink>
           )}
-          {project.live && (
+          {project.live_url && (
             <TrackedExternalLink
-              href={project.live}
+              href={project.live_url}
               destination="live_demo"
-              location="project_case_study"
+              location="project_detail"
               className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
             >
               <ExternalLink className="h-4 w-4" />
               Live Demo
             </TrackedExternalLink>
           )}
+          {project.playstore_url && (
+            <TrackedExternalLink
+              href={project.playstore_url}
+              destination="playstore"
+              location="project_detail"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Play Store
+            </TrackedExternalLink>
+          )}
+          {project.appstore_url && (
+            <TrackedExternalLink
+              href={project.appstore_url}
+              destination="appstore"
+              location="project_detail"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
+            >
+              <ExternalLink className="h-4 w-4" />
+              App Store
+            </TrackedExternalLink>
+          )}
         </div>
 
-        {/* Cover placeholder */}
-        <div className="bg-muted mt-8 aspect-video rounded-2xl" />
+        <div className="bg-muted relative mt-8 aspect-video overflow-hidden rounded-2xl">
+          {project.cover_url ? (
+            <Image
+              src={project.cover_url}
+              alt={project.title}
+              fill
+              sizes="(min-width: 768px) 768px, 100vw"
+              className="object-cover"
+            />
+          ) : null}
+        </div>
 
-        {/* Problem */}
         <section className="mt-12">
           <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
-            The Problem
+            Overview
           </h2>
-          <p className="text-muted-foreground mt-3 leading-relaxed">{project.problem}</p>
+          <p className="text-muted-foreground mt-3 leading-relaxed">{project.description}</p>
         </section>
 
-        {/* Solution */}
-        <section className="mt-10">
-          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
-            My Solution
-          </h2>
-          <p className="text-muted-foreground mt-3 leading-relaxed">{project.solution}</p>
-        </section>
-
-        {/* Impact */}
-        <section className="mt-10">
-          <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
-            Impact
-          </h2>
-          <ul className="mt-3 space-y-2">
-            {project.impact.map((item, i) => (
-              <li key={i} className="text-muted-foreground flex gap-2 leading-relaxed">
-                <span className="bg-accent mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Tech stack */}
         <section className="mt-10">
           <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             Tech Stack
           </h2>
           <div className="mt-3 flex flex-wrap gap-2">
-            {project.tech.map((t) => (
+            {project.tech_tags.map((t) => (
               <span
                 key={t}
                 className="bg-accent/10 text-accent rounded-full px-3 py-1 font-mono text-sm"

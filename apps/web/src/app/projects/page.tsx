@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProjectsGrid } from "@/components/sections/projects-grid";
+import { fetchAllProjects } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const projects = await fetchAllProjects();
+
   return (
     <div className="py-32">
       <div className="mx-auto max-w-container px-(--container-padding)">
@@ -21,7 +24,7 @@ export default function ProjectsPage() {
           serverless cloud systems to educational games.
         </p>
       </div>
-      <ProjectsGrid />
+      <ProjectsGrid projects={projects} />
     </div>
   );
 }
