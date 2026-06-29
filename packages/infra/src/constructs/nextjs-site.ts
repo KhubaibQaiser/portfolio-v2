@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
@@ -12,6 +12,7 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as cr from "aws-cdk-lib/custom-resources";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
 import { Construct } from "constructs";
 
@@ -106,6 +107,37 @@ export class NextjsSite extends Construct {
       sortKey: { name: "revalidatedAt", type: dynamodb.AttributeType.NUMBER },
       projectionType: dynamodb.ProjectionType.ALL,
     });
+
+    // OpenNext ships a custom-resource Lambda that seeds the tag cache from
+    // dynamodb-cache.json at deploy time. Without it, revalidateTag never
+    // enqueues ISR work (SQS Sent stays 0).
+    const dynamoProviderDir = path.join(openNextDir, "dynamodb-provider");
+    if (existsSync(dynamoProviderDir)) {
+      const dynamoProviderFn = new lambda.Function(this, "DynamoProviderFn", {
+        runtime,
+        architecture,
+        handler: "index.handler",
+        code: lambda.Code.fromAsset(dynamoProviderDir),
+        timeout: cdk.Duration.minutes(5),
+        logGroup: logGroupFor("DynamoProviderFn"),
+        environment: {
+          CACHE_DYNAMO_TABLE: tagTable.tableName,
+          OPEN_NEXT_BUILD_ID: buildId,
+          CACHE_BUCKET_REGION: region,
+        },
+      });
+      tagTable.grantWriteData(dynamoProviderFn);
+
+      const provider = new cr.Provider(this, "DynamoProvider", {
+        onEventHandler: dynamoProviderFn,
+        logRetention: logs.RetentionDays.TWO_WEEKS,
+      });
+
+      new cdk.CustomResource(this, "TagCacheSeed", {
+        serviceToken: provider.serviceToken,
+        properties: { buildId },
+      });
+    }
 
     const revalidationQueue = new sqs.Queue(this, "RevalidationQueue", {
       fifo: true,
@@ -283,6 +315,19 @@ export class NextjsSite extends Construct {
         invokedViaFunctionUrl: true,
       });
     }
+
+    this.serverFunction.addEnvironment(
+      "CLOUDFRONT_DISTRIBUTION_ID",
+      this.distribution.distributionId,
+    );
+    this.serverFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["cloudfront:CreateInvalidation"],
+        resources: [
+          `arn:aws:cloudfront::${cdk.Stack.of(this).account}:distribution/${this.distribution.distributionId}`,
+        ],
+      }),
+    );
 
     // Upload assets (browser-cacheable) and the ISR cache (private) to S3.
     new s3deploy.BucketDeployment(this, "AssetsDeployment", {

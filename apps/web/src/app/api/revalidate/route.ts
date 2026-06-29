@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
 import { getRevalidateSecret } from "@portfolio/ai/load-api-keys";
+import { revalidateContentCache } from "@/lib/revalidate-content-cache";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
 
@@ -22,23 +22,14 @@ export async function POST(request: Request) {
       tags?: string[];
     };
 
-    if (paths) {
-      for (const path of paths) {
-        revalidatePath(path);
-      }
-    }
+    const result = await revalidateContentCache({ tags, paths });
 
-    if (tags && tags.length > 0) {
-      for (const tag of tags) {
-        revalidateTag(tag, { expire: 0 });
-      }
-      /* unstable_cache + tag invalidation: also refresh the app router tree so pages pick up new data */
-      revalidatePath("/", "layout");
+    if (!result.success) {
+      return NextResponse.json(result, { status: 500 });
     }
 
     return NextResponse.json({
-      success: true,
-      revalidated: { paths, tags },
+      ...result,
       now: Date.now(),
     });
   } catch (error) {

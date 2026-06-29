@@ -100,7 +100,7 @@ export class AdminStack extends cdk.Stack {
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
         REVALIDATE_SECRET_ARN: revalidateSecret.secretArn,
-        NEXT_PUBLIC_WEB_URL: ssmGet(paths.webSiteUrl),
+        WEB_SITE_URL: ssmGet(paths.webSiteUrl),
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);

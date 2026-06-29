@@ -1,24 +1,20 @@
 import { getRevalidateSecret } from "@portfolio/ai/load-api-keys";
+import { WEB_CONTENT_TAGS } from "@portfolio/shared/constants";
 import { logger } from "@/lib/logger";
 
-/** Tags used by the public site's `unstable_cache` wrappers in apps/web/src/lib/data.ts */
-export const WEB_CONTENT_TAGS = [
-  "hero",
-  "about",
-  "experience",
-  "skills",
-  "site-config",
-  "projects",
-  "testimonials",
-  "resume",
-  "media",
-] as const;
+export { WEB_CONTENT_TAGS };
 
 export type RevalidateWebResult = { ok: true } | { ok: false; error: string };
 
+function resolveWebSiteUrl(): string | undefined {
+  const serverUrl = process.env.WEB_SITE_URL?.replace(/\/$/, "");
+  if (serverUrl) return serverUrl;
+  return process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/$/, "");
+}
+
 /** Notifies the public site to revalidate cached content for the given tags. */
 export async function revalidateWeb(tags: readonly string[]): Promise<RevalidateWebResult> {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL?.replace(/\/$/, "");
+  const webUrl = resolveWebSiteUrl();
 
   let secret: string | undefined;
   try {
@@ -30,7 +26,10 @@ export async function revalidateWeb(tags: readonly string[]): Promise<Revalidate
   }
 
   if (!webUrl) {
-    return { ok: false, error: "NEXT_PUBLIC_WEB_URL is not configured" };
+    return {
+      ok: false,
+      error: "WEB_SITE_URL (or NEXT_PUBLIC_WEB_URL for local dev) is not configured",
+    };
   }
   if (!secret) {
     return { ok: false, error: "Revalidation secret is not configured" };
@@ -47,17 +46,26 @@ export async function revalidateWeb(tags: readonly string[]): Promise<Revalidate
       body: JSON.stringify({ tags: [...tags] }),
     });
 
-    if (res.ok) {
+    const body = (await res.json().catch(() => null)) as
+      | { success?: boolean; error?: string }
+      | null;
+
+    if (res.ok && body?.success) {
       logger.info("web revalidation triggered", { tags });
       return { ok: true };
     }
 
-    const body = await res.text();
-    logger.warn("web revalidation failed", { tags, status: res.status, body });
-    return {
-      ok: false,
-      error: `Revalidation failed (${res.status})${body ? `: ${body}` : ""}`,
-    };
+    const errorMessage =
+      body?.error ??
+      (typeof body === "string" ? body : null) ??
+      `Revalidation failed (${res.status})`;
+
+    logger.warn("web revalidation failed", {
+      tags,
+      status: res.status,
+      error: errorMessage,
+    });
+    return { ok: false, error: errorMessage };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     logger.warn("web revalidation request failed", { tags, error: message });

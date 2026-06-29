@@ -72,7 +72,10 @@ export async function POST(request: Request) {
 
   try {
     const row = await getContentRepository().insertMedia(parsed.data);
-    await revalidateWeb(["media"]);
+    const cacheResult = await revalidateWeb(["media"]);
+    if (!cacheResult.ok) {
+      return NextResponse.json({ error: cacheResult.error }, { status: 502 });
+    }
     return NextResponse.json({ media: row });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to save media record";
