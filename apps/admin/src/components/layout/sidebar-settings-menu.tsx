@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, LogOut, RefreshCw, Settings } from "lucide-react";
-import { purgeWebCache } from "@/lib/actions";
-import { useToast } from "@/components/toast/toast-provider";
-import { runServerAction } from "@/lib/run-server-action";
+import { LogOut, Settings } from "lucide-react";
 
 export function SidebarSettingsMenu() {
-  const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [purging, setPurging] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,15 +32,6 @@ export function SidebarSettingsMenu() {
     window.location.assign("/auth/logout");
   }
 
-  async function handlePurgeCache() {
-    setPurging(true);
-    const result = await runServerAction(() => purgeWebCache(), toast, {
-      successMessage: "Site cache refreshed",
-    });
-    setPurging(false);
-    if (result.success) setOpen(false);
-  }
-
   return (
     <div ref={menuRef} className="relative">
       <button
@@ -65,21 +51,6 @@ export function SidebarSettingsMenu() {
           role="menu"
           className="border-border bg-background absolute right-2 bottom-full left-2 mb-1 overflow-hidden rounded-lg border shadow-md"
         >
-          <button
-            type="button"
-            role="menuitem"
-            disabled={purging}
-            onClick={handlePurgeCache}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors disabled:opacity-60"
-          >
-            {purging ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Revalidate site cache
-          </button>
-          <div className="border-border border-t" />
           <button
             type="button"
             role="menuitem"

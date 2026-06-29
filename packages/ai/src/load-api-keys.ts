@@ -67,25 +67,3 @@ export async function ensureAnthropicApiKey(): Promise<void> {
 export async function ensureAiApiKeys(): Promise<void> {
   await Promise.all([ensureGroqApiKey(), ensureAnthropicApiKey()]);
 }
-
-let revalidateSecretLoaded = false;
-
-/**
- * Shared secret for POST /api/revalidate. Local dev uses `REVALIDATE_SECRET`
- * from `.env.local`; production fetches from Secrets Manager via
- * `REVALIDATE_SECRET_ARN` (CDK-generated, no out-of-band injection).
- */
-export async function getRevalidateSecret(): Promise<string | undefined> {
-  const local = process.env.REVALIDATE_SECRET?.trim();
-  if (local) return local;
-
-  const secretArn = process.env.REVALIDATE_SECRET_ARN;
-  if (!secretArn) return undefined;
-
-  if (!revalidateSecretLoaded) {
-    process.env.REVALIDATE_SECRET = await fetchSecretString(secretArn);
-    revalidateSecretLoaded = true;
-  }
-
-  return process.env.REVALIDATE_SECRET;
-}

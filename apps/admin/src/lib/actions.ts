@@ -12,20 +12,11 @@ import {
   resumeSchema,
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
-import { revalidateWeb } from "@/lib/revalidate-web";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
 const repo = getContentRepository();
-
-async function revalidatePublicSite(
-  tags: readonly string[],
-): Promise<ActionResult | null> {
-  const result = await revalidateWeb(tags);
-  if (!result.ok) return { success: false, error: result.error };
-  return null;
-}
 
 // ---------------------------------------------------------------------------
 // Hero
@@ -42,8 +33,6 @@ export async function saveHero(
 
   try {
     await repo.upsertHero(parsed.data);
-    const cacheErr = await revalidatePublicSite(["hero"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -65,8 +54,6 @@ export async function saveAbout(
 
   try {
     await repo.upsertAbout(parsed.data);
-    const cacheErr = await revalidatePublicSite(["about"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -93,10 +80,6 @@ export async function saveExperience(
     } else {
       await repo.insertExperience(parsed.data);
     }
-    // The public "companies" stat is derived from Experience at read time, so
-    // revalidate About too — no stored count to sync.
-    const cacheErr = await revalidatePublicSite(["experience", "about"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -109,8 +92,6 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteExperience(id);
-    const cacheErr = await revalidatePublicSite(["experience", "about"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -137,8 +118,6 @@ export async function saveProject(
     } else {
       await repo.insertProject(parsed.data);
     }
-    const cacheErr = await revalidatePublicSite(["projects"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -151,8 +130,6 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteProject(id);
-    const cacheErr = await revalidatePublicSite(["projects"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -180,8 +157,6 @@ export async function saveSkills(
 
   try {
     await repo.batchUpsertSkills(skills);
-    const cacheErr = await revalidatePublicSite(["skills"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -194,8 +169,6 @@ export async function deleteSkill(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteSkill(id);
-    const cacheErr = await revalidatePublicSite(["skills"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -222,8 +195,6 @@ export async function saveTestimonial(
     } else {
       await repo.insertTestimonial(parsed.data);
     }
-    const cacheErr = await revalidatePublicSite(["testimonials"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -236,8 +207,6 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
 
   try {
     await repo.deleteTestimonial(id);
-    const cacheErr = await revalidatePublicSite(["testimonials"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -259,8 +228,6 @@ export async function saveSiteConfig(
 
   try {
     await repo.upsertSiteConfig(parsed.data);
-    const cacheErr = await revalidatePublicSite(["site-config"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -294,8 +261,6 @@ export async function saveResume(
 
   try {
     await repo.upsertResume(parsed.data);
-    const cacheErr = await revalidatePublicSite(["resume"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
@@ -312,8 +277,6 @@ export async function deleteMediaAsset(id: string): Promise<ActionResult> {
 
   try {
     const row = await repo.getMediaById(id);
-    // Lazy import so the S3 SDK isn't pulled into every editor page that imports
-    // these server actions (it lives in @portfolio/data/media for that reason).
     const { getMediaStore } = await import("@portfolio/data/media");
     const mediaStore = getMediaStore();
     if (mediaStore.isConfigured()) {
@@ -321,25 +284,8 @@ export async function deleteMediaAsset(id: string): Promise<ActionResult> {
       if (key) await mediaStore.deleteObject(key);
     }
     await repo.deleteMediaRow(id);
-    const cacheErr = await revalidatePublicSite(["media"]);
-    if (cacheErr) return cacheErr;
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
-}
-
-// ---------------------------------------------------------------------------
-// Cache
-// ---------------------------------------------------------------------------
-
-/** Purges all public-site content caches (e.g. after a direct DDB seed). */
-export async function purgeWebCache(): Promise<ActionResult> {
-  const auth = await requireAdmin();
-  if (!auth.ok) return { success: false, error: auth.error };
-
-  const { WEB_CONTENT_TAGS } = await import("@/lib/revalidate-web");
-  const cacheErr = await revalidatePublicSite(WEB_CONTENT_TAGS);
-  if (cacheErr) return cacheErr;
-  return { success: true };
 }

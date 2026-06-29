@@ -32,12 +32,6 @@ export class AdminStack extends cdk.Stack {
     const { config } = props;
     const paths = ssmPaths(config);
 
-    // Public origin for OAuth redirect/logout URIs. The CloudFront Host header
-    // is stripped before the Lambda origin, so the app can't derive this at
-    // runtime — and referencing the distribution domain here would create a
-    // Function↔Distribution cycle. Instead use the registered admin origin
-    // (custom domain when enabled, else the CloudFront URL from `adminUrls`),
-    // which must match a Cognito callback origin anyway.
     const appOrigin = config.domainEnabled
       ? `https://admin.${config.domainName}`
       : config.adminUrls.find((u) => u.startsWith("https://"));
@@ -46,14 +40,9 @@ export class AdminStack extends cdk.Stack {
       this,
       paths.mediaBucketName,
     );
-    // Cognito ids resolved from the SSM registry at deploy time (the AuthStack
-    // publishes them) — non-secret config, baked into the Lambda env.
     const ssmGet = (path: string) =>
       ssm.StringParameter.valueForStringParameter(this, path);
 
-    // Import the CDK-owned secrets by their complete ARNs (published to SSM by
-    // the DataStack). grantRead scopes IAM to exactly those ARNs, and we pass the
-    // same complete ARNs to the app — no hand-built or partial ARNs anywhere.
     const groqSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       "GroqSecret",
@@ -63,11 +52,6 @@ export class AdminStack extends cdk.Stack {
       this,
       "AnthropicSecret",
       ssmGet(paths.anthropicApiKeyArn),
-    );
-    const revalidateSecret = secretsmanager.Secret.fromSecretCompleteArn(
-      this,
-      "RevalidateSecret",
-      ssmGet(paths.revalidateSecretArn),
     );
 
     const site = new NextjsSite(this, "Site", {
@@ -85,8 +69,6 @@ export class AdminStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
-        // Powertools structured logger (see @portfolio/observability). WARN keeps
-        // ingestion low; the AppErrors metric filter below tracks ERROR lines.
         POWERTOOLS_SERVICE_NAME: "portfolio-admin",
         POWERTOOLS_LOG_LEVEL: "WARN",
         COGNITO_REGION: config.region,
@@ -94,19 +76,14 @@ export class AdminStack extends cdk.Stack {
         COGNITO_CLIENT_ID: ssmGet(paths.authUserPoolClientId),
         COGNITO_DOMAIN: ssmGet(paths.authHostedUiDomain),
         ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
-        // No fallback in-app: the admin throws if this is empty. Passed via
-        // `-c adminAllowedEmails=...` (GitHub variable) at deploy.
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
-        REVALIDATE_SECRET_ARN: revalidateSecret.secretArn,
-        WEB_SITE_URL: ssmGet(paths.webSiteUrl),
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
         anthropicSecret.grantRead(fn);
-        revalidateSecret.grantRead(fn);
       },
     });
 
@@ -115,8 +92,6 @@ export class AdminStack extends cdk.Stack {
       aliasToCloudFront(this, zone, site.distribution, "AdminAlias", "admin");
     }
 
-    // Runtime errors → shared AppErrors metric (same namespace/name as the web
-    // app, no dimensions, so the SharedStack alarms on both at once). ADR 0002.
     const errorMetric = appErrorMetric(config);
     new logs.MetricFilter(this, "AppErrorMetric", {
       logGroup: site.serverLogGroup,

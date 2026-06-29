@@ -1,19 +1,3 @@
-/** Tags used by the public site's `unstable_cache` wrappers (apps/web/src/lib/data.ts). */
-export const WEB_CONTENT_TAGS = [
-  "hero",
-  "about",
-  "experience",
-  "skills",
-  "site-config",
-  "projects",
-  "testimonials",
-  "resume",
-  "media",
-] as const;
-
-/** Public routes that must be refreshed when CMS content changes. */
-export const WEB_CONTENT_PATHS = ["/", "/projects", "/resume"] as const;
-
 /**
  * Skill category display labels — used by both admin editor and web UI.
  * This is configuration, not data, so it stays here rather than in Supabase.

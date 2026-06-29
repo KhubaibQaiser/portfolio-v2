@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     "30+ web, mobile, and game projects built with React, Next.js, React Native, AWS, and more.",
 };
 
+export const revalidate = 3600;
+
 export default function ProjectsPage() {
   return (
     <div className="py-32">
