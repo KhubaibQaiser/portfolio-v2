@@ -19,6 +19,8 @@ import {
 } from "@/lib/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 
+export const revalidate = 3600;
+
 export default async function HomePage() {
   const [hero, about, experience, featuredProjects, skills, testimonials, siteConfig] =
     await Promise.all([

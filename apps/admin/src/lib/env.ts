@@ -11,26 +11,15 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
-    // Revalidation webhook shared secret (matches apps/web)
-    REVALIDATE_SECRET: z.string().min(1).optional(),
-    REVALIDATE_SECRET_ARN: z.string().min(1).optional(),
-    // Cognito auth (Hosted UI + OAuth code flow)
     COGNITO_REGION: z.string().min(1).optional(),
     COGNITO_USER_POOL_ID: z.string().min(1).optional(),
     COGNITO_CLIENT_ID: z.string().min(1).optional(),
     COGNITO_DOMAIN: z.string().url().optional(),
-    // Public app origin behind CloudFront (for OAuth redirect/logout URIs)
     APP_ORIGIN: z.string().url().optional(),
-    // Admin allowlist (CSV of emails). Set per-deploy from a GitHub variable;
-    // resolved at runtime via lib/admin-emails.ts (reads process.env to stay
-    // edge-safe in middleware), which throws when unset — there is no fallback.
-    // Optional here so build-only steps don't require it; enforced at runtime.
     ADMIN_ALLOWED_EMAILS: z.string().optional(),
-    // Resume AI — Secrets Manager complete ARNs only
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     ANTHROPIC_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     RESUME_GEN_DAILY_USD_CAP: z.string().optional(),
-    // Data layer (consumed by @portfolio/data)
     DATA_BACKEND: z.enum(["fixture", "dynamo"]).optional(),
     DYNAMO_TABLE_PREFIX: z.string().min(1).optional(),
     DYNAMODB_LOCAL_ENDPOINT: z.string().url().optional(),
@@ -38,16 +27,9 @@ export const env = createEnv({
     S3_ENDPOINT: z.string().url().optional(),
     S3_MEDIA_BUCKET: z.string().min(1).optional(),
     MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
-    // Public portfolio URL for server-side revalidation (prod: CDK from SSM)
-    WEB_SITE_URL: z.string().url().optional(),
   },
-  client: {
-    // Legacy local-dev alias; prefer WEB_SITE_URL in server code
-    NEXT_PUBLIC_WEB_URL: z.string().url().optional(),
-  },
+  client: {},
   runtimeEnv: {
-    REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
-    REVALIDATE_SECRET_ARN: process.env.REVALIDATE_SECRET_ARN,
     COGNITO_REGION: process.env.COGNITO_REGION,
     COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID,
     COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
@@ -64,8 +46,6 @@ export const env = createEnv({
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_MEDIA_BUCKET: process.env.S3_MEDIA_BUCKET,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
-    WEB_SITE_URL: process.env.WEB_SITE_URL,
-    NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

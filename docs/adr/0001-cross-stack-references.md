@@ -132,17 +132,6 @@ is still by ARN.
   `delete-secret --force-delete-without-recovery`. To exercise AI locally, copy
   the complete ARN from SSM and use AWS credentials.
 
-- **Cache revalidation:** the `DataStack` creates `/portfolio/revalidate-secret`
-  with a CDK-generated value (`generateSecretString` — no out-of-band injection).
-  The complete ARN is published to SSM at `/portfolio/revalidate/secret-arn`; Web
-  and Admin import it, grant `GetSecretValue`, and pass `REVALIDATE_SECRET_ARN` to
-  the Lambda env. The app resolves the secret at request time via
-  `getRevalidateSecret()` (local dev uses plaintext `REVALIDATE_SECRET` in
-  `.env.local`). The `WebStack` publishes the public site origin to
-  `/portfolio/web/site-url`; the `AdminStack` reads it as `NEXT_PUBLIC_WEB_URL`
-  so admin saves can call `POST /api/revalidate` on the web app. Deploy order:
-  Data → Web → Admin (`admin.addDependency(web)`).
-
 - **Removal policy rule:** only the **DynamoDB content tables** and the **S3 media
   bucket** survive a `cdk destroy` (`RETAIN` + deletion protection / PITR);
   everything else is `DESTROY`. The single **deliberate exception** is the Cognito

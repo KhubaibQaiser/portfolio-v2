@@ -11,9 +11,8 @@ import {
  * to the pure `buildCandidateFacts` function.
  *
  * Candidate data is global (not per-user), so this is safe to memoize
- * with `unstable_cache` keyed only by the cache key. Admins edit data via
- * the `resume`, `experience`, `skills`, and `site-config` tags, which are
- * already revalidated by existing server actions.
+ * with `unstable_cache` keyed only by the cache key. Refreshes on the
+ * public site's 1-hour ISR window after admin edits.
  */
 export async function loadCandidateFactsUncached(): Promise<CandidateFacts> {
   const repo = getContentRepository();
@@ -79,14 +78,9 @@ export async function loadCandidateFactsUncached(): Promise<CandidateFacts> {
 
 /**
  * Cached fact-sheet loader. Keyed statically because candidate data is global.
- * Revalidated by existing tags when the admin edits resume/experience/skills/
- * site-config/about rows.
  */
 export const loadCandidateFacts = unstable_cache(
   async (): Promise<CandidateFacts> => loadCandidateFactsUncached(),
   ["resume-ai:candidate-facts"],
-  {
-    tags: ["resume", "experience", "skills", "site-config", "about"],
-    revalidate: 3600,
-  },
+  { revalidate: 3600 },
 );

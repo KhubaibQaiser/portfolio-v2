@@ -64,6 +64,8 @@ const projectCases: Record<string, ProjectCase> = {
   },
 };
 
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   return Object.keys(projectCases).map((slug) => ({ slug }));
 }

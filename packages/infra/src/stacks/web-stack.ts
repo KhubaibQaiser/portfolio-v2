@@ -37,18 +37,10 @@ export class WebStack extends cdk.Stack {
       paths.mediaBucketName,
     );
 
-    // Import the CDK-owned secret by its complete ARN (published to SSM by the
-    // DataStack). grantRead scopes IAM to exactly that ARN, and we pass the same
-    // complete ARN to the app — no hand-built or partial ARNs anywhere.
     const groqSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       "GroqSecret",
       ssm.StringParameter.valueForStringParameter(this, paths.groqApiKeyArn),
-    );
-    const revalidateSecret = secretsmanager.Secret.fromSecretCompleteArn(
-      this,
-      "RevalidateSecret",
-      ssm.StringParameter.valueForStringParameter(this, paths.revalidateSecretArn),
     );
 
     const site = new NextjsSite(this, "Site", {
@@ -66,29 +58,17 @@ export class WebStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
-        // Powertools structured logger (see @portfolio/observability). WARN keeps
-        // ingestion low; the AppErrors metric filter below tracks ERROR lines.
         POWERTOOLS_SERVICE_NAME: "portfolio-web",
         POWERTOOLS_LOG_LEVEL: "WARN",
         ...(config.domainEnabled
           ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
           : {}),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
-        REVALIDATE_SECRET_ARN: revalidateSecret.secretArn,
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
-        revalidateSecret.grantRead(fn);
       },
-    });
-
-    const webSiteUrl = config.domainEnabled
-      ? `https://${config.domainName}`
-      : `https://${site.distribution.distributionDomainName}`;
-    new ssm.StringParameter(this, "WebSiteUrlParam", {
-      parameterName: paths.webSiteUrl,
-      stringValue: webSiteUrl,
     });
 
     if (config.domainEnabled) {
@@ -97,9 +77,6 @@ export class WebStack extends cdk.Stack {
       aliasToCloudFront(this, zone, site.distribution, "WwwAlias", "www");
     }
 
-    // Surface runtime errors as one cheap, account-rolled-up metric (no
-    // dimensions, so web + admin share a single time series the SharedStack
-    // alarms on). See ADR 0002.
     const errorMetric = appErrorMetric(config);
     new logs.MetricFilter(this, "AppErrorMetric", {
       logGroup: site.serverLogGroup,

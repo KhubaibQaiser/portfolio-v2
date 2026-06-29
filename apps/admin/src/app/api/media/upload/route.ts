@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getContentRepository } from "@portfolio/data";
 import { getMediaStore } from "@portfolio/data/media";
 import { mediaInsertSchema } from "@portfolio/shared/schemas";
-import { revalidateWeb } from "@/lib/revalidate-web";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
@@ -72,10 +71,6 @@ export async function POST(request: Request) {
 
   try {
     const row = await getContentRepository().insertMedia(parsed.data);
-    const cacheResult = await revalidateWeb(["media"]);
-    if (!cacheResult.ok) {
-      return NextResponse.json({ error: cacheResult.error }, { status: 502 });
-    }
     return NextResponse.json({ media: row });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to save media record";

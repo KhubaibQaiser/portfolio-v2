@@ -11,35 +11,22 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
-    // AI — Secrets Manager complete ARN (CDK sets in prod; copy into .env.local for sandbox testing)
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
-    // Revalidation webhook shared secret (also set in apps/admin)
-    REVALIDATE_SECRET: z.string().min(1).optional(),
-    REVALIDATE_SECRET_ARN: z.string().min(1).optional(),
-    // Chat rate limit tuning (parsed as ints by chat-rate-limit.ts)
     CHAT_RATE_LIMIT_MAX: z.string().optional(),
     CHAT_RATE_LIMIT_WINDOW_SEC: z.string().optional(),
-    // GitHub API token for the /api/github proxy (raises rate limits)
     GITHUB_TOKEN: z.string().min(1).optional(),
-    // PostHog server-side: source map upload (next.config) + event tagging
     POSTHOG_API_KEY: z.string().min(1).optional(),
     POSTHOG_PROJECT_ID: z.string().min(1).optional(),
     POSTHOG_APP_HOST: z.string().url().optional(),
     POSTHOG_ENVIRONMENT: z.string().optional(),
-    // Data layer (consumed by @portfolio/data)
     DATA_BACKEND: z.enum(["fixture", "dynamo"]).optional(),
     DYNAMO_TABLE_PREFIX: z.string().min(1).optional(),
     DYNAMODB_LOCAL_ENDPOINT: z.string().url().optional(),
     AWS_REGION: z.string().min(1).optional(),
     S3_ENDPOINT: z.string().url().optional(),
     S3_MEDIA_BUCKET: z.string().min(1).optional(),
-    // Public URL objects are served from (S3/CloudFront). Read server-side by
-    // the media store and at build time for next.config image patterns.
     MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
-    // OpenNext / CloudFront on-demand revalidation (set by NextjsSite CDK)
-    CACHE_DYNAMO_TABLE: z.string().min(1).optional(),
     OPEN_NEXT_BUILD_ID: z.string().min(1).optional(),
-    CLOUDFRONT_DISTRIBUTION_ID: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
@@ -50,8 +37,6 @@ export const env = createEnv({
   },
   runtimeEnv: {
     GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
-    REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
-    REVALIDATE_SECRET_ARN: process.env.REVALIDATE_SECRET_ARN,
     CHAT_RATE_LIMIT_MAX: process.env.CHAT_RATE_LIMIT_MAX,
     CHAT_RATE_LIMIT_WINDOW_SEC: process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
@@ -71,9 +56,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
-    CACHE_DYNAMO_TABLE: process.env.CACHE_DYNAMO_TABLE,
     OPEN_NEXT_BUILD_ID: process.env.OPEN_NEXT_BUILD_ID,
-    CLOUDFRONT_DISTRIBUTION_ID: process.env.CLOUDFRONT_DISTRIBUTION_ID,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

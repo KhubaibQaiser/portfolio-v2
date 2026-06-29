@@ -168,22 +168,6 @@ export class DataStack extends cdk.Stack {
       "Anthropic API key",
     );
 
-    // Revalidate webhook secret — CDK generates the value on first deploy (no
-    // put-secret-value). Apps fetch via GetSecretValue using the SSM-published ARN.
-    const revalidateSecret = new secretsmanager.Secret(this, "RevalidateSecret", {
-      secretName: names.revalidateSecret,
-      description: "Shared secret for POST /api/revalidate (CDK-generated)",
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      generateSecretString: {
-        passwordLength: 32,
-        excludePunctuation: true,
-      },
-    });
-    new ssm.StringParameter(this, "RevalidateSecretArnParam", {
-      parameterName: paths.revalidateSecretArn,
-      stringValue: revalidateSecret.secretArn,
-    });
-
     new cdk.CfnOutput(this, "TablePrefix", {
       value: prefix,
       description: "Set as DYNAMO_TABLE_PREFIX in the apps",
