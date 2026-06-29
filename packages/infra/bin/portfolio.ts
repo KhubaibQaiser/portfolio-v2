@@ -72,7 +72,6 @@ const shared = new SharedStack(app, `${config.appName}-Shared`, {
 web.addDependency(data);
 admin.addDependency(data);
 admin.addDependency(auth);
-admin.addDependency(web);
 shared.addDependency(data);
 
 const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {

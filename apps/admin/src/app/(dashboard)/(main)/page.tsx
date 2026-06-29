@@ -32,8 +32,8 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
       </div>
       <p className="mt-2 text-muted-foreground">
-        Manage your portfolio content. Changes publish instantly via ISR
-        revalidation.
+        Manage your portfolio content. Saves go to DynamoDB; the public site
+        refreshes on its hourly cache window.
       </p>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">

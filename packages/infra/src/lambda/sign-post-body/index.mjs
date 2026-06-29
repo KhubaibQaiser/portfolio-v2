@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
  * CloudFront Lambda@Edge (origin-request): sign POST/PUT bodies for OAC.
  *
  * OAC signs origin requests to the Lambda function URL with SigV4, but for
- * requests WITH a body (POST/PUT — chat, contact, revalidate) the function URL
+ * requests WITH a body (POST/PUT — chat, contact) the function URL
  * requires an `x-amz-content-sha256` header holding the SHA-256 of the body.
  * CloudFront OAC does not compute it and Lambda rejects unsigned payloads, so
  * without this every POST fails at the function URL with "signature does not
