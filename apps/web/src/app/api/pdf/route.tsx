@@ -25,7 +25,7 @@ export async function GET() {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control":
-          "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+          "public, max-age=10, s-maxage=10, stale-while-revalidate=86400",
       },
     });
   } catch (error) {

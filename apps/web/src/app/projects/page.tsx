@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "30+ web, mobile, and game projects built with React, Next.js, React Native, AWS, and more.",
 };
 
-export const revalidate = 3600;
+export const revalidate = 10;
 
 export default async function ProjectsPage() {
   const projects = await fetchAllProjects();

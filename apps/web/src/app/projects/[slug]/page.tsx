@@ -8,7 +8,7 @@ import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
 
-export const revalidate = 3600;
+export const revalidate = 10;
 
 export async function generateStaticParams() {
   const projects = await fetchAllProjects();

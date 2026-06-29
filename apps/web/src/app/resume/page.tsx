@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
 };
 
-export const revalidate = 3600;
+export const revalidate = 10;
 
 export default async function ResumePage() {
   const resume = await getResumeData();
