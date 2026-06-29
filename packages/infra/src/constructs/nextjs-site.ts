@@ -110,7 +110,16 @@ export class NextjsSite extends Construct {
 
     // OpenNext ships a custom-resource Lambda that seeds the tag cache from
     // dynamodb-cache.json at deploy time. Without it, revalidateTag never
-    // enqueues ISR work (SQS Sent stays 0).
+    // enqueues ISR work (SQS Sent stays 0) and the site serves build-time HTML.
+    //
+    // CRITICAL: do NOT set OPEN_NEXT_BUILD_ID on this function. The tag cache
+    // key builder prefixes every key with `${OPEN_NEXT_BUILD_ID}/`, but the
+    // bundled dynamodb-cache.json already contains build-id-prefixed keys
+    // (e.g. `<buildId>/experience`). Setting the env here double-prefixes every
+    // row (`<buildId>/<buildId>/experience`), which the server — querying the
+    // single-prefixed namespace — can never find, silently breaking on-demand
+    // revalidation. The server function still needs OPEN_NEXT_BUILD_ID; the
+    // seeder must not have it.
     const dynamoProviderDir = path.join(openNextDir, "dynamodb-provider");
     if (existsSync(dynamoProviderDir)) {
       const dynamoProviderFn = new lambda.Function(this, "DynamoProviderFn", {
@@ -122,7 +131,6 @@ export class NextjsSite extends Construct {
         logGroup: logGroupFor("DynamoProviderFn"),
         environment: {
           CACHE_DYNAMO_TABLE: tagTable.tableName,
-          OPEN_NEXT_BUILD_ID: buildId,
           CACHE_BUCKET_REGION: region,
         },
       });
