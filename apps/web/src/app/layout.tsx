@@ -13,6 +13,7 @@ import { Footer } from "@/components/layout/footer";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { SiteConfigProvider } from "@/components/layout/site-config-provider";
+import { MAIN_NAV_LINKS } from "@portfolio/shared/constants";
 import { fetchSiteConfig } from "@/lib/data";
 import "@/styles/globals.css";
 
@@ -145,7 +146,6 @@ function JsonLd({
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const config = await fetchSiteConfig();
-  const navLinks = config.nav_links as unknown as Array<{ label: string; href: string }>;
   const socialLinks = config.social_links as unknown as Array<{ platform: string; url: string; label: string }>;
 
   return (
@@ -169,7 +169,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <a href="#main" className="skip-to-content">
               Skip to content
             </a>
-            <Navbar name={config.name} navLinks={navLinks} />
+            <Navbar name={config.name} navLinks={MAIN_NAV_LINKS} />
             <main id="main" className="relative">
               {children}
             </main>

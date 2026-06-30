@@ -2,6 +2,18 @@
  * Skill category display labels — used by both admin editor and web UI.
  * This is configuration, not data, so it stays here rather than in Supabase.
  */
+import type { NavLink } from "./schemas/site-config";
+
+/** Primary header navigation — code-owned, not editable via site config. */
+export const MAIN_NAV_LINKS: NavLink[] = [
+  { href: "#about", label: "About" },
+  { href: "#recommendations", label: "Recommendations" },
+  { href: "#skills", label: "Skills" },
+  { href: "#experience", label: "Experience" },
+  { href: "#projects", label: "Projects" },
+  { href: "#contact", label: "Contact" },
+];
+
 export const SKILL_CATEGORIES = {
   frontend: "Frontend",
   mobile: "Mobile",
