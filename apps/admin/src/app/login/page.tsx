@@ -1,6 +1,9 @@
 import { AlertCircle } from "lucide-react";
 import { GoogleSignInButton } from "./google-sign-in-button";
 
+// Known error codes get a tailored message. Better Auth also emits its own
+// codes (e.g. `googleSub_is_required`, `access_denied`) on the `error` param;
+// anything unmapped falls back to a generic message rather than being hidden.
 const ERROR_MESSAGES: Record<string, string> = {
   unauthorized: "This account is not authorized to access the admin dashboard.",
   invalid_state: "Your sign-in session expired. Please try again.",
@@ -12,10 +15,13 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string | string[] }>;
 }) {
-  const { error } = await searchParams;
-  const message = error ? (ERROR_MESSAGES[error] ?? "An error occurred.") : null;
+  const { error: rawError } = await searchParams;
+  const error = Array.isArray(rawError) ? rawError[0] : rawError;
+  const message = error
+    ? (ERROR_MESSAGES[error] ?? "Sign-in failed. Please try again.")
+    : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
