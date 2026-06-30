@@ -9,6 +9,7 @@ import { saveExperience, deleteExperience } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import {
+  CONTRACT_TYPE_LABELS,
   experienceSchema,
   getContractTypeLabel,
   type ContractType,
@@ -169,11 +170,13 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
               )
             }
           >
-            <option value="full_time">Full-time</option>
-            <option value="part_time">Part-time</option>
-            <option value="contract">Contract</option>
-            <option value="freelance">Freelance</option>
-            <option value="internship">Internship</option>
+            {(Object.entries(CONTRACT_TYPE_LABELS) as [ContractType, string][]).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ),
+            )}
           </Select>
         </div>
         <div>
