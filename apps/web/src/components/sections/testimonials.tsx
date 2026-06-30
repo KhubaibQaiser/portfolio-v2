@@ -4,14 +4,23 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ExternalLink, Quote, User } from "lucide-react";
-import type { Testimonial } from "@portfolio/shared/schemas";
+import {
+  truncateRecommendationDescription,
+  type Testimonial,
+} from "@portfolio/shared/schemas";
 import { formatRecommendationDate } from "@portfolio/shared/recommendation-dates";
 
 type TestimonialsProps = {
   testimonials: Testimonial[];
 };
 
-function RecommenderAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+function RecommenderAvatar({
+  name,
+  avatarUrl,
+}: {
+  name: string;
+  avatarUrl: string | null;
+}) {
   const [failed, setFailed] = useState(false);
 
   if (avatarUrl && !failed) {
@@ -58,6 +67,9 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           {visible.map((t, i) => {
             const formattedDate = formatRecommendationDate(t.recommended_at);
+            const { preview, isTruncated } = truncateRecommendationDescription(
+              t.description,
+            );
 
             return (
               <motion.div
@@ -74,7 +86,21 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
               >
                 <Quote className="text-accent/30 mb-4 h-8 w-8" />
                 <blockquote className="text-muted-foreground flex-1 text-sm leading-relaxed">
-                  &ldquo;{t.description}&rdquo;
+                  &ldquo;{preview}
+                  {isTruncated ? "…" : ""}&rdquo;
+                  {isTruncated && t.linkedin_url.trim() ? (
+                    <>
+                      {" "}
+                      <a
+                        href={t.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent font-medium hover:underline"
+                      >
+                        Read full
+                      </a>
+                    </>
+                  ) : null}
                 </blockquote>
                 <div className="border-border/50 mt-6 border-t pt-4">
                   <div className="flex items-start gap-3">
@@ -90,7 +116,9 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
                           {t.full_name}
                         </a>
                       ) : (
-                        <p className="text-foreground text-sm font-semibold">{t.full_name}</p>
+                        <p className="text-foreground text-sm font-semibold">
+                          {t.full_name}
+                        </p>
                       )}
                       <p className="text-muted-foreground text-xs">
                         {t.role_title}
