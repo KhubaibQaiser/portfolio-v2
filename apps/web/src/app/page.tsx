@@ -39,7 +39,11 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection hero={hero} name={siteConfig.name} companies={companies} />
-      <AboutSection about={about} location={siteConfig.location} companiesCount={companiesCount} />
+      <AboutSection
+        about={about}
+        location={siteConfig.location}
+        companiesCount={companiesCount}
+      />
       <Testimonials testimonials={testimonials} />
       <WhyHireMeSection highlights={about.highlights} />
       <StatDivider
@@ -54,11 +58,11 @@ export default async function HomePage() {
         variant="subtle"
       />
       <ExperienceSection experience={experience} />
-      <StatDivider
+      {/* <StatDivider
         stat={about.users_impacted}
         label="Users impacted by my work"
         variant="accent"
-      />
+      /> */}
       <FeaturedProjectsSection projects={featuredProjects} />
       <BuiltWithSection techStack={siteConfig.tech_stack} />
       <ContactSection email={siteConfig.email} />

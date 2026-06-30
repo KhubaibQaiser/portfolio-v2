@@ -6,6 +6,7 @@ export const contractTypeEnum = z.enum([
   "full_time",
   "part_time",
   "contract",
+  "consultant",
   "freelance",
   "internship",
 ]);
@@ -16,6 +17,7 @@ export const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
   full_time: "Full-time",
   part_time: "Part-time",
   contract: "Contract",
+  consultant: "Consultant",
   freelance: "Freelance",
   internship: "Internship",
 };
