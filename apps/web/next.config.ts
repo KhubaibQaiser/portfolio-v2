@@ -36,9 +36,7 @@ function mediaRemotePatterns() {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
-  // Powertools + AWS SDK are bundled so pnpm/OpenNext ship transitive deps into
-  // the Lambda artifact. Externalizing them breaks runtime resolution and crashes
-  // routes at module load — plain "Internal Server Error" with no app logs.
+  serverExternalPackages: [],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
