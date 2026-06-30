@@ -31,6 +31,9 @@ export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL =
 /** Card preview length on the public site; seed recommendations are ~186–208 chars. */
 export const RECOMMENDATION_DESCRIPTION_PREVIEW_MAX = 300;
 
+/** Maximum recommendation cards shown on the home page (newest first). */
+export const RECOMMENDATIONS_SECTION_MAX = 6;
+
 export function truncateRecommendationDescription(
   text: string,
   max = RECOMMENDATION_DESCRIPTION_PREVIEW_MAX,
