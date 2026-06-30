@@ -48,8 +48,9 @@ function serverActionAllowedOrigins(): string[] {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
-  // Keep better-auth external (OpenNext bundling can break plugin resolution).
-  serverExternalPackages: ["better-auth"],
+  // Bundle better-auth into the Lambda artifact. Externalizing it (or only
+  // better-auth) leaves @better-auth/core untraced under pnpm and crashes auth
+  // routes at runtime with ERR_MODULE_NOT_FOUND.
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
