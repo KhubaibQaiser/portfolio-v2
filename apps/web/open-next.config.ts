@@ -15,7 +15,14 @@ const config = {
       queue: "direct",
     },
     install: {
-      packages: ["@swc/helpers@0.5.15", "styled-jsx@5.1.6", "@next/env@16.2.9"],
+      packages: [
+        "@swc/helpers@0.5.15",
+        "styled-jsx@5.1.6",
+        "@next/env@16.2.9",
+        // Turbopack externalizes @react-pdf/renderer into .next/node_modules; install
+        // here so transitive @react-pdf/* resolve from the Lambda root node_modules.
+        "@react-pdf/renderer@4.4.1",
+      ],
       arch: "arm64",
     },
   },
