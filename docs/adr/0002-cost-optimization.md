@@ -57,7 +57,7 @@ alarm**, and add log-cost hygiene.
    account-scoped `SEARCH` expressions (no per-table or per-alarm cost).
 
 3. **Bounded log retention.** Every Lambda (OpenNext server/image/revalidation
-   per app + the Cognito pre-token fn) gets an explicit `LogGroup` with
+   per app) gets an explicit `LogGroup` with
    **14-day** retention and `DESTROY` removal, so log storage stays ~$0.
 
 4. **`POWERTOOLS_LOG_LEVEL=WARN` in production.** Captures WARN+ERROR, drops

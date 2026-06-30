@@ -19,9 +19,10 @@ export function ssmPaths(config: InfraConfig) {
   return {
     /** Physical name of the (auto-named) media bucket. */
     mediaBucketName: `${base}/data/media-bucket-name`,
-    authUserPoolId: `${base}/auth/user-pool-id`,
-    authUserPoolClientId: `${base}/auth/user-pool-client-id`,
-    authHostedUiDomain: `${base}/auth/hosted-ui-domain`,
+    /** Complete ARN of the Google OAuth JSON secret (Auth stack). */
+    googleOAuthArn: `${base}/auth/google-oauth-arn`,
+    /** Complete ARN of the Better Auth signing secret (Auth stack). */
+    betterAuthSecretArn: `${base}/auth/better-auth-secret-arn`,
     /** Route 53 public hosted zone id (from the Dns stack). */
     hostedZoneId: `${base}/dns/hosted-zone-id`,
     /** us-east-1 ACM certificate ARN for CloudFront (from the Cert stack). */
@@ -32,12 +33,14 @@ export function ssmPaths(config: InfraConfig) {
   } as const;
 }
 
-/** Secrets Manager secret names for runtime AI keys (values fetched in-app). */
+/** Secrets Manager secret names (values injected out-of-band or auto-generated). */
 export function secretNames(config: InfraConfig) {
   const base = `/${config.appName.toLowerCase()}`;
   return {
     groqApiKey: `${base}/groq-api-key`,
     anthropicApiKey: `${base}/anthropic-api-key`,
+    googleOAuth: `${base}/google-oauth`,
+    betterAuthSecret: `${base}/better-auth-secret`,
   } as const;
 }
 

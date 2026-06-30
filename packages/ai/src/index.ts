@@ -6,4 +6,5 @@ export {
   ensureAiApiKeys,
   ensureAnthropicApiKey,
   ensureGroqApiKey,
+  getSecretString,
 } from "./load-api-keys";

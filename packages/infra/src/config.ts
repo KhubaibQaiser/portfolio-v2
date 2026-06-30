@@ -24,7 +24,7 @@ export type InfraConfig = {
   /** Browser origins allowed to upload directly to the media bucket. */
   mediaCorsOrigins: string[];
   /**
-   * Admin app origins used to build Cognito Hosted UI callback/logout URLs.
+   * Admin app origins used for APP_ORIGIN and Better Auth trusted origins.
    * Always includes localhost for dev; pass the deployed admin origin via
    * `-c adminUrls=https://...` (csv) until the custom domain is delegated.
    */
@@ -36,13 +36,6 @@ export type InfraConfig = {
    * the in-repo default allowlist.
    */
   adminAllowedEmails: string[];
-  /**
-   * Enables the Google identity provider on the user pool. Requires the Google
-   * OAuth client id/secret to exist in SSM (see GOOGLE_* param names) — the
-   * AuthStack deploy fails if they are missing. Enabled by default; disable with
-   * `-c googleAuthEnabled=false`.
-   */
-  googleAuthEnabled: boolean;
   /**
    * Email subscribed to the SNS alerts topic (CloudWatch alarms, budgets).
    * Pass via `-c alertEmail=you@example.com`; the subscription requires a
@@ -123,7 +116,6 @@ export function resolveConfig(app: App): InfraConfig {
         : ["*"],
     adminUrls: [...new Set(adminUrls)],
     adminAllowedEmails: csv(ctx("adminAllowedEmails")),
-    googleAuthEnabled: ctx("googleAuthEnabled") !== "false",
     alertEmail: ctx("alertEmail"),
     contactEmail: ctx("contactEmail"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),

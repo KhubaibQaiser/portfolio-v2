@@ -1,11 +1,12 @@
-import Link from "next/link";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 const ERROR_MESSAGES: Record<string, string> = {
   unauthorized: "This account is not authorized to access the admin dashboard.",
   invalid_state: "Your sign-in session expired. Please try again.",
   missing_code: "Invalid authentication request.",
   auth_failed: "Authentication failed. Please try again.",
+  access_denied: "Sign-in was cancelled.",
 };
 
 export default async function LoginPage({
@@ -21,7 +22,7 @@ export default async function LoginPage({
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold tracking-tight">Admin Login</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Sign in to manage your portfolio content.
+          Sign in with Google to manage your portfolio content.
         </p>
 
         {message && (
@@ -31,17 +32,10 @@ export default async function LoginPage({
           </div>
         )}
 
-        <Link
-          href="/auth/login"
-          prefetch={false}
-          className="bg-accent text-accent-foreground mt-8 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          Continue to sign in
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <GoogleSignInButton />
 
         <p className="text-muted-foreground mt-4 text-center text-xs">
-          You&apos;ll be redirected to the secure Cognito sign-in page.
+          Only allow-listed Google accounts can access this dashboard.
         </p>
       </div>
     </div>

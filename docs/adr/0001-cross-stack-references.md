@@ -8,7 +8,7 @@
 
 The infra is split into multiple CDK stacks (`Data`, `Web`, `Admin`, `Auth`,
 `Shared`, plus edge `Dns`/`Cert`). Consumers need the DataStack's DynamoDB
-tables + media bucket and the AuthStack's Cognito ids.
+tables + media bucket and the AuthStack's auth secrets.
 
 Originally these were passed as **CDK construct references** across stacks
 (`tables: ITable[]`, `mediaBucket: IBucket`, `auth: { userPoolId, ... }`). CDK
@@ -49,10 +49,9 @@ resources by stable, decoupled handles:
    `/<app>/data/media-bucket-name`; consumers read it with
    `valueForStringParameter` and grant `arn:aws:s3:::<name>` (+ `/*`).
 
-3. **Cognito ids → SSM registry.** Cognito ids have no deterministic ARN, so the
-   AuthStack publishes `userPoolId` / `userPoolClientId` / `hostedUiDomain` to
-   `/<app>/auth/*`; the AdminStack reads them at deploy time. (Matches the
-   existing `/<app>/google/*` pattern for the Google OAuth creds.)
+3. **Auth secrets → SSM registry.** The AuthStack publishes complete ARNs for the
+   Google OAuth JSON secret and the Better Auth signing secret to `/<app>/auth/*`;
+   the AdminStack reads them at deploy time and grants the Lambda read access.
 
 4. **Ordering without coupling.** `bin/portfolio.ts` uses `stack.addDependency`
    only to order `cdk deploy --all` (Data + Auth before consumers). This adds **no**
@@ -87,9 +86,9 @@ is still by ARN.
 - ⚠️ Wildcard grant is slightly broader than per-table ARNs (scoped to the
   prefix; acceptable).
 
-### C. Auto-generated names + SSM registry — *chosen for bucket + Cognito*
+### C. Auto-generated names + SSM registry — *chosen for bucket + auth secrets*
 - ✅ Most migration-friendly: physical names float; repoint the SSM param.
-- ✅ Right fit for S3 (immutable global names) and Cognito (no deterministic ARN).
+- ✅ Right fit for S3 (immutable global names) and Secrets Manager ARNs.
 - ❌ For a *set* of resources it means injecting many names and per-ARN grants;
   overkill for the 9 tables, so we don't use it there.
 
@@ -134,6 +133,5 @@ is still by ARN.
 
 - **Removal policy rule:** only the **DynamoDB content tables** and the **S3 media
   bucket** survive a `cdk destroy` (`RETAIN` + deletion protection / PITR);
-  everything else is `DESTROY`. The single **deliberate exception** is the Cognito
-  **User Pool** (`AuthStack`), kept `RETAIN` because it holds identity state (admin
-  users + MFA) with no re-seed story — as precious as the content data.
+  everything else is `DESTROY`, including auth secrets (values are re-injectable or
+  auto-generated).

@@ -12,7 +12,7 @@ export type AdminAuth =
  * The data layer (DynamoDB) has no row-level security, so authorization must be
  * enforced explicitly at every mutation boundary rather than relying on the
  * middleware route guard alone. This is the single place that resolves the
- * verified Cognito identity and checks the email allowlist.
+ * verified Better Auth session and checks the email allowlist.
  */
 export async function requireAdmin(): Promise<AdminAuth> {
   const identity = await getCurrentIdentity();
