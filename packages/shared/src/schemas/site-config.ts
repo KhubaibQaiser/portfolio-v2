@@ -33,7 +33,6 @@ export const siteConfigSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(1000),
   social_links: z.array(socialLinkSchema),
-  nav_links: z.array(navLinkSchema),
   tech_stack: z.array(z.string().min(1)),
 });
 

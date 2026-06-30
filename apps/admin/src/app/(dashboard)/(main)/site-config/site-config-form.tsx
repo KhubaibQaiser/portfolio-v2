@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { saveSiteConfig } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
-import type { SiteConfig, SocialLink, NavLink } from "@portfolio/shared/schemas";
+import type { SiteConfig, SocialLink } from "@portfolio/shared/schemas";
 
 type SocialLinkDraft = SocialLink & { _clientId: string };
 
@@ -40,7 +40,6 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
     title: initialData?.title ?? "",
     description: initialData?.description ?? "",
     social_links: withClientIds(socialLinks),
-    nav_links: (initialData?.nav_links ?? []) as unknown as NavLink[],
     tech_stack: initialData?.tech_stack ?? [],
   });
 

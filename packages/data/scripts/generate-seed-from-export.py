@@ -95,7 +95,6 @@ def main() -> None:
             "title": site["title"],
             "description": site["description"],
             "social_links": parse_json_field(site["social_links"]),
-            "nav_links": parse_json_field(site["nav_links"]),
             "tech_stack": [
                 "Next.js 16",
                 "React 19",
