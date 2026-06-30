@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ExternalLink, Quote, User } from "lucide-react";
 import {
+  RECOMMENDATIONS_SECTION_MAX,
   truncateRecommendationDescription,
   type Testimonial,
 } from "@portfolio/shared/schemas";
@@ -46,7 +47,9 @@ function RecommenderAvatar({
 }
 
 export function Testimonials({ testimonials }: TestimonialsProps) {
-  const visible = testimonials.filter((t) => t.description.trim().length > 0);
+  const visible = testimonials
+    .filter((t) => t.description.trim().length > 0)
+    .slice(0, RECOMMENDATIONS_SECTION_MAX);
   if (visible.length === 0) return null;
 
   return (
