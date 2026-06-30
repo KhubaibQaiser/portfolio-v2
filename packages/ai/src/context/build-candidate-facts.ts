@@ -126,7 +126,7 @@ export function buildCandidateFacts(
       .map((b, bi) => `  [b${bi}] ${b}`)
       .join("\n");
 
-    const tech = exp.tech_tags.slice(0, 16).join(", ");
+    const tech = exp.tech_tags.slice(0, 12).join(", ");
 
     expBlocks.push(
       `[${stableId}] ${exp.role} @ ${exp.company} | ${renderPeriod(
@@ -176,6 +176,7 @@ export function buildCandidateFacts(
     `YOE: ${yoe} | Industries: ${industries}\n\n` +
     `Base summary: ${resume.default_summary.trim()}\n\n` +
     `# EXPERIENCE (rewrite-only; reference bullets by {experienceId, sourceBulletIndex})\n` +
+    `PDF target: 2 pages. Include max 5 roles. No per-job tech footer.\n` +
     `${expBlocks.join("\n\n")}\n\n` +
     `# SKILLS\n${skillBlock}\n\n` +
     `# EDUCATION\n${eduBlock}\n\n` +

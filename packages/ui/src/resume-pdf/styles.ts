@@ -14,9 +14,9 @@ export const baseStyles = {
     fontSize: 10,
     color: COLORS.body,
     backgroundColor: COLORS.bg,
-    paddingTop: 36,
-    paddingBottom: 36,
-    paddingHorizontal: 40,
+    paddingTop: 28,
+    paddingBottom: 28,
+    paddingHorizontal: 32,
     lineHeight: 1.4,
   },
 
@@ -57,7 +57,7 @@ export const baseStyles = {
     marginTop: 10,
   },
 
-  section: { marginTop: 12 },
+  section: { marginTop: 8 },
   sectionTitle: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
@@ -73,6 +73,6 @@ export const baseStyles = {
   summary: {
     fontSize: 10,
     color: COLORS.body,
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
 } as const;

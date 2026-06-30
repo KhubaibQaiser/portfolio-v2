@@ -15,7 +15,8 @@ Font.registerHyphenationCallback((word) => [word]);
 const s = StyleSheet.create({
   ...baseStyles,
 
-  expEntry: { marginBottom: 10 },
+  expEntry: { marginBottom: 6 },
+  expHeaderBlock: { marginBottom: 2 },
   expHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -38,7 +39,6 @@ const s = StyleSheet.create({
     color: COLORS.body,
   },
   expLocation: { fontSize: 9, color: COLORS.secondary },
-  expJobType: { fontSize: 8.5, color: COLORS.subtle, marginTop: 2 },
   bulletList: { marginTop: 3, paddingLeft: 10 },
   bulletRow: { flexDirection: "row", marginBottom: 2 },
   bulletDot: { width: 10, fontSize: 10, color: COLORS.primary },
@@ -46,41 +46,17 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 9.5,
     color: COLORS.body,
-    lineHeight: 1.45,
-  },
-  techLine: {
-    fontSize: 9,
-    color: COLORS.secondary,
-    marginTop: 2,
-    paddingLeft: 10,
     lineHeight: 1.35,
   },
-  techLabel: { fontFamily: "Helvetica-Bold", color: COLORS.body },
   skillRow: { flexDirection: "row", marginBottom: 3 },
   skillCategory: {
-    width: 100,
+    width: 88,
     fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
     color: COLORS.primary,
   },
   skillItems: { flex: 1, fontSize: 9.5, color: COLORS.body },
-  eduEntry: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 3,
-  },
-  eduDegree: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-  },
-  eduInstitution: {
-    fontSize: 9.5,
-    fontFamily: "Helvetica-Oblique",
-    color: COLORS.body,
-  },
-  eduYear: { fontSize: 9.5, color: COLORS.secondary },
+  eduLine: { fontSize: 9.5, color: COLORS.body, lineHeight: 1.35 },
   certRow: { flexDirection: "row", marginBottom: 2 },
   certBullet: { width: 10, fontSize: 10, color: COLORS.primary },
   certText: { flex: 1, fontSize: 9.5, color: COLORS.body },
@@ -95,6 +71,10 @@ function socialLinkLabel(link: { platform: string; label: string }): string {
 
 function Sep() {
   return <Text style={s.headerSep}>&nbsp;|&nbsp;</Text>;
+}
+
+function formatEducationLine(edu: ResumeData["education"][number]): string {
+  return `${edu.degree}, ${edu.institution} · ${edu.year}`;
 }
 
 export function ResumeDocument({ data }: { data: ResumeData }) {
@@ -148,45 +128,8 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           <Text style={s.summary}>{data.summary}</Text>
         </View>
 
-        {show("experience") && (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Work Experience</Text>
-            {data.experience.map((exp) => (
-              <View
-                key={`${exp.company}-${exp.period}`}
-                style={s.expEntry}
-                wrap={false}
-              >
-                <View style={s.expHeader}>
-                  <Text style={s.expRole}>{exp.role}</Text>
-                  <Text style={s.expPeriod}>{exp.period}</Text>
-                </View>
-                <View style={s.expSubHeader}>
-                  <Text style={s.expCompany}>{exp.company}</Text>
-                  <Text style={s.expLocation}>{exp.location}</Text>
-                </View>
-                <Text style={s.expJobType}>{exp.contractType}</Text>
-                <View style={s.bulletList}>
-                  {exp.bullets.map((bullet, i) => (
-                    <View key={i} style={s.bulletRow}>
-                      <Text style={s.bulletDot}>-</Text>
-                      <Text style={s.bulletText}>{bullet}</Text>
-                    </View>
-                  ))}
-                </View>
-                {exp.tech && (
-                  <Text style={s.techLine}>
-                    <Text style={s.techLabel}>Technologies: </Text>
-                    {exp.tech}
-                  </Text>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
         {show("skills") && (
-          <View style={s.section} wrap={false}>
+          <View style={s.section}>
             <Text style={s.sectionTitle}>Technical Skills</Text>
             {data.skills.map((group) => (
               <View key={group.category} style={s.skillRow}>
@@ -197,23 +140,47 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           </View>
         )}
 
-        {show("education") && data.education.length > 0 && (
-          <View style={s.section} wrap={false}>
-            <Text style={s.sectionTitle}>Education</Text>
-            {data.education.map((edu) => (
-              <View key={edu.institution} style={s.eduEntry}>
-                <View>
-                  <Text style={s.eduDegree}>{edu.degree}</Text>
-                  <Text style={s.eduInstitution}>{edu.institution}</Text>
+        {show("experience") && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Work Experience</Text>
+            {data.experience.map((exp) => (
+              <View key={`${exp.company}-${exp.period}`} style={s.expEntry}>
+                <View style={s.expHeaderBlock} wrap={false}>
+                  <View style={s.expHeader}>
+                    <Text style={s.expRole}>{exp.role}</Text>
+                    <Text style={s.expPeriod}>{exp.period}</Text>
+                  </View>
+                  <View style={s.expSubHeader}>
+                    <Text style={s.expCompany}>{exp.company}</Text>
+                    <Text style={s.expLocation}>{exp.location}</Text>
+                  </View>
                 </View>
-                <Text style={s.eduYear}>{edu.year}</Text>
+                <View style={s.bulletList}>
+                  {exp.bullets.map((bullet, i) => (
+                    <View key={i} style={s.bulletRow}>
+                      <Text style={s.bulletDot}>-</Text>
+                      <Text style={s.bulletText}>{bullet}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             ))}
           </View>
         )}
 
+        {show("education") && data.education.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Education</Text>
+            {data.education.map((edu) => (
+              <Text key={edu.institution} style={s.eduLine}>
+                {formatEducationLine(edu)}
+              </Text>
+            ))}
+          </View>
+        )}
+
         {show("certifications") && data.certifications.length > 0 && (
-          <View style={s.section} wrap={false}>
+          <View style={s.section}>
             <Text style={s.sectionTitle}>Certifications</Text>
             {data.certifications.map((cert) => (
               <View key={cert.name} style={s.certRow}>
