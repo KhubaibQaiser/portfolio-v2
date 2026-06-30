@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -13,12 +13,39 @@ function trackNav(href: string, label: string) {
   capturePortfolioEvent(PortfolioEvents.primaryNavClick, { href, label });
 }
 
+/** Strip `#` and ignore any duplicated hash segments from bad URL state. */
+function normalizeSectionId(href: string): string {
+  const trimmed = href.trim();
+  const withoutLeading = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  return withoutLeading.split("#")[0] ?? withoutLeading;
+}
+
 /** Section anchors from CMS are hash-only; they always target a home-page section. */
-function toHomeSectionHref(href: string) {
-  return {
-    pathname: "/" as const,
-    hash: href.startsWith("#") ? href.slice(1) : href,
-  };
+function toHomeSectionHref(href: string): string {
+  return `/#${normalizeSectionId(href)}`;
+}
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  window.history.replaceState(null, "", `/#${id}`);
+}
+
+function handleSectionNavClick(
+  e: MouseEvent<HTMLAnchorElement>,
+  href: string,
+  label: string,
+  onAfterNavigate?: () => void,
+) {
+  trackNav(href, label);
+  const id = normalizeSectionId(href);
+
+  if (window.location.pathname !== "/") {
+    return;
+  }
+
+  e.preventDefault();
+  scrollToSection(id);
+  onAfterNavigate?.();
 }
 
 type NavLink = { label: string; href: string };
@@ -33,6 +60,15 @@ type NavbarProps = {
 export function Navbar({ name, navLinks }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const { pathname, hash } = window.location;
+    if (!hash) return;
+    const id = hash.slice(1).split("#")[0];
+    if (id && hash !== `#${id}`) {
+      window.history.replaceState(null, "", `${pathname}#${id}`);
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -79,7 +115,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             <Link
               key={link.href}
               href={toHomeSectionHref(link.href)}
-              onClick={() => trackNav(link.href, link.label)}
+              onClick={(e) => handleSectionNavClick(e, link.href, link.label)}
               className={cn(
                 "text-muted-foreground relative px-3 py-2 text-sm font-medium",
                 "hover:text-foreground transition-colors duration-200",
@@ -133,10 +169,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               <MotionLink
                 key={link.href}
                 href={toHomeSectionHref(link.href)}
-                onClick={() => {
-                  trackNav(link.href, link.label);
-                  setMobileOpen(false);
-                }}
+                onClick={(e) =>
+                  handleSectionNavClick(e, link.href, link.label, () => setMobileOpen(false))
+                }
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}

@@ -60,7 +60,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
         >
           <h2 className="text-h2 font-bold tracking-tight">Recommendations</h2>
           <p className="text-body-lg text-muted-foreground mx-auto mt-4 max-w-xl">
-            Recommendations from colleagues and leaders — each one verifiable on LinkedIn.
+            Recommendations from colleagues and leaders
           </p>
         </motion.div>
 
