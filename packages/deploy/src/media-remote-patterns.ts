@@ -10,6 +10,12 @@ type RemotePattern = {
   pathname?: string;
 };
 
+/** LinkedIn CDN hosts for recommendation recommender avatars (browser-loaded, unoptimized). */
+const LINKEDIN_AVATAR_REMOTE_PATTERNS: RemotePattern[] = [
+  { protocol: "https", hostname: "media.licdn.com" },
+  { protocol: "https", hostname: "static.licdn.com" },
+];
+
 /** True when building OpenNext deploy artifacts (set by the deploy build script). */
 export function isOpenNextBuild(): boolean {
   return process.env.PORTFOLIO_OPENNEXT_BUILD === "1";
@@ -51,6 +57,8 @@ export function mediaRemotePatterns(
   if (options.allowDevPlaceholders && process.env.NODE_ENV === "development") {
     patterns.push({ protocol: "https", hostname: "placehold.co" });
   }
+
+  patterns.push(...LINKEDIN_AVATAR_REMOTE_PATTERNS);
 
   return patterns;
 }

@@ -19,7 +19,7 @@ const sections = [
   { href: "/projects", label: "Projects", icon: FolderOpen, description: "30+ projects" },
   { href: "/skills", label: "Skills", icon: Zap, description: "Skill categories" },
   { href: "/resume", label: "Resume", icon: FileText, description: "ATS resume data" },
-  { href: "/testimonials", label: "Testimonials", icon: MessageSquare, description: "Quotes" },
+  { href: "/recommendations", label: "Recommendations", icon: MessageSquare, description: "LinkedIn recs" },
   { href: "/site-config", label: "Site Config", icon: Settings, description: "Links, meta" },
   { href: "/media", label: "Media Library", icon: Image, description: "Images, files" },
 ];

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
+import { sortRecommendationsByDateDesc } from "@portfolio/shared/recommendation-dates";
 import type {
   ContentRepository,
   ResumeGenerationListOptions,
@@ -187,7 +188,7 @@ export function createFixtureContentRepository(): ContentRepository {
 
     // Testimonials
     async getTestimonials() {
-      return clone(testimonials).sort((a, b) => a.sort_order - b.sort_order);
+      return sortRecommendationsByDateDesc(clone(testimonials));
     },
     async insertTestimonial(values: TestimonialFormData) {
       const row: Testimonial = {

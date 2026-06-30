@@ -30,7 +30,7 @@ const navItems = [
   { href: "/skills", label: "Skills", icon: Zap },
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
-  { href: "/testimonials", label: "Testimonials", icon: MessageSquare },
+  { href: "/recommendations", label: "Recommendations", icon: MessageSquare },
   { href: "/site-config", label: "Site Config", icon: Settings },
   { href: "/media", label: "Media", icon: Image },
 ];
