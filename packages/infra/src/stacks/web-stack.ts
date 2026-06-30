@@ -36,6 +36,10 @@ export class WebStack extends cdk.Stack {
       this,
       paths.mediaBucketName,
     );
+    const mediaPublicBaseUrl = ssm.StringParameter.valueForStringParameter(
+      this,
+      paths.mediaPublicBaseUrl,
+    );
 
     const groqSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
@@ -58,6 +62,7 @@ export class WebStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
+        MEDIA_PUBLIC_BASE_URL: mediaPublicBaseUrl,
         POWERTOOLS_SERVICE_NAME: "portfolio-web",
         POWERTOOLS_LOG_LEVEL: "WARN",
         ...(config.domainEnabled

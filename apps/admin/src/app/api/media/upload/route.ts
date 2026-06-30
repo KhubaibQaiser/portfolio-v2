@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const mediaStore = getMediaStore();
+  const mediaStore = await getMediaStore();
   if (!mediaStore.isConfigured()) {
     return NextResponse.json(
       { error: "Media storage is not configured." },

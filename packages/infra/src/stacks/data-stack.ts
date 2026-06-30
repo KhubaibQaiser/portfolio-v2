@@ -1,4 +1,6 @@
 import * as cdk from "aws-cdk-lib";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
+import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -131,6 +133,23 @@ export class DataStack extends cdk.Stack {
       stringValue: mediaBucket.bucketName,
     });
 
+    const mediaCdn = new cloudfront.Distribution(this, "MediaCdn", {
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      },
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
+    });
+
+    const mediaPublicBaseUrl = `https://${mediaCdn.distributionDomainName}`;
+    new ssm.StringParameter(this, "MediaPublicBaseUrlParam", {
+      parameterName: ssmPaths(config).mediaPublicBaseUrl,
+      stringValue: mediaPublicBaseUrl,
+    });
+
     // --- Runtime AI key secrets ---
     // CDK owns the secret *resources* (existence + IAM contract) so the set of
     // keys the app needs is explicit in IaC, not discovered by reading code; the
@@ -175,6 +194,10 @@ export class DataStack extends cdk.Stack {
     new cdk.CfnOutput(this, "MediaBucketName", {
       value: mediaBucket.bucketName,
       description: "S3_MEDIA_BUCKET (also published to SSM for the apps)",
+    });
+    new cdk.CfnOutput(this, "MediaPublicBaseUrl", {
+      value: mediaPublicBaseUrl,
+      description: "MEDIA_PUBLIC_BASE_URL (CloudFront CDN for uploaded media)",
     });
   }
 }

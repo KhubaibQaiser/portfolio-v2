@@ -40,6 +40,10 @@ export class AdminStack extends cdk.Stack {
       this,
       paths.mediaBucketName,
     );
+    const mediaPublicBaseUrl = ssm.StringParameter.valueForStringParameter(
+      this,
+      paths.mediaPublicBaseUrl,
+    );
     const ssmGet = (path: string) =>
       ssm.StringParameter.valueForStringParameter(this, path);
 
@@ -80,6 +84,7 @@ export class AdminStack extends cdk.Stack {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
         S3_MEDIA_BUCKET: mediaBucketName,
+        MEDIA_PUBLIC_BASE_URL: mediaPublicBaseUrl,
         POWERTOOLS_SERVICE_NAME: "portfolio-admin",
         POWERTOOLS_LOG_LEVEL: "WARN",
         GOOGLE_OAUTH_SECRET_ARN: googleOAuthSecret.secretArn,

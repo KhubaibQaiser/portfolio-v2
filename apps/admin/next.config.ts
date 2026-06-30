@@ -48,9 +48,7 @@ function serverActionAllowedOrigins(): string[] {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
-  // Bundle better-auth into the Lambda artifact. Externalizing it (or only
-  // better-auth) leaves @better-auth/core untraced under pnpm and crashes auth
-  // routes at runtime with ERR_MODULE_NOT_FOUND.
+  serverExternalPackages: [],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),

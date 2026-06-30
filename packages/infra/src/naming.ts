@@ -19,6 +19,8 @@ export function ssmPaths(config: InfraConfig) {
   return {
     /** Physical name of the (auto-named) media bucket. */
     mediaBucketName: `${base}/data/media-bucket-name`,
+    /** Public HTTPS base URL for media objects (CloudFront in front of the bucket). */
+    mediaPublicBaseUrl: `${base}/data/media-public-base-url`,
     /** Complete ARN of the Google OAuth JSON secret (Auth stack). */
     googleOAuthArn: `${base}/auth/google-oauth-arn`,
     /** Complete ARN of the Better Auth signing secret (Auth stack). */
