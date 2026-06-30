@@ -71,7 +71,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                       />
                     ) : (
                       <div className="text-muted-foreground/30 flex h-full items-center justify-center">
-                        Project Screenshot
+                        Confidential
                       </div>
                     )}
                   </div>
