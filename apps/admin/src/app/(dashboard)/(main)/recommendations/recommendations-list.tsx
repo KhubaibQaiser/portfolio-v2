@@ -38,7 +38,7 @@ const FORM_FIELDS = [
   { key: "linkedin_url" as const, label: "LinkedIn verify URL", type: "text" },
   {
     key: "avatar_url" as const,
-    label: "Avatar URL (optional)",
+    label: "Avatar URL",
     type: "text",
     optional: true,
   },
@@ -98,7 +98,9 @@ export function RecommendationsList({ initialData }: RecommendationsListProps) {
           <label className="mb-1 block text-sm font-medium">Description</label>
           <textarea
             value={editing.description}
-            onChange={(e) => setEditing((p) => p && { ...p, description: e.target.value })}
+            onChange={(e) =>
+              setEditing((p) => p && { ...p, description: e.target.value })
+            }
             rows={6}
             className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
           />

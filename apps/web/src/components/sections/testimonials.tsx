@@ -9,6 +9,7 @@ import {
   type Testimonial,
 } from "@portfolio/shared/schemas";
 import { formatRecommendationDate } from "@portfolio/shared/recommendation-dates";
+import { Tooltip } from "@portfolio/ui/tooltip";
 
 type TestimonialsProps = {
   testimonials: Testimonial[];
@@ -84,6 +85,21 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
                 }}
                 className="border-border/50 bg-muted/30 hover:border-accent/20 relative flex flex-col rounded-2xl border p-6 transition-colors"
               >
+                {t.linkedin_url.trim() ? (
+                  <div className="absolute top-4 right-4">
+                    <Tooltip content="Verify on LinkedIn" side="bottom">
+                      <a
+                        href={t.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Verify on LinkedIn"
+                        className="text-muted-foreground hover:text-accent hover:bg-accent/10 flex h-8 w-8 items-center justify-center rounded-full transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4" aria-hidden />
+                      </a>
+                    </Tooltip>
+                  </div>
+                ) : null}
                 <Quote className="text-accent/30 mb-4 h-8 w-8" />
                 <blockquote className="text-muted-foreground flex-1 text-sm leading-relaxed">
                   &ldquo;{preview}
@@ -126,17 +142,6 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
                       </p>
                     </div>
                   </div>
-                  {t.linkedin_url.trim() ? (
-                    <a
-                      href={t.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-accent mt-3 inline-flex items-center gap-1 text-xs font-medium hover:underline"
-                    >
-                      Verify on LinkedIn
-                      <ExternalLink className="h-3 w-3" aria-hidden />
-                    </a>
-                  ) : null}
                 </div>
               </motion.div>
             );
