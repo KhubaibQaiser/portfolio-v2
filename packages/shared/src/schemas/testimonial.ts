@@ -29,7 +29,7 @@ export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL =
   "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0";
 
 /** Card preview length on the public site; seed recommendations are ~186–208 chars. */
-export const RECOMMENDATION_DESCRIPTION_PREVIEW_MAX = 200;
+export const RECOMMENDATION_DESCRIPTION_PREVIEW_MAX = 300;
 
 export function truncateRecommendationDescription(
   text: string,
