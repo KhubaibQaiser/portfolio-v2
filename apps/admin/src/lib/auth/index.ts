@@ -51,7 +51,7 @@ function buildAuth(secrets: Awaited<ReturnType<typeof getAuthSecrets>>) {
         googleSub: {
           type: "string",
           required: true,
-          input: false,
+          input: true,
         },
       },
     },
