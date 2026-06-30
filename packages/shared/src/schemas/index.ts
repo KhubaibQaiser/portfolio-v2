@@ -68,6 +68,8 @@ export {
   testimonialSchema,
   testimonialRowSchema,
   DEFAULT_LINKEDIN_RECOMMENDATIONS_URL,
+  RECOMMENDATION_DESCRIPTION_PREVIEW_MAX,
+  truncateRecommendationDescription,
   type TestimonialFormData,
   type Testimonial,
 } from "./testimonial";

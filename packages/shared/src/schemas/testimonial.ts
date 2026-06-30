@@ -27,3 +27,22 @@ export type Testimonial = z.infer<typeof testimonialRowSchema>;
 /** Default verify URL pre-filled in admin for new recommendations. */
 export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL =
   "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0";
+
+/** Card preview length on the public site; seed recommendations are ~186–208 chars. */
+export const RECOMMENDATION_DESCRIPTION_PREVIEW_MAX = 200;
+
+export function truncateRecommendationDescription(
+  text: string,
+  max = RECOMMENDATION_DESCRIPTION_PREVIEW_MAX,
+): { preview: string; isTruncated: boolean } {
+  if (text.length <= max) {
+    return { preview: text, isTruncated: false };
+  }
+
+  const slice = text.slice(0, max);
+  const lastSpace = slice.lastIndexOf(" ");
+  const preview =
+    lastSpace > max * 0.6 ? slice.slice(0, lastSpace).trimEnd() : slice.trimEnd();
+
+  return { preview, isTruncated: true };
+}
