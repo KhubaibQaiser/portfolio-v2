@@ -4,13 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./open-next-lambda-deps": "./src/open-next-lambda-deps.ts"
+    "./open-next-lambda-deps": "./src/open-next-lambda-deps.ts",
+    "./ssm-paths": "./src/ssm-paths.ts",
+    "./media-remote-patterns": "./src/media-remote-patterns.ts"
   },
   "scripts": {
+    "build-open-next": "tsx src/build-open-next.ts",
+    "smoke-test-images": "tsx src/smoke-test-image-optimizer.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.20.0",
     "typescript": "^6.0.2"
   }
 }

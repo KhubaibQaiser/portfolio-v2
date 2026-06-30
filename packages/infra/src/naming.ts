@@ -2,37 +2,15 @@ import { Stack } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import type { Construct } from "constructs";
+import { ssmPaths as deploySsmPaths } from "@portfolio/deploy/ssm-paths";
 import type { InfraConfig } from "./config";
 
 /**
- * SSM Parameter Store is the cross-stack discovery registry. Producers publish
- * physical names/ids here; consumers read them by these stable logical paths.
- *
- * This deliberately replaces CloudFormation cross-stack exports, which deadlock
- * ("Cannot update export … as it is in use") whenever a producer resource is
- * replaced. The SSM paths are the contract between stacks — physical resource
- * names are free to change (or be auto-generated), and a future migration just
- * repoints the parameter. See docs/adr/0001-cross-stack-references.md.
+ * SSM Parameter Store paths for this app's infra config.
+ * Logical paths are single-sourced in `@portfolio/deploy/ssm-paths`.
  */
 export function ssmPaths(config: InfraConfig) {
-  const base = `/${config.appName.toLowerCase()}`;
-  return {
-    /** Physical name of the (auto-named) media bucket. */
-    mediaBucketName: `${base}/data/media-bucket-name`,
-    /** Public HTTPS base URL for media objects (CloudFront in front of the bucket). */
-    mediaPublicBaseUrl: `${base}/data/media-public-base-url`,
-    /** Complete ARN of the Google OAuth JSON secret (Auth stack). */
-    googleOAuthArn: `${base}/auth/google-oauth-arn`,
-    /** Complete ARN of the Better Auth signing secret (Auth stack). */
-    betterAuthSecretArn: `${base}/auth/better-auth-secret-arn`,
-    /** Route 53 public hosted zone id (from the Dns stack). */
-    hostedZoneId: `${base}/dns/hosted-zone-id`,
-    /** us-east-1 ACM certificate ARN for CloudFront (from the Cert stack). */
-    certificateArn: `${base}/dns/certificate-arn`,
-    /** Complete ARNs (incl. random suffix) of the CDK-owned AI key secrets. */
-    groqApiKeyArn: `${base}/ai/groq-api-key-arn`,
-    anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,
-  } as const;
+  return deploySsmPaths(config.appName);
 }
 
 /** Secrets Manager secret names (values injected out-of-band or auto-generated). */
