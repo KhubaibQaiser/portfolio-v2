@@ -106,7 +106,7 @@ def main() -> None:
                 "AWS Lambda",
                 "Amazon DynamoDB",
                 "Amazon S3 + CloudFront",
-                "Amazon Cognito",
+                "Better Auth",
                 "OpenNext",
                 "Vercel AI SDK",
                 "Groq",
