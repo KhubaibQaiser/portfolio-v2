@@ -123,7 +123,7 @@
     ]
   },
   "resume": {
-    "default_summary": "Senior software engineer with 11 years building web and mobile products in ad tech, e-commerce, SaaS, and edtech. Day-to-day stack: React, Next.js, TypeScript, and AWS serverless (Lambda, CDK, DynamoDB). Recent scope includes systems serving 50K+ daily impressions, a 60% Core Web Vitals improvement, and technical leadership across six employers in four countries. Uses AI-assisted coding to shorten delivery cycles; keeps quality through code review, tests, and operational monitoring.",
+    "default_summary": "Senior software engineer with 11 years building production web and mobile products across ad tech, e-commerce, SaaS, and edtech. Core stack: React, Next.js, TypeScript, and AWS serverless (Lambda, CDK, DynamoDB). Recent work includes serverless systems at 50K+ daily impressions, a 60% Core Web Vitals gain, and a design system adopted by 40+ engineers across four countries.",
     "education": [
       {
         "url": null,
@@ -147,11 +147,6 @@
         "url": null,
         "name": "REST API (Intermediate)",
         "issuer": "HackerRank"
-      },
-      {
-        "url": null,
-        "name": "React (Basic)",
-        "issuer": "HackerRank"
       }
     ],
     "visible_sections": [
@@ -172,33 +167,22 @@
       "contract_type": "full_time",
       "start_date": "Aug 2024",
       "end_date": null,
-      "description": "Launched Embed Generator, Shopsense’s first publisher embed commerce product and a new line of business that monetized editorial content through shoppable templates on partner sites.\nBuilt the original serverless stack (CDK, Lambda, DynamoDB, SQS, S3, CloudFront, LLM/Supabase product flows) and a lightweight injector used in production on publisher pages.\nMigrated and upgraded the platform into Shoppability: self-serve admin dashboard, more embed types, per-publisher branding, and async processing for faster, easier publisher onboarding.\nScaled the architecture in a Turborepo monorepo with shared types, review/reprocess workflows, analytics dashboards, and CI/CD across preview, staging, and production environments.",
+      "description": "Launched Embed Generator, Shopsense's first publisher embed commerce product, opening a new revenue line through shoppable templates on partner sites.\nArchitected the original serverless platform (CDK, Lambda, DynamoDB, SQS, S3, CloudFront) with LLM-driven product flows and a production page injector.\nEvolved the platform into Shoppability: self-serve admin, multiple embed types, per-publisher branding, and async onboarding pipelines.\nScaled delivery in a Turborepo monorepo with shared types, review/reprocess workflows, analytics dashboards, and CI/CD across preview, staging, and production.",
       "tech_tags": [
         "TypeScript",
         "React",
         "Vite",
         "Turborepo",
-        "TanStack Router",
         "TanStack Query",
         "TanStack Table",
-        "Recharts",
         "Tailwind CSS",
-        "Radix UI",
-        "Zod",
         "AWS CDK",
         "Lambda",
         "DynamoDB",
         "SQS",
-        "API Gateway",
         "S3",
         "CloudFront",
-        "Fastly Edge",
-        "Docker",
         "Supabase",
-        "LLM APIs",
-        "Google Vision",
-        "PostHog",
-        "Amplitude",
         "GitHub Actions"
       ],
       "logo_url": null,
@@ -214,7 +198,7 @@
       "contract_type": "full_time",
       "start_date": "Jun 2023",
       "end_date": "Aug 2024",
-      "description": "Led CRA to Vite migration, reducing build times by 70% and improving developer experience\nImplemented React 18 features (Suspense, React Query) achieving 60% Core Web Vitals improvement\nMentored team of 5 on performance optimization best practices and modern React patterns",
+      "description": "Led CRA-to-Vite migration, cutting build times 70% and improving developer experience for the team.\nShipped React 18 patterns (Suspense, TanStack Query) that drove a 60% Core Web Vitals improvement on key flows.\nMentored 5 engineers on performance optimization and modern React architecture.",
       "tech_tags": [
         "React 18",
         "Vite",
@@ -236,7 +220,7 @@
       "contract_type": "contract",
       "start_date": "Jan 2023",
       "end_date": "Jun 2023",
-      "description": "Shipped cross-platform trading app with React Native, Next.js, and shared web/mobile codebase\nIntegrated Apollo GraphQL, Auth0, and Storybook for a cohesive full-stack development experience\nImplemented E2E testing with Detox (mobile) and Playwright (web) ensuring release stability",
+      "description": "Delivered a cross-platform sneaker trading app with shared React Native and Next.js codebase.\nIntegrated Apollo GraphQL, Auth0, and Storybook; added Detox and Playwright E2E coverage for release confidence.",
       "tech_tags": [
         "React Native",
         "Next.js",
@@ -259,7 +243,7 @@
       "contract_type": "full_time",
       "start_date": "Sep 2020",
       "end_date": "Jan 2023",
-      "description": "Created private npm design system adopted by 40+ engineers across 8 product teams\nLaunched company profile with Next.js + Contentful + Tailwind, achieving 70% Core Web Vitals improvement\nLed marketplace feature development for B2B e-commerce platform serving Indonesian market",
+      "description": "Built a private npm design system adopted by 40+ engineers across 8 product teams.\nLed marketplace and company-profile features on Next.js + Contentful + Tailwind for Indonesia's B2B e-commerce platform.",
       "tech_tags": [
         "React",
         "Next.js",
@@ -282,7 +266,7 @@
       "contract_type": "full_time",
       "start_date": "Feb 2019",
       "end_date": "Aug 2020",
-      "description": "Built transport management dashboards and driver tracking system for logistics operations\nDeveloped React Native driver app and rewrote Android app in Kotlin for improved performance\nMentored junior engineers and established code review processes for the engineering team",
+      "description": "Built transport management dashboards and a React Native driver tracking app for logistics operations.\nRewrote the Android driver app in Kotlin and mentored juniors on code review practices.",
       "tech_tags": [
         "React",
         "React Native",
@@ -303,7 +287,7 @@
       "contract_type": "full_time",
       "start_date": "Sep 2015",
       "end_date": "Feb 2019",
-      "description": "Developed educational games reaching 500K+ students across Pakistan and Middle East\nDelivered cross-platform mobile applications and interactive learning tools with HTML5 Canvas\nCreated survey application for CERP (Centre for Economic Research in Pakistan)",
+      "description": "Shipped educational games and learning tools reaching 500K+ students across Pakistan and the Middle East.\nBuilt cross-platform mobile apps and a CERP survey application for economic research.",
       "tech_tags": [
         "JavaScript",
         "HTML5 Canvas",
@@ -325,7 +309,7 @@
       "contract_type": "part_time",
       "start_date": "Oct 2023",
       "end_date": null,
-      "description": "Built a white-label admin dashboard in React 19, TypeScript, and Vite. Each client can use their own brand (logo, legal name, invoice branding) on one shared platform.\nWorked on 20+ modules with role-based access: Companies, Contacts, Invoices, Accounts Receivable, Support Tickets, Email Templates, and Settings. Permissions are checked at route and feature level with Zod schemas.\nBuilt a custom dashboard with 25+ widgets (sales, finance, inventory, commissions, maps). Users can drag, resize, and save their layout. Used dnd-kit and React Query for state and persistence.\nImproved large data tables with TanStack Table and Virtual. Added virtual rows, infinite scroll, filters, bulk actions, and keyboard navigation for big client and invoice lists.\nBuilt invoice and AR features: split-pane views, invoice batches, email status tracking, and brand/client grouping. This helped finance teams work faster with less manual work.\nAdded support ticket flows inside Company and Contact pages, plus a main Support module. Built email templates with rich text (TinyMCE) and default templates for client emails.\nSet up frontend patterns for a large codebase (4,000+ files): lazy routes with TanStack Router, shared forms and tables, React Hook Form + Zod validation, query cache persistence, and Sentry for errors.",
+      "description": "Built a white-label React 19 + TypeScript admin platform with per-client branding, RBAC across 20+ modules, and Zod-validated forms.\nShipped a drag-and-drop dashboard (25+ widgets, dnd-kit, TanStack Query) and high-volume data tables with TanStack Virtual, filters, and bulk actions.\nEstablished frontend patterns for a 4,000+ file codebase: lazy TanStack Router routes, shared form/table primitives, and Sentry error monitoring.",
       "tech_tags": [
         "React 19",
         "TypeScript",
@@ -770,15 +754,6 @@
       "sort_order": 4
     },
     {
-      "id": "3e93178a-eecc-4447-9867-d8071c0a95d4",
-      "name": "Framer Motion",
-      "category": "frontend",
-      "proficiency": 80,
-      "icon": null,
-      "years": 2,
-      "sort_order": 5
-    },
-    {
       "id": "89d77f74-67e0-46fb-9fcf-acd1da599bd3",
       "name": "React Native",
       "category": "mobile",
@@ -885,15 +860,6 @@
       "icon": null,
       "years": 3,
       "sort_order": 1
-    },
-    {
-      "id": "6ff3e185-7af9-4fa9-8e58-5165dec6501f",
-      "name": "Linear / JIRA",
-      "category": "tools",
-      "proficiency": 85,
-      "icon": null,
-      "years": 8,
-      "sort_order": 2
     }
   ],
   "testimonials": [

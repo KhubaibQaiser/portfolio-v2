@@ -18,9 +18,9 @@ export const tailoredBulletSchema = z.object({
   text: z
     .string()
     .min(10)
-    .max(350)
+    .max(280)
     .describe(
-      "Rewritten bullet. Rephrase/reorder only; never invent metrics or facts.",
+      "Rewritten bullet. Rephrase/reorder only; never invent metrics or facts. Max ~22 words.",
     ),
 });
 
@@ -28,14 +28,14 @@ export type TailoredBullet = z.infer<typeof tailoredBulletSchema>;
 
 export const tailoredExperienceSchema = z.object({
   experienceId: z.string().min(1),
-  bullets: z.array(tailoredBulletSchema).min(1).max(8),
+  bullets: z.array(tailoredBulletSchema).min(1).max(4),
 });
 
 export type TailoredExperience = z.infer<typeof tailoredExperienceSchema>;
 
 export const tailoredSkillGroupSchema = z.object({
   category: z.string().min(1),
-  items: z.array(z.string().min(1)).min(1).max(20),
+  items: z.array(z.string().min(1)).min(1).max(8),
 });
 
 export type TailoredSkillGroup = z.infer<typeof tailoredSkillGroupSchema>;
@@ -44,20 +44,28 @@ export const tailoredResumeSchema = z.object({
   summary: z
     .string()
     .min(80)
-    .max(900)
+    .max(450)
     .describe(
-      "Professional summary tailored to the JD. 2-4 sentences. No AI cliches.",
+      "Professional summary tailored to the JD. 2-3 sentences. No AI cliches.",
+    ),
+  titleOverride: z
+    .string()
+    .max(80)
+    .optional()
+    .describe(
+      "JD-aligned job title when truthful to candidate level (e.g. Senior Full-Stack Engineer). Omit to keep default.",
     ),
   keywords: z
     .array(z.string().min(1))
-    .max(30)
+    .max(25)
     .describe(
       "ATS keyword list the summary + bullets cover. Truthful to source only.",
     ),
-  experiences: z.array(tailoredExperienceSchema).min(1),
+  experiences: z.array(tailoredExperienceSchema).min(1).max(5),
   skills: z
     .array(tailoredSkillGroupSchema)
     .min(1)
+    .max(6)
     .describe(
       "Skills regrouped/reordered to surface JD-relevant categories first.",
     ),

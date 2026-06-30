@@ -6,13 +6,9 @@ import {
   CoverLetterDocument,
   type CoverLetterMeta,
 } from "@portfolio/ui/resume-pdf";
-import {
-  tailoredResumeSchema,
-  coverLetterSchema,
-  type TailoredResume,
-} from "@portfolio/ai/schemas";
+import { tailoredResumeSchema, coverLetterSchema } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
-import { getResumeData, type ResumeData } from "@portfolio/shared/resume-data";
+import { applyTailoredResume, getResumeData } from "@portfolio/shared/resume-data";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
@@ -43,48 +39,6 @@ function safeFileName(parts: (string | undefined)[]): string {
     .map((p) => p.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, ""))
     .filter(Boolean)
     .join("_");
-}
-
-/**
- * Merge the tailored AI resume into the admin's canonical ResumeData shape
- * used by `ResumeDocument`. We keep name/contact/education/certifications
- * from the DB (authoritative), and overlay summary/experience bullets/skills
- * from the tailored payload.
- */
-function applyTailoredResume(base: ResumeData, tailored: TailoredResume): ResumeData {
-  const tailoredBulletsByExpId = new Map<string, string[]>();
-  for (const e of tailored.experiences) {
-    tailoredBulletsByExpId.set(
-      e.experienceId,
-      e.bullets.map((b) => b.text),
-    );
-  }
-
-  const experienceByStableIndex = base.experience.map((exp, i) => {
-    const stableId = `e${i + 1}`;
-    const override = tailoredBulletsByExpId.get(stableId);
-    if (!override) return exp;
-    return { ...exp, bullets: override };
-  });
-
-  const tailoredSkills =
-    tailored.skills.length > 0
-      ? tailored.skills.map((g) => ({
-          category: g.category,
-          items: g.items,
-        }))
-      : base.skills;
-
-  const keywords =
-    tailored.keywords.length > 0 ? tailored.keywords.join(", ") : base.keywords;
-
-  return {
-    ...base,
-    summary: tailored.summary || base.summary,
-    experience: experienceByStableIndex,
-    skills: tailoredSkills,
-    keywords,
-  };
 }
 
 export async function POST(request: Request) {

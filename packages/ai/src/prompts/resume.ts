@@ -23,7 +23,7 @@ export function buildResumeSystemPrompt(
   facts: CandidateFacts,
   opts: ResumePromptOptions = {},
 ): string {
-  const header = `You are a senior resume strategist tailoring an existing candidate profile to a specific Job Description. Your job is to REWRITE, not invent, so the resulting resume is ATS-friendly and sounds unmistakably human.`;
+  const header = `You are a senior resume strategist tailoring an existing candidate profile to a specific Job Description. Your job is to REWRITE, not invent, so the resulting resume is ATS-friendly and sounds unmistakably human. Target a 2-page PDF: concise, impact-first, no filler.`;
 
   const roleLine = opts.role
     ? `Target role: ${opts.role}${opts.company ? ` at ${opts.company}` : ""}.`
@@ -46,11 +46,18 @@ export function buildResumeSystemPrompt(
     ANTI_ROBOTIC_RULES,
     `OUTPUT SHAPE:
 - Return JSON matching the provided schema exactly.
-- summary: a 2-4 sentence professional summary anchored in the candidate's real work.
-- experiences: one entry per relevant experience from the fact sheet. You may reorder by JD relevance, drop irrelevant roles entirely, or keep them all.
-- For each experience, produce 3-6 bullets. Each bullet MUST include {experienceId, sourceBulletIndex} pointing to a real source bullet. Max ~28 words per bullet.
-- skills: regroup/reorder so JD-relevant categories come first. You may rename categories for clarity (e.g. "Frontend" → "Frontend & UX").
-- keywords: short list (≤ 30) of ATS-relevant keywords your rewrite truthfully covers.`,
+- summary: 2-3 sentences, max 450 characters. Lead with years + core stack + best metric. No AI-tooling mention unless the JD asks for it.
+- titleOverride: optional JD-aligned title when truthful (Senior/Staff/Full-Stack). Omit if default title fits.
+- experiences: include ONLY roles relevant to the JD, max 5 total, ordered by JD relevance. Drop oldest or least relevant roles entirely.
+- Bullet budget by relevance (top = most JD-relevant after reordering):
+  - Top 2 roles: up to 4 bullets each, max ~22 words per bullet.
+  - Next 2 roles: 2-3 bullets each.
+  - 5th role (if included): 1-2 bullets max.
+- Roles before 2019 (e.g. early mobile/edtech): omit unless the JD explicitly needs that domain. If included, max 1 bullet each.
+- Part-time or concurrent roles: max 2 bullets; frame as consulting when appropriate.
+- Weave 1-2 stack terms into each bullet inline. Do NOT add a separate Technologies footer.
+- skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS, etc.).
+- keywords: max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.`,
     `CANDIDATE FACT SHEET:\n${facts.factSheet}`,
     include,
     retry,
