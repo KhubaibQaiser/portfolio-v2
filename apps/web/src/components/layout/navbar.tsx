@@ -13,7 +13,17 @@ function trackNav(href: string, label: string) {
   capturePortfolioEvent(PortfolioEvents.primaryNavClick, { href, label });
 }
 
+/** Section anchors from CMS are hash-only; they always target a home-page section. */
+function toHomeSectionHref(href: string) {
+  return {
+    pathname: "/" as const,
+    hash: href.startsWith("#") ? href.slice(1) : href,
+  };
+}
+
 type NavLink = { label: string; href: string };
+
+const MotionLink = motion.create(Link);
 
 type NavbarProps = {
   name: string;
@@ -66,9 +76,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
 
         <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((link, i) => (
-            <a
+            <Link
               key={link.href}
-              href={link.href}
+              href={toHomeSectionHref(link.href)}
               onClick={() => trackNav(link.href, link.label)}
               className={cn(
                 "text-muted-foreground relative px-3 py-2 text-sm font-medium",
@@ -78,9 +88,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             >
               <span className="text-accent font-mono text-xs opacity-70">0{i + 1}.</span>{" "}
               {link.label}
-            </a>
+            </Link>
           ))}
-          <a
+          <Link
             href="/resume"
             onClick={() => trackNav("/resume", "Resume")}
             className={cn(
@@ -91,7 +101,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             )}
           >
             Resume
-          </a>
+          </Link>
           <div className="ml-2">
             <ThemeToggle />
           </div>
@@ -120,9 +130,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 backdrop-blur-xl md:hidden"
           >
             {navLinks.map((link, i) => (
-              <motion.a
+              <MotionLink
                 key={link.href}
-                href={link.href}
+                href={toHomeSectionHref(link.href)}
                 onClick={() => {
                   trackNav(link.href, link.label);
                   setMobileOpen(false);
@@ -134,9 +144,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               >
                 <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
                 {link.label}
-              </motion.a>
+              </MotionLink>
             ))}
-            <motion.a
+            <MotionLink
               href="/resume"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -148,7 +158,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
               className="border-accent text-accent rounded-full border px-6 py-2 text-sm font-medium"
             >
               Resume
-            </motion.a>
+            </MotionLink>
           </motion.div>
         )}
       </AnimatePresence>
