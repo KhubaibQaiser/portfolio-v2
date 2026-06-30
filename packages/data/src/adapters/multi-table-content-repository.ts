@@ -38,6 +38,7 @@ import type {
   TestimonialFormData,
 } from "@portfolio/shared/types";
 import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
+import { sortRecommendationsByDateDesc } from "@portfolio/shared/recommendation-dates";
 import type { TableNames } from "../dynamo/tables";
 
 type Item = Record<string, unknown>;
@@ -366,7 +367,7 @@ export function createMultiTableContentRepository(
     // Testimonials
     async getTestimonials() {
       const items = await listItems(tables.testimonial);
-      return items.map(toTestimonial).sort((a, b) => a.sort_order - b.sort_order);
+      return sortRecommendationsByDateDesc(items.map(toTestimonial));
     },
     async insertTestimonial(values: TestimonialFormData) {
       const row = insertRow(values);

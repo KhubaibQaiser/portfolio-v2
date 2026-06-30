@@ -189,12 +189,16 @@ def main() -> None:
         content["testimonials"].append(
             {
                 "id": row["id"],
-                "quote": row["quote"],
-                "author_name": row["author_name"],
-                "author_title": row["author_title"],
-                "company": row["company"],
-                "avatar_url": to_nullable_str(row["avatar_url"]),
-                "sort_order": to_int(row["sort_order"]),
+                "full_name": row.get("full_name") or row.get("author_name", ""),
+                "profile_url": row.get("profile_url", ""),
+                "role_title": row.get("role_title") or row.get("author_title", ""),
+                "recommended_at": row.get("recommended_at", ""),
+                "description": row.get("description") or row.get("quote", ""),
+                "linkedin_url": row.get(
+                    "linkedin_url",
+                    "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
+                ),
+                "avatar_url": to_nullable_str(row.get("avatar_url")),
             }
         )
 
@@ -211,8 +215,12 @@ def main() -> None:
             }
         )
 
-    for key in ("experience", "projects", "testimonials"):
+    for key in ("experience", "projects"):
         content[key].sort(key=lambda r: r["sort_order"])
+    content["testimonials"].sort(
+        key=lambda r: r.get("recommended_at", ""),
+        reverse=True,
+    )
     content["skills"].sort(key=lambda r: (r["category"], r["sort_order"]))
 
     OUT_PATH.write_text(json.dumps(content, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

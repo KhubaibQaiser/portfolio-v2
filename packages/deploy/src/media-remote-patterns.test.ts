@@ -45,7 +45,10 @@ describe("mediaRemotePatterns", () => {
     delete process.env.PORTFOLIO_OPENNEXT_BUILD;
     process.env.NODE_ENV = "production";
 
-    expect(mediaRemotePatterns()).toEqual([]);
+    expect(mediaRemotePatterns()).toEqual([
+      { protocol: "https", hostname: "media.licdn.com" },
+      { protocol: "https", hostname: "static.licdn.com" },
+    ]);
   });
 
   it("isOpenNextBuild reflects PORTFOLIO_OPENNEXT_BUILD", () => {

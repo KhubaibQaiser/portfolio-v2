@@ -1,12 +1,17 @@
 import { z } from "zod";
 
 export const testimonialSchema = z.object({
-  quote: z.string().min(1).max(2000),
-  author_name: z.string().min(1).max(100),
-  author_title: z.string().min(1).max(150),
-  company: z.string().min(1).max(100),
-  avatar_url: z.string().url().nullable(),
-  sort_order: z.number().int().min(0),
+  full_name: z.string(),
+  profile_url: z.string(),
+  role_title: z.string(),
+  recommended_at: z.string(),
+  description: z.string(),
+  linkedin_url: z.string(),
+  avatar_url: z
+    .string()
+    .nullable()
+    .transform((v) => (v?.trim() ? v.trim() : null))
+    .default(null),
 });
 
 export type TestimonialFormData = z.infer<typeof testimonialSchema>;
@@ -18,3 +23,7 @@ export const testimonialRowSchema = testimonialSchema.extend({
 });
 
 export type Testimonial = z.infer<typeof testimonialRowSchema>;
+
+/** Default verify URL pre-filled in admin for new recommendations. */
+export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL =
+  "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0";

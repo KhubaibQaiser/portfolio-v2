@@ -67,6 +67,7 @@ export {
 export {
   testimonialSchema,
   testimonialRowSchema,
+  DEFAULT_LINKEDIN_RECOMMENDATIONS_URL,
   type TestimonialFormData,
   type Testimonial,
 } from "./testimonial";

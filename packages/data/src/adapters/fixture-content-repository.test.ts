@@ -37,17 +37,25 @@ describe("FixtureContentRepository", () => {
 
   it("isolates state between instances", async () => {
     await repo.insertTestimonial({
-      quote: "Great engineer.",
-      author_name: "Test",
-      author_title: "CEO",
-      company: "Acme",
+      full_name: "Test User",
+      profile_url: "https://www.linkedin.com/in/example/",
+      role_title: "CEO at Acme",
+      recommended_at: "01-01-2025",
+      description: "Great engineer.",
+      linkedin_url:
+        "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
       avatar_url: null,
-      sort_order: 99,
     });
     expect(await repo.getTestimonials()).toHaveLength(4);
 
     const fresh = createFixtureContentRepository();
     expect(await fresh.getTestimonials()).toHaveLength(3);
+  });
+
+  it("returns testimonials sorted by recommended_at descending", async () => {
+    const rows = await repo.getTestimonials();
+    expect(rows[0]?.full_name).toBe("Alex Rivera");
+    expect(rows.at(-1)?.full_name).toBe("Adi Prasetyo");
   });
 
   it("creates, updates, and deletes an experience row", async () => {

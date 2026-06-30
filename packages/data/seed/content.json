@@ -88,6 +88,10 @@
         "label": "About"
       },
       {
+        "href": "#recommendations",
+        "label": "Recommendations"
+      },
+      {
         "href": "#skills",
         "label": "Skills"
       },
@@ -865,30 +869,33 @@
   "testimonials": [
     {
       "id": "102edd9d-e8ca-42c5-bab7-5a70fe223991",
-      "quote": "Khubaib is one of the most skilled frontend engineers I've worked with. He took ownership of our ad delivery platform and delivered a production-grade system that handles tens of thousands of impressions daily.",
-      "author_name": "Alex Rivera",
-      "author_title": "CTO",
-      "company": "Shopsense AI",
-      "avatar_url": null,
-      "sort_order": 0
+      "full_name": "Alex Rivera",
+      "profile_url": "https://www.linkedin.com/in/example/",
+      "role_title": "CTO at Shopsense AI",
+      "recommended_at": "15-06-2024",
+      "description": "Khubaib is one of the most skilled frontend engineers I've worked with. He took ownership of our ad delivery platform and delivered a production-grade system that handles tens of thousands of impressions daily.",
+      "linkedin_url": "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
+      "avatar_url": null
     },
     {
       "id": "9e87b769-0a44-461d-b8c8-7ad345f4546d",
-      "quote": "His work on migrating our legacy CRA apps to Vite was flawless. Build times dropped by 70% and developer satisfaction went through the roof. Khubaib consistently ships high-quality, well-tested code.",
-      "author_name": "Sarah Chen",
-      "author_title": "Engineering Manager",
-      "company": "Achieve",
-      "avatar_url": null,
-      "sort_order": 1
+      "full_name": "Sarah Chen",
+      "profile_url": "https://www.linkedin.com/in/example/",
+      "role_title": "Engineering Manager at Achieve",
+      "recommended_at": "10-03-2024",
+      "description": "His work on migrating our legacy CRA apps to Vite was flawless. Build times dropped by 70% and developer satisfaction went through the roof. Khubaib consistently ships high-quality, well-tested code.",
+      "linkedin_url": "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
+      "avatar_url": null
     },
     {
       "id": "e92e4539-2de8-40ff-ad31-138e34a2476c",
-      "quote": "Khubaib created our entire design system from scratch as a private npm package. It unified the UI across 8 teams and 40+ engineers. His attention to DX and component API design is exceptional.",
-      "author_name": "Adi Prasetyo",
-      "author_title": "VP of Engineering",
-      "company": "GudangAda",
-      "avatar_url": null,
-      "sort_order": 2
+      "full_name": "Adi Prasetyo",
+      "profile_url": "https://www.linkedin.com/in/example/",
+      "role_title": "VP of Engineering at GudangAda",
+      "recommended_at": "20-01-2023",
+      "description": "Khubaib created our entire design system from scratch as a private npm package. It unified the UI across 8 teams and 40+ engineers. His attention to DX and component API design is exceptional.",
+      "linkedin_url": "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
+      "avatar_url": null
     }
   ],
   "media": [
