@@ -266,26 +266,3 @@ export async function saveResume(
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
   }
 }
-
-// ---------------------------------------------------------------------------
-// Media
-// ---------------------------------------------------------------------------
-
-export async function deleteMediaAsset(id: string): Promise<ActionResult> {
-  const auth = await requireAdmin();
-  if (!auth.ok) return { success: false, error: auth.error };
-
-  try {
-    const row = await repo.getMediaById(id);
-    const { getMediaStore } = await import("@portfolio/data/media");
-    const mediaStore = await getMediaStore();
-    if (mediaStore.isConfigured()) {
-      const key = mediaStore.publicUrlToObjectKey(row.url);
-      if (key) await mediaStore.deleteObject(key);
-    }
-    await repo.deleteMediaRow(id);
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
-  }
-}

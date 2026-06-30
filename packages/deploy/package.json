@@ -1,0 +1,16 @@
+{
+  "name": "@portfolio/deploy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./open-next-lambda-deps": "./src/open-next-lambda-deps.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

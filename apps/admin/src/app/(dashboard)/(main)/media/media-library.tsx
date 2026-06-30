@@ -6,7 +6,7 @@ import { MediaAssetCard } from "@portfolio/ui/media-asset-card";
 import { MediaDropzone } from "@portfolio/ui/media-dropzone";
 import { formatBytes } from "@portfolio/shared/utils";
 import type { Media as MediaRow } from "@portfolio/shared/schemas";
-import { deleteMediaAsset } from "@/lib/actions";
+import { deleteMediaAsset } from "@/lib/media-actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 

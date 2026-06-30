@@ -1,4 +1,5 @@
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next";
+import { OPEN_NEXT_LAMBDA_PACKAGES } from "@portfolio/deploy/open-next-lambda-deps";
 
 /**
  * OpenNext build config for the admin app. Mirrors the web app: AWS Lambda
@@ -15,12 +16,7 @@ const config = {
       queue: "direct",
     },
     install: {
-      packages: [
-        "@swc/helpers@0.5.15",
-        "styled-jsx@5.1.6",
-        "@next/env@16.2.9",
-        "@react-pdf/renderer@4.4.1",
-      ],
+      packages: [...OPEN_NEXT_LAMBDA_PACKAGES],
       arch: "arm64",
     },
   },
