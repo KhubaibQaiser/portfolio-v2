@@ -47,7 +47,7 @@ const web = new WebStack(app, `${config.appName}-Web`, {
 const auth = new AuthStack(app, `${config.appName}-Auth`, {
   env: primaryEnv,
   config,
-  description: "Cognito user pool + Hosted UI for the admin dashboard",
+  description: "Better Auth secrets (Google OAuth + signing key) for the admin app",
 });
 
 const admin = new AdminStack(app, `${config.appName}-Admin`, {
@@ -67,7 +67,7 @@ const shared = new SharedStack(app, `${config.appName}-Shared`, {
 // Stacks reference each other's resources by ARN/SSM, not CloudFormation
 // exports (see docs/adr/0001-cross-stack-references.md), so these are
 // ordering-only deps: they make `cdk deploy --all` create the DataStack tables
-// + bucket and the AuthStack SSM params before the consumers read them, without
+// + bucket and the AuthStack secret ARNs before the consumers read them, without
 // creating any import that could deadlock on a future replacement.
 web.addDependency(data);
 admin.addDependency(data);

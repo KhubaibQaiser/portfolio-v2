@@ -2,7 +2,7 @@
 
 Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**'s portfolio: a **Turborepo** monorepo with a public Next.js site (`apps/web`), a content-editing admin (`apps/admin`), and shared packages — running **serverless on AWS**, defined end-to-end as **infrastructure-as-code with AWS CDK**.
 
-The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in **DynamoDB** (one table per aggregate), admin auth is **Amazon Cognito**, media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
+The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in **DynamoDB** (one table per aggregate), admin auth is **[Better Auth](https://www.better-auth.com/)** (Google sign-in, stateless sessions), media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
 
 ---
 
@@ -14,7 +14,7 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 | **Next.js 16 (App Router, RSC)** | Server data, streaming, time-based ISR |
 | **Hosting** — OpenNext on Lambda + CloudFront | SSR/ISR, image optimization, streaming |
 | **Data** — DynamoDB, one table per entity | Clean key schemas; content + resume history + rate-limit/cost counters |
-| **Auth** — Amazon Cognito (Hosted UI + PKCE) | Admin sign-in; email allowlist; `aws-jwt-verify` |
+| **Auth** — Better Auth + Google (stateless) | Admin sign-in; email allowlist; encrypted session cookies |
 | **IaC** — AWS CDK (TypeScript) | Every resource in `packages/infra`; `cdk deploy` |
 | **CI/CD** — GitHub Actions + OIDC | Lint/typecheck/build on PRs; deploy on push to `main` |
 | **Observability** — CloudWatch + PostHog | Alarms/dashboard/budget + product analytics & error tracking |
@@ -30,7 +30,7 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 - **OpenNext + Lambda + CloudFront:** full Next.js 16 feature support (SSR, ISR, RSC streaming, image optimization) on serverless AWS, behind a global CDN — no always-on servers, scale-to-zero, pay-per-request.
 - **Time-based ISR (1 hour):** the public site revalidates cached pages every 3600 seconds. Admin saves go straight to DynamoDB; visitors see updates within the revalidation window. No on-demand invalidation, tag cache, SQS, or revalidation Lambda.
 - **DynamoDB (table-per-entity):** each aggregate gets its own table with a clean, readable key schema. On-demand billing, point-in-time recovery on durable tables, and TTL on the ephemeral rate-limit table.
-- **Cognito:** managed admin auth via Hosted UI (OAuth authorization code + PKCE). Tokens are verified server-side with `aws-jwt-verify`; access is gated by an email allowlist.
+- **Better Auth (stateless):** Google OAuth for admin sign-in with encrypted cookie sessions — no Cognito, no auth database. Access is gated by an email allowlist at sign-in and on every mutation.
 - **S3 + CloudFront:** media uploads from admin (presigned), served from a public CDN URL.
 - **Ports & adapters:** the apps depend on interfaces (`ContentRepository`, `MediaStore`, `RateLimiter`, `CostCap`, `AuthProvider`), not on AWS SDKs directly — so the same code runs locally against fixtures / DynamoDB Local and in production against AWS.
 - **Groq + Anthropic via the Vercel AI SDK:** chat and the resume builder; the system prompt is built from DynamoDB-backed content.
@@ -53,7 +53,7 @@ flowchart LR
     end
     ddb[(DynamoDB content)]
     s3media[(S3 media)]
-    cognito[Cognito Hosted UI]
+    google[Google OAuth]
   end
 
   user --> cf --> webfn
@@ -61,7 +61,7 @@ flowchart LR
   webfn --> ddb
   webfn --> s3media
   admin_user --> cf --> admfn
-  admfn -->|verify JWT| cognito
+  admfn --> google
   admfn --> ddb
   admfn --> s3media
 ```
@@ -84,7 +84,7 @@ Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages
 | --- | --- | --- |
 | `Portfolio-Data` | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets |
 | `Portfolio-Web` | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache |
-| `Portfolio-Auth` | `eu-west-1` | Cognito user pool, app client (PKCE), Hosted UI |
+| `Portfolio-Auth` | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key) |
 | `Portfolio-Admin` | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront |
 | `Portfolio-Shared` | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget |
 | `Portfolio-Storybook` | `eu-west-1` | Static Storybook: private S3 + CloudFront |
@@ -102,7 +102,7 @@ The custom domain is **deferred by default** (`domainEnabled=false`): both apps 
 portfolio-v2/
 ├── apps/
 │   ├── web/                 # Public site — Next.js, route handlers, chat, resume PDF
-│   └── admin/               # CMS — Cognito auth, editors, media uploads
+│   └── admin/               # CMS — Better Auth, editors, media uploads
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, ports, constants
 │   ├── data/                # DynamoDB adapter + fixtures + seed
@@ -133,7 +133,7 @@ portfolio-v2/
 
 | Concern | Implementation |
 | --- | --- |
-| Auth | Cognito Hosted UI (PKCE), httpOnly cookies, email allowlist |
+| Auth | Better Auth + Google OAuth, stateless encrypted cookies, email allowlist |
 | Forms | React Hook Form + Zod |
 | Media | S3 presigned uploads |
 | Resume AI | Vercel AI SDK + Anthropic + Groq; structured Zod output |
@@ -215,7 +215,28 @@ pnpm exec cdk deploy \
   -c contactEmail=you@example.com
 ```
 
-On first deploy, run `Portfolio-Admin` once to get the CloudFront URL, then re-run with `-c adminUrls=<that URL>` for Cognito callback URLs.
+On first deploy, run `Portfolio-Admin` once to get the CloudFront URL, then re-run with `-c adminUrls=<that URL>` so `APP_ORIGIN` and Google OAuth redirect URIs match.
+
+### Google sign-in (admin)
+
+1. Deploy `Portfolio-Auth` (creates empty Google OAuth secret + auto-generated Better Auth signing secret).
+2. Inject Google OAuth credentials (JSON):
+   ```bash
+   aws secretsmanager put-secret-value \
+     --region eu-west-1 \
+     --secret-id /portfolio/google-oauth \
+     --secret-string '{"clientId":"YOUR_GOOGLE_CLIENT_ID","clientSecret":"YOUR_GOOGLE_CLIENT_SECRET"}'
+   ```
+3. In [Google Cloud Console](https://console.cloud.google.com/), configure the OAuth client:
+   - **Authorized redirect URI:** `https://<admin-origin>/api/auth/callback/google` (and `http://localhost:3001/api/auth/callback/google` for local dev)
+   - **Authorized JavaScript origin:** the admin origin (CloudFront URL or custom domain)
+
+| Secret name | SSM ARN param | Lambda env | Used by |
+| --- | --- | --- | --- |
+| `/portfolio/google-oauth` | `/portfolio/auth/google-oauth-arn` | `GOOGLE_OAUTH_SECRET_ARN` | Admin (Better Auth Google provider) |
+| `/portfolio/better-auth-secret` | `/portfolio/auth/better-auth-secret-arn` | `BETTER_AUTH_SECRET_ARN` | Admin (session signing; auto-generated by CDK) |
+
+**Note:** Resume history and usage counters are keyed by the Google account id (`profile.sub`). After migrating from Cognito, existing rows keyed by the old Cognito `sub` are orphaned — acceptable on a greenfield redeploy.
 
 ### AI API keys
 
@@ -251,7 +272,7 @@ After seeding, allow up to one hour for the public site ISR window to reflect ch
 
 1. `cdk deploy Portfolio-Dns` — delegate nameservers at your registrar.
 2. `cdk deploy Portfolio-Cert -c domainEnabled=true` — wait for ACM to issue.
-3. `cdk deploy --all -c domainEnabled=true` — wire CloudFront aliases and Cognito callbacks.
+3. `cdk deploy --all -c domainEnabled=true` — wire CloudFront aliases and admin `APP_ORIGIN`.
 
 Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cross-stack-references.md).
 
@@ -283,7 +304,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 
 | Variable | Purpose |
 | --- | --- |
-| `COGNITO_*` / `APP_ORIGIN` | Cognito auth |
+| `GOOGLE_OAUTH_SECRET_ARN` / `BETTER_AUTH_SECRET_ARN` / `APP_ORIGIN` | Better Auth + Google OAuth |
 | `ADMIN_ALLOWED_EMAILS` | Email allowlist (required at runtime) |
 | `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN` | Resume AI keys |
 | `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` | Media uploads |
@@ -297,7 +318,7 @@ In production, CDK injects these on the Lambda environment; the IAM role supplie
 
 - **CloudWatch:** `AppErrors` alarm from structured ERROR logs; dashboard and AWS Budget in `Portfolio-Shared`.
 - **PostHog:** product events, pageviews, exception capture with source maps.
-- **Auth:** Cognito JWT verification + allowlist on every mutation.
+- **Auth:** Better Auth session verification + allowlist on every mutation.
 - **Resume AI:** prompt-injection stripping, Zod validation, rate limits, daily cost cap.
 
 ---

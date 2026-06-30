@@ -6,8 +6,8 @@ export type AdminIdentity = {
 
 /**
  * Backend-agnostic admin authentication. Production resolves the identity from
- * a verified Cognito JWT; dev uses a fixed dev identity. The `isAllowed` check
- * enforces the admin email allowlist independently of the token source.
+ * a verified Better Auth session; the `isAllowed` check enforces the admin
+ * email allowlist independently of the token source.
  */
 export type AuthProvider = {
   /** Resolves the current admin identity, or null when unauthenticated. */

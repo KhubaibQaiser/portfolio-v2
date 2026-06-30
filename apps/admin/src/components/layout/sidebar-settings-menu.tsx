@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LogOut, Settings } from "lucide-react";
+import { authClient } from "@/lib/auth/auth-client";
 
 export function SidebarSettingsMenu() {
   const [open, setOpen] = useState(false);
@@ -28,8 +29,14 @@ export function SidebarSettingsMenu() {
     };
   }, [open]);
 
-  function handleSignOut() {
-    window.location.assign("/auth/logout");
+  async function handleSignOut() {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.assign("/login");
+        },
+      },
+    });
   }
 
   return (

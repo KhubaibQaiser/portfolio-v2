@@ -22,8 +22,8 @@ export type AdminStackProps = cdk.StackProps & {
  * Admin dashboard stack. Hosts the content-editing app via the OpenNext
  * {@link NextjsSite} construct on its own CloudFront distribution, isolated from
  * the public site. The server function gets read/write to the content tables
- * (by ARN pattern) and the media bucket (from the SSM registry); the Cognito
- * wiring is read from SSM too. It imports nothing across stacks — see
+ * (by ARN pattern) and the media bucket (from the SSM registry); auth secrets
+ * are read from SSM too. It imports nothing across stacks — see
  * docs/adr/0001-cross-stack-references.md.
  */
 export class AdminStack extends cdk.Stack {
@@ -54,6 +54,17 @@ export class AdminStack extends cdk.Stack {
       ssmGet(paths.anthropicApiKeyArn),
     );
 
+    const googleOAuthSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "GoogleOAuthSecret",
+      ssmGet(paths.googleOAuthArn),
+    );
+    const betterAuthSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "BetterAuthSecret",
+      ssmGet(paths.betterAuthSecretArn),
+    );
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -71,10 +82,8 @@ export class AdminStack extends cdk.Stack {
         S3_MEDIA_BUCKET: mediaBucketName,
         POWERTOOLS_SERVICE_NAME: "portfolio-admin",
         POWERTOOLS_LOG_LEVEL: "WARN",
-        COGNITO_REGION: config.region,
-        COGNITO_USER_POOL_ID: ssmGet(paths.authUserPoolId),
-        COGNITO_CLIENT_ID: ssmGet(paths.authUserPoolClientId),
-        COGNITO_DOMAIN: ssmGet(paths.authHostedUiDomain),
+        GOOGLE_OAUTH_SECRET_ARN: googleOAuthSecret.secretArn,
+        BETTER_AUTH_SECRET_ARN: betterAuthSecret.secretArn,
         ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
@@ -84,6 +93,8 @@ export class AdminStack extends cdk.Stack {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
         anthropicSecret.grantRead(fn);
+        googleOAuthSecret.grantRead(fn);
+        betterAuthSecret.grantRead(fn);
       },
     });
 

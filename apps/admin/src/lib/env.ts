@@ -3,19 +3,20 @@ import { z } from "zod";
 
 /**
  * Validated environment for the admin app. Vars are optional to keep builds
- * green without secrets (set SKIP_ENV_VALIDATION for build-only steps); the
- * Cognito auth vars are effectively required at runtime (the auth helpers throw
- * when they are unset).
+ * green without secrets (set SKIP_ENV_VALIDATION for build-only steps); auth
+ * vars are effectively required at runtime (the auth helpers throw when unset).
  *
  * Imported from next.config.ts so validation runs at build/start.
  */
 export const env = createEnv({
   server: {
-    COGNITO_REGION: z.string().min(1).optional(),
-    COGNITO_USER_POOL_ID: z.string().min(1).optional(),
-    COGNITO_CLIENT_ID: z.string().min(1).optional(),
-    COGNITO_DOMAIN: z.string().url().optional(),
     APP_ORIGIN: z.string().url().optional(),
+    BETTER_AUTH_URL: z.string().url().optional(),
+    BETTER_AUTH_SECRET: z.string().min(32).optional(),
+    BETTER_AUTH_SECRET_ARN: z.string().min(1).optional(),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    GOOGLE_OAUTH_SECRET_ARN: z.string().min(1).optional(),
     ADMIN_ALLOWED_EMAILS: z.string().optional(),
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     ANTHROPIC_API_KEY_SECRET_ARN: z.string().min(1).optional(),
@@ -30,11 +31,13 @@ export const env = createEnv({
   },
   client: {},
   runtimeEnv: {
-    COGNITO_REGION: process.env.COGNITO_REGION,
-    COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID,
-    COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
-    COGNITO_DOMAIN: process.env.COGNITO_DOMAIN,
     APP_ORIGIN: process.env.APP_ORIGIN,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_SECRET_ARN: process.env.BETTER_AUTH_SECRET_ARN,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_OAUTH_SECRET_ARN: process.env.GOOGLE_OAUTH_SECRET_ARN,
     ADMIN_ALLOWED_EMAILS: process.env.ADMIN_ALLOWED_EMAILS,
     GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
     ANTHROPIC_API_KEY_SECRET_ARN: process.env.ANTHROPIC_API_KEY_SECRET_ARN,

@@ -48,9 +48,8 @@ function serverActionAllowedOrigins(): string[] {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   skipTrailingSlashRedirect: true,
-  // Keep aws-jwt-verify external (strict ESM exports break when bundled).
-  // Powertools is bundled — externalizing it breaks pnpm + OpenNext resolution.
-  serverExternalPackages: ["aws-jwt-verify"],
+  // Keep better-auth external (OpenNext bundling can break plugin resolution).
+  serverExternalPackages: ["better-auth"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
