@@ -278,7 +278,7 @@ export async function deleteMediaAsset(id: string): Promise<ActionResult> {
   try {
     const row = await repo.getMediaById(id);
     const { getMediaStore } = await import("@portfolio/data/media");
-    const mediaStore = getMediaStore();
+    const mediaStore = await getMediaStore();
     if (mediaStore.isConfigured()) {
       const key = mediaStore.publicUrlToObjectKey(row.url);
       if (key) await mediaStore.deleteObject(key);

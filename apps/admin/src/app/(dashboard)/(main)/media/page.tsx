@@ -1,12 +1,12 @@
 import { getContentRepository } from "@portfolio/data";
-import { getMediaStore } from "@portfolio/data/media";
+import { isMediaStorageConfigured } from "@portfolio/data/media";
 import { MediaLibrary } from "./media-library";
 
 export default async function MediaPage() {
   const items = await getContentRepository()
     .getMedia()
     .catch(() => []);
-  const storageReady = getMediaStore().isConfigured();
+  const storageReady = isMediaStorageConfigured();
 
   return (
     <>
