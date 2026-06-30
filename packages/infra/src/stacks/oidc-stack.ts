@@ -1,5 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as ssm from "aws-cdk-lib/aws-ssm";
+import { ssmPaths as deploySsmPaths } from "@portfolio/deploy/ssm-paths";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
 
@@ -14,10 +16,9 @@ const GITHUB_OIDC_AUD = "sts.amazonaws.com";
  * GitHub Actions OIDC deploy role. CI authenticates with GitHub's OIDC token
  * (no long-lived keys) and assumes this role to run `cdk deploy`.
  *
- * Least privilege: rather than granting broad service permissions, the role is
- * only allowed to assume the CDK bootstrap roles (`cdk-*`). CloudFormation then
- * executes changes via the bootstrap CFN execution role, so the actual deploy
- * permissions live with the bootstrap stack — the standard modern pattern.
+ * Least privilege for deploy: the role assumes CDK bootstrap roles (`cdk-*`) for
+ * `cdk deploy`, plus scoped read access for the OpenNext build and post-deploy
+ * smoke test (SSM registry, Web stack output, media bucket listing).
  *
  * The trust policy is pinned to the configured repo's `main` branch and a
  * `production` GitHub Environment so PR/fork runs cannot assume it.
@@ -61,12 +62,51 @@ export class OidcStack extends cdk.Stack {
       }),
     });
 
-    // Only allow assuming the CDK bootstrap roles in this account.
     role.addToPolicy(
       new iam.PolicyStatement({
         sid: "AssumeCdkBootstrapRoles",
         actions: ["sts:AssumeRole"],
         resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
+      }),
+    );
+
+    const registryPaths = deploySsmPaths(config.appName);
+    const registryParamArn = (suffix: string) =>
+      `arn:aws:ssm:${this.region}:${this.account}:parameter${suffix}`;
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadDeployRegistryFromSsm",
+        actions: ["ssm:GetParameter"],
+        resources: [
+          registryParamArn(registryPaths.mediaPublicBaseUrl),
+          registryParamArn(registryPaths.mediaBucketName),
+        ],
+      }),
+    );
+
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadWebStackOutputs",
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          `arn:aws:cloudformation:${this.region}:${this.account}:stack/${config.appName}-Web/*`,
+        ],
+      }),
+    );
+
+    const mediaBucketName = ssm.StringParameter.valueForStringParameter(
+      this,
+      registryPaths.mediaBucketName,
+    );
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ListMediaForSmokeTest",
+        actions: ["s3:ListBucket"],
+        resources: [`arn:aws:s3:::${mediaBucketName}`],
+        conditions: {
+          StringLike: { "s3:prefix": ["media/*"] },
+        },
       }),
     );
 

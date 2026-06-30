@@ -202,17 +202,24 @@ pnpm exec cdk bootstrap aws://<ACCOUNT_ID>/eu-west-1
 
 ### Deploy
 
-```bash
-pnpm --filter @portfolio/web exec open-next build
-pnpm --filter @portfolio/admin exec open-next build
-pnpm --filter @portfolio/ui build-storybook
+Requires AWS credentials and an existing **Portfolio-Data** stack (SSM must publish
+`/portfolio/data/media-public-base-url` before OpenNext builds).
 
+```bash
+# Resolves MEDIA_PUBLIC_BASE_URL from SSM, builds OpenNext bundles + Storybook,
+# and verifies the image optimizer allowlist is baked into the artifacts.
+pnpm build:open-next
+
+cd packages/infra
 pnpm exec cdk deploy \
   Portfolio-Data Portfolio-Auth Portfolio-Web Portfolio-Admin Portfolio-Shared Portfolio-Storybook \
   --require-approval never \
   -c adminUrls=https://<admin-distribution>.cloudfront.net \
   -c alertEmail=you@example.com \
   -c contactEmail=you@example.com
+
+# Optional: verify /_next/image serves a real media object after deploy
+pnpm smoke-test:images
 ```
 
 On first deploy, run `Portfolio-Admin` once to get the CloudFront URL, then re-run with `-c adminUrls=<that URL>` so `APP_ORIGIN` and Google OAuth redirect URIs match.
