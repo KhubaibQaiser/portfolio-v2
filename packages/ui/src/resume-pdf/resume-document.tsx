@@ -41,7 +41,7 @@ const s = StyleSheet.create({
   expLocation: { fontSize: 9, color: COLORS.secondary },
   bulletList: { marginTop: 3, paddingLeft: 10 },
   bulletRow: { flexDirection: "row", marginBottom: 2 },
-  bulletDot: { width: 10, fontSize: 10, color: COLORS.primary },
+  bulletDot: { width: 10, fontSize: 10, color: COLORS.accent },
   bulletText: {
     flex: 1,
     fontSize: 9.5,
@@ -53,12 +53,12 @@ const s = StyleSheet.create({
     width: 88,
     fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
+    color: COLORS.accent,
   },
   skillItems: { flex: 1, fontSize: 9.5, color: COLORS.body },
   eduLine: { fontSize: 9.5, color: COLORS.body, lineHeight: 1.35 },
   certRow: { flexDirection: "row", marginBottom: 2 },
-  certBullet: { width: 10, fontSize: 10, color: COLORS.primary },
+  certBullet: { width: 10, fontSize: 10, color: COLORS.accent },
   certText: { flex: 1, fontSize: 9.5, color: COLORS.body },
   certIssuer: { color: COLORS.secondary },
 });
@@ -88,7 +88,7 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
       keywords={data.keywords}
     >
       <Page size="LETTER" style={s.page}>
-        <View>
+        <View style={s.headerBand}>
           <Text style={s.headerName}>{data.name}</Text>
           <Text style={s.headerTitle}>{data.title}</Text>
 
@@ -119,8 +119,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                 </Link>,
               ])}
           </View>
-
-          <View style={s.headerRule} />
         </View>
 
         <View style={s.section}>

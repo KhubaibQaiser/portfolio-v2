@@ -77,7 +77,7 @@ export function CoverLetterDocument({
       subject={`Cover letter from ${contact.name}`}
     >
       <Page size="LETTER" style={s.page}>
-        <View>
+        <View style={s.headerBand}>
           <Text style={s.headerName}>{contact.name}</Text>
           <Text style={s.headerTitle}>{contact.title}</Text>
           <View style={s.headerContact}>
@@ -91,7 +91,6 @@ export function CoverLetterDocument({
               {contact.website}
             </Link>
           </View>
-          <View style={s.headerRule} />
         </View>
 
         <View style={s.meta}>
