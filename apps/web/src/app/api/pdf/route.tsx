@@ -14,8 +14,9 @@ export async function GET() {
     const buffer = await renderToBuffer(document);
     const bytes = new Uint8Array(buffer);
 
-    const safeName = data.name.replace(/\s+/g, "_");
-    const filename = `${safeName}_${data.title.replace(/\s+/g, "_")}_Resume.pdf`;
+    const slug = (value: string) =>
+      value.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+    const filename = `${slug(data.name)}-${slug(data.title)}-Resume.pdf`;
 
     logger.info("resume pdf generated", { bytes: bytes.byteLength });
 

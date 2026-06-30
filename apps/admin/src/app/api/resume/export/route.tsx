@@ -36,9 +36,9 @@ const bodySchema = z.discriminatedUnion("kind", [
 function safeFileName(parts: (string | undefined)[]): string {
   return parts
     .filter((p): p is string => Boolean(p && p.trim().length > 0))
-    .map((p) => p.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, ""))
+    .map((p) => p.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, ""))
     .filter(Boolean)
-    .join("_");
+    .join("-");
 }
 
 export async function POST(request: Request) {
