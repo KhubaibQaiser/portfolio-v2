@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Save, Loader2, X, Star } from "lucide-react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Plus, Pencil, Trash2, X, Star } from "lucide-react";
 import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
+import { Form, FormSaveButton, confirmLeave } from "@/components/form";
+import { getDeletedIds, tryLeaveForm } from "@/components/form/list-form-utils";
 import { saveProject, deleteProject } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
@@ -34,113 +37,186 @@ const EMPTY: ProjectFormData = {
   sort_order: 0,
 };
 
-function projectRowToForm(row: Project): ProjectFormData & { id: string } {
-  const { id, created_at: _created_at, updated_at: _updated_at, ...rest } = row;
+type ProjectEditForm = ProjectFormData & { id?: string };
+type ListFormValues = { items: Project[] };
+
+function projectRowToForm(row: Project): ProjectEditForm {
+  const { id, created_at: _c, updated_at: _u, ...rest } = row;
   return { ...projectSchema.parse(rest), id };
 }
 
 export function ProjectsList({ initialData }: ProjectsListProps) {
-  const toast = useToast();
-  const [items, setItems] = useState(initialData);
-  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(
-    null,
-  );
-  const [saving, setSaving] = useState(false);
-
-  async function handleSave() {
-    if (!editing) return;
-    setSaving(true);
-    const { id, ...values } = editing;
-    const result = await runServerAction(
-      () => saveProject(id ?? null, values),
-      toast,
-      {
-        onSuccess: () => {
-          setEditing(null);
-          window.location.reload();
-        },
-      },
-    );
-    setSaving(false);
-    if (!result.success) return;
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this project?")) return;
-    await runServerAction(() => deleteProject(id), toast, {
-      successMessage: "Deleted",
-      onSuccess: () => setItems((prev) => prev.filter((p) => p.id !== id)),
-    });
-  }
+  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(null);
 
   if (editing) {
-    return (
-      <div className="mt-6 space-y-4">
+    return <ProjectEditPanel entry={editing} onClose={() => setEditing(null)} />;
+  }
+
+  return <ProjectsListPanel initialData={initialData} onEdit={setEditing} />;
+}
+
+function ProjectsListPanel({
+  initialData,
+  onEdit,
+}: {
+  initialData: Project[];
+  onEdit: (entry: ProjectFormData & { id?: string }) => void;
+}) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const defaultValues: ListFormValues = { items: initialData };
+
+  const form = useForm<ListFormValues>({ defaultValues });
+  const { control, handleSubmit } = form;
+  const { fields, remove } = useFieldArray({ control, name: "items", keyName: "fieldKey" });
+  const items = useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
+
+  function openEdit(entry: ProjectFormData & { id?: string }) {
+    if (!tryLeaveForm(form, defaultValues)) return;
+    onEdit(entry);
+  }
+
+  async function onSubmit(values: ListFormValues) {
+    const deletedIds = getDeletedIds(initialData, values.items);
+    if (deletedIds.length === 0) return;
+
+    setSaving(true);
+    for (const id of deletedIds) {
+      const result = await runServerAction(() => deleteProject(id), toast);
+      if (!result.success) {
+        setSaving(false);
+        return;
+      }
+    }
+    setSaving(false);
+    window.location.reload();
+  }
+
+  return (
+    <Form {...form} isSubmitting={saving}>
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={() => openEdit({ ...EMPTY, sort_order: items.length })}
+          className="bg-accent text-accent-foreground mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        >
+          <Plus className="h-4 w-4" /> Add Project
+        </button>
+        <div className="space-y-2">
+          {fields.map((field, index) => {
+            const project = items[index];
+            if (!project) return null;
+            return (
+              <div
+                key={field.fieldKey}
+                className="border-border/50 bg-muted/20 hover:border-accent/20 flex items-center gap-3 rounded-lg border p-4 transition-colors"
+              >
+                <Star
+                  className={cn(
+                    "h-4 w-4",
+                    project.is_featured
+                      ? "fill-amber-500 text-amber-500"
+                      : "text-muted-foreground/30",
+                  )}
+                />
+                <div className="flex-1">
+                  <p className="font-medium">{project.title}</p>
+                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+                    {project.type}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openEdit(projectRowToForm(project))}
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm("Delete this project?")) return;
+                    remove(index);
+                  }}
+                  className="text-muted-foreground rounded-md p-2 hover:bg-red-500/10 hover:text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} className="mt-6" />
+      </div>
+    </Form>
+  );
+}
+
+function ProjectEditPanel({
+  entry,
+  onClose,
+}: {
+  entry: ProjectFormData & { id?: string };
+  onClose: () => void;
+}) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const form = useForm<ProjectEditForm>({ defaultValues: entry });
+  const { register, handleSubmit, reset, setValue, control } = form;
+  const techTags = useWatch({ control, name: "tech_tags" }) ?? [];
+
+  function handleClose() {
+    if (form.formState.isDirty && !confirmLeave()) return;
+    onClose();
+  }
+
+  async function onSubmit(formValues: ProjectEditForm) {
+    setSaving(true);
+    const { id, ...rest } = formValues;
+    const result = await runServerAction(() => saveProject(id ?? null, rest), toast, {
+      onSuccess: () => window.location.reload(),
+    });
+    setSaving(false);
+    if (result.success) reset(formValues);
+  }
+
+  return (
+    <Form {...form} isSubmitting={saving}>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{editing.id ? "Edit" : "Add"} Project</h2>
-          <button
-            onClick={() => setEditing(null)}
-            className="text-muted-foreground hover:text-foreground rounded-md p-1"
-          >
+          <h2 className="text-lg font-semibold">{entry.id ? "Edit" : "Add"} Project</h2>
+          <button type="button" onClick={handleClose} className="text-muted-foreground hover:text-foreground rounded-md p-1">
             <X className="h-5 w-5" />
           </button>
         </div>
+        <input type="hidden" {...register("id")} />
         {(["title", "slug", "summary", "role"] as const).map((key) => (
           <div key={key}>
             <label className="mb-1 block text-sm font-medium capitalize">{key}</label>
-            <input
-              value={editing[key]}
-              onChange={(e) => setEditing((p) => p && { ...p, [key]: e.target.value })}
-              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
-            />
+            <input {...register(key)} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
           </div>
         ))}
         <div>
           <label className="mb-1 block text-sm font-medium">Description</label>
-          <textarea
-            value={editing.description}
-            onChange={(e) =>
-              setEditing((p) => p && { ...p, description: e.target.value })
-            }
-            rows={4}
-            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
-          />
+          <textarea {...register("description")} rows={4} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Type</label>
-          <Select
-            variant="muted"
-            className="px-4"
-            value={editing.type}
-            onChange={(e) =>
-              setEditing(
-                (p) => p && { ...p, type: e.target.value as ProjectFormData["type"] },
-              )
-            }
-          >
+          <Select variant="muted" className="px-4" {...register("type")}>
             {["web", "mobile", "game", "open-source", "other"].map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
+              <option key={t} value={t}>{t}</option>
             ))}
           </Select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">
-            Tech Tags (comma-separated)
-          </label>
+          <label className="mb-1 block text-sm font-medium">Tech Tags (comma-separated)</label>
           <input
-            value={editing.tech_tags.join(", ")}
+            value={techTags.join(", ")}
             onChange={(e) =>
-              setEditing(
-                (p) =>
-                  p && {
-                    ...p,
-                    tech_tags: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  },
+              setValue(
+                "tech_tags",
+                e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                { shouldDirty: true },
               )
             }
             className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
@@ -148,107 +224,19 @@ export function ProjectsList({ initialData }: ProjectsListProps) {
         </div>
         {(["github_url", "live_url", "cover_url"] as const).map((key) => (
           <div key={key}>
-            <label className="mb-1 block text-sm font-medium capitalize">
-              {key.replace(/_/g, " ")}
-            </label>
-            <input
-              value={editing[key] ?? ""}
-              onChange={(e) =>
-                setEditing((p) => p && { ...p, [key]: e.target.value || null })
-              }
-              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
-            />
+            <label className="mb-1 block text-sm font-medium capitalize">{key.replace(/_/g, " ")}</label>
+            <input {...register(key)} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
           </div>
         ))}
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={editing.is_featured}
-              onChange={(e) =>
-                setEditing((p) => p && { ...p, is_featured: e.target.checked })
-              }
-            />
+            <input type="checkbox" {...register("is_featured")} />
             Featured
           </label>
-          <div>
-            <label className="text-sm font-medium">Sort Order: </label>
-            <input
-              type="number"
-              value={editing.sort_order}
-              onChange={(e) =>
-                setEditing(
-                  (p) => p && { ...p, sort_order: parseInt(e.target.value) || 0 },
-                )
-              }
-              className="border-border bg-muted/30 w-20 rounded border px-2 py-1 text-sm"
-            />
-          </div>
+          <input type="number" {...register("sort_order", { valueAsNumber: true })} className="border-border bg-muted/30 w-20 rounded border px-2 py-1 text-sm" />
         </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={cn(
-            "bg-accent text-accent-foreground flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50",
-          )}
-        >
-          {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {saving ? "Saving..." : "Save & Publish"}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-6">
-      <button
-        onClick={() => setEditing({ ...EMPTY, sort_order: items.length })}
-        className="bg-accent text-accent-foreground mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-      >
-        <Plus className="h-4 w-4" /> Add Project
-      </button>
-      <div className="space-y-2">
-        {items.map((project) => (
-          <div
-            key={project.id}
-            className={cn(
-              "border-border/50 bg-muted/20 hover:border-accent/20 flex items-center gap-3 rounded-lg border p-4 transition-colors",
-            )}
-          >
-            <Star
-              className={cn(
-                "h-4 w-4",
-                project.is_featured
-                  ? "fill-amber-500 text-amber-500"
-                  : "text-muted-foreground/30",
-              )}
-            />
-            <div className="flex-1">
-              <p className="font-medium">{project.title}</p>
-              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
-                {project.type}
-              </span>
-            </div>
-            <button
-              onClick={() => setEditing(projectRowToForm(project))}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-2"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => handleDelete(project.id)}
-              className="text-muted-foreground rounded-md p-2 hover:bg-red-500/10 hover:text-red-500"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
+      </form>
+    </Form>
   );
 }

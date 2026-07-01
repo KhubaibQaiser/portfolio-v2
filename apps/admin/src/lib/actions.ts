@@ -142,6 +142,7 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
 export async function saveSkills(
   skills: Array<{ id?: string } & z.infer<typeof skillSchema>>,
+  deletedIds: string[] = [],
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -157,6 +158,9 @@ export async function saveSkills(
 
   try {
     await repo.batchUpsertSkills(skills);
+    for (const id of deletedIds) {
+      await repo.deleteSkill(id);
+    }
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };

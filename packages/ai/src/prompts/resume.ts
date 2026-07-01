@@ -56,7 +56,7 @@ export function buildResumeSystemPrompt(
 - Roles before 2019 (e.g. early mobile/edtech): omit unless the JD explicitly needs that domain. If included, max 1 bullet each.
 - Part-time or concurrent roles: max 2 bullets; frame as consulting when appropriate.
 - Weave 1-2 stack terms into each bullet inline. Do NOT add a separate Technologies footer.
-- skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS, etc.).
+- skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS / GCP, etc.).
 - keywords: max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.`,
     `CANDIDATE FACT SHEET:\n${facts.factSheet}`,
     include,

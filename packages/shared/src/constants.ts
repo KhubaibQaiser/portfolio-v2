@@ -18,7 +18,7 @@ export const SKILL_CATEGORIES = {
   frontend: "Frontend",
   mobile: "Mobile",
   backend: "Backend / API",
-  cloud: "Cloud / AWS",
+  cloud: "Cloud",
   devops: "DevOps / CI",
   testing: "Testing",
   tools: "Tools",

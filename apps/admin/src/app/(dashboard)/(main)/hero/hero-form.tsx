@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { cn } from "@/lib/utils";
+import { Form, FormSaveButton } from "@/components/form";
 import { saveHero } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
-import type { Hero } from "@portfolio/shared/schemas";
+import type { Hero, HeroFormData } from "@portfolio/shared/schemas";
 
 type HeroFormProps = {
   initialData: Hero | null;
@@ -15,99 +16,88 @@ type HeroFormProps = {
 export function HeroForm({ initialData }: HeroFormProps) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    greeting: initialData?.greeting ?? "Hi, my name is",
-    headline: initialData?.headline ?? "",
-    subtitle: initialData?.subtitle ?? [],
-    value_proposition: initialData?.value_proposition ?? "",
-    cta_primary_text: initialData?.cta_primary_text ?? "View My Work",
-    cta_secondary_text: initialData?.cta_secondary_text ?? "Download Resume",
+
+  const form = useForm<HeroFormData>({
+    defaultValues: {
+      greeting: initialData?.greeting ?? "Hi, my name is",
+      headline: initialData?.headline ?? "",
+      subtitle: initialData?.subtitle ?? [],
+      value_proposition: initialData?.value_proposition ?? "",
+      cta_primary_text: initialData?.cta_primary_text ?? "View My Work",
+      cta_secondary_text: initialData?.cta_secondary_text ?? "Download Resume",
+    },
   });
 
-  function handleChange(field: string, value: string | string[]) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  const { register, handleSubmit, reset, setValue, control } = form;
+  const values = useWatch({ control }) ?? form.formState.defaultValues;
 
-  async function handleSave() {
+  async function onSubmit(data: HeroFormData) {
     setSaving(true);
-    await runServerAction(() => saveHero(form), toast);
+    const result = await runServerAction(() => saveHero(data), toast);
     setSaving(false);
+    if (result.success) reset(data);
   }
 
   return (
-    <div className="mt-8 space-y-5">
-      {(
-        [
-          "greeting",
-          "headline",
-          "value_proposition",
-          "cta_primary_text",
-          "cta_secondary_text",
-        ] as const
-      ).map((key) => (
-        <div key={key}>
-          <label className="mb-1.5 block text-sm font-medium capitalize">
-            {key.replace(/_/g, " ")}
+    <Form {...form} isSubmitting={saving}>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+        {(
+          [
+            "greeting",
+            "headline",
+            "value_proposition",
+            "cta_primary_text",
+            "cta_secondary_text",
+          ] as const
+        ).map((key) => (
+          <div key={key}>
+            <label className="mb-1.5 block text-sm font-medium capitalize">
+              {key.replace(/_/g, " ")}
+            </label>
+            {String(values?.[key] ?? "").length > 80 ? (
+              <textarea
+                {...register(key)}
+                rows={3}
+                className={cn(
+                  "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+                  "focus:border-accent text-sm focus:outline-hidden",
+                )}
+              />
+            ) : (
+              <input
+                {...register(key)}
+                className={cn(
+                  "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+                  "focus:border-accent text-sm focus:outline-hidden",
+                )}
+              />
+            )}
+          </div>
+        ))}
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">
+            Subtitles (one per line)
           </label>
-          {String(form[key]).length > 80 ? (
-            <textarea
-              value={form[key] as string}
-              onChange={(e) => handleChange(key, e.target.value)}
-              rows={3}
-              className={cn(
-                "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
-                "focus:border-accent text-sm focus:outline-hidden",
-              )}
-            />
-          ) : (
-            <input
-              value={form[key] as string}
-              onChange={(e) => handleChange(key, e.target.value)}
-              className={cn(
-                "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
-                "focus:border-accent text-sm focus:outline-hidden",
-              )}
-            />
-          )}
+          <textarea
+            value={(values?.subtitle ?? []).join("\n")}
+            onChange={(e) =>
+              setValue(
+                "subtitle",
+                e.target.value.split("\n").filter((line) => line.trim()),
+                { shouldDirty: true },
+              )
+            }
+            rows={3}
+            className={cn(
+              "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+              "focus:border-accent text-sm focus:outline-hidden",
+            )}
+          />
         </div>
-      ))}
 
-      <div>
-        <label className="mb-1.5 block text-sm font-medium">
-          Subtitles (one per line)
-        </label>
-        <textarea
-          value={form.subtitle.join("\n")}
-          onChange={(e) =>
-            handleChange(
-              "subtitle",
-              e.target.value.split("\n").filter((s) => s.trim()),
-            )
-          }
-          rows={3}
-          className={cn(
-            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
-            "focus:border-accent text-sm focus:outline-hidden",
-          )}
-        />
-      </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className={cn(
-          "bg-accent flex items-center gap-2 rounded-lg px-5 py-2.5",
-          "text-accent-foreground text-sm font-medium transition-opacity",
-          "hover:opacity-90 disabled:opacity-50",
-        )}
-      >
-        {saving ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Save className="h-4 w-4" />
-        )}
-        {saving ? "Saving..." : "Save & Publish"}
-      </button>
-    </div>
+        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
+      </form>
+    </Form>
   );
 }
