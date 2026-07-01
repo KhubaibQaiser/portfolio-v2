@@ -11,7 +11,8 @@ export default async function SkillsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Skills</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Manage your skill categories and proficiency levels.
+          Manage skill categories, proficiency, and display order (drag to reorder within
+          each category).
         </p>
       </div>
       <SkillsEditor initialData={skills} />

@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { Select } from "@portfolio/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Plus } from "lucide-react";
 import { Form, FormSaveButton } from "@/components/form";
 import { saveSkills } from "@/lib/actions";
+import {
+  getCategoryDisplayOrder,
+  insertNewSkill,
+  moveSkillToCategory,
+  normalizeSkillsOrder,
+  removeSkillAndReindex,
+  reorderSkillInCategory,
+} from "@/lib/skill-sort-utils";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
-import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
 import type { Skill, SkillCategory } from "@portfolio/shared/schemas";
+import { SkillsCategorySection } from "./skills-category-section";
+import { SkillsColumnHeader, SortableSkillRow } from "./sortable-skill-row";
 
 type SkillsEditorProps = {
   initialData: Skill[];
@@ -23,26 +31,84 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
 
+  const normalizedInitial = useMemo(() => normalizeSkillsOrder(initialData), [initialData]);
+
   const form = useForm<SkillsFormValues>({
-    defaultValues: { skills: initialData },
+    defaultValues: { skills: normalizedInitial },
   });
 
-  const { control, register, handleSubmit, reset } = form;
-  const { fields, append, remove } = useFieldArray({
+  const { control, register, handleSubmit, reset, setValue } = form;
+  const { replace } = useFieldArray({
     control,
     name: "skills",
     keyName: "fieldKey",
   });
 
+  const skills = useWatch({ control, name: "skills" }) ?? normalizedInitial;
+
+  const categoryOrder = useMemo(
+    () => getCategoryDisplayOrder(skills.map((s) => s.category)),
+    [skills],
+  );
+
+  const skillsByCategory = useMemo(() => {
+    const map = new Map<SkillCategory, Skill[]>();
+    for (const skill of skills) {
+      const list = map.get(skill.category) ?? [];
+      list.push(skill);
+      map.set(skill.category, list);
+    }
+    for (const [category, list] of map) {
+      map.set(
+        category,
+        [...list].sort((a, b) => a.sort_order - b.sort_order),
+      );
+    }
+    return map;
+  }, [skills]);
+
+  function applySkills(next: Skill[]) {
+    replace(next);
+    setValue("skills", next, { shouldDirty: true });
+  }
+
+  function handleReorder(category: SkillCategory, activeId: string, overId: string) {
+    applySkills(reorderSkillInCategory(skills, category, activeId, overId));
+  }
+
+  function handleCategoryChange(skillId: string, newCategory: SkillCategory) {
+    applySkills(moveSkillToCategory(skills, skillId, newCategory));
+  }
+
+  function handleRemove(skillId: string) {
+    applySkills(removeSkillAndReindex(skills, skillId));
+  }
+
+  function handleAdd() {
+    const draft: Skill = {
+      id: `new-${Date.now()}`,
+      name: "",
+      category: "frontend",
+      proficiency: 50,
+      icon: null,
+      years: 1,
+      sort_order: 0,
+      created_at: "",
+      updated_at: "",
+    };
+    applySkills(insertNewSkill(skills, draft));
+  }
+
   async function onSubmit(values: SkillsFormValues) {
     setSaving(true);
+    const ordered = normalizeSkillsOrder(values.skills);
     const initialIds = new Set(initialData.map((skill) => skill.id));
     const currentIds = new Set(
-      values.skills.map((skill) => skill.id).filter((id) => !id.startsWith("new-")),
+      ordered.map((skill) => skill.id).filter((id) => !id.startsWith("new-")),
     );
     const deletedIds = [...initialIds].filter((id) => !currentIds.has(id));
 
-    const payload = values.skills.map((skill) => ({
+    const payload = ordered.map((skill) => ({
       id: skill.id.startsWith("new-") ? undefined : skill.id,
       name: skill.name,
       category: skill.category as SkillCategory,
@@ -56,7 +122,7 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
       onSuccess: () => window.location.reload(),
     });
     setSaving(false);
-    if (result.success) reset(values);
+    if (result.success) reset({ skills: ordered });
   }
 
   return (
@@ -65,80 +131,46 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() =>
-              append({
-                id: `new-${Date.now()}`,
-                name: "",
-                category: "frontend",
-                proficiency: 50,
-                icon: null,
-                years: 1,
-                sort_order: fields.length,
-                created_at: "",
-                updated_at: "",
-              })
-            }
+            onClick={handleAdd}
             className="bg-accent text-accent-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           >
             <Plus className="h-4 w-4" /> Add Skill
           </button>
         </div>
 
-        <div className="mt-4 space-y-3">
-          {fields.map((field, index) => (
-            <div
-              key={field.fieldKey}
-              className="border-border/50 bg-muted/20 grid grid-cols-[1fr_120px_80px_60px_40px] items-center gap-3 rounded-lg border p-3"
-            >
-              <input
-                {...register(`skills.${index}.name`)}
-                placeholder="Skill name"
-                className="border-border bg-background focus:border-accent rounded-md border px-3 py-1.5 text-sm focus:outline-hidden"
-              />
-              <Select
-                className="bg-background h-9 min-w-0 rounded-md px-2 py-1.5 text-sm"
-                {...register(`skills.${index}.category`)}
+        <div className="mt-4 space-y-6">
+          <SkillsColumnHeader />
+
+          {categoryOrder.map((category) => {
+            const categorySkills = skillsByCategory.get(category);
+            if (!categorySkills?.length) return null;
+
+            return (
+              <SkillsCategorySection
+                key={category}
+                category={category}
+                skillIds={categorySkills.map((s) => s.id)}
+                onReorder={handleReorder}
               >
-                {Object.entries(SKILL_CATEGORIES).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  {...register(`skills.${index}.proficiency`, { valueAsNumber: true })}
-                  className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
-                />
-                <span className="text-muted-foreground text-xs">%</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
-                  {...register(`skills.${index}.years`, { valueAsNumber: true })}
-                  className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
-                />
-                <span className="text-muted-foreground text-xs">yr</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className="text-muted-foreground rounded-md p-1.5 hover:bg-red-500/10 hover:text-red-500"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-              <input type="hidden" {...register(`skills.${index}.id`)} />
-              <input
-                type="hidden"
-                {...register(`skills.${index}.sort_order`, { valueAsNumber: true })}
-              />
-            </div>
-          ))}
+                {categorySkills.map((skill) => {
+                  const index = skills.findIndex((s) => s.id === skill.id);
+                  if (index < 0) return null;
+
+                  return (
+                    <SortableSkillRow
+                      key={skill.id}
+                      id={skill.id}
+                      index={index}
+                      register={register}
+                      control={control}
+                      onCategoryChange={handleCategoryChange}
+                      onRemove={handleRemove}
+                    />
+                  );
+                })}
+              </SkillsCategorySection>
+            );
+          })}
         </div>
 
         <FormSaveButton
