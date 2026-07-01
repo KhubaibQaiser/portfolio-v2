@@ -103,7 +103,7 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                             key={idx}
                             className="text-muted-foreground flex gap-2 text-sm leading-relaxed"
                           >
-                            <span className="bg-accent mt-1.5 h-1 w-1 shrink-0 rounded-full" />
+                            <span className="bg-accent mt-2 h-1 w-1 shrink-0 rounded-full" />
                             {item}
                           </li>
                         ))}
