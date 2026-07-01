@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { getContentRepository } from "@portfolio/data";
+import { filterExperienceForResume } from "@portfolio/shared/schemas";
 import {
   buildCandidateFacts,
   type CandidateFacts,
@@ -54,7 +55,7 @@ export async function loadCandidateFactsUncached(): Promise<CandidateFacts> {
         }>) ?? [],
       voice_sample: resume.voice_sample ?? null,
     },
-    experiences: experience.map((e) => ({
+    experiences: filterExperienceForResume(experience).map((e) => ({
       id: e.id,
       company: e.company,
       role: e.role,

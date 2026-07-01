@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { filterExperienceForResume } from "./schemas/experience";
 import {
   applyTailoredResume,
   formatExpLocation,
+  getResumeData,
   stableExperienceIndex,
+  type ResumeContentSource,
   type ResumeData,
 } from "./resume-data";
 
@@ -51,6 +54,100 @@ const base: ResumeData = {
   certifications: [],
   skills: [{ category: "Frontend", items: ["React", "TypeScript"] }],
 };
+
+describe("filterExperienceForResume", () => {
+  it("includes rows with show_in_resume true or undefined", () => {
+    const rows = [
+      { company: "A", show_in_resume: true },
+      { company: "B" },
+      { company: "C", show_in_resume: false },
+    ];
+    expect(filterExperienceForResume(rows).map((r) => r.company)).toEqual([
+      "A",
+      "B",
+    ]);
+  });
+});
+
+describe("getResumeData", () => {
+  it("excludes experiences with show_in_resume false", async () => {
+    const repo: ResumeContentSource = {
+      getSiteConfig: async () => ({
+        id: "site-config",
+        name: "Test User",
+        title: "Engineer",
+        email: "test@example.com",
+        location: "Remote",
+        description: "Test bio.",
+        social_links: [],
+        tech_stack: [],
+        created_at: "",
+        updated_at: "",
+      }),
+      getResume: async () => ({
+        id: "resume",
+        default_summary: "Summary.",
+        education: [
+          {
+            degree: "BS",
+            institution: "State U",
+            year: "2020",
+            url: null,
+          },
+        ],
+        certifications: [],
+        visible_sections: ["experience"],
+        is_projects_visible: true,
+        voice_sample: null,
+        created_at: "",
+        updated_at: "",
+      }),
+      getExperience: async () => [
+        {
+          id: "1",
+          company: "Visible Co",
+          role: "Engineer",
+          location: "Remote",
+          location_type: "remote",
+          contract_type: "full_time",
+          start_date: "Jan 2024",
+          end_date: null,
+          description: "Did work.",
+          tech_tags: ["React"],
+          logo_url: null,
+          company_url: null,
+          sort_order: 0,
+          show_in_resume: true,
+          created_at: "",
+          updated_at: "",
+        },
+        {
+          id: "2",
+          company: "Hidden Co",
+          role: "Intern",
+          location: "Remote",
+          location_type: "remote",
+          contract_type: "internship",
+          start_date: "Jan 2020",
+          end_date: "Dec 2020",
+          description: "Internship.",
+          tech_tags: ["JavaScript"],
+          logo_url: null,
+          company_url: null,
+          sort_order: 1,
+          show_in_resume: false,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      getSkills: async () => [],
+    };
+
+    const data = await getResumeData(repo);
+    expect(data.experience).toHaveLength(1);
+    expect(data.experience[0]!.company).toBe("Visible Co");
+  });
+});
 
 describe("formatExpLocation", () => {
   it("formats city and location type compactly", () => {

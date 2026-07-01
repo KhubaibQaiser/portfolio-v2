@@ -72,6 +72,7 @@ describe("FixtureContentRepository", () => {
       logo_url: null,
       company_url: null,
       sort_order: 0,
+      show_in_resume: true,
     });
     expect(created.id).toBeTruthy();
 

@@ -116,6 +116,7 @@ function toExperience(item: Item): Experience {
     end_date: e.end_date ?? null,
     logo_url: e.logo_url ?? null,
     company_url: e.company_url ?? null,
+    show_in_resume: e.show_in_resume ?? true,
   };
 }
 

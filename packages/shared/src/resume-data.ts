@@ -3,7 +3,7 @@ import {
   getSkillCategorySortWeight,
 } from "./constants";
 import type { ContentRepository } from "./ports/content-repository";
-import { getContractTypeLabel } from "./schemas/experience";
+import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
 
 /** The read slice of {@link ContentRepository} the resume loader needs. */
 export type ResumeContentSource = Pick<
@@ -154,7 +154,7 @@ export async function getResumeData(
     summary: opts.summaryOverride ?? resume.default_summary,
     keywords,
     visibleSections,
-    experience: experience.map((exp) => ({
+    experience: filterExperienceForResume(experience).map((exp) => ({
       company: exp.company,
       role: exp.role,
       period: `${exp.start_date} – ${exp.end_date ?? "Present"}`,
