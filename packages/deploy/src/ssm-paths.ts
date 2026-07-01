@@ -16,10 +16,6 @@ export function ssmPaths(appName: string = DEFAULT_APP_NAME) {
     googleOAuthArn: `${base}/auth/google-oauth-arn`,
     /** Complete ARN of the Better Auth signing secret (Auth stack). */
     betterAuthSecretArn: `${base}/auth/better-auth-secret-arn`,
-    /** Route 53 public hosted zone id (from the Dns stack). */
-    hostedZoneId: `${base}/dns/hosted-zone-id`,
-    /** us-east-1 ACM certificate ARN for CloudFront (from the Cert stack). */
-    certificateArn: `${base}/dns/certificate-arn`,
     /** Complete ARNs (incl. random suffix) of the CDK-owned AI key secrets. */
     groqApiKeyArn: `${base}/ai/groq-api-key-arn`,
     anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,

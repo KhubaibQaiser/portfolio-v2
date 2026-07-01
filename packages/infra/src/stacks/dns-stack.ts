@@ -1,9 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as route53 from "aws-cdk-lib/aws-route53";
-import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
-import { ssmPaths } from "../naming";
 
 export type DnsStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -13,8 +11,14 @@ export type DnsStackProps = cdk.StackProps & {
  * The public hosted zone for the apex domain. Deployed first and in isolation:
  * its output nameservers must be delegated at the registrar (Namecheap) before
  * the ACM certificate can be DNS-validated. Route 53 is a global service, so
- * the stack's region is immaterial — it is colocated in us-east-1 with the cert
- * to keep the cert/zone reference same-region.
+ * the stack's region is immaterial — it lives in us-east-1 alongside the cert.
+ *
+ * `hostedZone` is passed directly (as a construct, not via SSM) to the Cert
+ * (same-region) and Web/Admin/Storybook (cross-region) stacks — see
+ * docs/adr/0001-cross-stack-references.md. `crossRegionReferences: true` must
+ * be set on this stack *and* every cross-region consumer for that to work;
+ * CloudFormation dynamic references (`{{resolve:ssm:...}}`) cannot cross
+ * regions, which is why an SSM-registry handle doesn't work here.
  */
 export class DnsStack extends cdk.Stack {
   readonly hostedZone: route53.PublicHostedZone;
@@ -32,13 +36,6 @@ export class DnsStack extends cdk.Stack {
     new cdk.CfnOutput(this, "NameServers", {
       description: "Set these as the custom nameservers at your registrar",
       value: cdk.Fn.join(", ", this.hostedZone.hostedZoneNameServers ?? []),
-    });
-
-    // Publish the zone id to the SSM registry so Cert/Web/Admin stacks can
-    // create validation records and aliases without importing this stack.
-    new ssm.StringParameter(this, "HostedZoneIdParam", {
-      parameterName: ssmPaths(props.config).hostedZoneId,
-      stringValue: this.hostedZone.hostedZoneId,
     });
   }
 }
