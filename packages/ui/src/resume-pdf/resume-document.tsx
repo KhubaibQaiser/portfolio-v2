@@ -126,18 +126,6 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
           <Text style={s.summary}>{data.summary}</Text>
         </View>
 
-        {show("skills") && (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Technical Skills</Text>
-            {data.skills.map((group) => (
-              <View key={group.category} style={s.skillRow}>
-                <Text style={s.skillCategory}>{group.category}</Text>
-                <Text style={s.skillItems}>{group.items.join(", ")}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
         {show("experience") && (
           <View style={s.section}>
             <Text style={s.sectionTitle}>Work Experience</Text>
@@ -189,6 +177,18 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                     <Text style={s.certIssuer}>{` (${cert.issuer})`}</Text>
                   ) : null}
                 </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {show("skills") && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Technical Skills</Text>
+            {data.skills.map((group) => (
+              <View key={group.category} style={s.skillRow}>
+                <Text style={s.skillCategory}>{group.category}</Text>
+                <Text style={s.skillItems}>{group.items.join(", ")}</Text>
               </View>
             ))}
           </View>

@@ -17,9 +17,9 @@ import type {
 
 const SECTION_OPTIONS = [
   { key: "experience", label: "Work experience" },
-  { key: "skills", label: "Technical skills" },
   { key: "education", label: "Education" },
   { key: "certifications", label: "Certifications" },
+  { key: "skills", label: "Technical skills" },
 ] as const;
 
 type EducationDraft = Education & { _clientId: string };
