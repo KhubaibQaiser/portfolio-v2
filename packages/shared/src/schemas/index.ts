@@ -16,6 +16,7 @@ export {
   contractTypeEnum,
   CONTRACT_TYPE_LABELS,
   getContractTypeLabel,
+  filterExperienceForResume,
   type ContractType,
   type ExperienceFormData,
   type Experience,

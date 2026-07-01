@@ -36,6 +36,7 @@ const EMPTY: ExperienceFormData = {
   logo_url: null,
   company_url: null,
   sort_order: 0,
+  show_in_resume: true,
 };
 
 type ExperienceEditForm = ExperienceFormData & {
@@ -139,6 +140,9 @@ function ExperienceListPanel({
                     {exp.company} &middot; {getContractTypeLabel(exp.contract_type)} &middot;{" "}
                     {exp.start_date} – {exp.end_date ?? "Present"}
                   </p>
+                  {exp.show_in_resume === false && (
+                    <p className="text-muted-foreground mt-1 text-xs">Hidden from resume</p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -269,6 +273,10 @@ function ExperienceEditPanel({
           <label className="mb-1 block text-sm font-medium">Sort Order</label>
           <input type="number" {...register("sort_order", { valueAsNumber: true })} className="border-border bg-muted/30 focus:border-accent w-32 rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
         </div>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" {...register("show_in_resume")} />
+          Show in Resume
+        </label>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
     </Form>
