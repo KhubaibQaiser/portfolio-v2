@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Select } from "@portfolio/ui/select";
-import { Plus, Save, Loader2, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { saveSkills, deleteSkill } from "@/lib/actions";
+import { Plus, Trash2 } from "lucide-react";
+import { Form, FormSaveButton } from "@/components/form";
+import { saveSkills } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
@@ -14,145 +15,138 @@ type SkillsEditorProps = {
   initialData: Skill[];
 };
 
+type SkillsFormValues = {
+  skills: Skill[];
+};
+
 export function SkillsEditor({ initialData }: SkillsEditorProps) {
   const toast = useToast();
-  const [skills, setSkills] = useState(initialData);
   const [saving, setSaving] = useState(false);
 
-  function addSkill() {
-    setSkills((prev) => [
-      ...prev,
-      {
-        id: `new-${Date.now()}`,
-        name: "",
-        category: "frontend",
-        proficiency: 50,
-        icon: null,
-        years: 1,
-        sort_order: prev.length,
-        created_at: "",
-        updated_at: "",
-      },
-    ]);
-  }
+  const form = useForm<SkillsFormValues>({
+    defaultValues: { skills: initialData },
+  });
 
-  function updateSkill(id: string, field: keyof Skill, value: string | number) {
-    setSkills((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
-  }
+  const { control, register, handleSubmit, reset } = form;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "skills",
+    keyName: "fieldKey",
+  });
 
-  async function removeSkill(id: string) {
-    if (id.startsWith("new-")) {
-      setSkills((prev) => prev.filter((s) => s.id !== id));
-      return;
-    }
-    await runServerAction(() => deleteSkill(id), toast, {
-      successMessage: "Deleted",
-      onSuccess: () => setSkills((prev) => prev.filter((s) => s.id !== id)),
-    });
-  }
-
-  async function handleSave() {
+  async function onSubmit(values: SkillsFormValues) {
     setSaving(true);
-    const payload = skills.map((s) => ({
-      id: s.id.startsWith("new-") ? undefined : s.id,
-      name: s.name,
-      category: s.category as SkillCategory,
-      proficiency: s.proficiency,
-      icon: s.icon,
-      years: s.years,
-      sort_order: s.sort_order,
+    const initialIds = new Set(initialData.map((skill) => skill.id));
+    const currentIds = new Set(
+      values.skills.map((skill) => skill.id).filter((id) => !id.startsWith("new-")),
+    );
+    const deletedIds = [...initialIds].filter((id) => !currentIds.has(id));
+
+    const payload = values.skills.map((skill) => ({
+      id: skill.id.startsWith("new-") ? undefined : skill.id,
+      name: skill.name,
+      category: skill.category as SkillCategory,
+      proficiency: skill.proficiency,
+      icon: skill.icon,
+      years: skill.years,
+      sort_order: skill.sort_order,
     }));
-    const result = await runServerAction(() => saveSkills(payload), toast, {
+
+    const result = await runServerAction(() => saveSkills(payload, deletedIds), toast, {
       onSuccess: () => window.location.reload(),
     });
     setSaving(false);
-    if (!result.success) return;
+    if (result.success) reset(values);
   }
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={addSkill}
-          className="bg-accent text-accent-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-        >
-          <Plus className="h-4 w-4" /> Add Skill
-        </button>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {skills.map((skill) => (
-          <div
-            key={skill.id}
-            className="border-border/50 bg-muted/20 grid grid-cols-[1fr_120px_80px_60px_40px] items-center gap-3 rounded-lg border p-3"
+    <Form {...form} isSubmitting={saving}>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() =>
+              append({
+                id: `new-${Date.now()}`,
+                name: "",
+                category: "frontend",
+                proficiency: 50,
+                icon: null,
+                years: 1,
+                sort_order: fields.length,
+                created_at: "",
+                updated_at: "",
+              })
+            }
+            className="bg-accent text-accent-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           >
-            <input
-              value={skill.name}
-              onChange={(e) => updateSkill(skill.id, "name", e.target.value)}
-              placeholder="Skill name"
-              className="border-border bg-background focus:border-accent rounded-md border px-3 py-1.5 text-sm focus:outline-hidden"
-            />
-            <Select
-              className="bg-background h-9 min-w-0 rounded-md px-2 py-1.5 text-sm"
-              value={skill.category}
-              onChange={(e) => updateSkill(skill.id, "category", e.target.value)}
-            >
-              {Object.entries(SKILL_CATEGORIES).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={skill.proficiency}
-                onChange={(e) =>
-                  updateSkill(skill.id, "proficiency", parseInt(e.target.value) || 0)
-                }
-                className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
-              />
-              <span className="text-muted-foreground text-xs">%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min={0}
-                max={30}
-                value={skill.years}
-                onChange={(e) =>
-                  updateSkill(skill.id, "years", parseInt(e.target.value) || 0)
-                }
-                className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
-              />
-              <span className="text-muted-foreground text-xs">yr</span>
-            </div>
-            <button
-              onClick={() => removeSkill(skill.id)}
-              className="text-muted-foreground rounded-md p-1.5 hover:bg-red-500/10 hover:text-red-500"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+            <Plus className="h-4 w-4" /> Add Skill
+          </button>
+        </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className={cn(
-          "bg-accent text-accent-foreground mt-6 flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50",
-        )}
-      >
-        {saving ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Save className="h-4 w-4" />
-        )}
-        {saving ? "Saving..." : "Save All & Publish"}
-      </button>
-    </div>
+        <div className="mt-4 space-y-3">
+          {fields.map((field, index) => (
+            <div
+              key={field.fieldKey}
+              className="border-border/50 bg-muted/20 grid grid-cols-[1fr_120px_80px_60px_40px] items-center gap-3 rounded-lg border p-3"
+            >
+              <input
+                {...register(`skills.${index}.name`)}
+                placeholder="Skill name"
+                className="border-border bg-background focus:border-accent rounded-md border px-3 py-1.5 text-sm focus:outline-hidden"
+              />
+              <Select
+                className="bg-background h-9 min-w-0 rounded-md px-2 py-1.5 text-sm"
+                {...register(`skills.${index}.category`)}
+              >
+                {Object.entries(SKILL_CATEGORIES).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  {...register(`skills.${index}.proficiency`, { valueAsNumber: true })}
+                  className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
+                />
+                <span className="text-muted-foreground text-xs">%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={30}
+                  {...register(`skills.${index}.years`, { valueAsNumber: true })}
+                  className="border-border bg-background focus:border-accent w-full rounded-md border px-2 py-1.5 text-center text-sm focus:outline-hidden"
+                />
+                <span className="text-muted-foreground text-xs">yr</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-muted-foreground rounded-md p-1.5 hover:bg-red-500/10 hover:text-red-500"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+              <input type="hidden" {...register(`skills.${index}.id`)} />
+              <input
+                type="hidden"
+                {...register(`skills.${index}.sort_order`, { valueAsNumber: true })}
+              />
+            </div>
+          ))}
+        </div>
+
+        <FormSaveButton
+          saving={saving}
+          onClick={handleSubmit(onSubmit)}
+          className="mt-6"
+        />
+      </form>
+    </Form>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { GuardedLink } from "@/components/form";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -62,10 +62,10 @@ export function Sidebar() {
         )}
       >
         <div className="border-border flex h-14 items-center border-b px-4">
-          <Link href="/" className="text-sm font-bold tracking-tight">
+          <GuardedLink href="/" className="text-sm font-bold tracking-tight">
             Portfolio
             <span className="text-accent">Admin</span>
-          </Link>
+          </GuardedLink>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2">
@@ -76,7 +76,7 @@ export function Sidebar() {
                 ? pathname === "/"
                 : pathname === href || pathname.startsWith(`${href}/`);
             return (
-              <Link
+              <GuardedLink
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
@@ -89,7 +89,7 @@ export function Sidebar() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
-              </Link>
+              </GuardedLink>
             );
           })}
         </nav>
