@@ -86,25 +86,6 @@ export default async function ResumePage() {
 
         <section className="mt-10">
           <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
-            Technical Skills
-          </h2>
-          <div className="mt-3 h-px bg-border" />
-          <div className="mt-4 space-y-3">
-            {resume.skills.map((group) => (
-              <div key={group.category} className="flex gap-2">
-                <span className="w-32 shrink-0 text-sm font-semibold text-foreground">
-                  {group.category}:
-                </span>
-                <span className="text-sm text-foreground/88 dark:text-foreground/82">
-                  {group.items.join(", ")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
             Professional Experience
           </h2>
           <div className="mt-3 h-px bg-border" />
@@ -174,6 +155,25 @@ export default async function ResumePage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+            Technical Skills
+          </h2>
+          <div className="mt-3 h-px bg-border" />
+          <div className="mt-4 space-y-3">
+            {resume.skills.map((group) => (
+              <div key={group.category} className="flex gap-2">
+                <span className="w-32 shrink-0 text-sm font-semibold text-foreground">
+                  {group.category}:
+                </span>
+                <span className="text-sm text-foreground/88 dark:text-foreground/82">
+                  {group.items.join(", ")}
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
     </div>

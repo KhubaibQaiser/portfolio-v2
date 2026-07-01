@@ -135,9 +135,9 @@ export async function getResumeData(
 
   const visibleSections = (resume.visible_sections as unknown as string[]) ?? [
     "experience",
-    "skills",
     "education",
     "certifications",
+    "skills",
   ];
 
   const title =

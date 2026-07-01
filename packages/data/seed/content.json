@@ -129,8 +129,8 @@
     ],
     "visible_sections": [
       "experience",
-      "skills",
-      "education"
+      "education",
+      "skills"
     ],
     "is_projects_visible": true,
     "voice_sample": null
