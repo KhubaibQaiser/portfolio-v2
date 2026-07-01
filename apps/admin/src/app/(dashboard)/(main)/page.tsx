@@ -37,12 +37,12 @@ export default function DashboardPage() {
       </p>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-        {sections.map(({ href, label, icon, description }) => (
+        {sections.map(({ href, label, icon: Icon, description }) => (
           <SectionCard
             key={href}
             href={href}
             label={label}
-            icon={icon}
+            icon={<Icon className="text-accent h-5 w-5" />}
             description={description}
           />
         ))}
