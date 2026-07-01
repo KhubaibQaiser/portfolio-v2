@@ -112,10 +112,26 @@ is still by ARN.
 
 ## Out of scope / follow-ups
 
-- **DNS → Cert (`hostedZone`)** is still a construct reference, but only when
-  `domainEnabled` (currently off) and both live in `us-east-1`. When the domain
-  is delegated, decouple via `HostedZone.fromHostedZoneAttributes` + an SSM
-  `hosted-zone-id` param.
+- **DNS → Cert → Web/Admin/Storybook (`hostedZone`/`certificate`)** are
+  cross-stack **construct references** (`dns.hostedZone`, `cert.certificate`),
+  including cross-*region*: `Dns`/`Cert` live in `us-east-1` (CloudFront
+  requires the cert there) while `Web`/`Admin`/`Storybook` are `eu-west-1`.
+  This was originally decoupled via the SSM registry
+  (`HostedZone.fromHostedZoneAttributes` + a `hosted-zone-id`/`certificate-arn`
+  param), matching the pattern used everywhere else in this doc — but that
+  doesn't work cross-region: CloudFormation dynamic references
+  (`{{resolve:ssm:...}}`) always resolve against the *consuming* stack's own
+  region, so the `eu-west-1` stacks failed to find params published in
+  `us-east-1` ("Unable to fetch parameters ... from parameter store for this
+  account").
+  Fixed by passing the real `IHostedZone`/`ICertificate` constructs and
+  opting in to CDK's native `crossRegionReferences: true` (set on `Dns`,
+  `Cert`, and every consumer), which is exactly the mechanism CDK ships for
+  this CloudFront/us-east-1-cert scenario — no manual custom resource, no SSM.
+  This is a deliberate exception to "no construct references" above: unlike
+  the DynamoDB tables that motivated this ADR, a hosted zone or ACM cert is
+  effectively never replaced in practice, so the deadly-embrace risk doesn't
+  apply here.
 - **Runtime secrets** (LLM API keys): the `DataStack` **creates** the secret
   resources (so the set of keys the app needs is explicit in IaC, not discovered
   by grepping the code) and publishes each **complete ARN** (incl. the random

@@ -1,11 +1,13 @@
 import * as cdk from "aws-cdk-lib";
+import type * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as logs from "aws-cdk-lib/aws-logs";
+import type * as route53 from "aws-cdk-lib/aws-route53";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
-import { aliasToCloudFront, resolveHostedZone, resolveSiteCertificate } from "../domain";
+import { aliasToCloudFront } from "../domain";
 import {
   appErrorMetric,
   grantAppDataAccess,
@@ -16,6 +18,9 @@ export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
   /** Absolute path to apps/web/.open-next. */
   openNextDir: string;
+  /** Dns/Cert stack constructs, only present when `config.domainEnabled`. */
+  hostedZone?: route53.IHostedZone;
+  certificate?: acm.ICertificate;
 };
 
 /**
@@ -50,11 +55,11 @@ export class WebStack extends cdk.Stack {
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
-      ...(config.domainEnabled
+      ...(config.domainEnabled && props.certificate
         ? {
             domain: {
               domainNames: [config.domainName, `www.${config.domainName}`],
-              certificate: resolveSiteCertificate(this, config),
+              certificate: props.certificate,
             },
           }
         : {}),
@@ -76,10 +81,9 @@ export class WebStack extends cdk.Stack {
       },
     });
 
-    if (config.domainEnabled) {
-      const zone = resolveHostedZone(this, config);
-      aliasToCloudFront(this, zone, site.distribution, "ApexAlias");
-      aliasToCloudFront(this, zone, site.distribution, "WwwAlias", "www");
+    if (config.domainEnabled && props.hostedZone) {
+      aliasToCloudFront(this, props.hostedZone, site.distribution, "ApexAlias");
+      aliasToCloudFront(this, props.hostedZone, site.distribution, "WwwAlias", "www");
     }
 
     const errorMetric = appErrorMetric(config);

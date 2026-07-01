@@ -31,6 +31,35 @@ const edgeEnv: cdk.Environment = {
 cdk.Tags.of(app).add("project", config.appName);
 cdk.Tags.of(app).add("managed-by", "cdk");
 
+// Edge stacks first: Web/Admin/Storybook take `hostedZone` and `certificate` as
+// construct props for custom-domain CloudFront + Route 53 aliases. Dns/Cert
+// deploy to us-east-1 (CloudFront only accepts ACM certs from that region);
+// app stacks run in eu-west-1. `crossRegionReferences: true` on both sides is
+// how CDK passes IHostedZone/ICertificate across that boundary — see ADR 0001.
+const dns = new DnsStack(app, `${config.appName}-Dns`, {
+  env: edgeEnv,
+  config,
+  crossRegionReferences: true,
+  description: "Route 53 public hosted zone for the apex domain",
+});
+
+// The cert can only validate once registrar nameservers are delegated, so it
+// is opt-in. Until then sites run on their default CloudFront URLs.
+let cert: CertStack | undefined;
+if (config.domainEnabled) {
+  cert = new CertStack(app, `${config.appName}-Cert`, {
+    env: edgeEnv,
+    config,
+    crossRegionReferences: true,
+    hostedZone: dns.hostedZone,
+    description: "us-east-1 ACM certificate for CloudFront",
+  });
+}
+
+const domainProps = config.domainEnabled
+  ? { hostedZone: dns.hostedZone, certificate: cert!.certificate }
+  : {};
+
 const data = new DataStack(app, `${config.appName}-Data`, {
   env: primaryEnv,
   config,
@@ -40,7 +69,9 @@ const data = new DataStack(app, `${config.appName}-Data`, {
 const web = new WebStack(app, `${config.appName}-Web`, {
   env: primaryEnv,
   config,
+  crossRegionReferences: true,
   openNextDir: path.join(repoRoot, "apps/web/.open-next"),
+  ...domainProps,
   description: "Web app (OpenNext on Lambda + CloudFront)",
 });
 
@@ -53,7 +84,9 @@ const auth = new AuthStack(app, `${config.appName}-Auth`, {
 const admin = new AdminStack(app, `${config.appName}-Admin`, {
   env: primaryEnv,
   config,
+  crossRegionReferences: true,
   openNextDir: path.join(repoRoot, "apps/admin/.open-next"),
+  ...domainProps,
   description: "Admin dashboard (OpenNext on Lambda + CloudFront)",
 });
 
@@ -68,7 +101,9 @@ const shared = new SharedStack(app, `${config.appName}-Shared`, {
 // exports (see docs/adr/0001-cross-stack-references.md), so these are
 // ordering-only deps: they make `cdk deploy --all` create the DataStack tables
 // + bucket and the AuthStack secret ARNs before the consumers read them, without
-// creating any import that could deadlock on a future replacement.
+// creating any import that could deadlock on a future replacement. (The
+// Dns/Cert → Web/Admin/Storybook ordering is inferred automatically from the
+// `hostedZone`/`certificate` construct references passed in above.)
 web.addDependency(data);
 admin.addDependency(data);
 admin.addDependency(auth);
@@ -77,7 +112,9 @@ shared.addDependency(data);
 const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {
   env: primaryEnv,
   config,
+  crossRegionReferences: true,
   assetDir: path.join(repoRoot, "packages/ui/storybook-static"),
+  ...domainProps,
   description: "Storybook design-system showcase (static S3 + CloudFront)",
 });
 
@@ -88,30 +125,6 @@ if (config.githubRepo) {
     config,
     description: "GitHub Actions OIDC deploy role",
   });
-}
-
-const dns = new DnsStack(app, `${config.appName}-Dns`, {
-  env: edgeEnv,
-  config,
-  description: "Route 53 public hosted zone for the apex domain",
-});
-
-// The cert can only validate once registrar nameservers are delegated, so it
-// is opt-in. Until then sites run on their default CloudFront URLs.
-let cert: CertStack | undefined;
-if (config.domainEnabled) {
-  cert = new CertStack(app, `${config.appName}-Cert`, {
-    env: edgeEnv,
-    config,
-    description: "us-east-1 ACM certificate for CloudFront",
-  });
-  cert.addDependency(dns);
-  web.addDependency(dns);
-  admin.addDependency(dns);
-  storybook.addDependency(dns);
-  web.addDependency(cert);
-  admin.addDependency(cert);
-  storybook.addDependency(cert);
 }
 
 app.synth();
