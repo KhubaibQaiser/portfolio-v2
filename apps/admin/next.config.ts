@@ -15,6 +15,7 @@ function serverActionAllowedOrigins(): string[] {
     "localhost:3001",
     "*.cloudfront.net",
     "*.lambda-url.eu-west-1.on.aws",
+    "*.khubaibqaiser.com"
   ]);
 
   const appOrigin = process.env.APP_ORIGIN;
