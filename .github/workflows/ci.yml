@@ -125,6 +125,8 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Build deploy artifacts (OpenNext bundles + Storybook)
+        env:
+          APP_ORIGIN: ${{ vars.APP_ORIGIN }}
         run: pnpm build:open-next
 
       - name: CDK deploy
