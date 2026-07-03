@@ -9,6 +9,7 @@
         "NEXT_PUBLIC_*",
         "MEDIA_PUBLIC_BASE_URL",
         "PORTFOLIO_OPENNEXT_BUILD",
+        "APP_ORIGIN",
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",
         "POSTHOG_APP_HOST",
