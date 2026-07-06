@@ -1,12 +1,4 @@
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Link,
-  Font,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 import type { ResumeData } from "@portfolio/shared/resume-data";
 import { COLORS, baseStyles } from "./styles";
 
@@ -37,6 +29,10 @@ const s = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Helvetica-Oblique",
     color: COLORS.body,
+  },
+  expContractType: {
+    fontFamily: "Helvetica-Oblique",
+    color: COLORS.secondary,
   },
   expLocation: { fontSize: 9, color: COLORS.secondary },
   bulletList: { marginTop: 3, paddingLeft: 10 },
@@ -137,7 +133,12 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                     <Text style={s.expPeriod}>{exp.period}</Text>
                   </View>
                   <View style={s.expSubHeader}>
-                    <Text style={s.expCompany}>{exp.company}</Text>
+                    <Text style={s.expCompany}>
+                      {exp.company}
+                      {exp.contractType ? (
+                        <Text style={s.expContractType}>{` · ${exp.contractType}`}</Text>
+                      ) : null}
+                    </Text>
                     <Text style={s.expLocation}>{exp.location}</Text>
                   </View>
                 </View>
