@@ -29,10 +29,7 @@ const PRICING: Record<string, { input: number; output: number }> = {
   [MODEL_IDS.groqLlama8bInstant]: { input: 0.05, output: 0.08 },
 };
 
-export function estimateCostUsd(
-  usage: LlmUsage,
-  modelId: ModelId | string,
-): number {
+export function estimateCostUsd(usage: LlmUsage, modelId: ModelId | string): number {
   const price = PRICING[modelId];
   if (!price) return 0;
   const inTok = usage.inputTokens ?? 0;

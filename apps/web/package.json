@@ -14,6 +14,7 @@
     "@ai-sdk/groq": "^3.0.35",
     "@ai-sdk/react": "^3.0.160",
     "@gsap/react": "^2.1.2",
+    "@marsidev/react-turnstile": "^1.5.3",
     "@portfolio/ai": "workspace:*",
     "@portfolio/data": "workspace:*",
     "@portfolio/observability": "workspace:*",
@@ -39,6 +40,7 @@
     "react-dom": "^19.2.5",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "resend": "^6.17.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },

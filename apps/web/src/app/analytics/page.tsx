@@ -19,13 +19,11 @@ const placeholderStats = [
 export default function AnalyticsPage() {
   return (
     <div className="py-32">
-      <div className="mx-auto max-w-container px-(--container-padding)">
-        <h1 className="text-h1 font-bold tracking-tight">
-          Site Analytics
-        </h1>
-        <p className="mt-3 max-w-xl text-body-lg text-muted-foreground">
-          Real-time metrics for khubaibqaiser.com — demonstrating data
-          visualization and analytics pipeline skills.
+      <div className="max-w-container mx-auto px-(--container-padding)">
+        <h1 className="text-h1 font-bold tracking-tight">Site Analytics</h1>
+        <p className="text-body-lg text-muted-foreground mt-3 max-w-xl">
+          Real-time metrics for khubaibqaiser.com — demonstrating data visualization and
+          analytics pipeline skills.
         </p>
 
         {/* Stats grid */}
@@ -33,14 +31,14 @@ export default function AnalyticsPage() {
           {placeholderStats.map(({ icon: Icon, label, value }) => (
             <div
               key={label}
-              className="flex items-center gap-4 rounded-xl border border-border/50 bg-muted/20 p-6"
+              className="border-border/50 bg-muted/20 flex items-center gap-4 rounded-xl border p-6"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                <Icon className="h-5 w-5 text-accent" />
+              <div className="bg-accent/10 flex h-10 w-10 items-center justify-center rounded-lg">
+                <Icon className="text-accent h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{value}</p>
-                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="text-muted-foreground text-sm">{label}</p>
               </div>
             </div>
           ))}
@@ -48,39 +46,35 @@ export default function AnalyticsPage() {
 
         {/* Placeholder charts */}
         <div className="mt-10 grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-6">
+          <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
             <h3 className="font-semibold">Visitor Trends</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               Daily visitors over the past 30 days
             </p>
-            <div className="mt-6 flex h-48 items-center justify-center text-sm text-muted-foreground/50">
+            <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Charts will be powered by PostHog + Recharts
             </div>
           </div>
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-6">
+          <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
             <h3 className="font-semibold">Traffic Sources</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Where visitors come from
-            </p>
-            <div className="mt-6 flex h-48 items-center justify-center text-sm text-muted-foreground/50">
+            <p className="text-muted-foreground mt-1 text-sm">Where visitors come from</p>
+            <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Donut chart coming in Phase 4
             </div>
           </div>
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-6">
+          <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
             <h3 className="font-semibold">Top Pages</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Most visited pages
-            </p>
-            <div className="mt-6 flex h-48 items-center justify-center text-sm text-muted-foreground/50">
+            <p className="text-muted-foreground mt-1 text-sm">Most visited pages</p>
+            <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Bar chart coming in Phase 4
             </div>
           </div>
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-6">
+          <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
             <h3 className="font-semibold">Core Web Vitals</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               LCP, INP, CLS from real users
             </p>
-            <div className="mt-6 flex h-48 items-center justify-center text-sm text-muted-foreground/50">
+            <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Core Web Vitals gauges — Phase 4
             </div>
           </div>

@@ -24,7 +24,9 @@ import {
 async function main(): Promise<void> {
   const tables = buildTableNames();
   const client = createDynamoClient();
-  console.log(`Seeding tables with prefix "${tables.content.replace(/-content$/, "")}"...`);
+  console.log(
+    `Seeding tables with prefix "${tables.content.replace(/-content$/, "")}"...`,
+  );
 
   await seedDynamoFromFixtures(client, tables);
 

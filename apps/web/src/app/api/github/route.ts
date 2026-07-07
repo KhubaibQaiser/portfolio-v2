@@ -65,8 +65,7 @@ export async function GET() {
     const stats: GitHubStats = {
       totalRepos: repos.length,
       totalStars: repos.reduce(
-        (sum: number, r: { stargazers_count: number }) =>
-          sum + r.stargazers_count,
+        (sum: number, r: { stargazers_count: number }) => sum + r.stargazers_count,
         0,
       ),
       totalForks: repos.reduce(
@@ -75,9 +74,7 @@ export async function GET() {
       ),
       topLanguages: [
         ...new Set(
-          repos
-            .map((r: { language: string | null }) => r.language)
-            .filter(Boolean),
+          repos.map((r: { language: string | null }) => r.language).filter(Boolean),
         ),
       ].slice(0, 8) as string[],
       updatedAt: new Date().toISOString(),

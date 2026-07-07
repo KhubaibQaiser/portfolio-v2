@@ -9,9 +9,7 @@ export class FabricationError extends Error {
   readonly offending: ReadonlyArray<string>;
 
   constructor(offending: ReadonlyArray<string>) {
-    super(
-      `Model referenced ids not present in source data: ${offending.join(", ")}`,
-    );
+    super(`Model referenced ids not present in source data: ${offending.join(", ")}`);
     this.name = "FabricationError";
     this.offending = offending;
   }
@@ -22,9 +20,7 @@ export class AiToneRejectedError extends Error {
   readonly hits: ReadonlyArray<string>;
 
   constructor(score: number, hits: ReadonlyArray<string>) {
-    super(
-      `Output flagged as AI-toned (score=${score}, hits=${hits.join(", ")})`,
-    );
+    super(`Output flagged as AI-toned (score=${score}, hits=${hits.join(", ")})`);
     this.name = "AiToneRejectedError";
     this.score = score;
     this.hits = hits;

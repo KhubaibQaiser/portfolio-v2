@@ -28,8 +28,7 @@ export function buildCoverLetterSystemPrompt(
   const metaLines: string[] = [];
   if (opts.company) metaLines.push(`Company: ${opts.company}`);
   if (opts.role) metaLines.push(`Role: ${opts.role}`);
-  if (opts.hiringManager)
-    metaLines.push(`Hiring manager: ${opts.hiringManager}`);
+  if (opts.hiringManager) metaLines.push(`Hiring manager: ${opts.hiringManager}`);
   const metaBlock = metaLines.length ? metaLines.join("\n") : "";
 
   const retry = opts.retryReason

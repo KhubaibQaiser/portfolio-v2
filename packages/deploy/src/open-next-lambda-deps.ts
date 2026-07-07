@@ -21,4 +21,5 @@ export const OPEN_NEXT_LAMBDA_PACKAGES = [
   "@aws-sdk/client-dynamodb@3.1075.0",
   "@aws-sdk/lib-dynamodb@3.1075.0",
   "@aws-sdk/client-secrets-manager@3.1075.0",
+  "resend@6.17.1",
 ] as const;

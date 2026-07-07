@@ -10,14 +10,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantStyles: Record<ButtonVariant, string> = {
-  default:
-    "bg-foreground text-background hover:opacity-90",
-  outline:
-    "border border-border bg-transparent text-foreground hover:bg-muted",
-  ghost:
-    "bg-transparent text-foreground hover:bg-muted",
-  accent:
-    "bg-accent text-accent-foreground hover:opacity-90",
+  default: "bg-foreground text-background hover:opacity-90",
+  outline: "border border-border bg-transparent text-foreground hover:bg-muted",
+  ghost: "bg-transparent text-foreground hover:bg-muted",
+  accent: "bg-accent text-accent-foreground hover:opacity-90",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

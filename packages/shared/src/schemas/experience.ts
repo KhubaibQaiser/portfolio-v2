@@ -43,9 +43,9 @@ export const experienceSchema = z.object({
 });
 
 /** Resume pipelines only — portfolio and admin list show all rows. */
-export function filterExperienceForResume<
-  T extends { show_in_resume?: boolean },
->(rows: T[]): T[] {
+export function filterExperienceForResume<T extends { show_in_resume?: boolean }>(
+  rows: T[],
+): T[] {
   return rows.filter((e) => e.show_in_resume !== false);
 }
 

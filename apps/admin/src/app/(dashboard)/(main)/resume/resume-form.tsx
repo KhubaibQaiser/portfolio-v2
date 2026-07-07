@@ -39,12 +39,20 @@ function parseEducation(raw: unknown): EducationDraft[] {
   if (list.length === 0) {
     return [{ _clientId: clientId(), degree: "", institution: "", year: "", url: null }];
   }
-  return list.map((entry) => ({ ...entry, url: entry.url ?? null, _clientId: clientId() }));
+  return list.map((entry) => ({
+    ...entry,
+    url: entry.url ?? null,
+    _clientId: clientId(),
+  }));
 }
 
 function parseCertifications(raw: unknown): CertificationDraft[] {
   const list = (raw as Certification[] | null) ?? [];
-  return list.map((entry) => ({ ...entry, url: entry.url ?? null, _clientId: clientId() }));
+  return list.map((entry) => ({
+    ...entry,
+    url: entry.url ?? null,
+    _clientId: clientId(),
+  }));
 }
 
 function parseVisibleSections(raw: unknown): string[] {
@@ -75,8 +83,16 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
   const { register, handleSubmit, reset, setValue, control } = form;
   const visibleSections = useWatch({ control, name: "visible_sections" }) ?? [];
   const voiceSample = useWatch({ control, name: "voice_sample" }) ?? "";
-  const educationFields = useFieldArray({ control, name: "education", keyName: "fieldKey" });
-  const certFields = useFieldArray({ control, name: "certifications", keyName: "fieldKey" });
+  const educationFields = useFieldArray({
+    control,
+    name: "education",
+    keyName: "fieldKey",
+  });
+  const certFields = useFieldArray({
+    control,
+    name: "certifications",
+    keyName: "fieldKey",
+  });
 
   function toggleSection(key: string) {
     const next = visibleSections.includes(key)
@@ -93,7 +109,8 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       certifications: data.certifications.map(({ _clientId: _b, ...rest }) => rest),
       visible_sections: data.visible_sections,
       is_projects_visible: data.is_projects_visible,
-      voice_sample: (data.voice_sample ?? "").trim() === "" ? null : (data.voice_sample ?? null),
+      voice_sample:
+        (data.voice_sample ?? "").trim() === "" ? null : (data.voice_sample ?? null),
     };
     const result = await runServerAction(() => saveResume(payload), toast);
     setSaving(false);
@@ -122,7 +139,8 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
             Voice sample (Resume AI only)
           </label>
           <p className="text-muted-foreground mb-2 text-xs">
-            ~150–300 words in your own voice. The generator uses this as a few-shot anchor.
+            ~150–300 words in your own voice. The generator uses this as a few-shot
+            anchor.
           </p>
           <textarea
             {...register("voice_sample")}
@@ -162,16 +180,39 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
           </div>
           <div className="space-y-4">
             {educationFields.fields.map((row, index) => (
-              <div key={row.fieldKey} className="border-border/50 bg-muted/20 rounded-lg border p-4">
+              <div
+                key={row.fieldKey}
+                className="border-border/50 bg-muted/20 rounded-lg border p-4"
+              >
                 <input type="hidden" {...register(`education.${index}._clientId`)} />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input {...register(`education.${index}.degree`)} placeholder="Degree" className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm" />
-                  <input {...register(`education.${index}.year`)} placeholder="Year" className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm" />
-                  <input {...register(`education.${index}.institution`)} placeholder="Institution" className="border-border bg-background sm:col-span-2 w-full rounded-md border px-3 py-2 text-sm" />
-                  <input {...register(`education.${index}.url`)} placeholder="URL (optional)" className="border-border bg-background sm:col-span-2 w-full rounded-md border px-3 py-2 text-sm" />
+                  <input
+                    {...register(`education.${index}.degree`)}
+                    placeholder="Degree"
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                  <input
+                    {...register(`education.${index}.year`)}
+                    placeholder="Year"
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                  <input
+                    {...register(`education.${index}.institution`)}
+                    placeholder="Institution"
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm sm:col-span-2"
+                  />
+                  <input
+                    {...register(`education.${index}.url`)}
+                    placeholder="URL (optional)"
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm sm:col-span-2"
+                  />
                 </div>
                 {educationFields.fields.length > 1 && (
-                  <button type="button" onClick={() => educationFields.remove(index)} className="text-muted-foreground hover:text-destructive mt-3 flex items-center gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => educationFields.remove(index)}
+                    className="text-muted-foreground hover:text-destructive mt-3 flex items-center gap-1 text-xs"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                     Remove
                   </button>
@@ -189,7 +230,12 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
             <button
               type="button"
               onClick={() =>
-                certFields.append({ _clientId: clientId(), name: "", issuer: "", url: null })
+                certFields.append({
+                  _clientId: clientId(),
+                  name: "",
+                  issuer: "",
+                  url: null,
+                })
               }
               className="border-border bg-muted/30 hover:bg-muted/50 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
             >
@@ -202,14 +248,36 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
               <p className="text-muted-foreground text-sm">No certifications yet.</p>
             ) : (
               certFields.fields.map((row, index) => (
-                <div key={row.fieldKey} className="border-border/50 bg-muted/20 rounded-lg border p-4">
-                  <input type="hidden" {...register(`certifications.${index}._clientId`)} />
+                <div
+                  key={row.fieldKey}
+                  className="border-border/50 bg-muted/20 rounded-lg border p-4"
+                >
+                  <input
+                    type="hidden"
+                    {...register(`certifications.${index}._clientId`)}
+                  />
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input {...register(`certifications.${index}.name`)} placeholder="Name" className="border-border bg-background sm:col-span-2 w-full rounded-md border px-3 py-2 text-sm" />
-                    <input {...register(`certifications.${index}.issuer`)} placeholder="Issuer" className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm" />
-                    <input {...register(`certifications.${index}.url`)} placeholder="URL (optional)" className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm" />
+                    <input
+                      {...register(`certifications.${index}.name`)}
+                      placeholder="Name"
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm sm:col-span-2"
+                    />
+                    <input
+                      {...register(`certifications.${index}.issuer`)}
+                      placeholder="Issuer"
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                    <input
+                      {...register(`certifications.${index}.url`)}
+                      placeholder="URL (optional)"
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    />
                   </div>
-                  <button type="button" onClick={() => certFields.remove(index)} className="text-muted-foreground hover:text-destructive mt-3 flex items-center gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => certFields.remove(index)}
+                    className="text-muted-foreground hover:text-destructive mt-3 flex items-center gap-1 text-xs"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                     Remove
                   </button>
@@ -225,7 +293,10 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
           </h2>
           <div className="flex flex-wrap gap-4">
             {SECTION_OPTIONS.map((section) => (
-              <label key={section.key} className="flex cursor-pointer items-center gap-2 text-sm">
+              <label
+                key={section.key}
+                className="flex cursor-pointer items-center gap-2 text-sm"
+              >
                 <input
                   type="checkbox"
                   checked={visibleSections.includes(section.key)}
@@ -239,7 +310,11 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
         </div>
 
         <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input type="checkbox" {...register("is_projects_visible")} className="border-border rounded" />
+          <input
+            type="checkbox"
+            {...register("is_projects_visible")}
+            className="border-border rounded"
+          />
           Projects visible on site (portfolio flag)
         </label>
 

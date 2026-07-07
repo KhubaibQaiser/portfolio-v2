@@ -12,7 +12,7 @@ export function Calendar({ className, ...props }: CalendarProps) {
     <DayPicker
       {...props}
       className={cn(
-        "rounded-lg border border-border bg-background p-2 text-foreground [--rdp-accent-color:var(--color-accent)] [--rdp-background-color:var(--color-background)]",
+        "border-border bg-background text-foreground rounded-lg border p-2 [--rdp-accent-color:var(--color-accent)] [--rdp-background-color:var(--color-background)]",
         className,
       )}
     />

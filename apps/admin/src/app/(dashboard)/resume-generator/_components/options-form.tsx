@@ -90,16 +90,10 @@ export function OptionsForm({ value, onChange, disabled }: Props) {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block text-xs">
-      <span className="mb-1 block text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground mb-1 block">{label}</span>
       {children}
     </label>
   );

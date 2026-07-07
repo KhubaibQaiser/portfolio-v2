@@ -24,9 +24,7 @@ export function ResumePdfDownloadLink({
     <Link
       href="/api/pdf"
       className={className}
-      onClick={() =>
-        capturePortfolioEvent(PortfolioEvents.resumePdfDownload)
-      }
+      onClick={() => capturePortfolioEvent(PortfolioEvents.resumePdfDownload)}
     >
       {children}
     </Link>

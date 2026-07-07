@@ -8,11 +8,7 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import {
-  appErrorMetric,
-  grantAppDataAccess,
-  ssmPaths,
-} from "../naming";
+import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;

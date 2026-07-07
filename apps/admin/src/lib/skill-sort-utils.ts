@@ -5,7 +5,9 @@ import {
 } from "@portfolio/shared/constants";
 import type { Skill, SkillCategory } from "@portfolio/shared/schemas";
 
-export function getCategoryDisplayOrder(categories: Iterable<SkillCategory>): SkillCategory[] {
+export function getCategoryDisplayOrder(
+  categories: Iterable<SkillCategory>,
+): SkillCategory[] {
   const unique = [...new Set(categories)];
   return unique.sort((a, b) => {
     const weightDiff = getSkillCategorySortWeight(b) - getSkillCategorySortWeight(a);
@@ -111,7 +113,10 @@ export function removeSkillAndReindex(skills: Skill[], skillId: string): Skill[]
   return flattenSkillGroups(groups, order);
 }
 
-export function nextSortOrderInCategory(skills: Skill[], category: SkillCategory): number {
+export function nextSortOrderInCategory(
+  skills: Skill[],
+  category: SkillCategory,
+): number {
   return skills.filter((s) => s.category === category).length;
 }
 

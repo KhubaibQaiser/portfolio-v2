@@ -127,6 +127,7 @@ jobs:
       - name: Build deploy artifacts (OpenNext bundles + Storybook)
         env:
           APP_ORIGIN: ${{ vars.APP_ORIGIN }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
         run: pnpm build:open-next
 
       - name: CDK deploy
@@ -139,6 +140,7 @@ jobs:
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
           -c alertEmail=${{ vars.ALERT_EMAIL }}
           -c contactEmail=${{ vars.CONTACT_EMAIL }}
+          -c contactFromEmail=${{ vars.CONTACT_FROM_EMAIL }}
           -c githubRepo=${{ github.repository }}
 
       - name: Smoke test image optimizer

@@ -62,20 +62,10 @@ export function ExperienceList({ initialData }: ExperienceListProps) {
   );
 
   if (editing) {
-    return (
-      <ExperienceEditPanel
-        entry={editing}
-        onClose={() => setEditing(null)}
-      />
-    );
+    return <ExperienceEditPanel entry={editing} onClose={() => setEditing(null)} />;
   }
 
-  return (
-    <ExperienceListPanel
-      initialData={initialData}
-      onEdit={setEditing}
-    />
-  );
+  return <ExperienceListPanel initialData={initialData} onEdit={setEditing} />;
 }
 
 function ExperienceListPanel({
@@ -91,8 +81,13 @@ function ExperienceListPanel({
 
   const form = useForm<ListFormValues>({ defaultValues });
   const { control, handleSubmit } = form;
-  const { fields, remove } = useFieldArray({ control, name: "items", keyName: "fieldKey" });
-  const items = useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
+  const { fields, remove } = useFieldArray({
+    control,
+    name: "items",
+    keyName: "fieldKey",
+  });
+  const items =
+    useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
 
   function openEdit(entry: ExperienceFormData & { id?: string }) {
     if (!tryLeaveForm(form, defaultValues)) return;
@@ -137,11 +132,13 @@ function ExperienceListPanel({
                 <div className="flex-1">
                   <p className="font-medium">{exp.role}</p>
                   <p className="text-muted-foreground text-sm">
-                    {exp.company} &middot; {getContractTypeLabel(exp.contract_type)} &middot;{" "}
-                    {exp.start_date} – {exp.end_date ?? "Present"}
+                    {exp.company} &middot; {getContractTypeLabel(exp.contract_type)}{" "}
+                    &middot; {exp.start_date} – {exp.end_date ?? "Present"}
                   </p>
                   {exp.show_in_resume === false && (
-                    <p className="text-muted-foreground mt-1 text-xs">Hidden from resume</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Hidden from resume
+                    </p>
                   )}
                 </div>
                 <button
@@ -165,7 +162,11 @@ function ExperienceListPanel({
             );
           })}
         </div>
-        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} className="mt-6" />
+        <FormSaveButton
+          saving={saving}
+          onClick={handleSubmit(onSubmit)}
+          className="mt-6"
+        />
       </div>
     </Form>
   );
@@ -212,16 +213,27 @@ function ExperienceEditPanel({
     <Form {...form} isSubmitting={saving}>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{entry.id ? "Edit" : "Add"} Experience</h2>
-          <button type="button" onClick={handleClose} className="text-muted-foreground hover:text-foreground rounded-md p-1">
+          <h2 className="text-lg font-semibold">
+            {entry.id ? "Edit" : "Add"} Experience
+          </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-foreground rounded-md p-1"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
         <input type="hidden" {...register("id")} />
         {(["company", "role", "location"] as const).map((key) => (
           <div key={key}>
-            <label className="mb-1 block text-sm font-medium capitalize">{key.replace(/_/g, " ")}</label>
-            <input {...register(key)} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+            <label className="mb-1 block text-sm font-medium capitalize">
+              {key.replace(/_/g, " ")}
+            </label>
+            <input
+              {...register(key)}
+              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            />
           </div>
         ))}
         <div>
@@ -262,16 +274,31 @@ function ExperienceEditPanel({
           </Select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Description (one bullet per line)</label>
-          <textarea {...register("description")} rows={5} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+          <label className="mb-1 block text-sm font-medium">
+            Description (one bullet per line)
+          </label>
+          <textarea
+            {...register("description")}
+            rows={5}
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Tech tags</label>
-          <input {...register("tech_tags_input")} placeholder="React, TypeScript, Node.js" className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" autoComplete="off" />
+          <input
+            {...register("tech_tags_input")}
+            placeholder="React, TypeScript, Node.js"
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            autoComplete="off"
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Sort Order</label>
-          <input type="number" {...register("sort_order", { valueAsNumber: true })} className="border-border bg-muted/30 focus:border-accent w-32 rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+          <input
+            type="number"
+            {...register("sort_order", { valueAsNumber: true })}
+            className="border-border bg-muted/30 focus:border-accent w-32 rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
         </div>
         <label className="flex items-center gap-2 text-sm font-medium">
           <input type="checkbox" {...register("show_in_resume")} />

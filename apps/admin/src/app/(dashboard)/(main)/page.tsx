@@ -19,8 +19,18 @@ const sections = [
   { href: "/projects", label: "Projects", icon: FolderOpen, description: "30+ projects" },
   { href: "/skills", label: "Skills", icon: Zap, description: "Skill categories" },
   { href: "/resume", label: "Resume", icon: FileText, description: "ATS resume data" },
-  { href: "/recommendations", label: "Recommendations", icon: MessageSquare, description: "LinkedIn recs" },
-  { href: "/site-config", label: "Site Config", icon: Settings, description: "Links, meta" },
+  {
+    href: "/recommendations",
+    label: "Recommendations",
+    icon: MessageSquare,
+    description: "LinkedIn recs",
+  },
+  {
+    href: "/site-config",
+    label: "Site Config",
+    icon: Settings,
+    description: "Links, meta",
+  },
   { href: "/media", label: "Media Library", icon: Image, description: "Images, files" },
 ];
 
@@ -28,12 +38,12 @@ export default function DashboardPage() {
   return (
     <>
       <div className="flex items-center gap-3">
-        <LayoutDashboard className="h-6 w-6 text-accent" />
+        <LayoutDashboard className="text-accent h-6 w-6" />
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
       </div>
-      <p className="mt-2 text-muted-foreground">
-        Manage your portfolio content. Saves go to DynamoDB; the public site
-        refreshes on its hourly cache window.
+      <p className="text-muted-foreground mt-2">
+        Manage your portfolio content. Saves go to DynamoDB; the public site refreshes on
+        its hourly cache window.
       </p>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">

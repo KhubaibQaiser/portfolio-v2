@@ -10,7 +10,11 @@ type FormSaveButtonProps = {
   className?: string;
 };
 
-export function FormSaveButton({ saving = false, onClick, className }: FormSaveButtonProps) {
+export function FormSaveButton({
+  saving = false,
+  onClick,
+  className,
+}: FormSaveButtonProps) {
   const {
     formState: { isDirty },
   } = useFormContext();

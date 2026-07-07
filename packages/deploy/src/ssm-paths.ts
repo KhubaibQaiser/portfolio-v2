@@ -19,6 +19,8 @@ export function ssmPaths(appName: string = DEFAULT_APP_NAME) {
     /** Complete ARNs (incl. random suffix) of the CDK-owned AI key secrets. */
     groqApiKeyArn: `${base}/ai/groq-api-key-arn`,
     anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,
+    resendApiKeyArn: `${base}/email/resend-api-key-arn`,
+    turnstileSecretKeyArn: `${base}/auth/turnstile-secret-key-arn`,
   } as const;
 }
 

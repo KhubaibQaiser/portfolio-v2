@@ -56,8 +56,14 @@ export class DataStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.RETAIN,
       });
 
-    durableTable("ContentTable", TABLE_SUFFIXES.content, { name: "section", type: STRING });
-    durableTable("ExperienceTable", TABLE_SUFFIXES.experience, { name: "id", type: STRING });
+    durableTable("ContentTable", TABLE_SUFFIXES.content, {
+      name: "section",
+      type: STRING,
+    });
+    durableTable("ExperienceTable", TABLE_SUFFIXES.experience, {
+      name: "id",
+      type: STRING,
+    });
 
     const projectTable = durableTable("ProjectTable", TABLE_SUFFIXES.project, {
       name: "id",
@@ -70,7 +76,10 @@ export class DataStack extends cdk.Stack {
     });
 
     durableTable("SkillTable", TABLE_SUFFIXES.skill, { name: "id", type: STRING });
-    durableTable("TestimonialTable", TABLE_SUFFIXES.testimonial, { name: "id", type: STRING });
+    durableTable("TestimonialTable", TABLE_SUFFIXES.testimonial, {
+      name: "id",
+      type: STRING,
+    });
     durableTable("ResumeVariantTable", TABLE_SUFFIXES.resumeVariant, {
       name: "id",
       type: STRING,
@@ -185,6 +194,18 @@ export class DataStack extends cdk.Stack {
       names.anthropicApiKey,
       paths.anthropicApiKeyArn,
       "Anthropic API key",
+    );
+    aiSecret(
+      "ResendApiKeySecret",
+      names.resendApiKey,
+      paths.resendApiKeyArn,
+      "Resend API key",
+    );
+    aiSecret(
+      "TurnstileSecretKeySecret",
+      names.turnstileSecretKey,
+      paths.turnstileSecretKeyArn,
+      "Cloudflare Turnstile secret key",
     );
 
     new cdk.CfnOutput(this, "TablePrefix", {

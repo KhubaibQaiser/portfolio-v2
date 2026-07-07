@@ -7,10 +7,11 @@
 
 @theme {
   /* Typography — Geist font family */
-  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
-    Consolas, monospace;
+  --font-sans:
+    "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   /* Fluid type scale */
   --text-display: clamp(2.25rem, 5vw + 0.85rem, 4.5rem);
@@ -132,12 +133,7 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.8),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
   pointer-events: none;
   z-index: 1;
 }
@@ -181,12 +177,7 @@ body {
 }
 
 .dark .glass-header::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .dark .glass-header::after {
@@ -261,4 +252,3 @@ body {
     display: none;
   }
 }
-

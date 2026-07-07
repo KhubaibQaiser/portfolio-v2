@@ -1,8 +1,4 @@
-import type {
-  ContentRepository,
-  CostCap,
-  RateLimiter,
-} from "@portfolio/shared/ports";
+import type { ContentRepository, CostCap, RateLimiter } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";

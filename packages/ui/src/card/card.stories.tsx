@@ -24,8 +24,7 @@ export const Default: Story = {
           <CardTitle>Card Title</CardTitle>
         </CardHeader>
         <CardContent>
-          This is the card content. It provides additional details about the
-          topic.
+          This is the card content. It provides additional details about the topic.
         </CardContent>
       </>
     ),
@@ -50,7 +49,14 @@ export const Hoverable: Story = {
 
 export const Grid: Story = {
   render: () => (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", maxWidth: "600px" }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "16px",
+        maxWidth: "600px",
+      }}
+    >
       {["React", "TypeScript", "Next.js", "Tailwind"].map((title) => (
         <Card key={title} hoverable>
           <CardHeader>

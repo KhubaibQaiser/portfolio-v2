@@ -15,9 +15,9 @@ export function formatRecommendationDate(s: string): string | null {
   return format(d, DISPLAY_FORMAT);
 }
 
-export function sortRecommendationsByDateDesc<
-  T extends { recommended_at: string },
->(rows: T[]): T[] {
+export function sortRecommendationsByDateDesc<T extends { recommended_at: string }>(
+  rows: T[],
+): T[] {
   return [...rows].sort(
     (a, b) =>
       parseRecommendationDate(b.recommended_at).getTime() -

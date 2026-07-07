@@ -48,6 +48,11 @@ export type InfraConfig = {
    * verification email. Domain identity is deferred until DNS is delegated.
    */
   contactEmail?: string;
+  /**
+   * Resend "from" address for the contact form (must use a verified domain).
+   * Pass via `-c contactFromEmail=Name <you@mail.example.com>`.
+   */
+  contactFromEmail?: string;
   /** Monthly cost budget (USD) that triggers SNS alerts at 80%/100%. */
   monthlyBudgetUsd: number;
   /**
@@ -118,6 +123,7 @@ export function resolveConfig(app: App): InfraConfig {
     adminAllowedEmails: csv(ctx("adminAllowedEmails")),
     alertEmail: ctx("alertEmail"),
     contactEmail: ctx("contactEmail"),
+    contactFromEmail: ctx("contactFromEmail"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),

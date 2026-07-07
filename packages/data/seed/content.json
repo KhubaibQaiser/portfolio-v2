@@ -20,16 +20,8 @@
     "countries_count": 4,
     "projects_count": 20,
     "users_impacted": "500K+",
-    "industries": [
-      "Ad-Tech",
-      "E-Commerce",
-      "SaaS",
-      "EdTech"
-    ],
-    "languages": [
-      "English",
-      "Urdu"
-    ],
+    "industries": ["Ad-Tech", "E-Commerce", "SaaS", "EdTech"],
+    "languages": ["English", "Urdu"],
     "highlights": [
       {
         "title": "I Ship End-to-End",
@@ -127,11 +119,7 @@
         "issuer": "HackerRank"
       }
     ],
-    "visible_sections": [
-      "experience",
-      "education",
-      "skills"
-    ],
+    "visible_sections": ["experience", "education", "skills"],
     "is_projects_visible": true,
     "voice_sample": null
   },
@@ -245,13 +233,7 @@
       "start_date": "Feb 2019",
       "end_date": "Aug 2020",
       "description": "Built transport management dashboards and a React Native driver tracking app for logistics operations.\nRewrote the Android driver app in Kotlin and mentored juniors on code review practices.",
-      "tech_tags": [
-        "React",
-        "React Native",
-        "Kotlin",
-        "Node.js",
-        "PostgreSQL"
-      ],
+      "tech_tags": ["React", "React Native", "Kotlin", "Node.js", "PostgreSQL"],
       "logo_url": null,
       "company_url": null,
       "sort_order": 4
@@ -320,14 +302,7 @@
       "description": "Serverless ad delivery system on AWS handling 50K+ daily impressions. Built with CDK, Lambda, DynamoDB, and SQS with real-time analytics via CloudFront.",
       "summary": "Serverless ad delivery system on AWS handling 50K+ daily impressions.",
       "cover_url": null,
-      "tech_tags": [
-        "AWS CDK",
-        "Lambda",
-        "DynamoDB",
-        "SQS",
-        "React",
-        "TypeScript"
-      ],
+      "tech_tags": ["AWS CDK", "Lambda", "DynamoDB", "SQS", "React", "TypeScript"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -344,13 +319,7 @@
       "description": "Private npm design system adopted by 40+ engineers across 8 product teams. Component library with Storybook documentation and automated visual regression testing.",
       "summary": "Private npm component library used by 40+ engineers across 8 teams.",
       "cover_url": null,
-      "tech_tags": [
-        "React",
-        "TypeScript",
-        "Storybook",
-        "npm",
-        "styled-components"
-      ],
+      "tech_tags": ["React", "TypeScript", "Storybook", "npm", "styled-components"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -367,13 +336,7 @@
       "description": "Enterprise financial wellness platform. Led CRA→Vite migration (70% faster builds) and React 18 upgrade achieving 60% Core Web Vitals improvement.",
       "summary": "Financial wellness platform with React 18 and 60% CWV improvement.",
       "cover_url": null,
-      "tech_tags": [
-        "React 18",
-        "Vite",
-        "TypeScript",
-        "React Query",
-        "Tailwind CSS"
-      ],
+      "tech_tags": ["React 18", "Vite", "TypeScript", "React Query", "Tailwind CSS"],
       "role": "Senior Web Developer",
       "type": "web",
       "github_url": null,
@@ -390,13 +353,7 @@
       "description": "Public-facing company website built with Next.js, Contentful CMS, and Tailwind CSS. Achieved 70% improvement in Core Web Vitals with SSG and ISR.",
       "summary": "Next.js + Contentful website with 70% Core Web Vitals improvement.",
       "cover_url": null,
-      "tech_tags": [
-        "Next.js",
-        "Contentful",
-        "Tailwind CSS",
-        "TypeScript",
-        "Vercel"
-      ],
+      "tech_tags": ["Next.js", "Contentful", "Tailwind CSS", "TypeScript", "Vercel"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -413,11 +370,7 @@
       "description": "Cross-platform sneaker trading app with shared React Native + web codebase.",
       "summary": "Cross-platform sneaker trading app with shared React Native + web codebase.",
       "cover_url": null,
-      "tech_tags": [
-        "React Native",
-        "Next.js",
-        "Apollo GraphQL"
-      ],
+      "tech_tags": ["React Native", "Next.js", "Apollo GraphQL"],
       "role": "Senior React Native Engineer",
       "type": "mobile",
       "github_url": null,
@@ -434,11 +387,7 @@
       "description": "React Native driver tracking app, later rewritten in native Kotlin.",
       "summary": "React Native driver tracking app, later rewritten in native Kotlin.",
       "cover_url": null,
-      "tech_tags": [
-        "React Native",
-        "Kotlin",
-        "Google Maps"
-      ],
+      "tech_tags": ["React Native", "Kotlin", "Google Maps"],
       "role": "Senior Software Engineer",
       "type": "mobile",
       "github_url": null,
@@ -455,12 +404,7 @@
       "description": "Dashboard for logistics operations with real-time driver tracking.",
       "summary": "Dashboard for logistics operations with real-time driver tracking.",
       "cover_url": null,
-      "tech_tags": [
-        "React",
-        "Node.js",
-        "PostgreSQL",
-        "Maps"
-      ],
+      "tech_tags": ["React", "Node.js", "PostgreSQL", "Maps"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -477,12 +421,7 @@
       "description": "Geographic data visualization dashboard with interactive maps.",
       "summary": "Geographic data visualization dashboard with interactive maps.",
       "cover_url": null,
-      "tech_tags": [
-        "React",
-        "D3.js",
-        "Leaflet",
-        "Node.js"
-      ],
+      "tech_tags": ["React", "D3.js", "Leaflet", "Node.js"],
       "role": "Software Engineer",
       "type": "web",
       "github_url": null,
@@ -499,11 +438,7 @@
       "description": "Cross-platform survey application for economic research in Pakistan.",
       "summary": "Cross-platform survey application for economic research in Pakistan.",
       "cover_url": null,
-      "tech_tags": [
-        "Cordova",
-        "JavaScript",
-        "SQLite"
-      ],
+      "tech_tags": ["Cordova", "JavaScript", "SQLite"],
       "role": "Mobile App Developer",
       "type": "mobile",
       "github_url": null,
@@ -520,11 +455,7 @@
       "description": "Educational math game reaching 500K+ students across Pakistan.",
       "summary": "Educational math game reaching 500K+ students across Pakistan.",
       "cover_url": null,
-      "tech_tags": [
-        "EaselJS",
-        "HTML5 Canvas",
-        "JavaScript"
-      ],
+      "tech_tags": ["EaselJS", "HTML5 Canvas", "JavaScript"],
       "role": "Game Developer",
       "type": "game",
       "github_url": null,
@@ -541,11 +472,7 @@
       "description": "Interactive educational puzzle game for K-12 students.",
       "summary": "Interactive educational puzzle game for K-12 students.",
       "cover_url": null,
-      "tech_tags": [
-        "HTML5 Canvas",
-        "JavaScript",
-        "EaselJS"
-      ],
+      "tech_tags": ["HTML5 Canvas", "JavaScript", "EaselJS"],
       "role": "Game Developer",
       "type": "game",
       "github_url": null,
@@ -562,11 +489,7 @@
       "description": "Competitive math game for classroom learning environments.",
       "summary": "Competitive math game for classroom learning environments.",
       "cover_url": null,
-      "tech_tags": [
-        "EaselJS",
-        "HTML5 Canvas",
-        "JavaScript"
-      ],
+      "tech_tags": ["EaselJS", "HTML5 Canvas", "JavaScript"],
       "role": "Game Developer",
       "type": "game",
       "github_url": null,

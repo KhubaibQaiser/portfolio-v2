@@ -15,11 +15,7 @@ export const coverLetterSchema = z.object({
     .describe(
       "Paragraphs. Each 40-900 chars. No AI cliches, no triples, vary sentence length.",
     ),
-  closing: z
-    .string()
-    .min(10)
-    .max(300)
-    .describe("Closing paragraph inviting next steps."),
+  closing: z.string().min(10).max(300).describe("Closing paragraph inviting next steps."),
   signOff: z
     .string()
     .min(2)

@@ -49,7 +49,7 @@ export function JdInput({ value, source, onChange, disabled }: Props) {
           className={cn(
             "rounded-md px-2.5 py-1 transition-colors",
             mode === "paste"
-              ? "bg-accent/10 font-medium text-accent"
+              ? "bg-accent/10 text-accent font-medium"
               : "text-muted-foreground hover:bg-muted",
           )}
         >
@@ -61,13 +61,13 @@ export function JdInput({ value, source, onChange, disabled }: Props) {
           className={cn(
             "rounded-md px-2.5 py-1 transition-colors",
             mode === "pdf"
-              ? "bg-accent/10 font-medium text-accent"
+              ? "bg-accent/10 text-accent font-medium"
               : "text-muted-foreground hover:bg-muted",
           )}
         >
           <FileUp className="mr-1 inline-block h-3.5 w-3.5" /> Upload PDF
         </button>
-        <span className="ml-auto text-muted-foreground">
+        <span className="text-muted-foreground ml-auto">
           {value.length.toLocaleString()} chars
         </span>
       </div>
@@ -80,12 +80,12 @@ export function JdInput({ value, source, onChange, disabled }: Props) {
           disabled={disabled}
           placeholder="Paste the job description here…"
           className={cn(
-            "w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5",
-            "text-sm focus:border-accent focus:outline-hidden",
+            "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
+            "focus:border-accent text-sm focus:outline-hidden",
           )}
         />
       ) : (
-        <div className="rounded-lg border border-dashed border-border bg-muted/10 p-6 text-center">
+        <div className="border-border bg-muted/10 rounded-lg border border-dashed p-6 text-center">
           <input
             ref={inputRef}
             type="file"
@@ -101,8 +101,8 @@ export function JdInput({ value, source, onChange, disabled }: Props) {
             onClick={() => inputRef.current?.click()}
             disabled={uploading || disabled}
             className={cn(
-              "mx-auto flex items-center gap-2 rounded-lg bg-accent px-4 py-2",
-              "text-sm font-medium text-accent-foreground transition-opacity",
+              "bg-accent mx-auto flex items-center gap-2 rounded-lg px-4 py-2",
+              "text-accent-foreground text-sm font-medium transition-opacity",
               "hover:opacity-90 disabled:opacity-50",
             )}
           >
@@ -113,16 +113,15 @@ export function JdInput({ value, source, onChange, disabled }: Props) {
             )}
             {uploading ? "Extracting…" : "Choose PDF"}
           </button>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-xs">
             Max 2MB, text-based PDFs only.
           </p>
           {value && !uploading && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Extracted {value.length.toLocaleString()} chars — switch to Paste
-              to edit.
+            <p className="text-muted-foreground mt-3 text-xs">
+              Extracted {value.length.toLocaleString()} chars — switch to Paste to edit.
             </p>
           )}
-          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+          {error && <p className="text-destructive mt-2 text-xs">{error}</p>}
         </div>
       )}
     </div>

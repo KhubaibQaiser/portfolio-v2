@@ -57,7 +57,7 @@ export function MonthYearPicker({
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content
-            className="z-100 rounded-xl border border-border bg-background p-0 shadow-lg outline-hidden"
+            className="border-border bg-background z-100 rounded-xl border p-0 shadow-lg outline-hidden"
             sideOffset={6}
             align="start"
           >
@@ -81,7 +81,7 @@ export function MonthYearPicker({
       {clearable && value != null && String(value).trim() !== "" && (
         <button
           type="button"
-          className="text-left text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="text-muted-foreground hover:text-foreground text-left text-xs underline-offset-2 hover:underline"
           onClick={() => onChange(null)}
         >
           Clear — role ended (show &quot;Present&quot; on site when empty)

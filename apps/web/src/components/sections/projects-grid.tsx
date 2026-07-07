@@ -36,12 +36,10 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
   const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
 
   const filtered =
-    activeFilter === "all"
-      ? projects
-      : projects.filter((p) => p.type === activeFilter);
+    activeFilter === "all" ? projects : projects.filter((p) => p.type === activeFilter);
 
   return (
-    <div className="mx-auto max-w-container px-(--container-padding) pt-10">
+    <div className="max-w-container mx-auto px-(--container-padding) pt-10">
       <div className="flex flex-wrap gap-2">
         {filters.map(({ label, value }) => (
           <button

@@ -37,9 +37,6 @@ export function renderResumeForAts(resume: TailoredResume): string {
   ].join("\n\n");
 }
 
-export function buildAtsUserPrompt(
-  resume: TailoredResume,
-  wrappedJd: string,
-): string {
+export function buildAtsUserPrompt(resume: TailoredResume, wrappedJd: string): string {
   return `Compare the tailored resume below against the Job Description. Return only the JSON object.\n\n<resume>\n${renderResumeForAts(resume)}\n</resume>\n\n${wrappedJd}`;
 }

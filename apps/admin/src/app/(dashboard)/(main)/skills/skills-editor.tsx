@@ -31,7 +31,10 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
 
-  const normalizedInitial = useMemo(() => normalizeSkillsOrder(initialData), [initialData]);
+  const normalizedInitial = useMemo(
+    () => normalizeSkillsOrder(initialData),
+    [initialData],
+  );
 
   const form = useForm<SkillsFormValues>({
     defaultValues: { skills: normalizedInitial },

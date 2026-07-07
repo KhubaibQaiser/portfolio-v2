@@ -111,7 +111,10 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
               <label className="mb-1.5 block text-sm font-medium">{label}</label>
               <input
                 type={inputType}
-                {...register(key, inputType === "number" ? { valueAsNumber: true } : undefined)}
+                {...register(
+                  key,
+                  inputType === "number" ? { valueAsNumber: true } : undefined,
+                )}
                 className={cn(
                   "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
                   "focus:border-accent text-sm focus:outline-hidden",
@@ -120,8 +123,8 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
               {key === "countries_count" && (
                 <p className="text-muted-foreground mt-1.5 text-xs">
                   Manual count for how many countries you’ve worked across (there is no
-                  per-job country field yet). Used with Companies in the “Companies across N
-                  countries” line on the site.
+                  per-job country field yet). Used with Companies in the “Companies across
+                  N countries” line on the site.
                 </p>
               )}
             </div>

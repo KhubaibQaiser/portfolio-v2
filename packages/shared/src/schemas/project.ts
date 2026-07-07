@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-export const projectTypeEnum = z.enum([
-  "web",
-  "mobile",
-  "game",
-  "open-source",
-  "other",
-]);
+export const projectTypeEnum = z.enum(["web", "mobile", "game", "open-source", "other"]);
 
 export type ProjectType = z.infer<typeof projectTypeEnum>;
 

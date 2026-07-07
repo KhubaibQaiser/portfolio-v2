@@ -80,9 +80,9 @@ async function putSeedRow(
 }
 
 /** Serializes a timestamped list row for DynamoDB (nulls omitted, id preserved). */
-function timestampedSeedRow<T extends { id: string; created_at: string; updated_at: string }>(
-  row: T,
-): WriteValues {
+function timestampedSeedRow<
+  T extends { id: string; created_at: string; updated_at: string },
+>(row: T): WriteValues {
   return writable({ ...row });
 }
 

@@ -5,17 +5,19 @@
  * rendering is predictable.
  */
 export function sanitizeLlmOutput(input: string): string {
-  return input
-    .replace(/[\u200B-\u200F\uFEFF\u202A-\u202E]/g, "")
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-    .replace(/\r\n/g, "\n")
-    // Drop stray HTML/XML-like tags the model sometimes leaks
-    // (e.g. <br>, </strong>, <system>) while preserving ASCII art
-    // comparisons like `x < y` and common arrows `->`.
-    .replace(/<\/?[a-zA-Z][^<>]*>/g, "")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return (
+    input
+      .replace(/[\u200B-\u200F\uFEFF\u202A-\u202E]/g, "")
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+      .replace(/\r\n/g, "\n")
+      // Drop stray HTML/XML-like tags the model sometimes leaks
+      // (e.g. <br>, </strong>, <system>) while preserving ASCII art
+      // comparisons like `x < y` and common arrows `->`.
+      .replace(/<\/?[a-zA-Z][^<>]*>/g, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /**

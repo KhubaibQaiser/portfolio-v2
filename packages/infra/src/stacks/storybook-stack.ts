@@ -39,7 +39,13 @@ export class StorybookStack extends cdk.Stack {
     });
 
     if (config.domainEnabled && props.hostedZone) {
-      aliasToCloudFront(this, props.hostedZone, site.distribution, "StorybookAlias", "storybook");
+      aliasToCloudFront(
+        this,
+        props.hostedZone,
+        site.distribution,
+        "StorybookAlias",
+        "storybook",
+      );
     }
 
     new cdk.CfnOutput(this, "StorybookUrl", {

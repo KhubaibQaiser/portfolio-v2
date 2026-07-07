@@ -12,7 +12,7 @@ type Props = {
 export function HistoryDrawer({ items, activeId, onSelect }: Props) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-4 text-xs text-muted-foreground">
+      <div className="border-border/60 text-muted-foreground rounded-lg border border-dashed p-4 text-xs">
         No generations yet. Your last 20 runs will appear here.
       </div>
     );
@@ -38,14 +38,14 @@ export function HistoryDrawer({ items, activeId, onSelect }: Props) {
                 {item.role ?? "Untitled role"}
                 {item.company ? ` · ${item.company}` : ""}
               </p>
-              <p className="mt-0.5 text-muted-foreground">
+              <p className="text-muted-foreground mt-0.5">
                 {d.toLocaleDateString()} ·{" "}
                 {d.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <p className="text-muted-foreground mt-0.5 text-[10px] tracking-wider uppercase">
                 {item.hasResume && "Resume"}
                 {item.hasResume && item.hasCoverLetter && " · "}
                 {item.hasCoverLetter && "Cover"}

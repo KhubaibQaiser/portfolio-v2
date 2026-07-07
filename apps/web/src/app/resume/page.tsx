@@ -9,7 +9,8 @@ import { getResumeData } from "@/lib/resume-data";
 
 export const metadata: Metadata = {
   title: "Resume",
-  description: "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
+  description:
+    "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
 };
 
 export const revalidate = 10;
@@ -23,20 +24,16 @@ export default async function ResumePage() {
       <div className="mx-auto max-w-3xl px-(--container-padding)">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-h1 font-bold tracking-tight">
-              {resume.name}
-            </h1>
-            <p className="mt-1 text-body-lg font-medium text-accent">
-              {resume.title}
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground/90 dark:text-foreground/85">
+            <h1 className="text-h1 font-bold tracking-tight">{resume.name}</h1>
+            <p className="text-body-lg text-accent mt-1 font-medium">{resume.title}</p>
+            <div className="text-foreground/90 dark:text-foreground/85 mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5 opacity-80" />
                 {resume.location}
               </span>
               <a
                 href={`mailto:${resume.email}`}
-                className="inline-flex items-center gap-1 text-foreground/90 underline-offset-4 transition-colors hover:text-accent dark:text-foreground/85"
+                className="text-foreground/90 hover:text-accent dark:text-foreground/85 inline-flex items-center gap-1 underline-offset-4 transition-colors"
               >
                 <Mail className="h-3.5 w-3.5 opacity-80" />
                 {resume.email}
@@ -45,14 +42,14 @@ export default async function ResumePage() {
                 href={`https://${resume.website}`}
                 destination="website"
                 location="resume_page"
-                className="inline-flex items-center gap-1 text-foreground/90 underline-offset-4 transition-colors hover:text-accent dark:text-foreground/85"
+                className="text-foreground/90 hover:text-accent dark:text-foreground/85 inline-flex items-center gap-1 underline-offset-4 transition-colors"
               >
                 <Globe className="h-3.5 w-3.5 opacity-80" />
                 {resume.website}
               </TrackedExternalLink>
             </div>
           </div>
-          <ResumePdfDownloadLink className="flex shrink-0 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground shadow-sm transition-opacity hover:opacity-90">
+          <ResumePdfDownloadLink className="bg-accent text-accent-foreground flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium shadow-sm transition-opacity hover:opacity-90">
             <Download className="h-4 w-4" />
             Download PDF
           </ResumePdfDownloadLink>
@@ -67,7 +64,7 @@ export default async function ResumePage() {
                 href={url}
                 destination={platform}
                 location="resume_page"
-                className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-foreground/88 transition-colors hover:border-accent/40 hover:text-accent dark:text-foreground/80"
+                className="border-border text-foreground/88 hover:border-accent/40 hover:text-accent dark:text-foreground/80 inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs transition-colors"
               >
                 {label} <ExternalLink className="h-3 w-3" />
               </TrackedExternalLink>
@@ -75,45 +72,49 @@ export default async function ResumePage() {
         </div>
 
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Professional Summary
           </h2>
-          <div className="mt-3 h-px bg-border" />
-          <p className="mt-4 leading-relaxed text-foreground/92 dark:text-foreground/88">
+          <div className="bg-border mt-3 h-px" />
+          <p className="text-foreground/92 dark:text-foreground/88 mt-4 leading-relaxed">
             {resume.summary}
           </p>
         </section>
 
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Professional Experience
           </h2>
-          <div className="mt-3 h-px bg-border" />
+          <div className="bg-border mt-3 h-px" />
           <div className="mt-4 space-y-8">
             {resume.experience.map((exp) => (
               <div key={`${exp.company}-${exp.period}`}>
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 className="font-semibold text-foreground">{exp.role}</h3>
-                  <span className="font-mono text-sm text-foreground/78 dark:text-foreground/72">
+                  <h3 className="text-foreground font-semibold">{exp.role}</h3>
+                  <span className="text-foreground/78 dark:text-foreground/72 font-mono text-sm">
                     {exp.period}
                   </span>
                 </div>
                 <p className="text-accent">{exp.company}</p>
-                <p className="text-sm text-foreground/82 dark:text-foreground/75">{exp.location}</p>
-                <p className="text-xs text-foreground/70 dark:text-foreground/65">{exp.contractType}</p>
+                <p className="text-foreground/82 dark:text-foreground/75 text-sm">
+                  {exp.location}
+                </p>
+                <p className="text-foreground/70 dark:text-foreground/65 text-xs">
+                  {exp.contractType}
+                </p>
                 <ul className="mt-2 space-y-1">
                   {exp.bullets.map((bullet, i) => (
                     <li
                       key={i}
-                      className="flex gap-2 text-sm leading-relaxed text-foreground/90 dark:text-foreground/85"
+                      className="text-foreground/90 dark:text-foreground/85 flex gap-2 text-sm leading-relaxed"
                     >
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                      <span className="bg-accent mt-2 h-1 w-1 shrink-0 rounded-full" />
                       {bullet}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-foreground/78 dark:text-foreground/70">
-                  <strong className="font-semibold text-foreground/88">Tech:</strong>{" "}
+                <p className="text-foreground/78 dark:text-foreground/70 mt-2 text-xs">
+                  <strong className="text-foreground/88 font-semibold">Tech:</strong>{" "}
                   {exp.tech}
                 </p>
               </div>
@@ -122,33 +123,38 @@ export default async function ResumePage() {
         </section>
 
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Education
           </h2>
-          <div className="mt-3 h-px bg-border" />
+          <div className="bg-border mt-3 h-px" />
           {resume.education.map((edu) => (
             <div key={edu.institution} className="mt-4 flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">{edu.degree}</h3>
+                <h3 className="text-foreground font-semibold">{edu.degree}</h3>
                 <p className="text-accent">{edu.institution}</p>
               </div>
-              <span className="text-sm text-foreground/82 dark:text-foreground/75">{edu.year}</span>
+              <span className="text-foreground/82 dark:text-foreground/75 text-sm">
+                {edu.year}
+              </span>
             </div>
           ))}
         </section>
 
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Certifications
           </h2>
-          <div className="mt-3 h-px bg-border" />
-          <ul className="mt-4 space-y-1 text-sm text-foreground/90 dark:text-foreground/85">
+          <div className="bg-border mt-3 h-px" />
+          <ul className="text-foreground/90 dark:text-foreground/85 mt-4 space-y-1 text-sm">
             {resume.certifications.map((cert) => (
-              <li key={cert.name} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="h-1 w-1 shrink-0 rounded-full bg-accent" />
+              <li
+                key={cert.name}
+                className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
+              >
+                <span className="bg-accent h-1 w-1 shrink-0 rounded-full" />
                 {cert.name}
                 {cert.issuer && (
-                  <span className="text-xs text-foreground/72 dark:text-foreground/65">
+                  <span className="text-foreground/72 dark:text-foreground/65 text-xs">
                     ({cert.issuer})
                   </span>
                 )}
@@ -158,17 +164,17 @@ export default async function ResumePage() {
         </section>
 
         <section className="mt-10">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Technical Skills
           </h2>
-          <div className="mt-3 h-px bg-border" />
+          <div className="bg-border mt-3 h-px" />
           <div className="mt-4 space-y-3">
             {resume.skills.map((group) => (
               <div key={group.category} className="flex gap-2">
-                <span className="w-32 shrink-0 text-sm font-semibold text-foreground">
+                <span className="text-foreground w-32 shrink-0 text-sm font-semibold">
                   {group.category}:
                 </span>
-                <span className="text-sm text-foreground/88 dark:text-foreground/82">
+                <span className="text-foreground/88 dark:text-foreground/82 text-sm">
                   {group.items.join(", ")}
                 </span>
               </div>

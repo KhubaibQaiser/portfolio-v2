@@ -17,8 +17,8 @@ const textareaCls = cn(
 export function CoverLetterPreview({ value, streaming, onChange }: Props) {
   if (!value) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-8 text-center">
-        <p className="text-sm font-medium text-muted-foreground">
+      <div className="border-border/60 rounded-lg border border-dashed p-8 text-center">
+        <p className="text-muted-foreground text-sm font-medium">
           No cover letter generated yet
         </p>
       </div>

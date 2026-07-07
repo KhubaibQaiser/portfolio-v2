@@ -28,11 +28,7 @@ type Position = {
   top: number;
 };
 
-function getPosition(
-  target: HTMLElement,
-  side: TooltipSide,
-  offset: number,
-): Position {
+function getPosition(target: HTMLElement, side: TooltipSide, offset: number): Position {
   const rect = target.getBoundingClientRect();
   const left = rect.left + rect.width / 2;
   const top = side === "top" ? rect.top - offset : rect.bottom + offset;
@@ -116,12 +112,10 @@ export function Tooltip({
               id={tooltipId}
               role="tooltip"
               className={cn(
-                "pointer-events-none fixed z-50 rounded-md border border-border/70 bg-background/95 px-2 py-1",
-                "text-xs font-medium text-foreground shadow-md backdrop-blur",
+                "border-border/70 bg-background/95 pointer-events-none fixed z-50 rounded-md border px-2 py-1",
+                "text-foreground text-xs font-medium shadow-md backdrop-blur",
                 "-translate-x-1/2",
-                side === "top"
-                  ? "-translate-y-full"
-                  : "translate-y-0",
+                side === "top" ? "-translate-y-full" : "translate-y-0",
                 className,
               )}
               style={

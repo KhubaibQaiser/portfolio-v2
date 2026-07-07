@@ -19,14 +19,7 @@ function scoreColor(score: number): string {
   return "text-rose-600";
 }
 
-export function AtsPanel({
-  value,
-  busy,
-  canRun,
-  canNudge,
-  onRun,
-  onNudge,
-}: Props) {
+export function AtsPanel({ value, busy, canRun, canNudge, onRun, onNudge }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -35,8 +28,8 @@ export function AtsPanel({
           onClick={onRun}
           disabled={busy || !canRun}
           className={cn(
-            "flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5",
-            "text-sm font-medium transition-colors hover:bg-muted/50",
+            "border-border bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5",
+            "hover:bg-muted/50 text-sm font-medium transition-colors",
             "disabled:opacity-50",
           )}
         >
@@ -53,8 +46,8 @@ export function AtsPanel({
             onClick={onNudge}
             disabled={busy || !canNudge}
             className={cn(
-              "flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5",
-              "text-sm font-medium text-accent transition-colors hover:bg-accent/10",
+              "border-accent/30 bg-accent/5 flex items-center gap-2 rounded-lg border px-3 py-1.5",
+              "text-accent hover:bg-accent/10 text-sm font-medium transition-colors",
               "disabled:opacity-50",
             )}
           >
@@ -65,21 +58,19 @@ export function AtsPanel({
       </div>
 
       {!value ? (
-        <div className="rounded-lg border border-dashed border-border/60 p-8 text-center">
-          <p className="text-sm font-medium text-muted-foreground">
-            No ATS score yet
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+        <div className="border-border/60 rounded-lg border border-dashed p-8 text-center">
+          <p className="text-muted-foreground text-sm font-medium">No ATS score yet</p>
+          <p className="text-muted-foreground mt-1 text-xs">
             Generate a resume first, then run ATS scoring.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/10 p-4">
+          <div className="border-border/60 bg-muted/10 flex items-center gap-4 rounded-lg border p-4">
             <p className={cn("text-4xl font-bold", scoreColor(value.score))}>
               {value.score}
             </p>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               <p>
                 Matched: <strong>{value.matchedKeywords.length}</strong>
               </p>
@@ -93,14 +84,14 @@ export function AtsPanel({
           <KeywordGroup title="Matched keywords" items={value.matchedKeywords} muted />
           {value.suggestions.length > 0 && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">
+              <h4 className="text-accent mb-2 text-xs font-semibold tracking-wider uppercase">
                 Suggestions
               </h4>
               <ul className="space-y-1.5 text-sm">
                 {value.suggestions.map((s, i) => (
                   <li
                     key={i}
-                    className="rounded-md border border-border/60 bg-muted/10 px-3 py-2 text-muted-foreground"
+                    className="border-border/60 bg-muted/10 text-muted-foreground rounded-md border px-3 py-2"
                   >
                     {s}
                   </li>
@@ -126,7 +117,7 @@ function KeywordGroup({
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">
+      <h4 className="text-accent mb-2 text-xs font-semibold tracking-wider uppercase">
         {title}
       </h4>
       <p className="flex flex-wrap gap-1.5 text-xs">

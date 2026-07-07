@@ -46,7 +46,9 @@ function projectRowToForm(row: Project): ProjectEditForm {
 }
 
 export function ProjectsList({ initialData }: ProjectsListProps) {
-  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(null);
+  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(
+    null,
+  );
 
   if (editing) {
     return <ProjectEditPanel entry={editing} onClose={() => setEditing(null)} />;
@@ -68,8 +70,13 @@ function ProjectsListPanel({
 
   const form = useForm<ListFormValues>({ defaultValues });
   const { control, handleSubmit } = form;
-  const { fields, remove } = useFieldArray({ control, name: "items", keyName: "fieldKey" });
-  const items = useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
+  const { fields, remove } = useFieldArray({
+    control,
+    name: "items",
+    keyName: "fieldKey",
+  });
+  const items =
+    useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
 
   function openEdit(entry: ProjectFormData & { id?: string }) {
     if (!tryLeaveForm(form, defaultValues)) return;
@@ -146,7 +153,11 @@ function ProjectsListPanel({
             );
           })}
         </div>
-        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} className="mt-6" />
+        <FormSaveButton
+          saving={saving}
+          onClick={handleSubmit(onSubmit)}
+          className="mt-6"
+        />
       </div>
     </Form>
   );
@@ -185,7 +196,11 @@ function ProjectEditPanel({
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{entry.id ? "Edit" : "Add"} Project</h2>
-          <button type="button" onClick={handleClose} className="text-muted-foreground hover:text-foreground rounded-md p-1">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-foreground rounded-md p-1"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -193,29 +208,43 @@ function ProjectEditPanel({
         {(["title", "slug", "summary", "role"] as const).map((key) => (
           <div key={key}>
             <label className="mb-1 block text-sm font-medium capitalize">{key}</label>
-            <input {...register(key)} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+            <input
+              {...register(key)}
+              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            />
           </div>
         ))}
         <div>
           <label className="mb-1 block text-sm font-medium">Description</label>
-          <textarea {...register("description")} rows={4} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+          <textarea
+            {...register("description")}
+            rows={4}
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Type</label>
           <Select variant="muted" className="px-4" {...register("type")}>
             {["web", "mobile", "game", "open-source", "other"].map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </Select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Tech Tags (comma-separated)</label>
+          <label className="mb-1 block text-sm font-medium">
+            Tech Tags (comma-separated)
+          </label>
           <input
             value={techTags.join(", ")}
             onChange={(e) =>
               setValue(
                 "tech_tags",
-                e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
                 { shouldDirty: true },
               )
             }
@@ -224,8 +253,13 @@ function ProjectEditPanel({
         </div>
         {(["github_url", "live_url", "cover_url"] as const).map((key) => (
           <div key={key}>
-            <label className="mb-1 block text-sm font-medium capitalize">{key.replace(/_/g, " ")}</label>
-            <input {...register(key)} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+            <label className="mb-1 block text-sm font-medium capitalize">
+              {key.replace(/_/g, " ")}
+            </label>
+            <input
+              {...register(key)}
+              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            />
           </div>
         ))}
         <div className="flex items-center gap-4">
@@ -233,7 +267,11 @@ function ProjectEditPanel({
             <input type="checkbox" {...register("is_featured")} />
             Featured
           </label>
-          <input type="number" {...register("sort_order", { valueAsNumber: true })} className="border-border bg-muted/30 w-20 rounded border px-2 py-1 text-sm" />
+          <input
+            type="number"
+            {...register("sort_order", { valueAsNumber: true })}
+            className="border-border bg-muted/30 w-20 rounded border px-2 py-1 text-sm"
+          />
         </div>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
