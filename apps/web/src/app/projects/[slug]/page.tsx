@@ -55,7 +55,9 @@ export default async function ProjectDetailPage({
         </Link>
 
         <h1 className="text-h1 mt-6 font-bold tracking-tight">{project.title}</h1>
-        <p className="text-muted-foreground mt-3 text-lg leading-relaxed">{project.summary}</p>
+        <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
+          {project.summary}
+        </p>
         <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-sm">
           <span className="text-accent font-medium">{project.role}</span>
           <span>·</span>
@@ -125,7 +127,9 @@ export default async function ProjectDetailPage({
           <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             Overview
           </h2>
-          <p className="text-muted-foreground mt-3 leading-relaxed">{project.description}</p>
+          <p className="text-muted-foreground mt-3 leading-relaxed">
+            {project.description}
+          </p>
         </section>
 
         <section className="mt-10">

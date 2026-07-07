@@ -1,6 +1,11 @@
 "use client";
 
-import { GitHubIcon, LinkedInIcon, TwitterIcon, InstagramIcon } from "@portfolio/ui/icons";
+import {
+  GitHubIcon,
+  LinkedInIcon,
+  TwitterIcon,
+  InstagramIcon,
+} from "@portfolio/ui/icons";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 
@@ -29,7 +34,7 @@ export function FooterSocialLinks({ socialLinks }: { socialLinks: SocialLink[] }
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors duration-200"
             aria-label={label}
             onClick={() =>
               capturePortfolioEvent(PortfolioEvents.outboundLink, {

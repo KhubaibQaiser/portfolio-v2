@@ -1,7 +1,9 @@
 /**
  * Extract PostHog distinct_id from the `ph_phc_*_posthog` cookie value (JSON).
  */
-export function parseDistinctIdFromCookie(cookieHeader: string | null): string | undefined {
+export function parseDistinctIdFromCookie(
+  cookieHeader: string | null,
+): string | undefined {
   if (!cookieHeader) return undefined;
   const match = cookieHeader.match(/ph_phc_[^=]+=([^;]+)/);
   if (!match?.[1]) return undefined;

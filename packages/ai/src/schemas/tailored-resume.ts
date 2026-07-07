@@ -6,10 +6,7 @@ import { z } from "zod";
  * prompt's idMap, which structurally prevents invented employers / bullets.
  */
 export const tailoredBulletSchema = z.object({
-  experienceId: z
-    .string()
-    .min(1)
-    .describe("Stable id from the fact sheet, e.g. 'e1'."),
+  experienceId: z.string().min(1).describe("Stable id from the fact sheet, e.g. 'e1'."),
   sourceBulletIndex: z
     .number()
     .int()
@@ -45,9 +42,7 @@ export const tailoredResumeSchema = z.object({
     .string()
     .min(80)
     .max(450)
-    .describe(
-      "Professional summary tailored to the JD. 2-3 sentences. No AI cliches.",
-    ),
+    .describe("Professional summary tailored to the JD. 2-3 sentences. No AI cliches."),
   titleOverride: z
     .string()
     .max(80)
@@ -58,17 +53,13 @@ export const tailoredResumeSchema = z.object({
   keywords: z
     .array(z.string().min(1))
     .max(25)
-    .describe(
-      "ATS keyword list the summary + bullets cover. Truthful to source only.",
-    ),
+    .describe("ATS keyword list the summary + bullets cover. Truthful to source only."),
   experiences: z.array(tailoredExperienceSchema).min(1).max(5),
   skills: z
     .array(tailoredSkillGroupSchema)
     .min(1)
     .max(6)
-    .describe(
-      "Skills regrouped/reordered to surface JD-relevant categories first.",
-    ),
+    .describe("Skills regrouped/reordered to surface JD-relevant categories first."),
 });
 
 export type TailoredResume = z.infer<typeof tailoredResumeSchema>;

@@ -30,9 +30,7 @@ export default function GlobalError({
         }}
       >
         <div style={{ textAlign: "center", padding: "2rem" }}>
-          <h1 style={{ fontSize: "3rem", fontWeight: 700 }}>
-            Something went wrong
-          </h1>
+          <h1 style={{ fontSize: "3rem", fontWeight: 700 }}>Something went wrong</h1>
           <p
             style={{
               marginTop: "1rem",

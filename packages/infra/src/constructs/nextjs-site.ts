@@ -15,10 +15,7 @@ import { Construct } from "constructs";
 const CACHE_PREFIX = "_cache";
 const ASSETS_PREFIX = "_assets";
 
-const lambdaDir = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../lambda",
-);
+const lambdaDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../lambda");
 
 export type NextjsSiteDomain = {
   domainNames: string[];

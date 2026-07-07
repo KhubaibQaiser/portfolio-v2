@@ -146,7 +146,11 @@ function JsonLd({
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const config = await fetchSiteConfig();
-  const socialLinks = config.social_links as unknown as Array<{ platform: string; url: string; label: string }>;
+  const socialLinks = config.social_links as unknown as Array<{
+    platform: string;
+    url: string;
+    label: string;
+  }>;
 
   return (
     <html
@@ -158,27 +162,27 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <JsonLd config={config} siteUrl={SITE_URL} />
       </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="bg-background min-h-screen font-sans antialiased">
         <ThemeProvider>
           <PostHogAnalyticsProvider>
             <PostHogThemeCapture />
             <Suspense fallback={null}>
               <PostHogPageView />
             </Suspense>
-          <SmoothScroll>
-            <a href="#main" className="skip-to-content">
-              Skip to content
-            </a>
-            <Navbar name={config.name} navLinks={MAIN_NAV_LINKS} />
-            <main id="main" className="relative">
-              {children}
-            </main>
-            <Footer name={config.name} socialLinks={socialLinks} />
-            <SiteConfigProvider email={config.email} socialLinks={socialLinks}>
-              <ChatBubble />
-              <CommandPalette />
-            </SiteConfigProvider>
-          </SmoothScroll>
+            <SmoothScroll>
+              <a href="#main" className="skip-to-content">
+                Skip to content
+              </a>
+              <Navbar name={config.name} navLinks={MAIN_NAV_LINKS} />
+              <main id="main" className="relative">
+                {children}
+              </main>
+              <Footer name={config.name} socialLinks={socialLinks} />
+              <SiteConfigProvider email={config.email} socialLinks={socialLinks}>
+                <ChatBubble />
+                <CommandPalette />
+              </SiteConfigProvider>
+            </SmoothScroll>
           </PostHogAnalyticsProvider>
         </ThemeProvider>
       </body>

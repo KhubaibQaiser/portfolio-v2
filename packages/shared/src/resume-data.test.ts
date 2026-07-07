@@ -48,9 +48,7 @@ const base: ResumeData = {
       tech: "JavaScript",
     },
   ],
-  education: [
-    { degree: "BS CS", institution: "State U", year: "2018" },
-  ],
+  education: [{ degree: "BS CS", institution: "State U", year: "2018" }],
   certifications: [],
   skills: [{ category: "Frontend", items: ["React", "TypeScript"] }],
 };
@@ -62,10 +60,7 @@ describe("filterExperienceForResume", () => {
       { company: "B" },
       { company: "C", show_in_resume: false },
     ];
-    expect(filterExperienceForResume(rows).map((r) => r.company)).toEqual([
-      "A",
-      "B",
-    ]);
+    expect(filterExperienceForResume(rows).map((r) => r.company)).toEqual(["A", "B"]);
   });
 });
 

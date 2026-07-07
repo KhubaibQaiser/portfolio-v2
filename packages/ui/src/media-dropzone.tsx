@@ -116,12 +116,14 @@ export function MediaDropzone({
           disabled && "pointer-events-none opacity-50",
         )}
       >
-        <Upload className="mx-auto h-8 w-8 text-muted-foreground/40" aria-hidden />
-        <p className="mt-3 text-sm text-muted-foreground">Drag & drop images here, or click to upload</p>
-        <p className="mt-1 text-xs text-muted-foreground/50">{hint}</p>
+        <Upload className="text-muted-foreground/40 mx-auto h-8 w-8" aria-hidden />
+        <p className="text-muted-foreground mt-3 text-sm">
+          Drag & drop images here, or click to upload
+        </p>
+        <p className="text-muted-foreground/50 mt-1 text-xs">{hint}</p>
       </div>
 
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
     </div>
   );
 }

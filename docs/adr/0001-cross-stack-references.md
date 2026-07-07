@@ -65,34 +65,38 @@ resource.
 
 Every permission is written against an **ARN** (deterministic pattern for
 DynamoDB/S3, or constructed from the SSM-discovered name), never against an
-imported construct. For values held *inside* SSM/Secrets (an id, an API key) the
+imported construct. For values held _inside_ SSM/Secrets (an id, an API key) the
 deterministic handle is the **name/path**; the grant that authorizes reading it
 is still by ARN.
 
 ## Approaches considered
 
-### A. Cross-stack construct references (CloudFormation exports) — *rejected*
+### A. Cross-stack construct references (CloudFormation exports) — _rejected_
+
 - ✅ Zero extra code; CDK wires it automatically; deploy ordering inferred.
 - ✅ Tightest type-safety (real `ITable`/`IBucket`).
 - ❌ **Replacing/renaming an exported resource deadlocks** ("export in use").
 - ❌ Migrations require destroying or temporarily decoupling consumers.
 
-### B. Deterministic ARN pattern for tables — *chosen for DynamoDB*
+### B. Deterministic ARN pattern for tables — _chosen for DynamoDB_
+
 - ✅ No exports; one wildcard grant covers the whole set (and future tables).
 - ✅ App already resolves names by `DYNAMO_TABLE_PREFIX` → single env var.
 - ✅ `tablePrefix` gives whole-data-layer blue/green migrations in one knob.
-- ⚠️ Names are deterministic, so an *in-place* identity change still replaces;
+- ⚠️ Names are deterministic, so an _in-place_ identity change still replaces;
   migration is at the **table-set** granularity (bump the prefix), not per-table.
 - ⚠️ Wildcard grant is slightly broader than per-table ARNs (scoped to the
   prefix; acceptable).
 
-### C. Auto-generated names + SSM registry — *chosen for bucket + auth secrets*
+### C. Auto-generated names + SSM registry — _chosen for bucket + auth secrets_
+
 - ✅ Most migration-friendly: physical names float; repoint the SSM param.
 - ✅ Right fit for S3 (immutable global names) and Secrets Manager ARNs.
-- ❌ For a *set* of resources it means injecting many names and per-ARN grants;
+- ❌ For a _set_ of resources it means injecting many names and per-ARN grants;
   overkill for the 9 tables, so we don't use it there.
 
-### D. Pure SSM registry for everything — *rejected (this round)*
+### D. Pure SSM registry for everything — _rejected (this round)_
+
 - ✅ Uniform; per-resource independent migration.
 - ❌ App would need all 9 table names injected (vs one prefix); per-ARN grants
   instead of a clean wildcard. More machinery than this portfolio warrants.
@@ -114,13 +118,13 @@ is still by ARN.
 
 - **DNS → Cert → Web/Admin/Storybook (`hostedZone`/`certificate`)** are
   cross-stack **construct references** (`dns.hostedZone`, `cert.certificate`),
-  including cross-*region*: `Dns`/`Cert` live in `us-east-1` (CloudFront
+  including cross-_region_: `Dns`/`Cert` live in `us-east-1` (CloudFront
   requires the cert there) while `Web`/`Admin`/`Storybook` are `eu-west-1`.
   This was originally decoupled via the SSM registry
   (`HostedZone.fromHostedZoneAttributes` + a `hosted-zone-id`/`certificate-arn`
   param), matching the pattern used everywhere else in this doc — but that
   doesn't work cross-region: CloudFormation dynamic references
-  (`{{resolve:ssm:...}}`) always resolve against the *consuming* stack's own
+  (`{{resolve:ssm:...}}`) always resolve against the _consuming_ stack's own
   region, so the `eu-west-1` stacks failed to find params published in
   `us-east-1` ("Unable to fetch parameters ... from parameter store for this
   account").

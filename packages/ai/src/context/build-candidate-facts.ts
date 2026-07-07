@@ -63,10 +63,7 @@ export type BuildCandidateFactsInput = {
 };
 
 export type CandidateIdMap = {
-  experiences: Record<
-    string,
-    { id: string; stableId: string; bullets: string[] }
-  >;
+  experiences: Record<string, { id: string; stableId: string; bullets: string[] }>;
   skillCategories: string[];
 };
 
@@ -97,9 +94,7 @@ function renderPeriod(start: string, end: string | null): string {
   return `${start} – ${end ?? "Present"}`;
 }
 
-export function buildCandidateFacts(
-  input: BuildCandidateFactsInput,
-): CandidateFacts {
+export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateFacts {
   const { siteConfig, resume, experiences, skills, about } = input;
 
   const idMap: CandidateIdMap = {
@@ -122,9 +117,7 @@ export function buildCandidateFacts(
       bullets,
     };
 
-    const bulletLines = bullets
-      .map((b, bi) => `  [b${bi}] ${b}`)
-      .join("\n");
+    const bulletLines = bullets.map((b, bi) => `  [b${bi}] ${b}`).join("\n");
 
     const tech = exp.tech_tags.slice(0, 12).join(", ");
 

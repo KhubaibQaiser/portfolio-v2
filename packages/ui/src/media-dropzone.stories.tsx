@@ -30,7 +30,10 @@ export const Default: Story = {
           }}
         />
         {last ? (
-          <p style={{ marginTop: 12, fontSize: 12, opacity: 0.8 }} data-testid="last-files">
+          <p
+            style={{ marginTop: 12, fontSize: 12, opacity: 0.8 }}
+            data-testid="last-files"
+          >
             Selected: {last}
           </p>
         ) : null}

@@ -23,17 +23,17 @@ export function BuiltWithSection({ techStack }: BuiltWithSectionProps) {
       className="bg-muted/30 py-(--section-padding-y)"
       aria-label="How this was built"
     >
-      <div className="mx-auto max-w-container px-(--container-padding)">
+      <div className="max-w-container mx-auto px-(--container-padding)">
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="text-center text-h2 font-semibold tracking-tight">
+          <h2 className="text-h2 text-center font-semibold tracking-tight">
             How This Portfolio Was Built
           </h2>
-          <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-center text-body-lg">
+          <p className="text-muted-foreground text-body-lg mx-auto mt-3 max-w-xl text-center">
             This portfolio is itself a technical showcase — a Turborepo monorepo with two
             Next.js apps, server-side AI chat, and edge-cached performance.
           </p>

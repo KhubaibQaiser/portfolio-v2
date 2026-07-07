@@ -3,23 +3,12 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  MessageCircle,
-  X,
-  Send,
-  Loader2,
-  Bot,
-  User,
-  AlertCircle,
-} from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { AssistantMarkdown } from "./assistant-markdown";
-import {
-  chatTransport,
-  ChatRateLimitError,
-} from "./chat-transport";
+import { chatTransport, ChatRateLimitError } from "./chat-transport";
 
 const SUGGESTED_QUESTIONS = [
   "What's Khubaib's strongest skill?",
@@ -30,9 +19,7 @@ const SUGGESTED_QUESTIONS = [
 const GREETING =
   "Hi! I'm Khubaib's AI assistant. Ask me anything about his experience, projects, or skills.";
 
-function getTextContent(msg: {
-  parts?: Array<{ type: string; text?: string }>;
-}): string {
+function getTextContent(msg: { parts?: Array<{ type: string; text?: string }> }): string {
   return (
     msg.parts
       ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
@@ -46,20 +33,12 @@ type MessageRowProps = {
   content: string;
 };
 
-const MessageRow = memo(function MessageRow({
-  role,
-  content,
-}: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ role, content }: MessageRowProps) {
   return (
-    <div
-      className={cn(
-        "flex gap-2",
-        role === "user" ? "justify-end" : "justify-start",
-      )}
-    >
+    <div className={cn("flex gap-2", role === "user" ? "justify-end" : "justify-start")}>
       {role === "assistant" && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10">
-          <Bot className="h-3.5 w-3.5 text-accent" />
+        <div className="bg-accent/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <Bot className="text-accent h-3.5 w-3.5" />
         </div>
       )}
       <div
@@ -70,15 +49,11 @@ const MessageRow = memo(function MessageRow({
             : "bg-muted text-foreground",
         )}
       >
-        {role === "assistant" ? (
-          <AssistantMarkdown content={content} />
-        ) : (
-          content
-        )}
+        {role === "assistant" ? <AssistantMarkdown content={content} /> : content}
       </div>
       {role === "user" && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent">
-          <User className="h-3.5 w-3.5 text-accent-foreground" />
+        <div className="bg-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <User className="text-accent-foreground h-3.5 w-3.5" />
         </div>
       )}
     </div>
@@ -121,14 +96,19 @@ export function ChatBubble() {
   const inputRef = useRef<HTMLInputElement>(null);
   const prevOpen = useRef(false);
 
-  const { messages: chatMessages, sendMessage, status, error } = useChat({
-      transport: chatTransport,
-      onError: (err) => {
-        if (err instanceof ChatRateLimitError) {
-          setCooldownSecondsLeft(err.retryAfterSeconds);
-        }
-      },
-    });
+  const {
+    messages: chatMessages,
+    sendMessage,
+    status,
+    error,
+  } = useChat({
+    transport: chatTransport,
+    onError: (err) => {
+      if (err instanceof ChatRateLimitError) {
+        setCooldownSecondsLeft(err.retryAfterSeconds);
+      }
+    },
+  });
 
   const isLoading = status === "streaming" || status === "submitted";
   const isCoolingDown = cooldownSecondsLeft > 0;
@@ -193,8 +173,7 @@ export function ChatBubble() {
     const len = trimmed.length;
     sendMessage({ text: trimmed });
     capturePortfolioEvent(PortfolioEvents.chatMessageSent, {
-      length_bucket:
-        len <= 60 ? "short" : len <= 180 ? "medium" : "long",
+      length_bucket: len <= 60 ? "short" : len <= 180 ? "medium" : "long",
     });
     setInputValue("");
   }
@@ -204,8 +183,7 @@ export function ChatBubble() {
     const len = q.length;
     sendMessage({ text: q });
     capturePortfolioEvent(PortfolioEvents.chatMessageSent, {
-      length_bucket:
-        len <= 60 ? "short" : len <= 180 ? "medium" : "long",
+      length_bucket: len <= 60 ? "short" : len <= 180 ? "medium" : "long",
       source: "suggested",
     });
   }
@@ -218,21 +196,21 @@ export function ChatBubble() {
       <AnimatePresence>
         {!open && (
           <motion.div
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed right-6 bottom-6 z-50"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ delay: 1.5, duration: 0.4, ease: "backOut" }}
           >
             <motion.span
-              className="pointer-events-none absolute inset-0 rounded-full bg-accent"
+              className="bg-accent pointer-events-none absolute inset-0 rounded-full"
               variants={pulseRing}
               initial="initial"
               animate="animate"
               aria-hidden
             />
             <motion.span
-              className="pointer-events-none absolute inset-0 rounded-full bg-accent"
+              className="bg-accent pointer-events-none absolute inset-0 rounded-full"
               variants={pulseRing}
               initial="initial"
               animate="animate"
@@ -254,8 +232,8 @@ export function ChatBubble() {
               whileTap={{ scale: 0.92 }}
               className={cn(
                 "relative flex h-14 w-14 items-center justify-center",
-                "rounded-full bg-accent text-accent-foreground",
-                "shadow-[0_8px_30px_-4px] shadow-accent/40",
+                "bg-accent text-accent-foreground rounded-full",
+                "shadow-accent/40 shadow-[0_8px_30px_-4px]",
                 "cursor-pointer",
               )}
               aria-label="Open AI chat"
@@ -264,8 +242,8 @@ export function ChatBubble() {
                 <MessageCircle className="h-6 w-6" />
               </motion.span>
 
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-background shadow-sm ring-2 ring-accent/20">
-                <Bot className="h-3 w-3 text-accent" />
+              <span className="bg-background ring-accent/20 absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full shadow-sm ring-2">
+                <Bot className="text-accent h-3 w-3" />
               </span>
             </motion.button>
           </motion.div>
@@ -283,22 +261,20 @@ export function ChatBubble() {
               ease: [0.22, 1, 0.36, 1] as const,
             }}
             className={cn(
-              "fixed bottom-6 right-6 z-50 flex min-h-0 flex-col",
-              "h-[500px] w-[380px] max-h-[80vh] max-w-[calc(100vw-3rem)]",
-              "rounded-2xl border border-border/60 bg-background overflow-hidden",
+              "fixed right-6 bottom-6 z-50 flex min-h-0 flex-col",
+              "h-[500px] max-h-[80vh] w-[380px] max-w-[calc(100vw-3rem)]",
+              "border-border/60 bg-background overflow-hidden rounded-2xl border",
               "shadow-[0_20px_60px_-12px] shadow-black/25 dark:shadow-black/50",
             )}
           >
-            <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
+            <div className="border-border/60 bg-muted/30 flex items-center justify-between border-b px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10">
-                  <Bot className="h-4 w-4 text-accent" />
+                <div className="bg-accent/10 flex h-8 w-8 items-center justify-center rounded-full">
+                  <Bot className="text-accent h-4 w-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold leading-tight">
-                    Ask Khubaib
-                  </span>
-                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <span className="text-sm leading-tight font-semibold">Ask Khubaib</span>
+                  <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
                     AI-powered
                   </span>
@@ -306,7 +282,7 @@ export function ChatBubble() {
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1.5 transition-colors"
                 aria-label="Close chat"
               >
                 <X className="h-4 w-4" />
@@ -331,19 +307,17 @@ export function ChatBubble() {
 
                 {showThinking && (
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                    <div className="bg-accent/10 flex h-7 w-7 items-center justify-center rounded-full">
+                      <Loader2 className="text-accent h-3.5 w-3.5 animate-spin" />
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      Thinking...
-                    </span>
+                    <span className="text-muted-foreground text-xs">Thinking...</span>
                   </div>
                 )}
 
                 {error && (
-                  <div className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                    <p className="text-xs leading-relaxed text-destructive">
+                  <div className="bg-destructive/10 flex items-start gap-2 rounded-xl px-3 py-2">
+                    <AlertCircle className="text-destructive mt-0.5 h-4 w-4 shrink-0" />
+                    <p className="text-destructive text-xs leading-relaxed">
                       {error instanceof ChatRateLimitError
                         ? error.message
                         : "Something went wrong. Please try again."}
@@ -354,9 +328,7 @@ export function ChatBubble() {
 
               {chatMessages.length === 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Try asking:
-                  </p>
+                  <p className="text-muted-foreground text-xs font-medium">Try asking:</p>
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <button
                       key={q}
@@ -364,8 +336,8 @@ export function ChatBubble() {
                       disabled={isLoading || isCoolingDown}
                       onClick={() => askQuestion(q)}
                       className={cn(
-                        "block w-full rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5",
-                        "text-left text-xs text-muted-foreground",
+                        "border-border/40 bg-muted/30 block w-full rounded-xl border px-3 py-2.5",
+                        "text-muted-foreground text-left text-xs",
                         "transition-all duration-150",
                         "hover:border-accent/30 hover:bg-accent/5 hover:text-foreground",
                         "disabled:pointer-events-none disabled:opacity-40",
@@ -380,7 +352,7 @@ export function ChatBubble() {
 
             <form
               onSubmit={onSubmit}
-              className="border-t border-border/60 bg-muted/20 p-3"
+              className="border-border/60 bg-muted/20 border-t p-3"
             >
               <div className="flex items-center gap-2">
                 <input
@@ -389,10 +361,10 @@ export function ChatBubble() {
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask about Khubaib's experience..."
                   className={cn(
-                    "flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm",
+                    "border-border bg-background flex-1 rounded-xl border px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground/50",
                     "transition-colors duration-150",
-                    "focus:border-accent/60 focus:ring-2 focus:ring-accent/10 focus:outline-hidden",
+                    "focus:border-accent/60 focus:ring-accent/10 focus:ring-2 focus:outline-hidden",
                   )}
                   disabled={isLoading || isCoolingDown}
                   maxLength={500}
@@ -400,9 +372,7 @@ export function ChatBubble() {
                 />
                 <button
                   type="submit"
-                  disabled={
-                    isLoading || isCoolingDown || !inputValue.trim()
-                  }
+                  disabled={isLoading || isCoolingDown || !inputValue.trim()}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-xl",
                     "bg-accent text-accent-foreground",
@@ -415,7 +385,7 @@ export function ChatBubble() {
                 </button>
               </div>
               {isCoolingDown && (
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                <p className="text-muted-foreground mt-2 text-center text-[11px]">
                   Try again in {cooldownSecondsLeft}s
                 </p>
               )}

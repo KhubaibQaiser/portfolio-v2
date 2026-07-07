@@ -8,11 +8,7 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import {
-  appErrorMetric,
-  grantAppDataAccess,
-  ssmPaths,
-} from "../naming";
+import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -52,6 +48,18 @@ export class WebStack extends cdk.Stack {
       ssm.StringParameter.valueForStringParameter(this, paths.groqApiKeyArn),
     );
 
+    const resendSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "ResendSecret",
+      ssm.StringParameter.valueForStringParameter(this, paths.resendApiKeyArn),
+    );
+
+    const turnstileSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "TurnstileSecret",
+      ssm.StringParameter.valueForStringParameter(this, paths.turnstileSecretKeyArn),
+    );
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -74,10 +82,18 @@ export class WebStack extends cdk.Stack {
           ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
           : {}),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
+        RESEND_API_KEY_SECRET_ARN: resendSecret.secretArn,
+        TURNSTILE_SECRET_KEY_SECRET_ARN: turnstileSecret.secretArn,
+        ...(config.contactEmail ? { CONTACT_TO_EMAIL: config.contactEmail } : {}),
+        ...(config.contactFromEmail
+          ? { CONTACT_FROM_EMAIL: config.contactFromEmail }
+          : {}),
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
+        resendSecret.grantRead(fn);
+        turnstileSecret.grantRead(fn);
       },
     });
 

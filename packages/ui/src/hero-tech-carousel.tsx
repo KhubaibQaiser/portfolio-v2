@@ -18,7 +18,10 @@ export type HeroTechCarouselProps = {
 
 const LOOP_CLONES = 6;
 
-export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTechCarouselProps) {
+export function HeroTechCarousel({
+  items = HERO_TOP_TECHS,
+  className,
+}: HeroTechCarouselProps) {
   const prefersReducedMotion = useReducedMotion();
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [segmentWidth, setSegmentWidth] = useState(0);
@@ -51,10 +54,10 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("relative mx-auto mt-8 w-full min-w-0 max-w-3xl", className)}
+      className={cn("relative mx-auto mt-8 w-full max-w-3xl min-w-0", className)}
       aria-label="Top technologies"
     >
-      <div className="hero-tech-marquee-root group relative overflow-hidden rounded-full border border-border/60 bg-background/30 px-3 py-2.5 backdrop-blur-sm">
+      <div className="hero-tech-marquee-root group border-border/60 bg-background/30 relative overflow-hidden rounded-full border px-3 py-2.5 backdrop-blur-sm">
         <div
           className={cn(
             "flex w-max items-center gap-3.5 will-change-transform",
@@ -79,9 +82,7 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                 const activeKey = `${setIndex}-${tech.id}`;
                 const isActive = activeItem === activeKey;
                 const isMonoBrand =
-                  tech.id === "nextjs" ||
-                  tech.id === "vercel" ||
-                  tech.id === "ai-sdk";
+                  tech.id === "nextjs" || tech.id === "vercel" || tech.id === "ai-sdk";
 
                 const buttonClass = cn(
                   "inline-flex h-12 w-12 items-center justify-center rounded-full border border-transparent",
@@ -137,7 +138,9 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                         <VercelAiSdkIcon
                           width={24}
                           height={24}
-                          color={isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)}
+                          color={
+                            isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)
+                          }
                           className="transition-colors duration-200"
                         />
                       </button>
@@ -166,7 +169,9 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
                       <SimpleIcon
                         width={24}
                         height={24}
-                        color={isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)}
+                        color={
+                          isMonoBrand ? "currentColor" : (tech.brandColor ?? undefined)
+                        }
                         className="transition-colors duration-200"
                       />
                     </button>
@@ -178,11 +183,11 @@ export function HeroTechCarousel({ items = HERO_TOP_TECHS, className }: HeroTech
         </div>
 
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-background to-transparent"
+          className="from-background pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-background to-transparent"
+          className="from-background pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l to-transparent"
           aria-hidden
         />
       </div>

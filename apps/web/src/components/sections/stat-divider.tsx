@@ -18,7 +18,7 @@ export function StatDivider({
       className={cn(
         "relative overflow-hidden py-24 md:py-32",
         variant === "gradient" &&
-          "bg-linear-to-br from-accent/5 via-transparent to-accent/5",
+          "from-accent/5 to-accent/5 bg-linear-to-br via-transparent",
         variant === "subtle" && "bg-muted/30",
         variant === "accent" && "bg-accent/5",
       )}
@@ -28,19 +28,19 @@ export function StatDivider({
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-container px-(--container-padding) text-center">
+      <div className="max-w-container relative mx-auto px-(--container-padding) text-center">
         {stat && (
-          <p className="font-mono text-5xl font-bold tracking-tight text-foreground md:text-6xl">
+          <p className="text-foreground font-mono text-5xl font-bold tracking-tight md:text-6xl">
             {stat}
           </p>
         )}
         {label && (
-          <p className="mt-2 text-sm font-medium uppercase tracking-widest text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm font-medium tracking-widest uppercase">
             {label}
           </p>
         )}
         {quote && (
-          <blockquote className="mx-auto max-w-2xl text-h3 font-medium italic leading-relaxed text-muted-foreground">
+          <blockquote className="text-h3 text-muted-foreground mx-auto max-w-2xl leading-relaxed font-medium italic">
             &ldquo;{quote}&rdquo;
           </blockquote>
         )}

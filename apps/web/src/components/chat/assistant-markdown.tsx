@@ -16,14 +16,14 @@ const mdComponents: Components = {
   ),
   li: ({ children }) => <li className="leading-snug">{children}</li>,
   strong: ({ children }) => (
-    <strong className="font-semibold text-foreground">{children}</strong>
+    <strong className="text-foreground font-semibold">{children}</strong>
   ),
   a: ({ href, children }) => (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium text-accent underline underline-offset-2 hover:opacity-90"
+      className="text-accent font-medium underline underline-offset-2 hover:opacity-90"
     >
       {children}
     </a>
@@ -34,7 +34,7 @@ const mdComponents: Components = {
       return (
         <code
           className={cn(
-            "block w-full overflow-x-auto font-mono text-xs text-foreground",
+            "text-foreground block w-full overflow-x-auto font-mono text-xs",
             codeClass,
           )}
           {...props}
@@ -45,7 +45,7 @@ const mdComponents: Components = {
     }
     return (
       <code
-        className="rounded bg-background/80 px-1 py-0.5 font-mono text-[0.8125rem]"
+        className="bg-background/80 rounded px-1 py-0.5 font-mono text-[0.8125rem]"
         {...props}
       >
         {children}
@@ -53,7 +53,7 @@ const mdComponents: Components = {
     );
   },
   pre: ({ children }) => (
-    <pre className="mb-2 max-w-full overflow-x-auto rounded-lg border border-border/50 bg-background/50 p-2 last:mb-0">
+    <pre className="border-border/50 bg-background/50 mb-2 max-w-full overflow-x-auto rounded-lg border p-2 last:mb-0">
       {children}
     </pre>
   ),
@@ -63,30 +63,24 @@ const mdComponents: Components = {
   h2: ({ children }) => (
     <h4 className="mb-2 text-sm font-semibold tracking-tight">{children}</h4>
   ),
-  h3: ({ children }) => (
-    <h4 className="mb-1.5 text-sm font-semibold">{children}</h4>
-  ),
+  h3: ({ children }) => <h4 className="mb-1.5 text-sm font-semibold">{children}</h4>,
   blockquote: ({ children }) => (
-    <blockquote className="mb-2 border-l-2 border-accent/40 pl-3 text-muted-foreground italic last:mb-0">
+    <blockquote className="border-accent/40 text-muted-foreground mb-2 border-l-2 pl-3 italic last:mb-0">
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-3 border-border/60" />,
+  hr: () => <hr className="border-border/60 my-3" />,
   table: ({ children }) => (
     <div className="mb-2 max-w-full overflow-x-auto last:mb-0">
       <table className="w-full border-collapse text-xs">{children}</table>
     </div>
   ),
-  thead: ({ children }) => (
-    <thead className="border-b border-border">{children}</thead>
-  ),
+  thead: ({ children }) => <thead className="border-border border-b">{children}</thead>,
   th: ({ children }) => (
     <th className="px-2 py-1.5 text-left font-semibold">{children}</th>
   ),
   td: ({ children }) => (
-    <td className="border-t border-border/50 px-2 py-1.5 align-top">
-      {children}
-    </td>
+    <td className="border-border/50 border-t px-2 py-1.5 align-top">{children}</td>
   ),
 };
 

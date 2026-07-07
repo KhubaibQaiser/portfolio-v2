@@ -11,8 +11,16 @@ const TELL_PATTERNS: ReadonlyArray<{ id: string; re: RegExp; weight: number }> =
   // One em dash (U+2014) or one semicolon triggers retry (threshold 35 in generate route)
   { id: "em-dash", re: /—/g, weight: 35 },
   { id: "semicolon", re: /;/g, weight: 35 },
-  { id: "opening-thrilled", re: /\b(?:i\s+am|i'm)\s+(?:thrilled|excited|delighted|eager)\s+to\s+apply\b/gi, weight: 35 },
-  { id: "opening-pleasure", re: /\bit\s+is\s+(?:with\s+great\s+)?(?:pleasure|enthusiasm)\s+that\s+i\b/gi, weight: 30 },
+  {
+    id: "opening-thrilled",
+    re: /\b(?:i\s+am|i'm)\s+(?:thrilled|excited|delighted|eager)\s+to\s+apply\b/gi,
+    weight: 35,
+  },
+  {
+    id: "opening-pleasure",
+    re: /\bit\s+is\s+(?:with\s+great\s+)?(?:pleasure|enthusiasm)\s+that\s+i\b/gi,
+    weight: 30,
+  },
   { id: "passionate-about", re: /\bpassionate\s+about\b/gi, weight: 15 },
   { id: "leveraged", re: /\bleverag(?:e|ed|ing)\b/gi, weight: 12 },
   { id: "utilized", re: /\butiliz(?:e|ed|ing)\b/gi, weight: 10 },
@@ -22,10 +30,22 @@ const TELL_PATTERNS: ReadonlyArray<{ id: string; re: RegExp; weight: number }> =
   { id: "innovative-solutions", re: /\binnovative\s+solutions?\b/gi, weight: 15 },
   { id: "robust", re: /\brobust\b/gi, weight: 6 },
   { id: "seamless", re: /\bseamless(?:ly)?\b/gi, weight: 8 },
-  { id: "dynamic-environment", re: /\bdynamic\s+(?:environment|team|role)\b/gi, weight: 12 },
-  { id: "in-conclusion", re: /\b(?:in\s+conclusion|furthermore|moreover|additionally)[,\s]/gi, weight: 8 },
+  {
+    id: "dynamic-environment",
+    re: /\bdynamic\s+(?:environment|team|role)\b/gi,
+    weight: 12,
+  },
+  {
+    id: "in-conclusion",
+    re: /\b(?:in\s+conclusion|furthermore|moreover|additionally)[,\s]/gi,
+    weight: 8,
+  },
   // triples: "X, Y, and Z" adjective lists
-  { id: "adjective-triple", re: /\b[a-z]+ly?,\s+[a-z]+ly?,\s+and\s+[a-z]+ly?\b/gi, weight: 6 },
+  {
+    id: "adjective-triple",
+    re: /\b[a-z]+ly?,\s+[a-z]+ly?,\s+and\s+[a-z]+ly?\b/gi,
+    weight: 6,
+  },
 ];
 
 export type AiToneResult = {

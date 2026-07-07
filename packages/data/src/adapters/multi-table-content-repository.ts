@@ -218,10 +218,7 @@ export function createMultiTableContentRepository(
   }
 
   /** Reads, merges the (null-stripped) patch, and writes the whole singleton. */
-  async function upsertSingleton(
-    section: string,
-    values: WriteValues,
-  ): Promise<void> {
+  async function upsertSingleton(section: string, values: WriteValues): Promise<void> {
     const current = (await getItem(tables.content, { section })) ?? {};
     const created_at = (current.created_at as string | undefined) ?? now();
     await putItem(tables.content, {

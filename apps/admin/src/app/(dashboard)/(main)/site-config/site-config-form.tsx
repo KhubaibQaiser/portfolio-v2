@@ -8,7 +8,11 @@ import { Form, FormSaveButton } from "@/components/form";
 import { saveSiteConfig } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
-import type { SiteConfig, SiteConfigFormData, SocialLink } from "@portfolio/shared/schemas";
+import type {
+  SiteConfig,
+  SiteConfigFormData,
+  SocialLink,
+} from "@portfolio/shared/schemas";
 
 type SocialLinkDraft = SocialLink & { _clientId: string };
 
@@ -118,7 +122,10 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
             onChange={(e) =>
               setValue(
                 "tech_stack",
-                e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+                e.target.value
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
                 { shouldDirty: true },
               )
             }

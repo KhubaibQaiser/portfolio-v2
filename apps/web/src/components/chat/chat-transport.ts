@@ -34,12 +34,9 @@ function parseRetryAfterSeconds(res: Response, data: unknown): number {
     typeof data === "object" &&
     data !== null &&
     "retryAfterSeconds" in data &&
-    typeof (data as { retryAfterSeconds: unknown }).retryAfterSeconds ===
-      "number"
+    typeof (data as { retryAfterSeconds: unknown }).retryAfterSeconds === "number"
   ) {
-    const n = Math.ceil(
-      (data as { retryAfterSeconds: number }).retryAfterSeconds,
-    );
+    const n = Math.ceil((data as { retryAfterSeconds: number }).retryAfterSeconds);
     if (Number.isFinite(n) && n > 0) return n;
   }
   const header = res.headers.get("Retry-After");
@@ -54,10 +51,7 @@ export const chatTransport = new DefaultChatTransport({
   api: "/api/chat",
   fetch: async (input, init) => {
     const headers = new Headers(init?.headers);
-    if (
-      typeof window !== "undefined" &&
-      process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
-    ) {
+    if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) {
       const id = posthog.get_distinct_id();
       if (id) {
         headers.set(POSTHOG_DISTINCT_ID_HEADER, id);

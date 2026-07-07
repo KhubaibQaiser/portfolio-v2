@@ -18,9 +18,7 @@ export async function getSecretString(secretId: string): Promise<string> {
 
   const region = process.env.AWS_REGION ?? "eu-west-1";
   const client = new SecretsManagerClient({ region });
-  const response = await client.send(
-    new GetSecretValueCommand({ SecretId: secretId }),
-  );
+  const response = await client.send(new GetSecretValueCommand({ SecretId: secretId }));
 
   const value = response.SecretString?.trim();
   if (!value) {

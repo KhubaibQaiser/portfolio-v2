@@ -61,7 +61,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
           {keywords.map((k) => (
             <span
               key={k}
-              className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-muted-foreground"
+              className="border-border/60 bg-muted/30 text-muted-foreground rounded-full border px-2 py-0.5"
             >
               {k}
             </span>
@@ -74,9 +74,9 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
           {experiences.map((exp, ei) => (
             <div
               key={`${exp.experienceId ?? "exp"}-${ei}`}
-              className="rounded-lg border border-border/60 bg-muted/10 p-3"
+              className="border-border/60 bg-muted/10 rounded-lg border p-3"
             >
-              <p className="mb-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mb-2 text-xs">
                 {exp.experienceId ?? "…"} · {(exp.bullets ?? []).length} bullets
               </p>
               <div className="space-y-2">
@@ -109,9 +109,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
             >
               <input
                 value={g.category}
-                onChange={(e) =>
-                  update((d) => (d.skills[gi]!.category = e.target.value))
-                }
+                onChange={(e) => update((d) => (d.skills[gi]!.category = e.target.value))}
                 disabled={!editable}
                 className={cn(textareaCls, "font-medium")}
               />
@@ -137,16 +135,10 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">
+      <h3 className="text-accent mb-2 text-xs font-semibold tracking-wider uppercase">
         {title}
       </h3>
       {children}
@@ -156,9 +148,9 @@ function Section({
 
 function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border/60 p-8 text-center">
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+    <div className="border-border/60 rounded-lg border border-dashed p-8 text-center">
+      <p className="text-muted-foreground text-sm font-medium">{title}</p>
+      <p className="text-muted-foreground mt-1 text-xs">{hint}</p>
     </div>
   );
 }

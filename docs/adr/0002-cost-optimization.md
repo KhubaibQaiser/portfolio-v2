@@ -11,21 +11,21 @@ observability. A cost review of the deployed infra found the bill was dominated
 not by traffic but by **fixed CloudWatch alarm charges**.
 
 CloudWatch bills alarms **per referenced metric**, and a metric-math alarm is
-charged for *every* metric in its expression. The previous `SharedStack`
+charged for _every_ metric in its expression. The previous `SharedStack`
 observability created, for all 9 DynamoDB tables:
 
-| Alarm group | Count | Metrics each | Alarm-metrics | $/mo |
-|---|---|---|---|---|
-| Throttle (per table) | 9 | 1 | 9 | $0.90 |
-| SystemErrors (per table, 6-metric math) | 9 | 6 | 54 | $5.40 |
-| **Total** | **18** | | **63** | **$6.30** |
+| Alarm group                             | Count  | Metrics each | Alarm-metrics | $/mo      |
+| --------------------------------------- | ------ | ------------ | ------------- | --------- |
+| Throttle (per table)                    | 9      | 1            | 9             | $0.90     |
+| SystemErrors (per table, 6-metric math) | 9      | 6            | 54            | $5.40     |
+| **Total**                               | **18** |              | **63**        | **$6.30** |
 
 That ~$6.30/mo **alone exceeded the entire budget**, before any traffic. Other
 findings:
 
 - **CloudWatch dashboards**: 3 custom dashboards are free (≤50 metrics each); the
   one dashboard here is **$0** (an earlier estimate of $3 was wrong).
-- **Lambda log groups had no retention** → defaulted to *Never Expire*, so log
+- **Lambda log groups had no retention** → defaulted to _Never Expire_, so log
   **storage** accrues forever.
 - `POWERTOOLS_LOG_LEVEL=INFO` logged a line per request (ingestion at $0.50/GB).
 - **No VPC/NAT Gateway** (avoids ~$32/mo) and **no X-Ray** — both good.
@@ -65,10 +65,10 @@ alarm**, and add log-cost hygiene.
 
 ## Decisions taken (explicit)
 
-- **DynamoDB throttle aggregate alarm:** *dropped for now*; can reintroduce one
+- **DynamoDB throttle aggregate alarm:** _dropped for now_; can reintroduce one
   aggregate alarm later if real throttling ever appears.
-- **Route 53 hosted zone:** *kept* (~$0.50/mo) — needed at launch.
-- **Log level:** *WARN* (WARN+ERROR) in prod.
+- **Route 53 hosted zone:** _kept_ (~$0.50/mo) — needed at launch.
+- **Log level:** _WARN_ (WARN+ERROR) in prod.
 
 ## Consequences
 
@@ -84,7 +84,7 @@ alarm**, and add log-cost hygiene.
   - INFO flow logs are off in prod. To trace a live issue, temporarily set the
     Lambda env `POWERTOOLS_LOG_LEVEL=INFO` (env-only change, no code redeploy).
   - The shared `AppErrors` metric has no per-app dimension, so the alarm can't
-    say *which* app erred — the alarming log line (and `POWERTOOLS_SERVICE_NAME`)
+    say _which_ app erred — the alarming log line (and `POWERTOOLS_SERVICE_NAME`)
     identifies it. A per-app dimension could be added later at +$0.10/mo.
 
 ## Not changed

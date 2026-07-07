@@ -32,14 +32,19 @@ export function MediaAssetCard({
 }: MediaAssetCardProps) {
   return (
     <Card hoverable className={cn("p-4", className)}>
-      <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-        <img src={imageUrl} alt={imageAlt ?? filename} className="h-full w-full object-cover" loading="lazy" />
+      <div className="bg-muted relative aspect-video overflow-hidden rounded-lg">
+        <img
+          src={imageUrl}
+          alt={imageAlt ?? filename}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
       </div>
       <div className="mt-3">
         <p className="truncate text-sm font-medium" title={filename}>
           {filename}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           {sizeLabel} · {uploadedLabel}
         </p>
       </div>

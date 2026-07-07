@@ -1,12 +1,4 @@
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Link,
-  Font,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { CoverLetter } from "@portfolio/ai/schemas/cover-letter";
 import { COLORS, baseStyles } from "./styles";
@@ -96,9 +88,7 @@ export function CoverLetterDocument({
         <View style={s.meta}>
           <Text style={s.metaLine}>{dateStr}</Text>
           {meta?.company && <Text style={s.metaLine}>{meta.company}</Text>}
-          {meta?.role && (
-            <Text style={s.metaLine}>Re: {meta.role} position</Text>
-          )}
+          {meta?.role && <Text style={s.metaLine}>Re: {meta.role} position</Text>}
         </View>
 
         <Text style={s.greeting}>{letter.greeting}</Text>

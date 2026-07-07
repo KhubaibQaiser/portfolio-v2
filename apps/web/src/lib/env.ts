@@ -11,6 +11,12 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
+    RESEND_API_KEY_SECRET_ARN: z.string().min(1).optional(),
+    RESEND_API_KEY: z.string().min(1).optional(),
+    CONTACT_TO_EMAIL: z.string().email().optional(),
+    CONTACT_FROM_EMAIL: z.string().min(1).optional(),
+    TURNSTILE_SECRET_KEY_SECRET_ARN: z.string().min(1).optional(),
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
     GROQ_API_KEY_SECRET_ARN: z.string().min(1).optional(),
     CHAT_RATE_LIMIT_MAX: z.string().optional(),
     CHAT_RATE_LIMIT_WINDOW_SEC: z.string().optional(),
@@ -34,8 +40,15 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
     NEXT_PUBLIC_POSTHOG_UI_HOST: z.string().url().optional(),
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: z.string().optional(),
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   },
   runtimeEnv: {
+    RESEND_API_KEY_SECRET_ARN: process.env.RESEND_API_KEY_SECRET_ARN,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
+    CONTACT_FROM_EMAIL: process.env.CONTACT_FROM_EMAIL,
+    TURNSTILE_SECRET_KEY_SECRET_ARN: process.env.TURNSTILE_SECRET_KEY_SECRET_ARN,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
     GROQ_API_KEY_SECRET_ARN: process.env.GROQ_API_KEY_SECRET_ARN,
     CHAT_RATE_LIMIT_MAX: process.env.CHAT_RATE_LIMIT_MAX,
     CHAT_RATE_LIMIT_WINDOW_SEC: process.env.CHAT_RATE_LIMIT_WINDOW_SEC,
@@ -55,6 +68,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
     OPEN_NEXT_BUILD_ID: process.env.OPEN_NEXT_BUILD_ID,
   },

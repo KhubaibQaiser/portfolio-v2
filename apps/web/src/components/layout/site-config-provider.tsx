@@ -20,11 +20,7 @@ export function SiteConfigProvider({
   socialLinks,
   children,
 }: SiteConfigContextValue & { children: ReactNode }) {
-  return (
-    <SiteConfigContext value={{ email, socialLinks }}>
-      {children}
-    </SiteConfigContext>
-  );
+  return <SiteConfigContext value={{ email, socialLinks }}>{children}</SiteConfigContext>;
 }
 
 export function useSiteConfig() {

@@ -1,7 +1,4 @@
-import {
-  SKILL_CATEGORIES,
-  getSkillCategorySortWeight,
-} from "./constants";
+import { SKILL_CATEGORIES, getSkillCategorySortWeight } from "./constants";
 import type { ContentRepository } from "./ports/content-repository";
 import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
 
@@ -69,12 +66,8 @@ export type GetResumeDataOptions = {
 const DEFAULT_MAX_SKILL_ITEMS = 10;
 
 /** Compact location for PDF: "San Francisco, CA · Remote" */
-export function formatExpLocation(
-  city: string,
-  locationType: string,
-): string {
-  const typeLabel =
-    locationType.charAt(0).toUpperCase() + locationType.slice(1);
+export function formatExpLocation(city: string, locationType: string): string {
+  const typeLabel = locationType.charAt(0).toUpperCase() + locationType.slice(1);
   return `${city} · ${typeLabel}`;
 }
 
@@ -140,8 +133,7 @@ export async function getResumeData(
     "skills",
   ];
 
-  const title =
-    opts.titleOverride?.trim() || siteConfig.title;
+  const title = opts.titleOverride?.trim() || siteConfig.title;
 
   return {
     name: siteConfig.name,

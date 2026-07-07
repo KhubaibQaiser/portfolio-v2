@@ -1,8 +1,4 @@
-import type {
-  TailoredResume,
-  CoverLetter,
-  AtsScore,
-} from "@portfolio/ai/schemas";
+import type { TailoredResume, CoverLetter, AtsScore } from "@portfolio/ai/schemas";
 
 export type HistoryItem = {
   id: string;

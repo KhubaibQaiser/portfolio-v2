@@ -2,7 +2,12 @@ import type { LanguageModel } from "ai";
 import { convertToModelMessages, smoothStream, streamText } from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
-import { MODEL_IDS, ensureGroqApiKey, isProviderRateLimitError, modelFor } from "@portfolio/ai";
+import {
+  MODEL_IDS,
+  ensureGroqApiKey,
+  isProviderRateLimitError,
+  modelFor,
+} from "@portfolio/ai";
 import { stripPromptInjection } from "@portfolio/ai/guardrails/prompt-injection";
 import { captureServerEvent } from "@/lib/analytics/capture-server";
 import { PortfolioEvents } from "@/lib/analytics/events";

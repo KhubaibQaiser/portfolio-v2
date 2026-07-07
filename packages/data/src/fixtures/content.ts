@@ -49,8 +49,7 @@ export const resumeFixture: Resume = {
 
 export const experienceFixtures: Experience[] = raw.experience.map((row) => ({
   ...row,
-  show_in_resume:
-    (row as { show_in_resume?: boolean }).show_in_resume ?? true,
+  show_in_resume: (row as { show_in_resume?: boolean }).show_in_resume ?? true,
   created_at: TS,
   updated_at: TS,
 })) as Experience[];

@@ -98,7 +98,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
       )}
     >
       <nav
-        className="mx-auto flex h-16 max-w-container items-center justify-between px-(--container-padding)"
+        className="max-w-container mx-auto flex h-16 items-center justify-between px-(--container-padding)"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -170,7 +170,9 @@ export function Navbar({ name, navLinks }: NavbarProps) {
                 key={link.href}
                 href={toHomeSectionHref(link.href)}
                 onClick={(e) =>
-                  handleSectionNavClick(e, link.href, link.label, () => setMobileOpen(false))
+                  handleSectionNavClick(e, link.href, link.label, () =>
+                    setMobileOpen(false),
+                  )
                 }
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

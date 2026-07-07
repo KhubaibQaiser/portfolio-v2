@@ -8,16 +8,16 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 
 ## Overview
 
-| Area | Notes |
-| --- | --- |
-| **Monorepo** — Turborepo + pnpm | One repo, shared packages, cached builds |
-| **Next.js 16 (App Router, RSC)** | Server data, streaming, time-based ISR |
-| **Hosting** — OpenNext on Lambda + CloudFront | SSR/ISR, image optimization, streaming |
-| **Data** — DynamoDB, one table per entity | Clean key schemas; content + resume history + rate-limit/cost counters |
-| **Auth** — Better Auth + Google (stateless) | Admin sign-in; email allowlist; encrypted session cookies |
-| **IaC** — AWS CDK (TypeScript) | Every resource in `packages/infra`; `cdk deploy` |
-| **CI/CD** — GitHub Actions + OIDC | Lint/typecheck/build on PRs; deploy on push to `main` |
-| **Observability** — CloudWatch + PostHog | Alarms/dashboard/budget + product analytics & error tracking |
+| Area                                          | Notes                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| **Monorepo** — Turborepo + pnpm               | One repo, shared packages, cached builds                               |
+| **Next.js 16 (App Router, RSC)**              | Server data, streaming, time-based ISR                                 |
+| **Hosting** — OpenNext on Lambda + CloudFront | SSR/ISR, image optimization, streaming                                 |
+| **Data** — DynamoDB, one table per entity     | Clean key schemas; content + resume history + rate-limit/cost counters |
+| **Auth** — Better Auth + Google (stateless)   | Admin sign-in; email allowlist; encrypted session cookies              |
+| **IaC** — AWS CDK (TypeScript)                | Every resource in `packages/infra`; `cdk deploy`                       |
+| **CI/CD** — GitHub Actions + OIDC             | Lint/typecheck/build on PRs; deploy on push to `main`                  |
+| **Observability** — CloudWatch + PostHog      | Alarms/dashboard/budget + product analytics & error tracking           |
 
 **Links:** [khubaibqaiser.com](https://khubaibqaiser.com) · admin and Storybook are deployed privately.
 
@@ -80,17 +80,17 @@ The admin app is `force-dynamic` — it always reads fresh content from DynamoDB
 
 Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages/infra/bin/portfolio.ts).
 
-| Stack | Region | Contents |
-| --- | --- | --- |
-| `Portfolio-Data` | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets |
-| `Portfolio-Web` | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache |
-| `Portfolio-Auth` | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key) |
-| `Portfolio-Admin` | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront |
-| `Portfolio-Shared` | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget |
-| `Portfolio-Storybook` | `eu-west-1` | Static Storybook: private S3 + CloudFront |
-| `Portfolio-Oidc` | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`) |
-| `Portfolio-Dns` | `us-east-1` | Route 53 hosted zone |
-| `Portfolio-Cert` | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`) |
+| Stack                 | Region      | Contents                                                                        |
+| --------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `Portfolio-Data`      | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                              |
+| `Portfolio-Web`       | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache           |
+| `Portfolio-Auth`      | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                           |
+| `Portfolio-Admin`     | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                          |
+| `Portfolio-Shared`    | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget |
+| `Portfolio-Storybook` | `eu-west-1` | Static Storybook: private S3 + CloudFront                                       |
+| `Portfolio-Oidc`      | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                   |
+| `Portfolio-Dns`       | `us-east-1` | Route 53 hosted zone                                                            |
+| `Portfolio-Cert`      | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)             |
 
 The custom domain is **deferred by default** (`domainEnabled=false`): both apps run on their default `*.cloudfront.net` URLs until you delegate nameservers and redeploy with `-c domainEnabled=true`.
 
@@ -122,21 +122,21 @@ portfolio-v2/
 
 ### Public site (`apps/web`)
 
-| Concern | Implementation |
-| --- | --- |
-| Content | DynamoDB via `ContentRepository`; pages use `revalidate = 3600` |
-| Chat | Vercel AI SDK + Groq (prompt from DynamoDB content) |
-| Resume PDF | `@react-pdf/renderer` (dynamic route handler) |
-| Analytics / errors | PostHog (events, `$exception`, source maps) |
+| Concern            | Implementation                                                  |
+| ------------------ | --------------------------------------------------------------- |
+| Content            | DynamoDB via `ContentRepository`; pages use `revalidate = 3600` |
+| Chat               | Vercel AI SDK + Groq (prompt from DynamoDB content)             |
+| Resume PDF         | `@react-pdf/renderer` (dynamic route handler)                   |
+| Analytics / errors | PostHog (events, `$exception`, source maps)                     |
 
 ### Admin (`apps/admin`)
 
-| Concern | Implementation |
-| --- | --- |
-| Auth | Better Auth + Google OAuth, stateless encrypted cookies, email allowlist |
-| Forms | React Hook Form + Zod |
-| Media | S3 presigned uploads |
-| Resume AI | Vercel AI SDK + Anthropic + Groq; structured Zod output |
+| Concern   | Implementation                                                           |
+| --------- | ------------------------------------------------------------------------ |
+| Auth      | Better Auth + Google OAuth, stateless encrypted cookies, email allowlist |
+| Forms     | React Hook Form + Zod                                                    |
+| Media     | S3 presigned uploads                                                     |
+| Resume AI | Vercel AI SDK + Anthropic + Groq; structured Zod output                  |
 
 ### Data layer (`packages/data`)
 
@@ -177,15 +177,15 @@ With `DATA_BACKEND=fixture` (the default) you can run the UI immediately.
 
 ### Commands
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | All apps |
-| `pnpm dev:web` | Web — http://localhost:3000 |
-| `pnpm dev:admin` | Admin — http://localhost:3001 |
-| `pnpm build` | Production build |
-| `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
-| `pnpm test` | Vitest unit tests |
-| `pnpm ddb:up` / `pnpm ddb:down` | DynamoDB Local |
+| Command                         | Description                   |
+| ------------------------------- | ----------------------------- |
+| `pnpm dev`                      | All apps                      |
+| `pnpm dev:web`                  | Web — http://localhost:3000   |
+| `pnpm dev:admin`                | Admin — http://localhost:3001 |
+| `pnpm build`                    | Production build              |
+| `pnpm lint` / `pnpm typecheck`  | ESLint / `tsc --noEmit`       |
+| `pnpm test`                     | Vitest unit tests             |
+| `pnpm ddb:up` / `pnpm ddb:down` | DynamoDB Local                |
 
 ---
 
@@ -238,10 +238,10 @@ On first deploy, run `Portfolio-Admin` once to get the CloudFront URL, then re-r
    - **Authorized redirect URI:** `https://<admin-origin>/api/auth/callback/google` (and `http://localhost:3001/api/auth/callback/google` for local dev)
    - **Authorized JavaScript origin:** the admin origin (CloudFront URL or custom domain)
 
-| Secret name | SSM ARN param | Lambda env | Used by |
-| --- | --- | --- | --- |
-| `/portfolio/google-oauth` | `/portfolio/auth/google-oauth-arn` | `GOOGLE_OAUTH_SECRET_ARN` | Admin (Better Auth Google provider) |
-| `/portfolio/better-auth-secret` | `/portfolio/auth/better-auth-secret-arn` | `BETTER_AUTH_SECRET_ARN` | Admin (session signing; auto-generated by CDK) |
+| Secret name                     | SSM ARN param                            | Lambda env                | Used by                                        |
+| ------------------------------- | ---------------------------------------- | ------------------------- | ---------------------------------------------- |
+| `/portfolio/google-oauth`       | `/portfolio/auth/google-oauth-arn`       | `GOOGLE_OAUTH_SECRET_ARN` | Admin (Better Auth Google provider)            |
+| `/portfolio/better-auth-secret` | `/portfolio/auth/better-auth-secret-arn` | `BETTER_AUTH_SECRET_ARN`  | Admin (session signing; auto-generated by CDK) |
 
 **Note:** Resume history and usage counters are keyed by the Google account id (`profile.sub`).
 
@@ -261,10 +261,35 @@ aws secretsmanager put-secret-value \
   --secret-string "YOUR_ANTHROPIC_KEY"
 ```
 
-| Secret name | SSM ARN param | Lambda env | Used by |
-| --- | --- | --- | --- |
-| `/portfolio/groq-api-key` | `/portfolio/ai/groq-api-key-arn` | `GROQ_API_KEY_SECRET_ARN` | Web + Admin |
-| `/portfolio/anthropic-api-key` | `/portfolio/ai/anthropic-api-key-arn` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin |
+| Secret name                    | SSM ARN param                         | Lambda env                     | Used by     |
+| ------------------------------ | ------------------------------------- | ------------------------------ | ----------- |
+| `/portfolio/groq-api-key`      | `/portfolio/ai/groq-api-key-arn`      | `GROQ_API_KEY_SECRET_ARN`      | Web + Admin |
+| `/portfolio/anthropic-api-key` | `/portfolio/ai/anthropic-api-key-arn` | `ANTHROPIC_API_KEY_SECRET_ARN` | Admin       |
+
+### Contact form (Resend + Turnstile)
+
+1. **Resend:** verify a sending domain at [resend.com/domains](https://resend.com/domains), then create an API key (Sending access).
+2. **Turnstile:** Cloudflare dashboard → Turnstile → add site with widget type **Invisible**; hostnames include prod + `localhost`.
+3. Deploy `Portfolio-Data` (creates empty secret shells), then inject values:
+
+```bash
+aws secretsmanager put-secret-value \
+  --region eu-west-1 \
+  --secret-id /portfolio/resend-api-key \
+  --secret-string "YOUR_RESEND_KEY"
+
+aws secretsmanager put-secret-value \
+  --region eu-west-1 \
+  --secret-id /portfolio/turnstile-secret-key \
+  --secret-string "YOUR_TURNSTILE_SECRET"
+```
+
+| Secret name                       | SSM ARN param                              | Lambda env                        | Used by |
+| --------------------------------- | ------------------------------------------ | --------------------------------- | ------- |
+| `/portfolio/resend-api-key`       | `/portfolio/email/resend-api-key-arn`      | `RESEND_API_KEY_SECRET_ARN`       | Web     |
+| `/portfolio/turnstile-secret-key` | `/portfolio/auth/turnstile-secret-key-arn` | `TURNSTILE_SECRET_KEY_SECRET_ARN` | Web     |
+
+GitHub variables for deploy: `CONTACT_EMAIL` (recipient), `CONTACT_FROM_EMAIL` (verified Resend from address), `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (baked in at OpenNext build).
 
 ### Seed content
 
@@ -289,7 +314,7 @@ Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cr
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint → typecheck → test → integration → build → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys).
 
-Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`).
+Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`).
 
 ---
 
@@ -299,23 +324,27 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 
 ### Web
 
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Canonical URL |
-| `GROQ_API_KEY_SECRET_ARN` | Groq key (Secrets Manager ARN) |
-| `DATA_BACKEND` | `fixture` or `dynamo` |
-| `DYNAMO_TABLE_PREFIX` | Table prefix (default `portfolio`) |
-| PostHog vars | Analytics and source-map upload |
+| Variable                                                   | Purpose                                        |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                     | Canonical URL                                  |
+| `GROQ_API_KEY_SECRET_ARN`                                  | Groq key (Secrets Manager ARN)                 |
+| `RESEND_API_KEY` / `RESEND_API_KEY_SECRET_ARN`             | Contact form email (local key or prod ARN)     |
+| `TURNSTILE_SECRET_KEY` / `TURNSTILE_SECRET_KEY_SECRET_ARN` | Turnstile server verification                  |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                           | Invisible Turnstile widget (public)            |
+| `CONTACT_TO_EMAIL` / `CONTACT_FROM_EMAIL`                  | Contact form recipient and Resend from address |
+| `DATA_BACKEND`                                             | `fixture` or `dynamo`                          |
+| `DYNAMO_TABLE_PREFIX`                                      | Table prefix (default `portfolio`)             |
+| PostHog vars                                               | Analytics and source-map upload                |
 
 ### Admin
 
-| Variable | Purpose |
-| --- | --- |
-| `GOOGLE_OAUTH_SECRET_ARN` / `BETTER_AUTH_SECRET_ARN` / `APP_ORIGIN` | Better Auth + Google OAuth |
-| `ADMIN_ALLOWED_EMAILS` | Email allowlist (required at runtime) |
-| `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN` | Resume AI keys |
-| `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL` | Media uploads |
-| `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX` | Data layer |
+| Variable                                                            | Purpose                               |
+| ------------------------------------------------------------------- | ------------------------------------- |
+| `GOOGLE_OAUTH_SECRET_ARN` / `BETTER_AUTH_SECRET_ARN` / `APP_ORIGIN` | Better Auth + Google OAuth            |
+| `ADMIN_ALLOWED_EMAILS`                                              | Email allowlist (required at runtime) |
+| `GROQ_API_KEY_SECRET_ARN` / `ANTHROPIC_API_KEY_SECRET_ARN`          | Resume AI keys                        |
+| `S3_MEDIA_BUCKET` / `MEDIA_PUBLIC_BASE_URL`                         | Media uploads                         |
+| `DATA_BACKEND` / `DYNAMO_TABLE_PREFIX`                              | Data layer                            |
 
 In production, CDK injects these on the Lambda environment; the IAM role supplies AWS credentials.
 

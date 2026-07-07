@@ -15,7 +15,10 @@ export async function GET() {
     const bytes = new Uint8Array(buffer);
 
     const slug = (value: string) =>
-      value.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+      value
+        .trim()
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-+|-+$/g, "");
     const filename = `${slug(data.name)}-${slug(data.title)}-Resume.pdf`;
 
     logger.info("resume pdf generated", { bytes: bytes.byteLength });
@@ -25,8 +28,7 @@ export async function GET() {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control":
-          "public, max-age=10, s-maxage=10, stale-while-revalidate=86400",
+        "Cache-Control": "public, max-age=10, s-maxage=10, stale-while-revalidate=86400",
       },
     });
   } catch (error) {

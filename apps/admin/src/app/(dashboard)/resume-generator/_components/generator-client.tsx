@@ -28,12 +28,7 @@ import { CoverLetterPreview } from "./cover-letter-preview";
 import { AtsPanel } from "./ats-panel";
 import { HistoryDrawer } from "./history-drawer";
 import { PolishChecklist } from "./polish-checklist";
-import type {
-  GenKind,
-  GenerationState,
-  HistoryItem,
-  OptionsState,
-} from "./types";
+import type { GenKind, GenerationState, HistoryItem, OptionsState } from "./types";
 
 type Tab = "resume" | "cover_letter" | "ats";
 
@@ -75,7 +70,10 @@ export function GeneratorClient({ initialHistory }: Props) {
 
   const canGenerate = jd.trim().length >= 20 && !streaming;
 
-  async function runGenerate(kind: GenKind, opts?: { mode?: "quality" | "fast"; mustTryToInclude?: string[] }) {
+  async function runGenerate(
+    kind: GenKind,
+    opts?: { mode?: "quality" | "fast"; mustTryToInclude?: string[] },
+  ) {
     if (!canGenerate) return;
     setError(null);
     setStreaming(kind);
@@ -154,8 +152,7 @@ export function GeneratorClient({ initialHistory }: Props) {
         setGeneration((g) => ({
           ...g,
           resume: (res.data.resume as TailoredResume) ?? g.resume,
-          coverLetter:
-            (res.data.coverLetter as CoverLetter) ?? g.coverLetter,
+          coverLetter: (res.data.coverLetter as CoverLetter) ?? g.coverLetter,
         }));
       }
       return;
@@ -303,8 +300,7 @@ export function GeneratorClient({ initialHistory }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download =
-      kind === "resume" ? "resume.pdf" : "cover-letter.pdf";
+    a.download = kind === "resume" ? "resume.pdf" : "cover-letter.pdf";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -324,9 +320,7 @@ export function GeneratorClient({ initialHistory }: Props) {
       const cover = json.row.cover_letter
         ? coverLetterSchema.safeParse(json.row.cover_letter)
         : null;
-      const ats = json.row.ats
-        ? atsScoreSchema.safeParse(json.row.ats)
-        : null;
+      const ats = json.row.ats ? atsScoreSchema.safeParse(json.row.ats) : null;
 
       setGeneration({
         resume: resume?.success ? resume.data : null,
@@ -351,7 +345,7 @@ export function GeneratorClient({ initialHistory }: Props) {
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)_minmax(240px,280px)]">
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
+        <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
           Job description
         </h2>
         <JdInput
@@ -364,7 +358,7 @@ export function GeneratorClient({ initialHistory }: Props) {
           disabled={Boolean(streaming)}
         />
 
-        <h2 className="mt-4 text-sm font-semibold uppercase tracking-wider text-accent">
+        <h2 className="text-accent mt-4 text-sm font-semibold tracking-wider uppercase">
           Options
         </h2>
         <OptionsForm
@@ -398,8 +392,8 @@ export function GeneratorClient({ initialHistory }: Props) {
             onClick={() => runGenerate("resume", { mode: "fast" })}
             disabled={!canGenerate}
             className={cn(
-              "flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5",
-              "text-sm font-medium hover:bg-muted/50 disabled:opacity-50",
+              "border-border bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5",
+              "hover:bg-muted/50 text-sm font-medium disabled:opacity-50",
             )}
             title="Groq Scout, fastest, lower quality"
           >
@@ -410,8 +404,8 @@ export function GeneratorClient({ initialHistory }: Props) {
               type="button"
               onClick={stop}
               className={cn(
-                "flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5",
-                "text-sm font-medium text-destructive hover:bg-destructive/10",
+                "border-destructive/40 bg-destructive/5 flex items-center gap-2 rounded-lg border px-3 py-1.5",
+                "text-destructive hover:bg-destructive/10 text-sm font-medium",
               )}
             >
               <Square className="h-3.5 w-3.5" /> Stop
@@ -419,7 +413,7 @@ export function GeneratorClient({ initialHistory }: Props) {
           )}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
       </section>
 
       <section className="min-w-0 space-y-4">
@@ -438,7 +432,7 @@ export function GeneratorClient({ initialHistory }: Props) {
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm transition-colors",
                 tab === key
-                  ? "bg-accent/10 font-medium text-accent"
+                  ? "bg-accent/10 text-accent font-medium"
                   : "text-muted-foreground hover:bg-muted",
               )}
             >
@@ -453,7 +447,7 @@ export function GeneratorClient({ initialHistory }: Props) {
                   onClick={() => runGenerate("resume")}
                   disabled={!canGenerate}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs",
+                    "border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs",
                     "hover:bg-muted disabled:opacity-50",
                   )}
                 >
@@ -464,8 +458,8 @@ export function GeneratorClient({ initialHistory }: Props) {
                   type="button"
                   onClick={() => download("resume")}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs",
-                    "font-medium text-accent-foreground hover:opacity-90",
+                    "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
+                    "text-accent-foreground font-medium hover:opacity-90",
                   )}
                 >
                   <Download className="h-3 w-3" /> PDF
@@ -479,7 +473,7 @@ export function GeneratorClient({ initialHistory }: Props) {
                   onClick={() => runGenerate("cover_letter")}
                   disabled={!canGenerate}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs",
+                    "border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs",
                     "hover:bg-muted disabled:opacity-50",
                   )}
                 >
@@ -490,8 +484,8 @@ export function GeneratorClient({ initialHistory }: Props) {
                   type="button"
                   onClick={() => download("cover_letter")}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs",
-                    "font-medium text-accent-foreground hover:opacity-90",
+                    "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
+                    "text-accent-foreground font-medium hover:opacity-90",
                   )}
                 >
                   <Download className="h-3 w-3" /> PDF
@@ -501,31 +495,23 @@ export function GeneratorClient({ initialHistory }: Props) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-background/50 p-4">
+        <div className="border-border/60 bg-background/50 rounded-xl border p-4">
           {tab === "resume" && (
             <div className="space-y-4">
               <ResumePreview
                 value={generation.resume}
                 streaming={streaming === "resume" || streaming === "both"}
-                onChange={(next) =>
-                  setGeneration((g) => ({ ...g, resume: next }))
-                }
+                onChange={(next) => setGeneration((g) => ({ ...g, resume: next }))}
               />
-              {generation.resume && !streaming && (
-                <PolishChecklist kind="resume" />
-              )}
+              {generation.resume && !streaming && <PolishChecklist kind="resume" />}
             </div>
           )}
           {tab === "cover_letter" && (
             <div className="space-y-4">
               <CoverLetterPreview
                 value={generation.coverLetter}
-                streaming={
-                  streaming === "cover_letter" || streaming === "both"
-                }
-                onChange={(next) =>
-                  setGeneration((g) => ({ ...g, coverLetter: next }))
-                }
+                streaming={streaming === "cover_letter" || streaming === "both"}
+                onChange={(next) => setGeneration((g) => ({ ...g, coverLetter: next }))}
               />
               {generation.coverLetter && !streaming && (
                 <PolishChecklist kind="cover_letter" />
@@ -539,8 +525,8 @@ export function GeneratorClient({ initialHistory }: Props) {
               canRun={Boolean(generation.resume)}
               canNudge={Boolean(
                 generation.ats &&
-                  generation.ats.missingKeywords.length > 0 &&
-                  canGenerate,
+                generation.ats.missingKeywords.length > 0 &&
+                canGenerate,
               )}
               onRun={() => void runAts(false)}
               onNudge={() => void runAts(true)}
@@ -550,7 +536,7 @@ export function GeneratorClient({ initialHistory }: Props) {
       </section>
 
       <aside className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
+        <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
           History
         </h2>
         <HistoryDrawer
@@ -574,7 +560,7 @@ function CopyButton({ onClick }: { onClick: () => void }) {
         window.setTimeout(() => setCopied(false), 1600);
       }}
       className={cn(
-        "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs",
+        "border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs",
         "hover:bg-muted",
       )}
     >
@@ -613,7 +599,7 @@ function GenButton({
         "flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-opacity",
         primary
           ? "bg-accent text-accent-foreground hover:opacity-90"
-          : "border border-border bg-muted/30 hover:bg-muted/50",
+          : "border-border bg-muted/30 hover:bg-muted/50 border",
         "disabled:opacity-50",
       )}
     >

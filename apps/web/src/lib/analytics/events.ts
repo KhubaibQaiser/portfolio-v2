@@ -19,5 +19,4 @@ export const PortfolioEvents = {
   githubApiError: "portfolio_github_api_error",
 } as const;
 
-export type PortfolioEventName =
-  (typeof PortfolioEvents)[keyof typeof PortfolioEvents];
+export type PortfolioEventName = (typeof PortfolioEvents)[keyof typeof PortfolioEvents];

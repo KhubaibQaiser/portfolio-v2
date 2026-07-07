@@ -8,14 +8,16 @@ const appName = process.env.PORTFOLIO_APP_NAME ?? DEFAULT_APP_NAME;
 const paths = ssmPaths(appName);
 const webStackName = `${appName}-Web`;
 
-const mediaPublicBaseUrl = getSsmParameter(paths.mediaPublicBaseUrl, region).replace(/\/$/, "");
+const mediaPublicBaseUrl = getSsmParameter(paths.mediaPublicBaseUrl, region).replace(
+  /\/$/,
+  "",
+);
 const mediaBucket = getSsmParameter(paths.mediaBucketName, region);
 const siteUrl = getStackOutput(webStackName, "SiteUrl", region).replace(/\/$/, "");
 
 const sampleKey = listFirstS3Key(mediaBucket, "media/", region);
 if (!sampleKey) {
-  const message =
-    `No objects under s3://${mediaBucket}/media/. Upload media via the admin app, then re-run.`;
+  const message = `No objects under s3://${mediaBucket}/media/. Upload media via the admin app, then re-run.`;
   if (process.env.CI === "true") {
     throw new Error(message);
   }
@@ -25,8 +27,7 @@ if (!sampleKey) {
 
 const mediaObjectUrl = `${mediaPublicBaseUrl}/${sampleKey}`;
 const optimizerUrl =
-  `${siteUrl}/_next/image?` +
-  `url=${encodeURIComponent(mediaObjectUrl)}&w=640&q=75`;
+  `${siteUrl}/_next/image?` + `url=${encodeURIComponent(mediaObjectUrl)}&w=640&q=75`;
 
 console.log(`Smoke testing image optimizer: ${optimizerUrl}`);
 

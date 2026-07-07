@@ -3,9 +3,9 @@ import { isAdminEmailAllowed } from "./allowlist";
 
 describe("isAdminEmailAllowed", () => {
   it("returns true for an email on the allowlist", () => {
-    expect(isAdminEmailAllowed("Admin@Example.com", "admin@example.com,other@test.com")).toBe(
-      true,
-    );
+    expect(
+      isAdminEmailAllowed("Admin@Example.com", "admin@example.com,other@test.com"),
+    ).toBe(true);
   });
 
   it("returns false for an email not on the allowlist", () => {

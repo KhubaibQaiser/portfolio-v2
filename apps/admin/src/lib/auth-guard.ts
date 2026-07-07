@@ -23,8 +23,7 @@ export async function requireAdmin(): Promise<AdminAuth> {
   } catch (error) {
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Admin allowlist is not configured",
+      error: error instanceof Error ? error.message : "Admin allowlist is not configured",
     };
   }
 

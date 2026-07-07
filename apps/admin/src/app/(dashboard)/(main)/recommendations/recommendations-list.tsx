@@ -34,7 +34,11 @@ const FORM_FIELDS = [
   { key: "full_name" as const, label: "Full name", placeholder: undefined },
   { key: "profile_url" as const, label: "Profile URL", placeholder: undefined },
   { key: "role_title" as const, label: "Role / title", placeholder: undefined },
-  { key: "recommended_at" as const, label: "Date (DD-MM-YYYY)", placeholder: "15-03-2024" },
+  {
+    key: "recommended_at" as const,
+    label: "Date (DD-MM-YYYY)",
+    placeholder: "15-03-2024",
+  },
   { key: "linkedin_url" as const, label: "LinkedIn verify URL", placeholder: undefined },
   { key: "avatar_url" as const, label: "Avatar URL (optional)", placeholder: undefined },
 ];
@@ -62,8 +66,13 @@ function RecommendationsListPanel({
 
   const form = useForm<ListFormValues>({ defaultValues });
   const { control, handleSubmit } = form;
-  const { fields, remove } = useFieldArray({ control, name: "items", keyName: "fieldKey" });
-  const items = useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
+  const { fields, remove } = useFieldArray({
+    control,
+    name: "items",
+    keyName: "fieldKey",
+  });
+  const items =
+    useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
 
   function openEdit(entry: RecommendationEditForm) {
     if (!tryLeaveForm(form, defaultValues)) return;
@@ -136,7 +145,11 @@ function RecommendationsListPanel({
             );
           })}
         </div>
-        <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} className="mt-6" />
+        <FormSaveButton
+          saving={saving}
+          onClick={handleSubmit(onSubmit)}
+          className="mt-6"
+        />
       </div>
     </Form>
   );
@@ -179,20 +192,34 @@ function RecommendationEditPanel({
     <Form {...form} isSubmitting={saving}>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{entry.id ? "Edit" : "Add"} Recommendation</h2>
-          <button type="button" onClick={handleClose} className="text-muted-foreground hover:text-foreground rounded-md p-1">
+          <h2 className="text-lg font-semibold">
+            {entry.id ? "Edit" : "Add"} Recommendation
+          </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-foreground rounded-md p-1"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
         <input type="hidden" {...register("id")} />
         <div>
           <label className="mb-1 block text-sm font-medium">Description</label>
-          <textarea {...register("description")} rows={6} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+          <textarea
+            {...register("description")}
+            rows={6}
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
         </div>
         {FORM_FIELDS.map(({ key, label, placeholder }) => (
           <div key={key}>
             <label className="mb-1 block text-sm font-medium">{label}</label>
-            <input {...register(key)} placeholder={placeholder} className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden" />
+            <input
+              {...register(key)}
+              placeholder={placeholder}
+              className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            />
           </div>
         ))}
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />

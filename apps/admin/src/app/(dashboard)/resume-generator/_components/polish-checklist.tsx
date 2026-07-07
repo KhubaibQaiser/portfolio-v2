@@ -57,7 +57,7 @@ const COVER_ITEMS: Item[] = [
   {
     id: "voice",
     label: "Sounds human, not robotic",
-    hint: "No em-dash triplets, no \"I am passionate about…\" filler.",
+    hint: 'No em-dash triplets, no "I am passionate about…" filler.',
   },
   {
     id: "signoff",
@@ -78,7 +78,7 @@ export function PolishChecklist({ kind }: Props) {
   const progress = `${checked.size}/${items.length}`;
 
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/10 text-xs">
+    <div className="border-border/60 bg-muted/10 rounded-lg border text-xs">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -90,11 +90,11 @@ export function PolishChecklist({ kind }: Props) {
           <ChevronRight className="h-3.5 w-3.5" />
         )}
         <span>Human-polish checklist</span>
-        <span className="ml-auto text-muted-foreground">{progress}</span>
+        <span className="text-muted-foreground ml-auto">{progress}</span>
       </button>
 
       {open && (
-        <ul className="space-y-1 border-t border-border/60 p-2">
+        <ul className="border-border/60 space-y-1 border-t p-2">
           {items.map((item) => {
             const isChecked = checked.has(item.id);
             return (
@@ -109,7 +109,7 @@ export function PolishChecklist({ kind }: Props) {
                       return next;
                     });
                   }}
-                  className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted/40"
+                  className="hover:bg-muted/40 flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left"
                 >
                   <span
                     className={cn(
@@ -124,14 +124,12 @@ export function PolishChecklist({ kind }: Props) {
                   </span>
                   <span>
                     <span
-                      className={cn(
-                        isChecked && "line-through text-muted-foreground",
-                      )}
+                      className={cn(isChecked && "text-muted-foreground line-through")}
                     >
                       {item.label}
                     </span>
                     {item.hint && (
-                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      <span className="text-muted-foreground mt-0.5 block text-[11px]">
                         {item.hint}
                       </span>
                     )}

@@ -19,6 +19,8 @@ export function secretNames(config: InfraConfig) {
   return {
     groqApiKey: `${base}/groq-api-key`,
     anthropicApiKey: `${base}/anthropic-api-key`,
+    resendApiKey: `${base}/resend-api-key`,
+    turnstileSecretKey: `${base}/turnstile-secret-key`,
     googleOAuth: `${base}/google-oauth`,
     betterAuthSecret: `${base}/better-auth-secret`,
   } as const;

@@ -1,8 +1,7 @@
 import posthog from "posthog-js";
 
 const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-const uiHost =
-  process.env.NEXT_PUBLIC_POSTHOG_UI_HOST ?? "https://us.posthog.com";
+const uiHost = process.env.NEXT_PUBLIC_POSTHOG_UI_HOST ?? "https://us.posthog.com";
 
 if (token) {
   posthog.init(token, {
@@ -16,8 +15,7 @@ if (token) {
       if (process.env.NODE_ENV === "development") {
         ph.debug();
       }
-      const env =
-        process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT ?? process.env.VERCEL_ENV;
+      const env = process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT ?? process.env.VERCEL_ENV;
       if (env) {
         ph.register({ environment: env });
       }

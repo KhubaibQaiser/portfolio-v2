@@ -127,9 +127,17 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
       deleted_at: null,
     } as const;
 
-    const older = await repo.insertResumeGeneration({ ...base, company: "Older", role: "A" });
+    const older = await repo.insertResumeGeneration({
+      ...base,
+      company: "Older",
+      role: "A",
+    });
     await new Promise((resolve) => setTimeout(resolve, 5)); // distinct created_at
-    const newer = await repo.insertResumeGeneration({ ...base, company: "Newer", role: "B" });
+    const newer = await repo.insertResumeGeneration({
+      ...base,
+      company: "Newer",
+      role: "B",
+    });
 
     const history = await repo.getResumeGenerations({ limit: 10 });
     const ids = history.map((r) => r.id);
