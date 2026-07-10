@@ -11,6 +11,7 @@ type AboutSectionProps = {
   location: string;
   /** Distinct employers from Experience (not the stored `about.companies_count` field). */
   companiesCount: number;
+  name: string;
 };
 
 const statusLabel: Record<string, string> = {
@@ -28,7 +29,12 @@ const sectionVariants = {
   },
 };
 
-export function AboutSection({ about, location, companiesCount }: AboutSectionProps) {
+export function AboutSection({
+  about,
+  location,
+  companiesCount,
+  name,
+}: AboutSectionProps) {
   const stats = [
     { icon: Clock, label: "Years", value: `${about.years_experience}+` },
     { icon: Briefcase, label: "Companies", value: String(companiesCount) },
@@ -92,8 +98,9 @@ export function AboutSection({ about, location, companiesCount }: AboutSectionPr
                   {about.photo_url ? (
                     <Image
                       src={about.photo_url}
-                      alt="Portrait"
+                      alt={`Portrait of ${name}`}
                       fill
+                      priority
                       sizes="(min-width: 768px) 288px, 256px"
                       className="object-cover"
                     />

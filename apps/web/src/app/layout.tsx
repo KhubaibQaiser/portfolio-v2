@@ -16,6 +16,7 @@ import { SiteConfigProvider } from "@/components/layout/site-config-provider";
 import { MAIN_NAV_LINKS } from "@portfolio/shared/constants";
 import { fetchSiteConfig } from "@/lib/data";
 import { SITE_URL } from "@/lib/seo";
+import { env } from "@/lib/env";
 import "@/styles/globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,6 +62,15 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,
+    },
+    // Populated once GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION are set
+    // (see Cloud Agents / deploy secrets) — omitted entirely until then so no
+    // empty verification meta tags are emitted.
+    verification: {
+      google: env.GOOGLE_SITE_VERIFICATION,
+      other: env.BING_SITE_VERIFICATION
+        ? { "msvalidate.01": env.BING_SITE_VERIFICATION }
+        : undefined,
     },
   };
 }

@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// Next.js already injects `<meta name="robots" content="noindex">` for any
+// route that returns a 404 status, so we only need to set the title here.
+export const metadata: Metadata = {
+  title: "Page Not Found",
+};
 
 export default function NotFound() {
   return (
