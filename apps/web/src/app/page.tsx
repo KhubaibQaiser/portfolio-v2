@@ -27,6 +27,31 @@ export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
 };
 
+function FaqJsonLd({
+  highlights,
+}: {
+  highlights: { title: string; description: string }[];
+}) {
+  if (highlights.length === 0) return null;
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: highlights.map((h) => ({
+      "@type": "Question",
+      name: h.title,
+      acceptedAnswer: { "@type": "Answer", text: h.description },
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+    />
+  );
+}
+
 export default async function HomePage() {
   const [hero, about, experience, featuredProjects, skills, testimonials, siteConfig] =
     await Promise.all([
@@ -44,6 +69,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <FaqJsonLd highlights={about.highlights} />
       <HeroSection hero={hero} name={siteConfig.name} companies={companies} />
       <AboutSection
         about={about}
