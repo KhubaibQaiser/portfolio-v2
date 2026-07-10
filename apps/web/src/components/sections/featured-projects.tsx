@@ -67,7 +67,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                         alt={project.title}
                         fill
                         sizes="(min-width: 768px) 50vw, 100vw"
-                        className="object-cover"
+                        className="object-cover object-top"
                       />
                     ) : (
                       <div className="text-muted-foreground/30 flex h-full items-center justify-center">

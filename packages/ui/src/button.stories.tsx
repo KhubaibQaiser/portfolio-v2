@@ -51,7 +51,7 @@ export const Disabled: Story = {
 
 export const AllVariants: Story = {
   render: () => (
-    <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+    <div className="flex items-center gap-3">
       <Button variant="default">Default</Button>
       <Button variant="accent">Accent</Button>
       <Button variant="outline">Outline</Button>

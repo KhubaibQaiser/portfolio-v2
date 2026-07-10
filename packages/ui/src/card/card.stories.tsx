@@ -49,14 +49,7 @@ export const Hoverable: Story = {
 
 export const Grid: Story = {
   render: () => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "16px",
-        maxWidth: "600px",
-      }}
-    >
+    <div className="grid max-w-[600px] grid-cols-2 gap-4">
       {["React", "TypeScript", "Next.js", "Tailwind"].map((title) => (
         <Card key={title} hoverable>
           <CardHeader>

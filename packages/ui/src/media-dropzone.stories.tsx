@@ -23,17 +23,14 @@ export const Default: Story = {
   render: function Render() {
     const [last, setLast] = useState<string>("");
     return (
-      <div style={{ maxWidth: 560 }}>
+      <div className="max-w-[560px]">
         <MediaDropzone
           onFilesSelected={(files) => {
             setLast(files.map((f) => `${f.name} (${f.type})`).join(", "));
           }}
         />
         {last ? (
-          <p
-            style={{ marginTop: 12, fontSize: 12, opacity: 0.8 }}
-            data-testid="last-files"
-          >
+          <p className="mt-3 text-xs opacity-80" data-testid="last-files">
             Selected: {last}
           </p>
         ) : null}

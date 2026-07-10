@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import posthog from "posthog-js";
+import "@/styles/globals.css";
 
 export default function GlobalError({
   error,
@@ -17,54 +18,21 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily: "system-ui, sans-serif",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          backgroundColor: "#fafafa",
-          color: "#0f1117",
-        }}
-      >
-        <div style={{ textAlign: "center", padding: "2rem" }}>
-          <h1 style={{ fontSize: "3rem", fontWeight: 700 }}>Something went wrong</h1>
-          <p
-            style={{
-              marginTop: "1rem",
-              color: "#666",
-              fontSize: "1.125rem",
-            }}
-          >
+      <body className="bg-background text-foreground m-0 flex min-h-screen items-center justify-center font-sans">
+        <div className="p-8 text-center">
+          <h1 className="text-5xl font-bold">Something went wrong</h1>
+          <p className="text-muted-foreground mt-4 text-lg">
             A critical error occurred. Please try refreshing the page.
           </p>
           {error.digest && (
-            <p
-              style={{
-                marginTop: "0.5rem",
-                color: "#999",
-                fontSize: "0.75rem",
-                fontFamily: "monospace",
-              }}
-            >
+            <p className="text-muted-foreground/70 mt-2 font-mono text-xs">
               Error ID: {error.digest}
             </p>
           )}
           <button
+            type="button"
             onClick={reset}
-            style={{
-              marginTop: "2rem",
-              padding: "0.625rem 1.5rem",
-              borderRadius: "9999px",
-              border: "none",
-              backgroundColor: "#0f1117",
-              color: "#fafafa",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
+            className="bg-foreground text-background mt-8 cursor-pointer rounded-full px-6 py-2.5 text-sm font-medium"
           >
             Try Again
           </button>
