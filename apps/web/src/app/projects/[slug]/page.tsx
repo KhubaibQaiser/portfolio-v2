@@ -1,7 +1,7 @@
 import type { Metadata, ResolvingMetadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
 import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
 import { GitHubIcon } from "@portfolio/ui/icons";
@@ -50,13 +50,23 @@ export default async function ProjectDetailPage({
     <div className="py-32">
       <SlugViewTracker slug={slug} />
       <div className="mx-auto max-w-3xl px-(--container-padding)">
-        <Link
-          href="/projects"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Projects
-        </Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Home
+          </Link>
+          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+          <Link
+            href="/projects"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Projects
+          </Link>
+          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+          <span className="text-foreground font-medium">{project.title}</span>
+        </nav>
 
         <h1 className="text-h1 mt-6 font-bold tracking-tight">{project.title}</h1>
         <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
