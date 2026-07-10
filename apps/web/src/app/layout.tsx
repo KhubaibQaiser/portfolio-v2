@@ -151,6 +151,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="/llms.txt"
+          title="LLM site summary"
+        />
         <JsonLd config={config} siteUrl={SITE_URL} />
       </head>
       <body className="bg-background min-h-screen font-sans antialiased">
