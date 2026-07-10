@@ -25,7 +25,7 @@ export const Default: Story = {
   render: function Render() {
     const [copied, setCopied] = useState(false);
     return (
-      <div style={{ maxWidth: 320 }}>
+      <div className="max-w-80">
         <MediaAssetCard
           filename="hero-background.webp"
           imageUrl={SAMPLE_URL}
@@ -54,14 +54,7 @@ export const Copied: Story = {
 
 export const Grid: Story = {
   render: () => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-        gap: 16,
-        maxWidth: 720,
-      }}
-    >
+    <div className="grid max-w-[720px] grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
       {["a", "b", "c"].map((seed) => (
         <MediaAssetCard
           key={seed}

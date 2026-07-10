@@ -214,7 +214,6 @@ export function ChatBubble() {
               variants={pulseRing}
               initial="initial"
               animate="animate"
-              style={{ animationDelay: "1.1s" }}
               transition={{
                 duration: 2.2,
                 repeat: Infinity,

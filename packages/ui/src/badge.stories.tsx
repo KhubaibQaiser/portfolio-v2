@@ -34,7 +34,7 @@ export const Success: Story = {
 
 export const AllVariants: Story = {
   render: () => (
-    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+    <div className="flex flex-wrap gap-2">
       <Badge variant="default">React</Badge>
       <Badge variant="accent">TypeScript</Badge>
       <Badge variant="outline">Next.js</Badge>

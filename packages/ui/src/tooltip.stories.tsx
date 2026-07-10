@@ -25,7 +25,7 @@ type Story = StoryObj<typeof Tooltip>;
 
 export const Basic: Story = {
   render: (args) => (
-    <div style={{ padding: "80px", display: "flex", justifyContent: "center" }}>
+    <div className="flex justify-center p-20">
       <Tooltip {...args}>
         <Button variant="outline">Hover me</Button>
       </Tooltip>
@@ -38,21 +38,11 @@ export const IconTrigger: Story = {
     content: "Portfolio metrics are updated weekly",
   },
   render: (args) => (
-    <div style={{ padding: "80px", display: "flex", justifyContent: "center" }}>
+    <div className="flex justify-center p-20">
       <Tooltip {...args}>
         <button
           type="button"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 9999,
-            border: "1px solid var(--color-border)",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "transparent",
-            color: "var(--color-foreground)",
-          }}
+          className="border-border text-foreground inline-flex h-10 w-10 items-center justify-center rounded-full border bg-transparent"
         >
           <Info size={18} />
         </button>
