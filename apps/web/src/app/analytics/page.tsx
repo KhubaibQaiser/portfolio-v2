@@ -6,12 +6,17 @@ export async function generateMetadata(
   _props: object,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
-  return buildPageMetadata(parent, {
+  const metadata = await buildPageMetadata(parent, {
     title: "Analytics",
     description:
       "Public analytics dashboard for khubaibqaiser.com — real-time visitor metrics, traffic sources, and performance data.",
     path: "/analytics",
   });
+
+  // Placeholder/thin content (all stats are "—", charts are "coming in Phase 4") —
+  // keep it reachable for visitors but excluded from search results until it
+  // has real data. Also dropped from sitemap.ts for the same reason.
+  return { ...metadata, robots: { index: false, follow: true } };
 }
 
 const placeholderStats = [

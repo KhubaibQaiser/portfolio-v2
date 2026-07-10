@@ -32,11 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     ...projectEntries,
-    {
-      url: `${SITE_URL}/analytics`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.5,
-    },
+    // /analytics intentionally omitted — it's noindex (see analytics/page.tsx)
+    // until it has real data instead of placeholder stats.
   ];
 }
