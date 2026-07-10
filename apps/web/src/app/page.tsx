@@ -75,6 +75,7 @@ export default async function HomePage() {
         about={about}
         location={siteConfig.location}
         companiesCount={companiesCount}
+        name={siteConfig.name}
       />
       <Testimonials testimonials={testimonials} />
       <WhyHireMeSection highlights={about.highlights} />
