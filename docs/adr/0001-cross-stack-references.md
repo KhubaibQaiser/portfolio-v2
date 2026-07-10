@@ -11,7 +11,7 @@ The infra is split into multiple CDK stacks (`Data`, `Web`, `Admin`, `Auth`,
 tables + media bucket and the AuthStack's auth secrets.
 
 Originally these were passed as **CDK construct references** across stacks
-(`tables: ITable[]`, `mediaBucket: IBucket`, `auth: { userPoolId, ... }`). CDK
+(`tables: ITable[]`, `mediaBucket: IBucket`, auth secrets from AuthStack). CDK
 turns each cross-stack reference into a **CloudFormation export** (`Fn::ImportValue`).
 
 That bit us during the single-table → multi-table migration: changing the
