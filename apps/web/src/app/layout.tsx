@@ -15,9 +15,8 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { SiteConfigProvider } from "@/components/layout/site-config-provider";
 import { MAIN_NAV_LINKS } from "@portfolio/shared/constants";
 import { fetchSiteConfig } from "@/lib/data";
+import { SITE_URL } from "@/lib/seo";
 import "@/styles/globals.css";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await fetchSiteConfig();
@@ -70,9 +69,6 @@ export async function generateMetadata(): Promise<Metadata> {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
-    alternates: {
-      canonical: SITE_URL,
-    },
   };
 }
 
@@ -102,7 +98,9 @@ function JsonLd({
     jobTitle: config.title,
     description: config.description,
     email: config.email,
-    sameAs: socialLinks.map((l) => l.url),
+    // Include the canonical site URL alongside external profiles (e.g. GitHub, LinkedIn) so
+    // Google's Knowledge Graph can tie the entity back to the homepage, not just third parties.
+    sameAs: [...new Set([...socialLinks.map((l) => l.url), siteUrl])],
     knowsAbout: [
       "React",
       "Next.js",
