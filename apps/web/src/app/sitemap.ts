@@ -1,29 +1,39 @@
 import type { MetadataRoute } from "next";
+import { fetchAllProjects } from "@/lib/data";
+import { SITE_URL } from "@/lib/seo";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const projects = await fetchAllProjects();
 
-export default function sitemap(): MetadataRoute.Sitemap {
+  const projectEntries: MetadataRoute.Sitemap = projects.map((project) => ({
+    url: `${SITE_URL}/projects/${project.slug}`,
+    lastModified: new Date(project.updated_at),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   return [
     {
-      url: baseUrl,
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${baseUrl}/resume`,
+      url: `${SITE_URL}/resume`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/projects`,
+      url: `${SITE_URL}/projects`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    ...projectEntries,
     {
-      url: `${baseUrl}/analytics`,
+      url: `${SITE_URL}/analytics`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.5,
