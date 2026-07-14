@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Project } from "@portfolio/shared/schemas";
@@ -60,7 +61,10 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                     isOdd && "md:[direction:rtl] md:*:[direction:ltr]",
                   )}
                 >
-                  <div className="bg-muted relative aspect-video overflow-hidden rounded-xl">
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    className="bg-muted relative aspect-video overflow-hidden rounded-xl"
+                  >
                     {project.cover_url ? (
                       <Image
                         src={project.cover_url}
@@ -74,12 +78,17 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                         Confidential
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   <div className={cn(isOdd && "md:text-right")}>
                     <p className="text-accent font-mono text-sm">Featured Project</p>
                     <h3 className="text-h3 mt-1 font-semibold tracking-tight">
-                      {project.title}
+                      <Link
+                        href={`/projects/${project.slug}`}
+                        className="hover:text-accent"
+                      >
+                        {project.title}
+                      </Link>
                     </h3>
                     <div className="bg-muted/50 text-muted-foreground mt-4 rounded-xl p-5 text-sm leading-relaxed">
                       {project.description}
@@ -102,6 +111,13 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                         isOdd && "md:justify-end",
                       )}
                     >
+                      <Link
+                        href={`/projects/${project.slug}`}
+                        className="text-accent inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+                      >
+                        Case Study
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
                       {project.github_url && (
                         <a
                           href={project.github_url}
@@ -129,6 +145,16 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                 </motion.div>
               );
             })}
+          </div>
+
+          <div className="mt-14 flex justify-center">
+            <Link
+              href="/projects"
+              className="border-border hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition-colors"
+            >
+              View All Projects
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </motion.div>
       </div>
