@@ -7,7 +7,8 @@ import { TrackedExternalLink } from "@/components/analytics/tracked-external-lin
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildPageMetadata, SITE_URL } from "@/lib/seo";
+import type { Project } from "@portfolio/shared/schemas";
 
 export const revalidate = 10;
 
@@ -34,6 +35,51 @@ export async function generateMetadata(
   });
 }
 
+function ProjectJsonLd({ project, slug }: { project: Project; slug: string }) {
+  const projectUrl = `${SITE_URL}/projects/${slug}`;
+
+  const creativeWorkSchema = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "@id": `${projectUrl}#creativework`,
+    name: project.title,
+    description: project.summary,
+    url: projectUrl,
+    image: project.cover_url ?? undefined,
+    keywords: project.tech_tags.join(", "),
+    author: { "@id": `${SITE_URL}/#person` },
+    creator: { "@id": `${SITE_URL}/#person` },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Projects",
+        item: `${SITE_URL}/projects`,
+      },
+      { "@type": "ListItem", position: 3, name: project.title, item: projectUrl },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(creativeWorkSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+    </>
+  );
+}
+
 export default async function ProjectDetailPage({
   params,
 }: {
@@ -48,6 +94,7 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="py-32">
+      <ProjectJsonLd project={project} slug={slug} />
       <SlugViewTracker slug={slug} />
       <div className="mx-auto max-w-3xl px-(--container-padding)">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
