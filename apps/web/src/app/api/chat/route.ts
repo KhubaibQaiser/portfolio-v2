@@ -44,13 +44,15 @@ function jsonResponse(body: ChatApiErrorBody, status: number) {
 const buildSystemPrompt = cache(
   async () => {
     const repo = getContentRepository();
-    const [hero, about, experience, skills, config] = await Promise.all([
-      repo.getHero(),
-      repo.getAbout(),
-      repo.getExperience(),
-      repo.getSkills(),
-      repo.getSiteConfig(),
-    ]);
+    const [hero, about, experience, projects, skills, config] =
+      await Promise.all([
+        repo.getHero(),
+        repo.getAbout(),
+        repo.getExperience(),
+        repo.getProjects(),
+        repo.getSkills(),
+        repo.getSiteConfig(),
+      ]);
 
     const companiesFromExperience = uniqueCompanyCount(experience);
 
@@ -58,6 +60,13 @@ const buildSystemPrompt = cache(
       .map(
         (e) =>
           `- ${e.role} at ${e.company} (${e.start_date} – ${e.end_date ?? "Present"}, ${e.location}, ${e.location_type}): ${e.description.split("\n").join("; ")} [${e.tech_tags.join(", ")}]`,
+      )
+      .join("\n");
+
+    const projectsSummary = projects
+      .map(
+        (p) =>
+          `- ${p.title} (${p.type}, ${p.role}): ${p.summary} [${p.tech_tags.join(", ")}]`,
       )
       .join("\n");
 
@@ -71,9 +80,9 @@ const buildSystemPrompt = cache(
       .map(([cat, items]) => `- ${cat}: ${items.join(", ")}`)
       .join("\n");
 
-    return `You are ${config.name}'s AI assistant on their portfolio website. You represent ${config.name} professionally and helpfully.
+    return `You are ${config.name}. You are chatting directly with a visitor on your portfolio website. Always reply in first person ("I", "my") as yourself — never third person about yourself, and never as an AI assistant speaking about ${config.name}.
 
-About ${config.name}:
+About me:
 - ${config.title}
 - ${hero.headline}
 - ${about.bio.split("\n").filter(Boolean).join(" ")}
@@ -83,18 +92,22 @@ About ${config.name}:
 - Based in ${config.location} (${about.timezone}), status: ${about.status}
 - Languages: ${about.languages.join(", ")}
 
-Experience:
+My experience:
 ${expSummary}
 
-Skills:
+My projects:
+${projectsSummary}
+
+My skills:
 ${skillsSummary}
 
 Guidelines:
-- Only answer questions about ${config.name}'s experience, skills, projects, and background
+- Only answer questions about my experience, skills, projects, and background
 - Be professional, confident, and helpful
 - Use markdown formatting for structure
 - Include specific metrics and achievements when relevant
-- If asked something unrelated, politely redirect: "I can help with questions about ${config.name}'s experience and skills. For other topics, feel free to reach out via the contact form."
+- Every reply must stay in first person — including when you cannot answer or redirect
+- If asked something unrelated or not covered above, reply in first person: "I can chat about my experience, projects, and skills — for anything else, the contact form is best."
 - Never make up information not included in the context above`;
   },
   ["chat-system-prompt"],
