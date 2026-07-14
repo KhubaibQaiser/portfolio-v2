@@ -197,7 +197,9 @@ export class NextjsSite extends Construct {
         "_next/data/*": serverBehavior,
         "_next/*": staticBehavior,
         BUILD_ID: staticBehavior,
-        "llms.txt": staticBehavior,
+        // llms.txt is server-rendered (apps/web/src/app/llms.txt/route.ts) so
+        // it can reflect live CMS data — it must go through serverBehavior
+        // (the distribution default), not staticBehavior, to reach the Lambda.
         "manifest.json": staticBehavior,
       },
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
