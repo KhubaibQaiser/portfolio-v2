@@ -11,9 +11,10 @@ import { AssistantMarkdown } from "./assistant-markdown";
 import { chatTransport, ChatRateLimitError } from "./chat-transport";
 
 const SUGGESTED_QUESTIONS = [
-  "What's your strongest skill?",
-  "Tell me about your AWS experience",
-  "What companies have you worked at?",
+  "Walk me through your experience",
+  "What's your biggest strength?",
+  "Tell me about a challenging project you worked on",
+  "Why should we hire you?",
 ];
 
 const GREETING =
