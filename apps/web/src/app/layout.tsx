@@ -48,20 +48,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: config.name,
       title: `${config.name} | ${config.title}`,
       description: config.description,
-      images: [
-        {
-          url: "/og-image.png",
-          width: 1200,
-          height: 630,
-          alt: `${config.name} — ${config.title}`,
-        },
-      ],
+      // images intentionally omitted — populated from opengraph-image.tsx
     },
     twitter: {
       card: "summary_large_image",
       title: `${config.name} | ${config.title}`,
       description: config.description,
-      images: ["/og-image.png"],
+      // images intentionally omitted — populated from twitter-image.tsx
     },
     robots: {
       index: true,
