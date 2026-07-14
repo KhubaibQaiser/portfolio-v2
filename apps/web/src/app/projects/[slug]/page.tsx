@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
@@ -7,6 +7,7 @@ import { TrackedExternalLink } from "@/components/analytics/tracked-external-lin
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const revalidate = 10;
 
@@ -15,19 +16,22 @@ export async function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
   const { slug } = await params;
   const project = await fetchProjectBySlug(slug);
   if (!project) return { title: "Project Not Found" };
 
-  return {
+  return buildPageMetadata(parent, {
     title: project.title,
     description: project.summary,
-  };
+    path: `/projects/${slug}`,
+    image: project.cover_url
+      ? { url: project.cover_url, width: 1200, height: 630, alt: project.title }
+      : undefined,
+  });
 }
 
 export default async function ProjectDetailPage({

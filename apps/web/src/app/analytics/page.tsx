@@ -1,11 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { BarChart3, Users, Eye, Globe, MonitorSmartphone, Zap } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Analytics",
-  description:
-    "Public analytics dashboard for khubaibqaiser.com — real-time visitor metrics, traffic sources, and performance data.",
-};
+export async function generateMetadata(
+  _props: object,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  return buildPageMetadata(parent, {
+    title: "Analytics",
+    description:
+      "Public analytics dashboard for khubaibqaiser.com — real-time visitor metrics, traffic sources, and performance data.",
+    path: "/analytics",
+  });
+}
 
 const placeholderStats = [
   { icon: Users, label: "Total Visitors", value: "—" },

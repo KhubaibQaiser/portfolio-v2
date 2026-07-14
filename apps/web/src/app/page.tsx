@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HeroSection } from "@/components/sections/hero";
 import { AboutSection } from "@/components/sections/about";
 import { WhyHireMeSection } from "@/components/sections/why-hire-me";
@@ -18,8 +19,13 @@ import {
   fetchSiteConfig,
 } from "@/lib/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
+import { SITE_URL } from "@/lib/seo";
 
 export const revalidate = 10;
+
+export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL },
+};
 
 export default async function HomePage() {
   const [hero, about, experience, featuredProjects, skills, testimonials, siteConfig] =

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { Download, MapPin, Mail, Globe, ExternalLink } from "lucide-react";
 import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
 import {
@@ -6,12 +6,19 @@ import {
   ResumeViewTracker,
 } from "@/components/analytics/resume-analytics";
 import { getResumeData } from "@/lib/resume-data";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Resume",
-  description:
-    "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
-};
+export async function generateMetadata(
+  _props: object,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  return buildPageMetadata(parent, {
+    title: "Resume",
+    description:
+      "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
+    path: "/resume",
+  });
+}
 
 export const revalidate = 10;
 

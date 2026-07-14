@@ -1,12 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { ProjectsGrid } from "@/components/sections/projects-grid";
 import { fetchAllProjects } from "@/lib/data";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Projects",
-  description:
-    "30+ web, mobile, and game projects built with React, Next.js, React Native, AWS, and more.",
-};
+export async function generateMetadata(
+  _props: object,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  return buildPageMetadata(parent, {
+    title: "Projects",
+    description:
+      "30+ web, mobile, and game projects built with React, Next.js, React Native, AWS, and more.",
+    path: "/projects",
+  });
+}
 
 export const revalidate = 10;
 
