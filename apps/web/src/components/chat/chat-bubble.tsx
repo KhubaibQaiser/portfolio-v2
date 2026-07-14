@@ -11,13 +11,13 @@ import { AssistantMarkdown } from "./assistant-markdown";
 import { chatTransport, ChatRateLimitError } from "./chat-transport";
 
 const SUGGESTED_QUESTIONS = [
-  "What's Khubaib's strongest skill?",
-  "Tell me about his AWS experience",
-  "What companies has he worked at?",
+  "What's your strongest skill?",
+  "Tell me about your AWS experience",
+  "What companies have you worked at?",
 ];
 
 const GREETING =
-  "Hi! I'm Khubaib's AI assistant. Ask me anything about his experience, projects, or skills.";
+  "Hi! I'm Khubaib. Ask me anything about my experience, projects, or skills.";
 
 function getTextContent(msg: { parts?: Array<{ type: string; text?: string }> }): string {
   return (
