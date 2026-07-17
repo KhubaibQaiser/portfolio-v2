@@ -28,7 +28,6 @@ jobs:
 
   typecheck:
     name: Type check
-    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -38,7 +37,6 @@ jobs:
 
   test:
     name: Unit tests
-    needs: typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,7 +46,6 @@ jobs:
 
   integration:
     name: Integration tests (DynamoDB Local)
-    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -69,9 +66,11 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.dev.yml down
 
+  # Builds Next apps only (Storybook is built at deploy via build-storybook).
+  # Uploads the web .next output so Lighthouse can reuse it without rebuilding.
   build:
     name: Build
-    needs: integration
+    needs: [lint, typecheck, test, integration]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -80,10 +79,18 @@ jobs:
       - run: pnpm build
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      - name: Upload web build for Lighthouse
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-next-build
+          path: apps/web/.next
+          include-hidden-files: true
+          retention-days: 1
 
   # Runs against the production build on PRs and main. Deploy waits on this job
   # so a Lighthouse regression blocks prod (see deploy.needs).
   # Matrix covers desktop + mobile; performance must be >= 0.90 on both.
+  # Reuses the Build job artifact — no second Next compile.
   lighthouse:
     name: Lighthouse CI (${{ matrix.formFactor }})
     needs: build
@@ -97,10 +104,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
-      - name: Build web app
-        run: pnpm --filter @portfolio/web build
-        env:
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-next-build
+          path: apps/web/.next
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
