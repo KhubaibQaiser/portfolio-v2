@@ -43,7 +43,7 @@ export function Footer({ name, socialLinks }: FooterProps) {
               {name}
             </Link>
           </p>
-          <p className="text-muted-foreground/60 font-mono text-xs">
+          <p className="text-muted-foreground font-mono text-xs">
             Built with Next.js, TypeScript & Tailwind CSS
           </p>
         </div>

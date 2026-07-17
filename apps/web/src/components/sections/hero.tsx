@@ -15,19 +15,13 @@ type HeroSectionProps = {
   companies: string[];
 };
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.1, delayChildren: 0.3 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
+/** Embellishments only — never opacity-gate above-fold LCP text. */
+const embellishmentVariants = {
+  hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
 
@@ -42,47 +36,39 @@ export function HeroSection({ hero, name, companies }: HeroSectionProps) {
         aria-hidden
       />
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="max-w-container relative z-10 mx-auto w-full min-w-0 px-(--container-padding) py-16 text-center sm:py-24 md:py-32"
-      >
-        <motion.p
-          variants={itemVariants}
-          className="text-accent font-mono text-sm md:text-base"
-        >
+      <div className="max-w-container relative z-10 mx-auto w-full min-w-0 px-(--container-padding) py-16 text-center sm:py-24 md:py-32">
+        {/* Visible in SSR HTML immediately — LCP must not wait on Framer Motion */}
+        <p className="text-accent font-mono text-sm md:text-base">
           {hero.greeting}
-        </motion.p>
+        </p>
 
-        <motion.h1
-          variants={itemVariants}
-          className="text-display mt-5 leading-[1.1] font-bold tracking-tight text-balance"
-        >
+        <h1 className="text-display mt-5 leading-[1.1] font-bold tracking-tight text-balance">
           {name}
           <span className="text-accent">.</span>
-        </motion.h1>
+        </h1>
 
-        <motion.h2
-          variants={itemVariants}
-          className="text-h1 text-muted-foreground mt-3 leading-tight font-semibold tracking-tight text-balance"
-        >
+        <h2 className="text-h1 text-muted-foreground mt-3 leading-tight font-semibold tracking-tight text-balance">
           {hero.headline}
-        </motion.h2>
+        </h2>
 
-        <motion.p
-          variants={itemVariants}
-          className="text-body-lg text-muted-foreground mx-auto mt-6 max-w-2xl leading-relaxed"
-        >
+        <p className="text-body-lg text-muted-foreground mx-auto mt-6 max-w-2xl leading-relaxed">
           {hero.value_proposition}
-        </motion.p>
+        </p>
 
-        <motion.div variants={itemVariants}>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={embellishmentVariants}
+          transition={{ delay: 0.15 }}
+        >
           <HeroTechCarousel />
         </motion.div>
 
         <motion.div
-          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          variants={embellishmentVariants}
+          transition={{ delay: 0.25 }}
           className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
           <a
@@ -120,7 +106,13 @@ export function HeroSection({ hero, name, companies }: HeroSectionProps) {
           </a>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="mt-16">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={embellishmentVariants}
+          transition={{ delay: 0.35 }}
+          className="mt-16"
+        >
           <div
             className={cn(
               "border-border/80 mx-auto max-w-4xl rounded-2xl border",
@@ -164,7 +156,7 @@ export function HeroSection({ hero, name, companies }: HeroSectionProps) {
             <ArrowDown className="text-muted-foreground/40 h-5 w-5" />
           </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 }

@@ -10,8 +10,7 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 import { SmoothScroll } from "@portfolio/ui/smooth-scroll";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { ChatBubble } from "@/components/chat/chat-bubble";
-import { CommandPalette } from "@/components/layout/command-palette";
+import { DeferredWidgets } from "@/components/layout/deferred-widgets";
 import { SiteConfigProvider } from "@/components/layout/site-config-provider";
 import { MAIN_NAV_LINKS } from "@portfolio/shared/constants";
 import { fetchSiteConfig } from "@/lib/data";
@@ -186,8 +185,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </main>
               <Footer name={config.name} socialLinks={socialLinks} />
               <SiteConfigProvider email={config.email} socialLinks={socialLinks}>
-                <ChatBubble />
-                <CommandPalette />
+                <DeferredWidgets />
               </SiteConfigProvider>
             </SmoothScroll>
           </PostHogAnalyticsProvider>
