@@ -10,7 +10,7 @@ export async function captureServerEvent(
 ): Promise<void> {
   const client = getPostHogServer();
   if (!client) return;
-  const env = process.env.POSTHOG_ENVIRONMENT ?? process.env.VERCEL_ENV;
+  const env = process.env.POSTHOG_ENVIRONMENT;
   try {
     await client.captureImmediate({
       distinctId: distinctId ?? "anonymous",

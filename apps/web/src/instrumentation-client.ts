@@ -15,7 +15,7 @@ if (token) {
       if (process.env.NODE_ENV === "development") {
         ph.debug();
       }
-      const env = process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT ?? process.env.VERCEL_ENV;
+      const env = process.env.NEXT_PUBLIC_POSTHOG_ENVIRONMENT;
       if (env) {
         ph.register({ environment: env });
       }

@@ -133,6 +133,14 @@ jobs:
         env:
           APP_ORIGIN: ${{ vars.APP_ORIGIN }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_POSTHOG_UI_HOST: ${{ vars.NEXT_PUBLIC_POSTHOG_UI_HOST }}
+          NEXT_PUBLIC_POSTHOG_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
+          POSTHOG_APP_HOST: ${{ vars.POSTHOG_APP_HOST }}
+          POSTHOG_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
         run: pnpm build:open-next
 
       - name: CDK deploy
@@ -146,6 +154,9 @@ jobs:
           -c alertEmail=${{ vars.ALERT_EMAIL }}
           -c contactEmail=${{ vars.CONTACT_EMAIL }}
           -c contactFromEmail=${{ vars.CONTACT_FROM_EMAIL }}
+          -c posthogProjectToken=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+          -c posthogHost=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+          -c posthogEnvironment=${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
           -c githubRepo=${{ github.repository }}
 
       - name: Smoke test image optimizer

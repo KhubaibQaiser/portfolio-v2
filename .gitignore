@@ -38,9 +38,6 @@ yarn-error.log*
 *.pem
 Thumbs.db
 
-# vercel
-.vercel
-
 # storybook
 storybook-static/
 

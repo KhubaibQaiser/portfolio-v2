@@ -314,7 +314,9 @@ Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cr
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint → typecheck → test → integration → build → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys).
 
-Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`).
+Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`), plus PostHog (below).
+
+**PostHog (deploy):** bake client analytics and source maps into the OpenNext build; inject token/host on the web Lambda for server events. Set these GitHub **variables**: `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_POSTHOG_UI_HOST`, `NEXT_PUBLIC_POSTHOG_ENVIRONMENT`, `POSTHOG_PROJECT_ID`, `POSTHOG_APP_HOST`. Set GitHub **secret** `POSTHOG_API_KEY` (personal API key) for source-map upload at build time. CDK receives `-c posthogProjectToken` / `posthogHost` / `posthogEnvironment` for Lambda runtime.
 
 ---
 
@@ -334,7 +336,11 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | `CONTACT_TO_EMAIL` / `CONTACT_FROM_EMAIL`                  | Contact form recipient and Resend from address |
 | `DATA_BACKEND`                                             | `fixture` or `dynamo`                          |
 | `DYNAMO_TABLE_PREFIX`                                      | Table prefix (default `portfolio`)             |
-| PostHog vars                                               | Analytics and source-map upload                |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`                        | Client + server PostHog project key (`phc_…`)  |
+| `NEXT_PUBLIC_POSTHOG_HOST`                                 | Ingestion host (required for server capture)   |
+| `NEXT_PUBLIC_POSTHOG_UI_HOST`                              | PostHog app URL (toolbar / UI links)           |
+| `NEXT_PUBLIC_POSTHOG_ENVIRONMENT` / `POSTHOG_ENVIRONMENT`  | Environment super-property                     |
+| `POSTHOG_API_KEY` / `POSTHOG_PROJECT_ID`                   | Build-time source map upload (personal key)    |
 
 ### Admin
 
@@ -353,7 +359,7 @@ In production, CDK injects these on the Lambda environment; the IAM role supplie
 ## Observability & security
 
 - **CloudWatch:** `AppErrors` alarm from structured ERROR logs; dashboard and AWS Budget in `Portfolio-Shared`.
-- **PostHog:** product events, pageviews, exception capture with source maps.
+- **PostHog:** product events, pageviews, exception capture with source maps. Client token is baked at OpenNext build; server capture uses Lambda env (`NEXT_PUBLIC_POSTHOG_*` + `POSTHOG_ENVIRONMENT`).
 - **Auth:** Better Auth session verification + allowlist on every mutation.
 - **Resume AI:** prompt-injection stripping, Zod validation, rate limits, daily cost cap.
 
