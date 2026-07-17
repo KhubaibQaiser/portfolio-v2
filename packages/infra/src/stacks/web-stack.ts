@@ -88,6 +88,15 @@ export class WebStack extends cdk.Stack {
         ...(config.contactFromEmail
           ? { CONTACT_FROM_EMAIL: config.contactFromEmail }
           : {}),
+        ...(config.posthogProjectToken
+          ? {
+              NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: config.posthogProjectToken,
+              NEXT_PUBLIC_POSTHOG_HOST: config.posthogHost ?? "https://us.i.posthog.com",
+              ...(config.posthogEnvironment
+                ? { POSTHOG_ENVIRONMENT: config.posthogEnvironment }
+                : {}),
+            }
+          : {}),
       },
       grantServer: (fn) => {
         grantAppDataAccess(this, fn, config, mediaBucketName);

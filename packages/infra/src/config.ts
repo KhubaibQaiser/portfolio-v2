@@ -53,6 +53,21 @@ export type InfraConfig = {
    * Pass via `-c contactFromEmail=Name <you@mail.example.com>`.
    */
   contactFromEmail?: string;
+  /**
+   * PostHog project API key for server-side capture on the web Lambda.
+   * Pass via `-c posthogProjectToken=phc_…` (same value as NEXT_PUBLIC_* at build).
+   */
+  posthogProjectToken?: string;
+  /**
+   * PostHog ingestion host for posthog-node (e.g. https://us.i.posthog.com).
+   * Pass via `-c posthogHost=…`.
+   */
+  posthogHost?: string;
+  /**
+   * Environment super-property for server events (e.g. production).
+   * Pass via `-c posthogEnvironment=production`.
+   */
+  posthogEnvironment?: string;
   /** Monthly cost budget (USD) that triggers SNS alerts at 80%/100%. */
   monthlyBudgetUsd: number;
   /**
@@ -124,6 +139,9 @@ export function resolveConfig(app: App): InfraConfig {
     alertEmail: ctx("alertEmail"),
     contactEmail: ctx("contactEmail"),
     contactFromEmail: ctx("contactFromEmail"),
+    posthogProjectToken: ctx("posthogProjectToken"),
+    posthogHost: ctx("posthogHost"),
+    posthogEnvironment: ctx("posthogEnvironment"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),
