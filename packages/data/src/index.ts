@@ -1,8 +1,15 @@
-import type { ContentRepository, CostCap, RateLimiter } from "@portfolio/shared/ports";
+import type {
+  ChatResponseCache,
+  ContentRepository,
+  CostCap,
+  RateLimiter,
+} from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+import { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
+import { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { buildTableNames } from "./dynamo/tables";
@@ -11,6 +18,8 @@ export { createFixtureContentRepository } from "./adapters/fixture-content-repos
 export { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 export { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 export { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+export { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
+export { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
 export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
 export {
@@ -63,6 +72,25 @@ export function getRateLimiter(): RateLimiter {
   return resolveDataBackend() === "dynamo"
     ? createDynamoRateLimiter(createDynamoClient(), buildTableNames().rateLimit)
     : createNoopRateLimiter();
+}
+
+let cachedChatResponseCache: ChatResponseCache | undefined;
+
+/**
+ * Returns the chat response cache: DynamoDB + TTL in production, in-memory Map
+ * for fixture/local so exact-match caching still works in dev.
+ */
+export function getChatResponseCache(): ChatResponseCache {
+  if (!cachedChatResponseCache) {
+    cachedChatResponseCache =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoChatResponseCache(
+            createDynamoClient(),
+            buildTableNames().chatCache,
+          )
+        : createMemoryChatResponseCache();
+  }
+  return cachedChatResponseCache;
 }
 
 /** Returns the cost cap bound to the active content repository. */
