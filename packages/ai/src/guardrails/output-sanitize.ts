@@ -23,7 +23,7 @@ export function sanitizeLlmOutput(input: string): string {
 /**
  * Parse a JSON object from model text that may include ```json fences or
  * leading/trailing prose. Used when the provider does not support
- * `json_schema` / structured outputs (e.g. Groq llama-3.1-8b-instant).
+ * `json_schema` / structured outputs (e.g. Groq openai/gpt-oss-20b).
  */
 export function parseJsonObjectFromLlm(text: string): unknown {
   const trimmed = text.trim();

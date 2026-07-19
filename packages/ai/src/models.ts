@@ -4,13 +4,13 @@ import { anthropic, groq } from "./providers";
 
 /**
  * Canonical model ids. Centralized so upgrades happen in one place.
+ * Groq IDs follow console.groq.com/docs/models (Llama 4 Scout + 3.1 8B retired).
  */
 export const MODEL_IDS = {
   anthropicSonnet: "claude-sonnet-4-5",
   anthropicHaiku: "claude-haiku-4-5",
-  groqLlama4Scout: "meta-llama/llama-4-scout-17b-16e-instruct",
   groqGptOss120b: "openai/gpt-oss-120b",
-  groqLlama8bInstant: "llama-3.1-8b-instant",
+  groqGptOss20b: "openai/gpt-oss-20b",
 } as const;
 
 export type ModelId = (typeof MODEL_IDS)[keyof typeof MODEL_IDS];
@@ -27,9 +27,9 @@ export type ResolvedModel = {
  * Resolve a model for a given use case.
  *
  * - `quality`: best writing/reasoning; Claude Sonnet 4.5 when available,
- *   otherwise falls back to Groq `openai/gpt-oss-120b`.
- * - `fast`:    low-latency draft; Groq Llama 4 Scout.
- * - `cheap`:   tiny/cheap pass (ATS scoring, AI-tone retry); Groq 8B instant.
+ *   otherwise Groq `openai/gpt-oss-120b`.
+ * - `fast`:    portfolio chat / low-latency; Groq `openai/gpt-oss-120b`.
+ * - `cheap`:   tiny/cheap pass (ATS scoring, AI-tone retry); Groq `openai/gpt-oss-20b`.
  */
 export function modelFor(mode: ModelMode): ResolvedModel {
   if (mode === "quality") {
@@ -49,15 +49,15 @@ export function modelFor(mode: ModelMode): ResolvedModel {
 
   if (mode === "fast") {
     return {
-      model: groq(MODEL_IDS.groqLlama4Scout),
-      modelId: MODEL_IDS.groqLlama4Scout,
+      model: groq(MODEL_IDS.groqGptOss120b),
+      modelId: MODEL_IDS.groqGptOss120b,
       provider: "groq",
     };
   }
 
   return {
-    model: groq(MODEL_IDS.groqLlama8bInstant),
-    modelId: MODEL_IDS.groqLlama8bInstant,
+    model: groq(MODEL_IDS.groqGptOss20b),
+    modelId: MODEL_IDS.groqGptOss20b,
     provider: "groq",
   };
 }
@@ -80,8 +80,8 @@ export function fallbackChainFor(mode: ModelMode): ResolvedModel[] {
       });
     }
     chain.push({
-      model: groq(MODEL_IDS.groqLlama4Scout),
-      modelId: MODEL_IDS.groqLlama4Scout,
+      model: groq(MODEL_IDS.groqGptOss20b),
+      modelId: MODEL_IDS.groqGptOss20b,
       provider: "groq",
     });
     return chain;
@@ -90,8 +90,8 @@ export function fallbackChainFor(mode: ModelMode): ResolvedModel[] {
   if (mode === "fast") {
     return [
       {
-        model: groq(MODEL_IDS.groqGptOss120b),
-        modelId: MODEL_IDS.groqGptOss120b,
+        model: groq(MODEL_IDS.groqGptOss20b),
+        modelId: MODEL_IDS.groqGptOss20b,
         provider: "groq",
       },
     ];

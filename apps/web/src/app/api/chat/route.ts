@@ -210,7 +210,7 @@ export async function POST(req: Request) {
     });
 
     const primary = modelFor("fast");
-    const fallback = groq(MODEL_IDS.groqLlama8bInstant);
+    const fallback = groq(MODEL_IDS.groqGptOss20b);
 
     try {
       return createStream(
@@ -224,12 +224,12 @@ export async function POST(req: Request) {
       if (isProviderRateLimitError(primaryError)) {
         logger.warn("chat primary model rate limited, using fallback", {
           primaryModelId: primary.modelId,
-          fallbackModelId: MODEL_IDS.groqLlama8bInstant,
+          fallbackModelId: MODEL_IDS.groqGptOss20b,
         });
         return createStream(
           systemPrompt,
           fallback,
-          MODEL_IDS.groqLlama8bInstant,
+          MODEL_IDS.groqGptOss20b,
           modelMessages,
           messages,
         );
