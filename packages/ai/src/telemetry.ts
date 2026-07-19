@@ -17,16 +17,15 @@ export type UsageRecord = {
 };
 
 /**
- * Pricing in USD per 1M tokens, sourced from public model cards.
+ * Pricing in USD per 1M tokens, sourced from public Groq/Anthropic model cards.
  * Kept conservative (upper bound) so the daily-cap circuit breaker
  * never silently undercounts.
  */
 const PRICING: Record<string, { input: number; output: number }> = {
   [MODEL_IDS.anthropicSonnet]: { input: 3.0, output: 15.0 },
   [MODEL_IDS.anthropicHaiku]: { input: 1.0, output: 5.0 },
-  [MODEL_IDS.groqLlama4Scout]: { input: 0.11, output: 0.34 },
-  [MODEL_IDS.groqGptOss120b]: { input: 0.15, output: 0.75 },
-  [MODEL_IDS.groqLlama8bInstant]: { input: 0.05, output: 0.08 },
+  [MODEL_IDS.groqGptOss120b]: { input: 0.15, output: 0.6 },
+  [MODEL_IDS.groqGptOss20b]: { input: 0.075, output: 0.3 },
 };
 
 export function estimateCostUsd(usage: LlmUsage, modelId: ModelId | string): number {
