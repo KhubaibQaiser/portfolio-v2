@@ -2,15 +2,39 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { DeferredWidgetsErrorBoundary } from "@/components/layout/deferred-widgets-error-boundary";
+
+async function importWithRetry<T>(
+  loader: () => Promise<T>,
+  retries = 3,
+): Promise<T> {
+  let last: unknown;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await loader();
+    } catch (error) {
+      last = error;
+      if (attempt < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      }
+    }
+  }
+  throw last;
+}
 
 const ChatBubble = dynamic(
-  () => import("@/components/chat/chat-bubble").then((m) => m.ChatBubble),
+  () =>
+    importWithRetry(() =>
+      import("@/components/chat/chat-bubble").then((m) => m.ChatBubble),
+    ),
   { ssr: false },
 );
 
 const CommandPalette = dynamic(
   () =>
-    import("@/components/layout/command-palette").then((m) => m.CommandPalette),
+    importWithRetry(() =>
+      import("@/components/layout/command-palette").then((m) => m.CommandPalette),
+    ),
   { ssr: false },
 );
 
@@ -41,8 +65,12 @@ export function DeferredWidgets() {
 
   return (
     <>
-      <ChatBubble />
-      <CommandPalette />
+      <DeferredWidgetsErrorBoundary>
+        <ChatBubble />
+      </DeferredWidgetsErrorBoundary>
+      <DeferredWidgetsErrorBoundary>
+        <CommandPalette />
+      </DeferredWidgetsErrorBoundary>
     </>
   );
 }
