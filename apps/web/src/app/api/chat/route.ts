@@ -1,5 +1,11 @@
 import type { LanguageModel } from "ai";
-import { convertToModelMessages, smoothStream, streamText } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  smoothStream,
+  streamText,
+} from "ai";
 import type { UIMessage } from "ai";
 import { unstable_cache as cache } from "next/cache";
 import {
@@ -14,9 +20,18 @@ import { PortfolioEvents } from "@/lib/analytics/events";
 import { getDistinctIdFromRequest } from "@/lib/analytics/request";
 import type { ChatApiErrorBody } from "@/lib/chat-api-error";
 import { checkChatRateLimit } from "@/lib/chat-rate-limit";
+import {
+  buildChatResponseCacheKey,
+  chatResponseCacheTtlSec,
+  extractUserText,
+  isChatResponseCacheEnabled,
+  isFirstTurnChat,
+  normalizeChatPrompt,
+  shouldStoreChatResponse,
+} from "@/lib/chat-response-cache";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
-import { getContentRepository } from "@portfolio/data";
+import { getChatResponseCache, getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { groq } from "@ai-sdk/groq";
 
@@ -114,12 +129,29 @@ Guidelines:
   { revalidate: 10 },
 );
 
+function cachedAssistantResponse(
+  cachedText: string,
+  originalMessages: UIMessage[],
+): Response {
+  const stream = createUIMessageStream({
+    originalMessages,
+    execute: ({ writer }) => {
+      const id = "cached-text";
+      writer.write({ type: "text-start", id });
+      writer.write({ type: "text-delta", id, delta: cachedText });
+      writer.write({ type: "text-end", id });
+    },
+  });
+  return createUIMessageStreamResponse({ stream });
+}
+
 function createStream(
   systemPrompt: string,
   model: LanguageModel,
   modelId: string,
   messages: Awaited<ReturnType<typeof convertToModelMessages>>,
   originalMessages: UIMessage[],
+  cacheWrite?: { key: string },
 ) {
   const result = streamText({
     model,
@@ -132,6 +164,25 @@ function createStream(
         modelId,
         error: toError(error),
       });
+    },
+    onFinish: async ({ text, finishReason }) => {
+      if (!cacheWrite) return;
+      if (finishReason !== "stop" && finishReason !== "length") return;
+      if (!shouldStoreChatResponse(text)) return;
+
+      try {
+        await getChatResponseCache().set(
+          cacheWrite.key,
+          text,
+          chatResponseCacheTtlSec(),
+        );
+      } catch (error) {
+        // Fail-open: a cache write miss must never break the user response.
+        logger.warn("chat response cache write failed", {
+          error: toError(error),
+          modelId,
+        });
+      }
     },
   });
   return result.toUIMessageStreamResponse({ originalMessages });
@@ -183,6 +234,46 @@ export async function POST(req: Request) {
       );
     }
 
+    const systemPrompt = await buildSystemPrompt();
+    const sanitizedMessages = sanitizeUserMessages(messages);
+    const primary = modelFor("fast");
+
+    let cacheKey: string | undefined;
+    const cacheable =
+      isChatResponseCacheEnabled() && isFirstTurnChat(sanitizedMessages);
+
+    if (cacheable) {
+      const lastUser = [...sanitizedMessages]
+        .reverse()
+        .find((m) => m.role === "user");
+      const promptText = lastUser ? extractUserText(lastUser) : "";
+      const normalized = normalizeChatPrompt(promptText);
+
+      if (normalized.length > 0) {
+        cacheKey = buildChatResponseCacheKey({
+          normalizedPrompt: normalized,
+          modelId: primary.modelId,
+          systemPrompt,
+        });
+
+        try {
+          const hit = await getChatResponseCache().get(cacheKey);
+          if (hit) {
+            await captureServerEvent(distinctId, PortfolioEvents.chatApiRequest, {
+              message_count: messages.length,
+              cache_hit: true,
+              model_id: primary.modelId,
+            });
+            return cachedAssistantResponse(hit.text, messages);
+          }
+        } catch (error) {
+          logger.warn("chat response cache read failed", {
+            error: toError(error),
+          });
+        }
+      }
+    }
+
     try {
       await ensureGroqApiKey();
     } catch (error) {
@@ -201,16 +292,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemPrompt = await buildSystemPrompt();
-    const sanitizedMessages = sanitizeUserMessages(messages);
     const modelMessages = await convertToModelMessages(sanitizedMessages);
 
     await captureServerEvent(distinctId, PortfolioEvents.chatApiRequest, {
       message_count: messages.length,
+      cache_hit: false,
+      model_id: primary.modelId,
     });
 
-    const primary = modelFor("fast");
     const fallback = groq(MODEL_IDS.groqGptOss20b);
+    const cacheWrite = cacheKey ? { key: cacheKey } : undefined;
 
     try {
       return createStream(
@@ -219,6 +310,7 @@ export async function POST(req: Request) {
         primary.modelId,
         modelMessages,
         messages,
+        cacheWrite,
       );
     } catch (primaryError) {
       if (isProviderRateLimitError(primaryError)) {
@@ -232,6 +324,8 @@ export async function POST(req: Request) {
           MODEL_IDS.groqGptOss20b,
           modelMessages,
           messages,
+          // Key is primary-model scoped; do not write under a different model.
+          undefined,
         );
       }
       throw primaryError;
