@@ -116,6 +116,15 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // Ephemeral chat response cache: exact-match FAQ replies, TTL sweep.
+    new dynamodb.Table(this, "ChatCacheTable", {
+      tableName: `${prefix}-${TABLE_SUFFIXES.chatCache}`,
+      partitionKey: { name: "pk", type: STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: "ttl",
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // Auto-named (no fixed bucketName) so it can be replaced/migrated cleanly;
     // S3 names are global + immutable, so a deterministic name is the worst case
     // for migration. Consumers discover the name from the SSM registry below.

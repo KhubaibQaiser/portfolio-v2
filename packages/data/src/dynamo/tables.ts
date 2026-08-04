@@ -19,6 +19,8 @@ export const TABLE_SUFFIXES = {
   resumeGeneration: "resume-generation",
   /** Rate-limiter counters, keyed by `pk`/`sk` with a `ttl` sweep. */
   rateLimit: "rate-limit",
+  /** Chat response cache entries, keyed by `pk` with a `ttl` sweep. */
+  chatCache: "chat-cache",
 } as const;
 
 export type TableKey = keyof typeof TABLE_SUFFIXES;
@@ -125,5 +127,6 @@ export function buildCreateTableInputs(
         { AttributeName: "sk", KeyType: "RANGE" },
       ],
     },
+    simpleTable(names.chatCache, "pk"),
   ];
 }
