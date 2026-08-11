@@ -54,11 +54,21 @@ export const experienceFixtures: Experience[] = raw.experience.map((row) => ({
   updated_at: TS,
 })) as Experience[];
 
-export const projectFixtures: Project[] = raw.projects.map((row) => ({
-  ...row,
-  created_at: TS,
-  updated_at: TS,
-})) as Project[];
+export const projectFixtures: Project[] = raw.projects.map((row) => {
+  const r = row as {
+    show_in_resume?: boolean;
+    resume_status?: string | null;
+    resume_description?: string;
+  };
+  return {
+    ...row,
+    show_in_resume: r.show_in_resume ?? false,
+    resume_status: r.resume_status ?? null,
+    resume_description: r.resume_description ?? "",
+    created_at: TS,
+    updated_at: TS,
+  };
+}) as Project[];
 
 export const skillFixtures: Skill[] = raw.skills.map((row) => ({
   ...row,

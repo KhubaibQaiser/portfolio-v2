@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { filterExperienceForResume } from "./schemas/experience";
+import { filterProjectsForResume } from "./schemas/project";
 import {
   applyTailoredResume,
   formatExpLocation,
@@ -23,7 +24,7 @@ const base: ResumeData = {
     {
       company: "Alpha Co",
       role: "Senior Engineer",
-      period: "2024 – Present",
+      period: "2024 - Present",
       location: "SF · Remote",
       contractType: "Full-time",
       bullets: ["Built things."],
@@ -32,7 +33,7 @@ const base: ResumeData = {
     {
       company: "Beta Co",
       role: "Engineer",
-      period: "2022 – 2024",
+      period: "2022 - 2024",
       location: "NYC · Remote",
       contractType: "Full-time",
       bullets: ["Shipped features."],
@@ -41,17 +42,78 @@ const base: ResumeData = {
     {
       company: "Gamma Co",
       role: "Junior Engineer",
-      period: "2018 – 2022",
+      period: "2018 - 2022",
       location: "Austin · Remote",
       contractType: "Full-time",
       bullets: ["Learned a lot."],
       tech: "JavaScript",
     },
   ],
+  projects: [],
   education: [{ degree: "BS CS", institution: "State U", year: "2018" }],
   certifications: [],
   skills: [{ category: "Frontend", items: ["React", "TypeScript"] }],
 };
+
+function emptyProjectsRepo(
+  overrides: Partial<ResumeContentSource> = {},
+): ResumeContentSource {
+  return {
+    getSiteConfig: async () => ({
+      id: "site-config",
+      name: "Test User",
+      title: "Engineer",
+      email: "test@example.com",
+      location: "Remote",
+      description: "Test bio.",
+      social_links: [],
+      tech_stack: [],
+      created_at: "",
+      updated_at: "",
+    }),
+    getResume: async () => ({
+      id: "resume",
+      default_summary: "Summary.",
+      education: [
+        {
+          degree: "BS",
+          institution: "State U",
+          year: "2020",
+          url: null,
+        },
+      ],
+      certifications: [],
+      visible_sections: ["experience", "projects"],
+      is_projects_visible: true,
+      voice_sample: null,
+      created_at: "",
+      updated_at: "",
+    }),
+    getExperience: async () => [
+      {
+        id: "1",
+        company: "Visible Co",
+        role: "Engineer",
+        location: "Remote",
+        location_type: "remote",
+        contract_type: "full_time",
+        start_date: "Jan 2024",
+        end_date: null,
+        description: "Did work.",
+        tech_tags: ["React"],
+        logo_url: null,
+        company_url: null,
+        sort_order: 0,
+        show_in_resume: true,
+        created_at: "",
+        updated_at: "",
+      },
+    ],
+    getSkills: async () => [],
+    getProjects: async () => [],
+    ...overrides,
+  };
+}
 
 describe("filterExperienceForResume", () => {
   it("includes rows with show_in_resume true or undefined", () => {
@@ -64,39 +126,20 @@ describe("filterExperienceForResume", () => {
   });
 });
 
+describe("filterProjectsForResume", () => {
+  it("includes only rows with show_in_resume true", () => {
+    const rows = [
+      { title: "A", show_in_resume: true },
+      { title: "B" },
+      { title: "C", show_in_resume: false },
+    ];
+    expect(filterProjectsForResume(rows).map((r) => r.title)).toEqual(["A"]);
+  });
+});
+
 describe("getResumeData", () => {
   it("excludes experiences with show_in_resume false", async () => {
-    const repo: ResumeContentSource = {
-      getSiteConfig: async () => ({
-        id: "site-config",
-        name: "Test User",
-        title: "Engineer",
-        email: "test@example.com",
-        location: "Remote",
-        description: "Test bio.",
-        social_links: [],
-        tech_stack: [],
-        created_at: "",
-        updated_at: "",
-      }),
-      getResume: async () => ({
-        id: "resume",
-        default_summary: "Summary.",
-        education: [
-          {
-            degree: "BS",
-            institution: "State U",
-            year: "2020",
-            url: null,
-          },
-        ],
-        certifications: [],
-        visible_sections: ["experience"],
-        is_projects_visible: true,
-        voice_sample: null,
-        created_at: "",
-        updated_at: "",
-      }),
+    const repo = emptyProjectsRepo({
       getExperience: async () => [
         {
           id: "1",
@@ -135,12 +178,77 @@ describe("getResumeData", () => {
           updated_at: "",
         },
       ],
-      getSkills: async () => [],
-    };
+    });
 
     const data = await getResumeData(repo);
     expect(data.experience).toHaveLength(1);
     expect(data.experience[0]!.company).toBe("Visible Co");
+    expect(data.experience[0]!.period).toBe("Jan 2024 - Present");
+  });
+
+  it("maps resume projects and skips hidden ones", async () => {
+    const repo = emptyProjectsRepo({
+      getProjects: async () => [
+        {
+          id: "p1",
+          title: "GymOS",
+          slug: "gymos",
+          description: "Portfolio prose.",
+          summary: "Summary.",
+          cover_url: null,
+          tech_tags: ["React"],
+          role: "Founder",
+          type: "web",
+          github_url: null,
+          live_url: null,
+          playstore_url: null,
+          appstore_url: null,
+          is_featured: true,
+          sort_order: 0,
+          show_in_resume: true,
+          resume_status: "In Progress",
+          resume_description: "Multi-tenant coaching platform\nBuilt billing and roles",
+          created_at: "",
+          updated_at: "",
+        },
+        {
+          id: "p2",
+          title: "Hidden App",
+          slug: "hidden-app",
+          description: "Hidden.",
+          summary: "Hidden.",
+          cover_url: null,
+          tech_tags: ["Go"],
+          role: "Author",
+          type: "other",
+          github_url: null,
+          live_url: null,
+          playstore_url: null,
+          appstore_url: null,
+          is_featured: false,
+          sort_order: 1,
+          show_in_resume: false,
+          resume_status: null,
+          resume_description: "Should not appear",
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+
+    const data = await getResumeData(repo);
+    expect(data.projects).toEqual([
+      {
+        name: "GymOS",
+        status: "In Progress",
+        bullets: ["Multi-tenant coaching platform", "Built billing and roles"],
+      },
+    ]);
+  });
+
+  it("returns an empty projects array when none are opted in", async () => {
+    const data = await getResumeData(emptyProjectsRepo());
+    expect(data.projects).toEqual([]);
   });
 });
 

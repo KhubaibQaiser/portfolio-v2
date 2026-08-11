@@ -109,7 +109,7 @@
         "issuer": "HackerRank"
       }
     ],
-    "visible_sections": ["experience", "education", "skills"],
+    "visible_sections": ["experience", "projects", "education", "skills"],
     "is_projects_visible": true,
     "voice_sample": null
   },
@@ -300,7 +300,10 @@
       "playstore_url": null,
       "appstore_url": null,
       "is_featured": true,
-      "sort_order": 0
+      "sort_order": 0,
+      "show_in_resume": true,
+      "resume_status": null,
+      "resume_description": "Built serverless ad delivery on AWS CDK handling 50K+ daily impressions\nDesigned real-time analytics pipeline with Lambda, DynamoDB, SQS, and CloudFront\nShipped React admin for campaign configuration and reporting"
     },
     {
       "id": "362762ec-4647-4cd0-94d1-bb843a7ca30e",
@@ -317,7 +320,10 @@
       "playstore_url": null,
       "appstore_url": null,
       "is_featured": true,
-      "sort_order": 1
+      "sort_order": 1,
+      "show_in_resume": true,
+      "resume_status": null,
+      "resume_description": "Led private npm design system adopted by 40+ engineers across 8 product teams\nBuilt Storybook docs and visual regression testing for the component library"
     },
     {
       "id": "d9dfb6c9-255e-4c1f-85df-4bf2dc77307f",

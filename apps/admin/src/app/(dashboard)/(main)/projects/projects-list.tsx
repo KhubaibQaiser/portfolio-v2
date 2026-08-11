@@ -35,6 +35,9 @@ const EMPTY: ProjectFormData = {
   appstore_url: null,
   is_featured: false,
   sort_order: 0,
+  show_in_resume: false,
+  resume_status: null,
+  resume_description: "",
 };
 
 type ProjectEditForm = ProjectFormData & { id?: string };
@@ -128,9 +131,16 @@ function ProjectsListPanel({
                 />
                 <div className="flex-1">
                   <p className="font-medium">{project.title}</p>
-                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
-                    {project.type}
-                  </span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+                      {project.type}
+                    </span>
+                    {project.show_in_resume === false && (
+                      <span className="text-muted-foreground text-xs">
+                        Hidden from resume
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -184,7 +194,11 @@ function ProjectEditPanel({
   async function onSubmit(formValues: ProjectEditForm) {
     setSaving(true);
     const { id, ...rest } = formValues;
-    const result = await runServerAction(() => saveProject(id ?? null, rest), toast, {
+    const payload = {
+      ...rest,
+      resume_status: rest.resume_status?.trim() ? rest.resume_status.trim() : null,
+    };
+    const result = await runServerAction(() => saveProject(id ?? null, payload), toast, {
       onSuccess: () => window.location.reload(),
     });
     setSaving(false);
@@ -221,6 +235,30 @@ function ProjectEditPanel({
             rows={4}
             className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">
+            Resume status (optional)
+          </label>
+          <input
+            {...register("resume_status")}
+            placeholder="e.g. In Progress"
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">
+            Resume bullets (one per line)
+          </label>
+          <textarea
+            {...register("resume_description")}
+            rows={4}
+            placeholder={"Bullet for the PDF resume\nAnother bullet"}
+            className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+          />
+          <p className="text-muted-foreground mt-1 text-xs">
+            Used on the resume PDF only. Portfolio description above stays unchanged.
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Type</label>
@@ -273,6 +311,10 @@ function ProjectEditPanel({
             className="border-border bg-muted/30 w-20 rounded border px-2 py-1 text-sm"
           />
         </div>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" {...register("show_in_resume")} />
+          Show in Resume
+        </label>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
     </Form>

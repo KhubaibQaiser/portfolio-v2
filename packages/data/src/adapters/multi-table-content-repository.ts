@@ -129,6 +129,9 @@ function toProject(item: Item): Project {
     live_url: p.live_url ?? null,
     playstore_url: p.playstore_url ?? null,
     appstore_url: p.appstore_url ?? null,
+    show_in_resume: p.show_in_resume ?? false,
+    resume_status: p.resume_status ?? null,
+    resume_description: p.resume_description ?? "",
   };
 }
 
