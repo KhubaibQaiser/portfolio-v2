@@ -1,11 +1,12 @@
 import { SKILL_CATEGORIES, getSkillCategorySortWeight } from "./constants";
 import type { ContentRepository } from "./ports/content-repository";
 import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
+import { filterProjectsForResume } from "./schemas/project";
 
 /** The read slice of {@link ContentRepository} the resume loader needs. */
 export type ResumeContentSource = Pick<
   ContentRepository,
-  "getSiteConfig" | "getResume" | "getExperience" | "getSkills"
+  "getSiteConfig" | "getResume" | "getExperience" | "getSkills" | "getProjects"
 >;
 
 export type ResumeSocialLink = {
@@ -35,6 +36,12 @@ export type ResumeDataSkillGroup = {
   items: string[];
 };
 
+export type ResumeDataProject = {
+  name: string;
+  status?: string;
+  bullets: string[];
+};
+
 export type ResumeData = {
   name: string;
   title: string;
@@ -47,6 +54,7 @@ export type ResumeData = {
   keywords: string;
   visibleSections: string[];
   experience: ResumeDataExperience[];
+  projects: ResumeDataProject[];
   education: ResumeDataEducation[];
   certifications: { name: string; issuer: string }[];
   skills: ResumeDataSkillGroup[];
@@ -80,11 +88,12 @@ export async function getResumeData(
   repo: ResumeContentSource,
   opts: GetResumeDataOptions = {},
 ): Promise<ResumeData> {
-  const [siteConfig, resume, experience, skills] = await Promise.all([
+  const [siteConfig, resume, experience, skills, projects] = await Promise.all([
     repo.getSiteConfig(),
     repo.getResume(),
     repo.getExperience(),
     repo.getSkills(),
+    repo.getProjects(),
   ]);
 
   const socialLinks = (siteConfig.social_links as unknown as ResumeSocialLink[]) ?? [];
@@ -128,12 +137,24 @@ export async function getResumeData(
 
   const visibleSections = (resume.visible_sections as unknown as string[]) ?? [
     "experience",
+    "projects",
     "education",
     "certifications",
     "skills",
   ];
 
   const title = opts.titleOverride?.trim() || siteConfig.title;
+
+  const resumeProjects: ResumeDataProject[] = filterProjectsForResume(projects).map(
+    (project) => {
+      const status = project.resume_status?.trim();
+      return {
+        name: project.title,
+        ...(status ? { status } : {}),
+        bullets: project.resume_description.split("\n").filter(Boolean),
+      };
+    },
+  );
 
   return {
     name: siteConfig.name,
@@ -149,12 +170,13 @@ export async function getResumeData(
     experience: filterExperienceForResume(experience).map((exp) => ({
       company: exp.company,
       role: exp.role,
-      period: `${exp.start_date} – ${exp.end_date ?? "Present"}`,
+      period: `${exp.start_date} - ${exp.end_date ?? "Present"}`,
       location: formatExpLocation(exp.location, exp.location_type),
       contractType: getContractTypeLabel(exp.contract_type),
       bullets: exp.description.split("\n").filter(Boolean),
       tech: exp.tech_tags.join(", "),
     })),
+    projects: resumeProjects,
     education,
     certifications: certifications.map((c) => ({
       name: c.name,

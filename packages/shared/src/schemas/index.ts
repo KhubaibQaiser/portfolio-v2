@@ -25,6 +25,7 @@ export {
   projectSchema,
   projectRowSchema,
   projectTypeEnum,
+  filterProjectsForResume,
   type ProjectFormData,
   type Project,
   type ProjectType,

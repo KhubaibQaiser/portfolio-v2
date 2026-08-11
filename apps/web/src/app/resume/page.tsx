@@ -129,6 +129,41 @@ export default async function ResumePage() {
           </div>
         </section>
 
+        {resume.visibleSections.includes("projects") && resume.projects.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
+              Projects
+            </h2>
+            <div className="bg-border mt-3 h-px" />
+            <div className="mt-4 space-y-8">
+              {resume.projects.map((project) => (
+                <div key={project.name}>
+                  <h3 className="text-foreground font-semibold">
+                    {project.name}
+                    {project.status ? (
+                      <span className="text-foreground/78 dark:text-foreground/72 font-normal">
+                        {" "}
+                        ({project.status})
+                      </span>
+                    ) : null}
+                  </h3>
+                  <ul className="mt-2 space-y-1">
+                    {project.bullets.map((bullet, i) => (
+                      <li
+                        key={i}
+                        className="text-foreground/90 dark:text-foreground/85 flex gap-2 text-sm leading-relaxed"
+                      >
+                        <span className="bg-accent mt-2 h-1 w-1 shrink-0 rounded-full" />
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section className="mt-10">
           <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
             Education

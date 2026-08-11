@@ -23,7 +23,18 @@ export const projectSchema = z.object({
   appstore_url: z.string().url().nullable(),
   is_featured: z.boolean(),
   sort_order: z.number().int().min(0),
+  show_in_resume: z.boolean().default(false),
+  resume_status: z.string().max(80).nullable().default(null),
+  /** Newline-separated bullets for the resume PDF (portfolio description stays separate). */
+  resume_description: z.string().max(2000).default(""),
 });
+
+/** Resume pipelines only — portfolio and admin list show all rows. */
+export function filterProjectsForResume<T extends { show_in_resume?: boolean }>(
+  rows: T[],
+): T[] {
+  return rows.filter((p) => p.show_in_resume === true);
+}
 
 export type ProjectFormData = z.infer<typeof projectSchema>;
 

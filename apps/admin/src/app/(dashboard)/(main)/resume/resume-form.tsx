@@ -17,6 +17,7 @@ import type {
 
 const SECTION_OPTIONS = [
   { key: "experience", label: "Work experience" },
+  { key: "projects", label: "Projects" },
   { key: "education", label: "Education" },
   { key: "certifications", label: "Certifications" },
   { key: "skills", label: "Technical skills" },
@@ -308,15 +309,6 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
             ))}
           </div>
         </div>
-
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            {...register("is_projects_visible")}
-            className="border-border rounded"
-          />
-          Projects visible on site (portfolio flag)
-        </label>
 
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
