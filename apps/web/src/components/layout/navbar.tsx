@@ -91,69 +91,73 @@ export function Navbar({ name, navLinks }: NavbarProps) {
   const firstName = name.split(" ")[0];
 
   return (
-    <header
-      className={cn(
-        "glass-header fixed top-0 right-0 left-0 z-50 backdrop-blur-[10px] transition-shadow duration-500",
-        scrolled && "shadow-lg",
-      )}
-    >
-      <nav
-        className="max-w-container mx-auto flex h-16 items-center justify-between px-(--container-padding)"
-        role="navigation"
-        aria-label="Main navigation"
+    <>
+      <header
+        className={cn(
+          "glass-header fixed top-0 right-0 left-0 z-50 backdrop-blur-[10px] transition-shadow duration-500",
+          scrolled && "shadow-lg",
+        )}
       >
-        <Link
-          href="/"
-          className="text-foreground text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"
+        <nav
+          className="max-w-container mx-auto flex h-16 items-center justify-between px-(--container-padding)"
+          role="navigation"
+          aria-label="Main navigation"
         >
-          {firstName}
-          <span className="text-accent">.</span>
-        </Link>
+          <Link
+            href="/"
+            className="text-foreground text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"
+          >
+            {firstName}
+            <span className="text-accent">.</span>
+          </Link>
 
-        <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link, i) => (
+          <div className="hidden items-center gap-1 md:flex">
+            {navLinks.map((link, i) => (
+              <Link
+                key={link.href}
+                href={toHomeSectionHref(link.href)}
+                onClick={(e) => handleSectionNavClick(e, link.href, link.label)}
+                className={cn(
+                  "text-muted-foreground relative px-3 py-2 text-sm font-medium",
+                  "hover:text-foreground transition-colors duration-200",
+                )}
+              >
+                <span className="text-accent font-mono text-xs opacity-70">
+                  0{i + 1}.
+                </span>{" "}
+                {link.label}
+              </Link>
+            ))}
             <Link
-              key={link.href}
-              href={toHomeSectionHref(link.href)}
-              onClick={(e) => handleSectionNavClick(e, link.href, link.label)}
+              href="/resume"
+              onClick={() => trackNav("/resume", "Resume")}
               className={cn(
-                "text-muted-foreground relative px-3 py-2 text-sm font-medium",
-                "hover:text-foreground transition-colors duration-200",
+                "border-accent ml-2 rounded-full border px-4 py-1.5",
+                "text-accent text-sm font-medium transition-all duration-200",
+                "hover:bg-accent hover:text-accent-foreground",
+                "active:scale-95",
               )}
             >
-              <span className="text-accent font-mono text-xs opacity-70">0{i + 1}.</span>{" "}
-              {link.label}
+              Resume
             </Link>
-          ))}
-          <Link
-            href="/resume"
-            onClick={() => trackNav("/resume", "Resume")}
-            className={cn(
-              "border-accent ml-2 rounded-full border px-4 py-1.5",
-              "text-accent text-sm font-medium transition-all duration-200",
-              "hover:bg-accent hover:text-accent-foreground",
-              "active:scale-95",
-            )}
-          >
-            Resume
-          </Link>
-          <div className="ml-2">
-            <ThemeToggle />
+            <div className="ml-2">
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="bg-muted/50 text-foreground flex h-9 w-9 items-center justify-center rounded-full"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
-        </div>
-      </nav>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="bg-muted/50 text-foreground flex h-9 w-9 items-center justify-center rounded-full"
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
+        </nav>
+      </header>
 
       <AnimatePresence>
         {mobileOpen && (
@@ -162,7 +166,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="glass fixed inset-0 top-16 z-40 flex flex-col items-center justify-center gap-8 backdrop-blur-xl md:hidden"
+            className="glass fixed inset-x-0 top-16 bottom-0 z-40 flex flex-col items-center justify-start gap-8 overflow-y-auto overscroll-contain px-6 py-8 backdrop-blur-xl md:hidden"
           >
             {navLinks.map((link, i) => (
               <MotionLink
@@ -198,6 +202,6 @@ export function Navbar({ name, navLinks }: NavbarProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }
