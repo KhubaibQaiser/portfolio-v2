@@ -109,9 +109,23 @@
         "issuer": "HackerRank"
       }
     ],
-    "visible_sections": ["experience", "projects", "education", "skills"],
+    "visible_sections": [
+      "experience",
+      "projects",
+      "education",
+      "skills",
+      "languages",
+      "remote",
+      "references"
+    ],
     "is_projects_visible": true,
-    "voice_sample": null
+    "voice_sample": null,
+    "languages": [
+      { "name": "English", "level": "Fluent" },
+      { "name": "Urdu", "level": "Native" }
+    ],
+    "remote_work_line": "Remote-first since 2015. Overlapped US, EU, and APAC time zones across 7 companies.",
+    "references_line": "References available on request"
   },
   "experience": [
     {

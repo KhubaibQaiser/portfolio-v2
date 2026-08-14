@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Wand2,
+  LayoutTemplate,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/skills", label: "Skills", icon: Zap },
   { href: "/resume", label: "Resume", icon: FileText },
+  { href: "/resume-layouts", label: "Resume layouts", icon: LayoutTemplate },
   { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
   { href: "/recommendations", label: "Recommendations", icon: MessageSquare },
   { href: "/site-config", label: "Site Config", icon: Settings },

@@ -17,6 +17,7 @@ import {
   experienceFixtures,
   mediaFixtures,
   projectFixtures,
+  resumeLayoutFixtures,
   skillFixtures,
   testimonialFixtures,
 } from "../src/fixtures/content";
@@ -36,6 +37,7 @@ async function main(): Promise<void> {
   console.log(`  ${skillFixtures.length} skill rows`);
   console.log(`  ${testimonialFixtures.length} testimonial rows`);
   console.log(`  ${mediaFixtures.length} media rows`);
+  console.log(`  ${resumeLayoutFixtures.length} resume layout rows`);
   console.log("Seed complete.");
 }
 

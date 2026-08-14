@@ -84,6 +84,10 @@ export class DataStack extends cdk.Stack {
       name: "id",
       type: STRING,
     });
+    durableTable("ResumeLayoutTable", TABLE_SUFFIXES.resumeLayout, {
+      name: "id",
+      type: STRING,
+    });
     durableTable("MediaTable", TABLE_SUFFIXES.media, { name: "id", type: STRING });
 
     const resumeGenerationTable = durableTable(

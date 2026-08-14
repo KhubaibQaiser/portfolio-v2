@@ -45,13 +45,37 @@ export {
   certificationSchema,
   resumeVariantSchema,
   resumeVariantRowSchema,
+  languageProficiencyEnum,
+  resumeLanguageSchema,
   type ResumeFormData,
   type Resume,
   type ResumeVariant,
   type ResumeVariantFormData,
   type Education,
   type Certification,
+  type LanguageProficiency,
+  type ResumeLanguage,
 } from "./resume";
+export {
+  resumeLayoutSchema,
+  resumeLayoutRowSchema,
+  variantGuidelinesSchema,
+  resumeLayoutComponentKeyEnum,
+  CLASSIC_LAYOUT_ID,
+  MODERN_BLUE_LAYOUT_ID,
+  pickDefaultResumeLayout,
+  type ResumeLayoutFormData,
+  type ResumeLayout,
+  type VariantGuidelines,
+  type ResumeLayoutComponentKey,
+} from "./resume-layout";
+export {
+  classicGuidelines,
+  modernBlueGuidelines,
+  classicLayoutForm,
+  modernBlueLayoutForm,
+  cloneLayoutForm,
+} from "./resume-layout-defaults";
 export {
   resumeGenLanguageEnum,
   resumeGenToneEnum,

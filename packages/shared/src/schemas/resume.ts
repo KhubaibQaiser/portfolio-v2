@@ -17,6 +17,15 @@ export const certificationSchema = z.object({
 
 export type Certification = z.infer<typeof certificationSchema>;
 
+export const languageProficiencyEnum = z.enum(["Native", "Fluent", "Intermediate"]);
+export type LanguageProficiency = z.infer<typeof languageProficiencyEnum>;
+
+export const resumeLanguageSchema = z.object({
+  name: z.string().min(1).max(80),
+  level: languageProficiencyEnum,
+});
+export type ResumeLanguage = z.infer<typeof resumeLanguageSchema>;
+
 export const resumeSchema = z.object({
   default_summary: z.string().min(1).max(2000),
   education: z.array(educationSchema).min(1),
@@ -24,6 +33,9 @@ export const resumeSchema = z.object({
   visible_sections: z.array(z.string()),
   is_projects_visible: z.boolean(),
   voice_sample: z.string().max(3000).nullable().optional(),
+  languages: z.array(resumeLanguageSchema),
+  remote_work_line: z.string().max(300).nullable(),
+  references_line: z.string().max(200).nullable(),
 });
 
 export type ResumeFormData = z.infer<typeof resumeSchema>;

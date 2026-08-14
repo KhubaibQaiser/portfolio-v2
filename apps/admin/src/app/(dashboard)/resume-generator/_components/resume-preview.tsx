@@ -19,7 +19,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
     return (
       <EmptyState
         title="No resume generated yet"
-        hint="Paste a JD on the left and click Generate."
+        hint="Paste a JD, pick a layout, and click Tailor resume."
       />
     );
   }

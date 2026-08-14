@@ -14,6 +14,7 @@ import {
   mediaFixtures,
   projectFixtures,
   resumeFixture,
+  resumeLayoutFixtures,
   siteConfigFixture,
   skillFixtures,
   testimonialFixtures,
@@ -125,5 +126,10 @@ export async function seedDynamoFromFixtures(
   await clearTable(client, tables.media);
   for (const row of mediaFixtures) {
     await putSeedRow(client, tables.media, writable({ ...row }));
+  }
+
+  await clearTable(client, tables.resumeLayout);
+  for (const row of resumeLayoutFixtures) {
+    await putSeedRow(client, tables.resumeLayout, timestampedSeedRow(row));
   }
 }

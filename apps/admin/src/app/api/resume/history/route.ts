@@ -23,6 +23,7 @@ export async function GET() {
         hasResume: r.resume !== null,
         hasCoverLetter: r.cover_letter !== null,
         hasAts: r.ats !== null,
+        layoutId: r.layout_id,
       })),
     });
   } catch (err) {
