@@ -193,6 +193,7 @@ export function createModernBlueStyles(
       marginLeft: -spacing.bulletIndent,
       fontFamily: "DM Sans SemiBold",
       fontSize: bodySizes.body ?? px(9.5),
+      lineHeight: 1.5,
       color: blue,
     },
     bulletText: {
@@ -209,11 +210,14 @@ export function createModernBlueStyles(
     tag: {
       backgroundColor: rule,
       borderRadius: px(3),
-      paddingVertical: px(2) * scale.chip,
-      paddingHorizontal: px(5),
+      padding: px(4) * scale.chip,
       marginRight: px(3) * scale.chip,
       marginBottom: px(3) * scale.chip,
       fontSize: bodySizes.tags ?? px(8.5),
+      // react-pdf leaves extra leading below the baseline; 1.28 balances it
+      // against the cap gap so the glyphs sit optically centred in the pill.
+      lineHeight: 1.28,
+      textAlign: "center",
       color: ink,
     },
     highlightedTag: {

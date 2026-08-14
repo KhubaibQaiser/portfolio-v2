@@ -104,6 +104,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
                       bullets={project.bullets}
                       styles={bulletStyles}
                       boldFont="DM Sans SemiBold"
+                      marker="•"
                     />
                   </View>
                 ))}

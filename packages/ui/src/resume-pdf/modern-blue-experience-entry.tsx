@@ -28,7 +28,7 @@ export function ModernBlueExperienceEntry({ experience, styles }: Props) {
       <View style={styles.bulletList}>
         {experience.bullets.map((bullet, index) => (
           <View key={`${index}-${bullet}`} style={styles.bulletRow}>
-            <Text style={styles.bulletMarker}>-</Text>
+            <Text style={styles.bulletMarker}>•</Text>
             <RichPdfText
               value={bullet}
               style={styles.bulletText}

@@ -15,7 +15,7 @@ export const MAIN_NAV_LINKS: NavLink[] = [
 ];
 
 export const SKILL_CATEGORIES = {
-  frontend: "Frontend",
+  frontend: "Frontend & UI",
   mobile: "Mobile",
   backend: "Backend / API",
   cloud: "Cloud",
