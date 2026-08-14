@@ -78,14 +78,14 @@ const MODERN_BLUE_PROMPT = `You are a professional resume writer tailoring a res
 GUIDELINES:
 1. Only modify resume content using existing experience and skills from the provided resume data
 2. Never invent projects, skills, or experience not in the original resume
-3. Always write a new summary for this role (3-4 sentences max). Same person, same seniority, JD-aligned emphasis.
+3. Always write a new full-width summary for this role (maximum 450 characters). Same person, same seniority, JD-aligned emphasis.
 4. Reorder experience bullets to prioritize relevance to the target job
 5. Highlight (bold with **double asterisks**) technical keywords that match the job description
 6. For skills section: prioritize skills mentioned in the job description
-7. Keep summaries to 3-4 sentences
+7. Keep the summary within 450 characters and each bullet within 280 characters
 8. Preserve accuracy - every claim must come from the original resume
 9. Tone: Professional, achievement-focused, confident
-10. This layout is a one-page A4 two-column resume. Prefer 3-6 roles, max 5 bullets per role, tight wording.
+10. This layout is a strict one-page A4 two-column resume. Return 3-5 roles, max 4 bullets per role, using concise wording.
 
 TARGET JOB DESCRIPTION:
 {jobDescription}
@@ -169,40 +169,70 @@ export function modernBlueGuidelines(): VariantGuidelines {
       },
       typography: {
         headingFont: "DM Serif Display",
-        bodyFont: "Helvetica",
-        headingSizes: { name: 28, title: 7.5, section: 6.5, job: 8.5 },
-        bodySizes: { contact: 9, meta: 7.5, body: 8, tags: 7.5 },
+        bodyFont: "DM Sans",
+        headingSizes: { name: 21, title: 7.5, section: 6, job: 7.875 },
+        bodySizes: { contact: 6.75, meta: 6.75, body: 7.125, tags: 6.375 },
       },
       spacing: {
-        pageMargins: "12mm top, 10mm bottom, 13mm left, 13mm right",
-        sectionGap: 12,
-        jobGap: 9,
-        bulletIndent: 11,
+        pageMargins: "10mm top, 8mm bottom, 11mm horizontal",
+        sectionGap: 9,
+        jobGap: 6.75,
+        bulletIndent: 8.25,
       },
       layout: {
         pageSize: "A4",
         columnLayout: "twoColumn",
-        leftColumnWidth: 385,
-        rightColumnWidth: 130,
+        leftColumnWidth: 377,
+        rightColumnWidth: 144,
         maxBulletsPerJob: 5,
         includeTagHighlighting: true,
       },
     },
-    contentEmphasis: SHARED_EMPHASIS,
+    contentEmphasis: {
+      ...SHARED_EMPHASIS,
+      summaryStrategy: {
+        ...SHARED_EMPHASIS.summaryStrategy,
+        maxSummaryLines: 5,
+      },
+    },
     aiTailoringPromptTemplate: MODERN_BLUE_PROMPT,
     aiTailoringRules: SHARED_AI_RULES,
     validation: {
-      minExperienceItems: 1,
-      maxExperienceItems: 8,
+      minExperienceItems: 5,
+      maxExperienceItems: 7,
       maxBulletsPerRole: 5,
       requireEducation: true,
       requireSummary: true,
       maxPageCount: 1,
       allowOverflow: "reduce-spacing",
     },
-    sections: SHARED_SECTIONS,
+    sections: {
+      ...SHARED_SECTIONS,
+      references: false,
+      projects: false,
+      certifications: false,
+    },
     notes:
       "Modern Blue two-column A4. Visual hierarchy via color and type. Best for frontend, full-stack, and senior technical roles.",
+  };
+}
+
+export function normalizeResumeLayoutGuidelines(
+  componentKey: string,
+  version: number,
+  guidelines: VariantGuidelines,
+): VariantGuidelines {
+  if (componentKey !== "modern-blue" || version >= 2) return guidelines;
+  const defaults = modernBlueGuidelines();
+  return {
+    ...defaults,
+    formatting: {
+      ...defaults.formatting,
+      colorPalette: {
+        ...defaults.formatting.colorPalette,
+        ...guidelines.formatting.colorPalette,
+      },
+    },
   };
 }
 
@@ -210,7 +240,7 @@ export function classicLayoutForm(): ResumeLayoutFormData {
   return {
     name: "Classic",
     description: "Single-column LETTER resume with a slate header band.",
-    version: 1,
+    version: 2,
     component_key: "classic",
     preview_image_url: null,
     is_default: true,

@@ -169,7 +169,7 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
     `YOE: ${yoe} | Industries: ${industries}\n\n` +
     `Base summary: ${resume.default_summary.trim()}\n\n` +
     `# EXPERIENCE (rewrite-only; reference bullets by {experienceId, sourceBulletIndex})\n` +
-    `PDF target: 2 pages. Include max 5 roles. No per-job tech footer.\n` +
+    `PDF target: use the selected layout's page budget. Include max 5 roles. No per-job tech footer.\n` +
     `${expBlocks.join("\n\n")}\n\n` +
     `# SKILLS\n${skillBlock}\n\n` +
     `# EDUCATION\n${eduBlock}\n\n` +

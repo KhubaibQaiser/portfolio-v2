@@ -75,6 +75,7 @@ export {
   classicLayoutForm,
   modernBlueLayoutForm,
   cloneLayoutForm,
+  normalizeResumeLayoutGuidelines,
 } from "./resume-layout-defaults";
 export {
   resumeGenLanguageEnum,
