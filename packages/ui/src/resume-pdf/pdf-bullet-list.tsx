@@ -13,14 +13,15 @@ type Props = {
   bullets: string[];
   styles: BulletStyle;
   boldFont?: string;
+  marker?: string;
 };
 
-export function PdfBulletList({ bullets, styles, boldFont }: Props) {
+export function PdfBulletList({ bullets, styles, boldFont, marker = "-" }: Props) {
   return (
     <View style={styles.list}>
       {bullets.map((bullet, i) => (
         <View key={i} style={styles.row}>
-          <Text style={styles.dot}>-</Text>
+          <Text style={styles.dot}>{marker}</Text>
           <RichPdfText value={bullet} style={styles.text} boldFont={boldFont} />
         </View>
       ))}

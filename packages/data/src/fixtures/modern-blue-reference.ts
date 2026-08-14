@@ -115,7 +115,7 @@ export const modernBlueReferenceResume: ResumeData = {
   certifications: [],
   skills: [
     {
-      category: "Design and Frontend",
+      category: "Frontend & UI",
       items: [
         "React",
         "TypeScript",
