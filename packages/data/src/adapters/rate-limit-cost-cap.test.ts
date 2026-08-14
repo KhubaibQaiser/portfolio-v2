@@ -27,6 +27,8 @@ function generation(createdBy: string, costUsd: number): ResumeGenerationInsert 
     usage: { costUsd },
     resume_pdf_url: null,
     cover_letter_pdf_url: null,
+    layout_id: null,
+    applied_changes: [],
     archived_at: null,
     deleted_at: null,
   };

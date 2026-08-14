@@ -2,6 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ContentRepository } from "@portfolio/shared/ports";
+import type { ResumeGenerationInsert } from "@portfolio/shared/types";
 import { createMultiTableContentRepository } from "./multi-table-content-repository";
 import { ensureTables } from "../dynamo/create-table";
 import { buildTableNames } from "../dynamo/tables";
@@ -97,6 +98,8 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
       usage: { costUsd: 0.3 },
       resume_pdf_url: null,
       cover_letter_pdf_url: null,
+      layout_id: null,
+      applied_changes: [],
       archived_at: null,
       deleted_at: null,
     });
@@ -106,7 +109,7 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
   });
 
   it("lists generation history newest-first via the recent GSI", async () => {
-    const base = {
+    const base: Omit<ResumeGenerationInsert, "company" | "role"> = {
       created_by: "user-3",
       hiring_manager: null,
       language: "en",
@@ -123,9 +126,11 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
       usage: { costUsd: 0.1 },
       resume_pdf_url: null,
       cover_letter_pdf_url: null,
+      layout_id: null,
+      applied_changes: [],
       archived_at: null,
       deleted_at: null,
-    } as const;
+    };
 
     const older = await repo.insertResumeGeneration({
       ...base,

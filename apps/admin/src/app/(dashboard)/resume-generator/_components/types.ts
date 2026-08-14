@@ -10,6 +10,7 @@ export type HistoryItem = {
   hasResume: boolean;
   hasCoverLetter: boolean;
   hasAts: boolean;
+  layoutId: string | null;
 };
 
 export type GenKind = "resume" | "cover_letter" | "both";

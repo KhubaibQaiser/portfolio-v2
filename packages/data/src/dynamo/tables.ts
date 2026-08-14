@@ -15,6 +15,7 @@ export const TABLE_SUFFIXES = {
   skill: "skill",
   testimonial: "testimonial",
   resumeVariant: "resume-variant",
+  resumeLayout: "resume-layout",
   media: "media",
   resumeGeneration: "resume-generation",
   /** Rate-limiter counters, keyed by `pk`/`sk` with a `ttl` sweep. */
@@ -83,6 +84,7 @@ export function buildCreateTableInputs(
     simpleTable(names.skill, "id"),
     simpleTable(names.testimonial, "id"),
     simpleTable(names.resumeVariant, "id"),
+    simpleTable(names.resumeLayout, "id"),
     simpleTable(names.media, "id"),
     {
       TableName: names.resumeGeneration,

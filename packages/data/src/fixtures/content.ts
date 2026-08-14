@@ -5,10 +5,17 @@ import type {
   Media,
   Project,
   Resume,
+  ResumeLayout,
   SiteConfig,
   Skill,
   Testimonial,
 } from "@portfolio/shared/types";
+import {
+  CLASSIC_LAYOUT_ID,
+  MODERN_BLUE_LAYOUT_ID,
+  classicLayoutForm,
+  modernBlueLayoutForm,
+} from "@portfolio/shared/schemas";
 import raw from "../../seed/content.json";
 
 /**
@@ -43,6 +50,9 @@ export const siteConfigFixture: SiteConfig = {
 export const resumeFixture: Resume = {
   id: "resume",
   ...raw.resume,
+  languages: raw.resume.languages ?? [],
+  remote_work_line: raw.resume.remote_work_line ?? null,
+  references_line: raw.resume.references_line ?? null,
   created_at: TS,
   updated_at: TS,
 } as Resume;
@@ -84,3 +94,18 @@ export const testimonialFixtures: Testimonial[] = raw.testimonials.map((row) => 
 
 /** Media metadata rows (object bytes live in S3; seed stores the catalog row). */
 export const mediaFixtures: Media[] = raw.media.map((row) => ({ ...row })) as Media[];
+
+export const resumeLayoutFixtures: ResumeLayout[] = [
+  {
+    id: CLASSIC_LAYOUT_ID,
+    ...classicLayoutForm(),
+    created_at: TS,
+    updated_at: TS,
+  },
+  {
+    id: MODERN_BLUE_LAYOUT_ID,
+    ...modernBlueLayoutForm(),
+    created_at: TS,
+    updated_at: TS,
+  },
+];

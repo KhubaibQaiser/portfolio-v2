@@ -15,7 +15,8 @@
     "./experience-dates": "./src/experience-dates.ts",
     "./recommendation-dates": "./src/recommendation-dates.ts",
     "./experience-stats": "./src/experience-stats.ts",
-    "./resume-data": "./src/resume-data.ts"
+    "./resume-data": "./src/resume-data.ts",
+    "./resume-changes": "./src/resume-changes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

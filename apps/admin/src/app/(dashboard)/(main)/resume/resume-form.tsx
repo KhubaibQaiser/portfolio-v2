@@ -13,6 +13,8 @@ import type {
   Education,
   Certification,
   ResumeFormData,
+  ResumeLanguage,
+  LanguageProficiency,
 } from "@portfolio/shared/schemas";
 
 const SECTION_OPTIONS = [
@@ -21,14 +23,24 @@ const SECTION_OPTIONS = [
   { key: "education", label: "Education" },
   { key: "certifications", label: "Certifications" },
   { key: "skills", label: "Technical skills" },
+  { key: "languages", label: "Languages" },
+  { key: "remote", label: "Remote work" },
+  { key: "references", label: "References" },
 ] as const;
 
+const LANGUAGE_LEVELS: LanguageProficiency[] = ["Native", "Fluent", "Intermediate"];
+
+type LanguageDraft = ResumeLanguage & { _clientId: string };
 type EducationDraft = Education & { _clientId: string };
 type CertificationDraft = Certification & { _clientId: string };
 
-type ResumeFormValues = Omit<ResumeFormData, "education" | "certifications"> & {
+type ResumeFormValues = Omit<
+  ResumeFormData,
+  "education" | "certifications" | "languages"
+> & {
   education: EducationDraft[];
   certifications: CertificationDraft[];
+  languages: LanguageDraft[];
 };
 
 function clientId(): string {
@@ -56,6 +68,11 @@ function parseCertifications(raw: unknown): CertificationDraft[] {
   }));
 }
 
+function parseLanguages(raw: unknown): LanguageDraft[] {
+  const list = (raw as ResumeLanguage[] | null) ?? [];
+  return list.map((entry) => ({ ...entry, _clientId: clientId() }));
+}
+
 function parseVisibleSections(raw: unknown): string[] {
   const value = raw as string[] | null;
   if (Array.isArray(value) && value.length > 0) return [...value];
@@ -76,6 +93,9 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       voice_sample: initialData?.voice_sample ?? "",
       education: parseEducation(initialData?.education),
       certifications: parseCertifications(initialData?.certifications),
+      languages: parseLanguages(initialData?.languages),
+      remote_work_line: initialData?.remote_work_line ?? "",
+      references_line: initialData?.references_line ?? "References available on request",
       visible_sections: parseVisibleSections(initialData?.visible_sections),
       is_projects_visible: initialData?.is_projects_visible ?? true,
     },
@@ -94,6 +114,11 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
     name: "certifications",
     keyName: "fieldKey",
   });
+  const languageFields = useFieldArray({
+    control,
+    name: "languages",
+    keyName: "fieldKey",
+  });
 
   function toggleSection(key: string) {
     const next = visibleSections.includes(key)
@@ -108,6 +133,17 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       default_summary: data.default_summary,
       education: data.education.map(({ _clientId: _a, ...rest }) => rest),
       certifications: data.certifications.map(({ _clientId: _b, ...rest }) => rest),
+      languages: data.languages
+        .map(({ _clientId: _c, ...rest }) => rest)
+        .filter((lang) => lang.name.trim().length > 0),
+      remote_work_line:
+        (data.remote_work_line ?? "").trim() === ""
+          ? null
+          : (data.remote_work_line ?? null),
+      references_line:
+        (data.references_line ?? "").trim() === ""
+          ? null
+          : (data.references_line ?? null),
       visible_sections: data.visible_sections,
       is_projects_visible: data.is_projects_visible,
       voice_sample:
@@ -286,6 +322,83 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
               ))
             )}
           </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
+              Languages
+            </h2>
+            <button
+              type="button"
+              onClick={() =>
+                languageFields.append({
+                  _clientId: clientId(),
+                  name: "",
+                  level: "Intermediate",
+                })
+              }
+              className="border-border bg-muted/30 hover:bg-muted/50 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              Add language
+            </button>
+          </div>
+          <div className="space-y-3">
+            {languageFields.fields.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No languages yet.</p>
+            ) : (
+              languageFields.fields.map((row, index) => (
+                <div
+                  key={row.fieldKey}
+                  className="border-border/50 bg-muted/20 flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center"
+                >
+                  <input type="hidden" {...register(`languages.${index}._clientId`)} />
+                  <input
+                    {...register(`languages.${index}.name`)}
+                    placeholder="Language"
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                  <select
+                    {...register(`languages.${index}.level`)}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm sm:w-44"
+                  >
+                    {LANGUAGE_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => languageFields.remove(index)}
+                    className="text-muted-foreground hover:text-destructive flex items-center gap-1 text-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Remote work line</label>
+          <input
+            {...register("remote_work_line")}
+            placeholder="Remote-first since 2015. Overlapped US, EU, and APAC time zones."
+            className="border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">References line</label>
+          <input
+            {...register("references_line")}
+            placeholder="References available on request"
+            className="border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5 text-sm"
+          />
         </div>
 
         <div>

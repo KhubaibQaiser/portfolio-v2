@@ -2,13 +2,14 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  ResumeDocument,
   CoverLetterDocument,
+  renderResumeDocument,
   type CoverLetterMeta,
 } from "@portfolio/ui/resume-pdf";
 import { tailoredResumeSchema, coverLetterSchema } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
 import { applyTailoredResume, getResumeData } from "@portfolio/shared/resume-data";
+import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
@@ -20,6 +21,7 @@ const bodySchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("resume"),
     resume: tailoredResumeSchema,
+    layoutId: z.string().min(1).optional(),
   }),
   z.object({
     kind: z.literal("cover_letter"),
@@ -55,7 +57,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const base = await getResumeData(getContentRepository());
+  const repo = getContentRepository();
+  const base = await getResumeData(repo);
 
   logger.info("resume pdf export requested", {
     userId: auth.id,
@@ -66,7 +69,12 @@ export async function POST(request: Request) {
     if (body.kind === "resume") {
       const tailored = sanitizeLlmObject(body.resume);
       const data = applyTailoredResume(base, tailored);
-      const buffer = await renderToBuffer(<ResumeDocument data={data} />);
+      const layouts = await repo.getResumeLayouts().catch(() => []);
+      const layout = body.layoutId
+        ? (layouts.find((item) => item.id === body.layoutId) ??
+          pickDefaultResumeLayout(layouts))
+        : pickDefaultResumeLayout(layouts);
+      const buffer = await renderToBuffer(renderResumeDocument(data, layout));
       const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
       return new Response(new Uint8Array(buffer), {
         status: 200,

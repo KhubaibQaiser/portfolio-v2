@@ -2,16 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parsePartialJson } from "ai";
-import {
-  Check,
-  Copy,
-  Download,
-  Loader2,
-  Play,
-  RefreshCw,
-  Square,
-  Zap,
-} from "lucide-react";
+import { Download, RefreshCw, Square, Zap } from "lucide-react";
 import {
   atsScoreSchema,
   combinedSchema,
@@ -20,7 +11,13 @@ import {
   type CoverLetter,
   type TailoredResume,
 } from "@portfolio/ai/schemas";
+import type { ResumeLayout } from "@portfolio/shared/schemas";
+import type { ResumeData } from "@portfolio/shared/resume-data";
+import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
 import { cn } from "@/lib/utils";
+import { applyTailoredSummary } from "@/lib/actions";
+import { useToast } from "@/components/toast/toast-provider";
+import { runServerAction } from "@/lib/run-server-action";
 import { JdInput } from "./jd-input";
 import { OptionsForm } from "./options-form";
 import { ResumePreview } from "./resume-preview";
@@ -28,13 +25,20 @@ import { CoverLetterPreview } from "./cover-letter-preview";
 import { AtsPanel } from "./ats-panel";
 import { HistoryDrawer } from "./history-drawer";
 import { PolishChecklist } from "./polish-checklist";
+import { LayoutPicker } from "./layout-picker";
+import { AppliedChangesList } from "./applied-changes-list";
+import { ResumePdfPreview } from "./resume-pdf-preview";
+import { GenButton } from "./gen-button";
+import { CopyButton } from "./copy-button";
 import type { GenKind, GenerationState, HistoryItem, OptionsState } from "./types";
 
 type Tab = "resume" | "cover_letter" | "ats";
 
 type Props = {
   initialHistory: HistoryItem[];
-  dailyCap: number;
+  layouts: ResumeLayout[];
+  defaultLayoutId: string;
+  baseResume: ResumeData | null;
 };
 
 const DEFAULT_OPTS: OptionsState = {
@@ -46,21 +50,30 @@ const DEFAULT_OPTS: OptionsState = {
   language: "en",
 };
 
-export function GeneratorClient({ initialHistory }: Props) {
+export function GeneratorClient({
+  initialHistory,
+  layouts,
+  defaultLayoutId,
+  baseResume,
+}: Props) {
+  const toast = useToast();
   const [jd, setJd] = useState("");
   const [jdSource, setJdSource] = useState<"paste" | "pdf">("paste");
   const [options, setOptions] = useState<OptionsState>(DEFAULT_OPTS);
+  const [layoutId, setLayoutId] = useState(defaultLayoutId);
   const [tab, setTab] = useState<Tab>("resume");
   const [generation, setGeneration] = useState<GenerationState>({
     resume: null,
     coverLetter: null,
     ats: null,
   });
+  const [appliedChanges, setAppliedChanges] = useState<string[]>([]);
   const [streaming, setStreaming] = useState<GenKind | null>(null);
   const [atsBusy, setAtsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(initialHistory);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -69,6 +82,14 @@ export function GeneratorClient({ initialHistory }: Props) {
   }, []);
 
   const canGenerate = jd.trim().length >= 20 && !streaming;
+
+  function recordChanges(resume: TailoredResume | null) {
+    if (!resume || !baseResume) {
+      setAppliedChanges([]);
+      return;
+    }
+    setAppliedChanges(describeAppliedResumeChanges(baseResume, resume, options.role));
+  }
 
   async function runGenerate(
     kind: GenKind,
@@ -82,6 +103,7 @@ export function GeneratorClient({ initialHistory }: Props) {
 
     if (kind === "resume" || kind === "both") {
       setGeneration((g) => ({ ...g, resume: null, ats: null }));
+      setAppliedChanges([]);
     }
     if (kind === "cover_letter" || kind === "both") {
       setGeneration((g) => ({ ...g, coverLetter: null }));
@@ -108,6 +130,7 @@ export function GeneratorClient({ initialHistory }: Props) {
           model: opts?.mode ?? "quality",
           mustTryToInclude: opts?.mustTryToInclude,
           regenerateFromId: regenerateFromId ?? undefined,
+          layoutId: layoutId || undefined,
         }),
       });
 
@@ -119,6 +142,7 @@ export function GeneratorClient({ initialHistory }: Props) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let lastResume: TailoredResume | null = null;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -126,16 +150,20 @@ export function GeneratorClient({ initialHistory }: Props) {
         buffer += decoder.decode(value, { stream: true });
         const parsed = await parsePartialJson(buffer);
         if (parsed.value && typeof parsed.value === "object") {
-          applyPartial(kind, parsed.value as Record<string, unknown>);
+          lastResume = applyPartial(kind, parsed.value as Record<string, unknown>);
         }
       }
 
       const final = await parsePartialJson(buffer);
       if (final.value) {
-        applyPartial(kind, final.value as Record<string, unknown>);
+        lastResume = applyPartial(kind, final.value as Record<string, unknown>);
       }
 
-      if (kind === "resume" || kind === "both") void refreshHistory();
+      if (kind === "resume" || kind === "both") {
+        recordChanges(lastResume);
+        setPreviewRevision((n) => n + 1);
+        void refreshHistory();
+      }
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -145,7 +173,10 @@ export function GeneratorClient({ initialHistory }: Props) {
     }
   }
 
-  function applyPartial(kind: GenKind, value: Record<string, unknown>) {
+  function applyPartial(
+    kind: GenKind,
+    value: Record<string, unknown>,
+  ): TailoredResume | null {
     if (kind === "both") {
       const res = combinedSchema.partial().safeParse(value);
       if (res.success) {
@@ -154,29 +185,39 @@ export function GeneratorClient({ initialHistory }: Props) {
           resume: (res.data.resume as TailoredResume) ?? g.resume,
           coverLetter: (res.data.coverLetter as CoverLetter) ?? g.coverLetter,
         }));
+        return (res.data.resume as TailoredResume) ?? null;
       }
-      return;
+      return null;
     }
 
     if (kind === "resume") {
       const res = tailoredResumeSchema.partial().safeParse(value);
       if (res.success) {
-        setGeneration((g) => ({
-          ...g,
-          resume: res.data as TailoredResume,
-        }));
+        const next = res.data as TailoredResume;
+        setGeneration((g) => ({ ...g, resume: next }));
+        return next;
       }
-      return;
+      return null;
     }
 
     const res = coverLetterSchema.partial().safeParse(value);
     if (res.success) {
       setGeneration((g) => ({ ...g, coverLetter: res.data as CoverLetter }));
     }
+    return null;
   }
 
   function stop() {
     abortRef.current?.abort();
+  }
+
+  function startOver() {
+    stop();
+    setGeneration({ resume: null, coverLetter: null, ats: null });
+    setAppliedChanges([]);
+    setActiveHistoryId(null);
+    setError(null);
+    setPreviewRevision(0);
   }
 
   async function refreshHistory() {
@@ -222,48 +263,14 @@ export function GeneratorClient({ initialHistory }: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [generation.resume, jd],
+    [generation.resume, jd, layoutId],
   );
 
-  function resumeToPlainText(r: TailoredResume): string {
-    const lines: string[] = [];
-    if (r.summary) lines.push(r.summary, "");
-    if (r.keywords?.length) lines.push(`Keywords: ${r.keywords.join(", ")}`, "");
-    for (const exp of r.experiences ?? []) {
-      lines.push(`[${exp.experienceId}]`);
-      for (const b of exp.bullets ?? []) lines.push(`- ${b.text}`);
-      lines.push("");
-    }
-    if (r.skills?.length) {
-      lines.push("Skills:");
-      for (const s of r.skills) {
-        lines.push(`- ${s.category}: ${s.items.join(", ")}`);
-      }
-    }
-    return lines.join("\n").trim();
-  }
-
-  function coverLetterToPlainText(c: CoverLetter): string {
-    const parts: string[] = [];
-    if (c.greeting) parts.push(c.greeting);
-    parts.push(...(c.body ?? []));
-    if (c.closing) parts.push(c.closing);
-    if (c.signOff) parts.push(c.signOff);
-    return parts.join("\n\n").trim();
-  }
-
   async function copyTo(kind: "resume" | "cover_letter") {
-    const text =
-      kind === "resume"
-        ? generation.resume
-          ? resumeToPlainText(generation.resume)
-          : ""
-        : generation.coverLetter
-          ? coverLetterToPlainText(generation.coverLetter)
-          : "";
-    if (!text) return;
+    const payload = kind === "resume" ? generation.resume : generation.coverLetter;
+    if (!payload) return;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
     } catch {
       setError("Copy to clipboard failed");
     }
@@ -275,7 +282,7 @@ export function GeneratorClient({ initialHistory }: Props) {
 
     const body =
       kind === "resume"
-        ? { kind, resume: generation.resume }
+        ? { kind, resume: generation.resume, layoutId }
         : {
             kind,
             coverLetter: generation.coverLetter,
@@ -305,6 +312,20 @@ export function GeneratorClient({ initialHistory }: Props) {
     URL.revokeObjectURL(url);
   }
 
+  async function applySummary() {
+    if (!generation.resume?.summary) return;
+    if (
+      !window.confirm(
+        "Replace the CMS professional summary with this tailored summary? Experience rows will not change.",
+      )
+    ) {
+      return;
+    }
+    await runServerAction(() => applyTailoredSummary(generation.resume!.summary), toast, {
+      successMessage: "CMS summary updated",
+    });
+  }
+
   async function loadHistory(id: string) {
     setActiveHistoryId(id);
     try {
@@ -322,8 +343,9 @@ export function GeneratorClient({ initialHistory }: Props) {
         : null;
       const ats = json.row.ats ? atsScoreSchema.safeParse(json.row.ats) : null;
 
+      const nextResume = resume?.success ? resume.data : null;
       setGeneration({
-        resume: resume?.success ? resume.data : null,
+        resume: nextResume,
         coverLetter: cover?.success ? cover.data : null,
         ats: ats?.success ? ats.data : null,
       });
@@ -337,6 +359,18 @@ export function GeneratorClient({ initialHistory }: Props) {
         length: json.row.length ?? "",
         language: json.row.language ?? "en",
       });
+      if (typeof json.row.layout_id === "string" && json.row.layout_id) {
+        setLayoutId(json.row.layout_id);
+      }
+      if (
+        Array.isArray(json.row.applied_changes) &&
+        json.row.applied_changes.length > 0
+      ) {
+        setAppliedChanges(json.row.applied_changes as string[]);
+      } else {
+        recordChanges(nextResume);
+      }
+      setPreviewRevision((n) => n + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
     }
@@ -345,6 +379,16 @@ export function GeneratorClient({ initialHistory }: Props) {
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)_minmax(240px,280px)]">
       <section className="space-y-4">
+        <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
+          Layout
+        </h2>
+        <LayoutPicker
+          layouts={layouts}
+          value={layoutId}
+          onChange={setLayoutId}
+          disabled={Boolean(streaming)}
+        />
+
         <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
           Job description
         </h2>
@@ -369,23 +413,17 @@ export function GeneratorClient({ initialHistory }: Props) {
 
         <div className="flex flex-wrap gap-2 pt-2">
           <GenButton
-            label="Resume"
+            label="Tailor resume"
             onClick={() => runGenerate("resume")}
             streaming={streaming === "resume"}
             disabled={!canGenerate}
+            primary
           />
           <GenButton
             label="Cover letter"
             onClick={() => runGenerate("cover_letter")}
             streaming={streaming === "cover_letter"}
             disabled={!canGenerate}
-          />
-          <GenButton
-            label="Both"
-            onClick={() => runGenerate("both")}
-            streaming={streaming === "both"}
-            disabled={!canGenerate}
-            primary
           />
           <button
             type="button"
@@ -395,11 +433,11 @@ export function GeneratorClient({ initialHistory }: Props) {
               "border-border bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5",
               "hover:bg-muted/50 text-sm font-medium disabled:opacity-50",
             )}
-            title="Groq Scout, fastest, lower quality"
+            title="Faster, lower quality draft"
           >
             <Zap className="h-3.5 w-3.5" /> Fast draft
           </button>
-          {streaming && (
+          {streaming ? (
             <button
               type="button"
               onClick={stop}
@@ -410,7 +448,15 @@ export function GeneratorClient({ initialHistory }: Props) {
             >
               <Square className="h-3.5 w-3.5" /> Stop
             </button>
-          )}
+          ) : null}
+          <button
+            type="button"
+            onClick={startOver}
+            disabled={Boolean(streaming)}
+            className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            Start over
+          </button>
         </div>
 
         {error && <p className="text-destructive text-sm">{error}</p>}
@@ -439,8 +485,8 @@ export function GeneratorClient({ initialHistory }: Props) {
               {label}
             </button>
           ))}
-          <div className="ml-auto flex gap-2">
-            {tab === "resume" && generation.resume && (
+          <div className="ml-auto flex flex-wrap gap-2">
+            {tab === "resume" && generation.resume ? (
               <>
                 <button
                   type="button"
@@ -456,7 +502,7 @@ export function GeneratorClient({ initialHistory }: Props) {
                 <CopyButton onClick={() => void copyTo("resume")} />
                 <button
                   type="button"
-                  onClick={() => download("resume")}
+                  onClick={() => void download("resume")}
                   className={cn(
                     "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
                     "text-accent-foreground font-medium hover:opacity-90",
@@ -464,9 +510,17 @@ export function GeneratorClient({ initialHistory }: Props) {
                 >
                   <Download className="h-3 w-3" /> PDF
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void applySummary()}
+                  disabled={Boolean(streaming)}
+                  className="border-border hover:bg-muted rounded-md border px-2.5 py-1 text-xs disabled:opacity-50"
+                >
+                  Apply summary to CMS
+                </button>
               </>
-            )}
-            {tab === "cover_letter" && generation.coverLetter && (
+            ) : null}
+            {tab === "cover_letter" && generation.coverLetter ? (
               <>
                 <button
                   type="button"
@@ -482,7 +536,7 @@ export function GeneratorClient({ initialHistory }: Props) {
                 <CopyButton onClick={() => void copyTo("cover_letter")} />
                 <button
                   type="button"
-                  onClick={() => download("cover_letter")}
+                  onClick={() => void download("cover_letter")}
                   className={cn(
                     "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
                     "text-accent-foreground font-medium hover:opacity-90",
@@ -491,19 +545,32 @@ export function GeneratorClient({ initialHistory }: Props) {
                   <Download className="h-3 w-3" /> PDF
                 </button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
 
         <div className="border-border/60 bg-background/50 rounded-xl border p-4">
           {tab === "resume" && (
             <div className="space-y-4">
+              <AppliedChangesList changes={appliedChanges} />
               <ResumePreview
                 value={generation.resume}
                 streaming={streaming === "resume" || streaming === "both"}
-                onChange={(next) => setGeneration((g) => ({ ...g, resume: next }))}
+                onChange={(next) => {
+                  setGeneration((g) => ({ ...g, resume: next }));
+                  recordChanges(next);
+                }}
               />
-              {generation.resume && !streaming && <PolishChecklist kind="resume" />}
+              {generation.resume && !streaming ? (
+                <>
+                  <PolishChecklist kind="resume" />
+                  <ResumePdfPreview
+                    resume={generation.resume}
+                    layoutId={layoutId}
+                    revision={previewRevision}
+                  />
+                </>
+              ) : null}
             </div>
           )}
           {tab === "cover_letter" && (
@@ -513,9 +580,9 @@ export function GeneratorClient({ initialHistory }: Props) {
                 streaming={streaming === "cover_letter" || streaming === "both"}
                 onChange={(next) => setGeneration((g) => ({ ...g, coverLetter: next }))}
               />
-              {generation.coverLetter && !streaming && (
+              {generation.coverLetter && !streaming ? (
                 <PolishChecklist kind="cover_letter" />
-              )}
+              ) : null}
             </div>
           )}
           {tab === "ats" && (
@@ -546,69 +613,5 @@ export function GeneratorClient({ initialHistory }: Props) {
         />
       </aside>
     </div>
-  );
-}
-
-function CopyButton({ onClick }: { onClick: () => void }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        onClick();
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1600);
-      }}
-      className={cn(
-        "border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs",
-        "hover:bg-muted",
-      )}
-    >
-      {copied ? (
-        <>
-          <Check className="h-3 w-3" /> Copied
-        </>
-      ) : (
-        <>
-          <Copy className="h-3 w-3" /> Copy
-        </>
-      )}
-    </button>
-  );
-}
-
-function GenButton({
-  label,
-  onClick,
-  streaming,
-  disabled,
-  primary,
-}: {
-  label: string;
-  onClick: () => void;
-  streaming?: boolean;
-  disabled?: boolean;
-  primary?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-opacity",
-        primary
-          ? "bg-accent text-accent-foreground hover:opacity-90"
-          : "border-border bg-muted/30 hover:bg-muted/50 border",
-        "disabled:opacity-50",
-      )}
-    >
-      {streaming ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <Play className="h-3.5 w-3.5" />
-      )}
-      {label}
-    </button>
   );
 }

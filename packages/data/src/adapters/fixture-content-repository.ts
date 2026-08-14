@@ -25,6 +25,8 @@ import type {
   ResumeGenerationUpdate,
   ResumeVariant,
   ResumeVariantFormData,
+  ResumeLayout,
+  ResumeLayoutFormData,
   SiteConfig,
   SiteConfigFormData,
   Skill,
@@ -37,6 +39,7 @@ import {
   heroFixture,
   projectFixtures,
   resumeFixture,
+  resumeLayoutFixtures,
   siteConfigFixture,
   skillFixtures,
   testimonialFixtures,
@@ -65,6 +68,7 @@ export function createFixtureContentRepository(): ContentRepository {
   const skills: Skill[] = clone(skillFixtures);
   const testimonials: Testimonial[] = clone(testimonialFixtures);
   const resumeVariants: ResumeVariant[] = [];
+  const resumeLayouts: ResumeLayout[] = clone(resumeLayoutFixtures);
   const media: Media[] = [];
   const resumeGenerations: ResumeGeneration[] = [];
 
@@ -250,6 +254,33 @@ export function createFixtureContentRepository(): ContentRepository {
     async deleteResumeVariant(id: string) {
       const idx = resumeVariants.findIndex((r) => r.id === id);
       if (idx >= 0) resumeVariants.splice(idx, 1);
+    },
+
+    // Resume layouts
+    async getResumeLayouts() {
+      return clone(resumeLayouts).sort((a, b) => a.name.localeCompare(b.name));
+    },
+    async getResumeLayoutById(id: string) {
+      const row = resumeLayouts.find((r) => r.id === id);
+      return row ? clone(row) : null;
+    },
+    async insertResumeLayout(values: ResumeLayoutFormData) {
+      const row: ResumeLayout = {
+        ...values,
+        id: randomUUID(),
+        created_at: now(),
+        updated_at: now(),
+      };
+      resumeLayouts.push(row);
+      return clone(row);
+    },
+    async updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>) {
+      const row = requireById(resumeLayouts, id, "ResumeLayout");
+      Object.assign(row, values, { updated_at: now() });
+    },
+    async deleteResumeLayout(id: string) {
+      const idx = resumeLayouts.findIndex((r) => r.id === id);
+      if (idx >= 0) resumeLayouts.splice(idx, 1);
     },
 
     // Media

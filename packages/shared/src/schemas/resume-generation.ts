@@ -50,6 +50,8 @@ export type ResumeGeneration = {
   usage: ResumeGenerationUsage | null;
   resume_pdf_url: string | null;
   cover_letter_pdf_url: string | null;
+  layout_id: string | null;
+  applied_changes: string[];
   archived_at: string | null;
   deleted_at: string | null;
   created_at: string;

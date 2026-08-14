@@ -36,7 +36,14 @@ import {
 } from "@portfolio/ai/prompts/cover-letter";
 import type { CandidateFacts } from "@portfolio/ai/context/build-candidate-facts";
 import { getContentRepository } from "@portfolio/data";
-import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
+import { getResumeData } from "@portfolio/shared/resume-data";
+import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
+import {
+  classicGuidelines,
+  pickDefaultResumeLayout,
+  type ResumeGenerationUsage,
+  type VariantGuidelines,
+} from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { loadCandidateFacts } from "@/lib/resume-ai/load-candidate-facts";
@@ -61,6 +68,7 @@ const bodySchema = z.object({
   model: z.enum(["quality", "fast"]).default("quality"),
   mustTryToInclude: z.array(z.string().max(80)).max(40).optional(),
   regenerateFromId: z.string().uuid().optional(),
+  layoutId: z.string().min(1).optional(),
 });
 
 type Body = z.infer<typeof bodySchema>;
@@ -150,6 +158,17 @@ export async function POST(request: Request) {
   }
   const wrappedJd = wrapUntrusted(jdTrimmed);
 
+  const repo = getContentRepository();
+  const layouts = await repo.getResumeLayouts().catch(() => []);
+  const requestedLayout = body.layoutId
+    ? layouts.find((item) => item.id === body.layoutId)
+    : undefined;
+  if (body.layoutId && layouts.length > 0 && !requestedLayout) {
+    return NextResponse.json({ error: "Unknown resume layout." }, { status: 400 });
+  }
+  const layout = requestedLayout ?? pickDefaultResumeLayout(layouts);
+  const guidelines: VariantGuidelines = layout?.guidelines ?? classicGuidelines();
+
   let facts: CandidateFacts;
   try {
     facts = await loadCandidateFacts();
@@ -175,15 +194,19 @@ export async function POST(request: Request) {
       });
     }
 
-    const resumePrompt = buildResumeSystemPrompt(facts, {
-      tone: body.tone,
-      length: body.length,
-      language: body.language,
-      company: body.company,
-      role: body.role,
-      mustTryToInclude: body.mustTryToInclude,
-      retryReason,
-    });
+    const resumePrompt = buildResumeSystemPrompt(
+      facts,
+      {
+        tone: body.tone,
+        length: body.length,
+        language: body.language,
+        company: body.company,
+        role: body.role,
+        mustTryToInclude: body.mustTryToInclude,
+        retryReason,
+      },
+      guidelines,
+    );
 
     if (body.kind === "resume") return resumePrompt;
 
@@ -217,6 +240,7 @@ export async function POST(request: Request) {
     jdLength: jdTrimmed.length,
     hasCompany: Boolean(body.company),
     hasRole: Boolean(body.role),
+    layoutId: layout?.id ?? null,
   });
 
   async function runStream(resolved: ResolvedModel, system: string, signal: AbortSignal) {
@@ -348,6 +372,16 @@ export async function POST(request: Request) {
         }
       }
 
+      let appliedChanges: string[] = [];
+      if (finalResume) {
+        try {
+          const base = await getResumeData(repo);
+          appliedChanges = describeAppliedResumeChanges(base, finalResume, body.role);
+        } catch {
+          appliedChanges = [];
+        }
+      }
+
       await getContentRepository().insertResumeGeneration({
         created_by: auth.id,
         company: body.company ?? null,
@@ -376,6 +410,8 @@ export async function POST(request: Request) {
         } as unknown as ResumeGenerationUsage,
         resume_pdf_url: null,
         cover_letter_pdf_url: null,
+        layout_id: layout?.id ?? body.layoutId ?? null,
+        applied_changes: appliedChanges,
         archived_at: null,
         deleted_at: null,
       });

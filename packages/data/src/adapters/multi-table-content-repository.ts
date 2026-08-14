@@ -31,6 +31,8 @@ import type {
   ResumeGenerationUpdate,
   ResumeVariant,
   ResumeVariantFormData,
+  ResumeLayout,
+  ResumeLayoutFormData,
   SiteConfig,
   SiteConfigFormData,
   Skill,
@@ -106,6 +108,9 @@ function toResume(item: Item): Resume {
     education: (r.education ?? []).map((e) => ({ ...e, url: e.url ?? null })),
     certifications: (r.certifications ?? []).map((c) => ({ ...c, url: c.url ?? null })),
     voice_sample: r.voice_sample ?? null,
+    languages: r.languages ?? [],
+    remote_work_line: r.remote_work_line ?? null,
+    references_line: r.references_line ?? null,
   };
 }
 
@@ -150,6 +155,15 @@ function toResumeVariant(item: Item): ResumeVariant {
   return { ...v, summary_override: v.summary_override ?? null };
 }
 
+function toResumeLayout(item: Item): ResumeLayout {
+  const v = item as ResumeLayout;
+  return {
+    ...v,
+    preview_image_url: v.preview_image_url ?? null,
+    is_default: v.is_default ?? false,
+  };
+}
+
 function toMedia(item: Item): Media {
   const m = item as Media;
   return { ...m, alt_text: m.alt_text ?? null };
@@ -172,6 +186,8 @@ function toResumeGeneration(item: Item): ResumeGeneration {
     usage: r.usage ?? null,
     resume_pdf_url: r.resume_pdf_url ?? null,
     cover_letter_pdf_url: r.cover_letter_pdf_url ?? null,
+    layout_id: r.layout_id ?? null,
+    applied_changes: r.applied_changes ?? [],
     archived_at: r.archived_at ?? null,
     deleted_at: r.deleted_at ?? null,
   };
@@ -426,6 +442,27 @@ export function createMultiTableContentRepository(
     },
     async deleteResumeVariant(id: string) {
       await deleteItem(tables.resumeVariant, { id });
+    },
+
+    // Resume layouts
+    async getResumeLayouts() {
+      const items = await listItems(tables.resumeLayout);
+      return items.map(toResumeLayout).sort((a, b) => a.name.localeCompare(b.name));
+    },
+    async getResumeLayoutById(id: string) {
+      const item = await getItem(tables.resumeLayout, { id });
+      return item ? toResumeLayout(item) : null;
+    },
+    async insertResumeLayout(values: ResumeLayoutFormData) {
+      const row = insertRow(values);
+      await putItem(tables.resumeLayout, row);
+      return toResumeLayout(row);
+    },
+    async updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>) {
+      await patchRow(tables.resumeLayout, id, "ResumeLayout", values);
+    },
+    async deleteResumeLayout(id: string) {
+      await deleteItem(tables.resumeLayout, { id });
     },
 
     // Media

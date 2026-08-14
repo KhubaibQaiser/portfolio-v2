@@ -223,6 +223,42 @@ export default async function ResumePage() {
             ))}
           </div>
         </section>
+
+        {resume.visibleSections.includes("languages") && resume.languages.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
+              Languages
+            </h2>
+            <div className="bg-border mt-3 h-px" />
+            <p className="text-foreground/90 dark:text-foreground/85 mt-4 text-sm">
+              {resume.languages.map((l) => `${l.name} (${l.level})`).join(" · ")}
+            </p>
+          </section>
+        ) : null}
+
+        {resume.visibleSections.includes("remote") && resume.remoteWorkLine ? (
+          <section className="mt-10">
+            <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
+              Remote Work
+            </h2>
+            <div className="bg-border mt-3 h-px" />
+            <p className="text-foreground/90 dark:text-foreground/85 mt-4 text-sm leading-relaxed">
+              {resume.remoteWorkLine}
+            </p>
+          </section>
+        ) : null}
+
+        {resume.visibleSections.includes("references") && resume.referencesLine ? (
+          <section className="mt-10">
+            <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
+              References
+            </h2>
+            <div className="bg-border mt-3 h-px" />
+            <p className="text-foreground/90 dark:text-foreground/85 mt-4 text-sm">
+              {resume.referencesLine}
+            </p>
+          </section>
+        ) : null}
       </div>
     </div>
   );
