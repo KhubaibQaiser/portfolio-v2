@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   CoverLetterDocument,
-  renderResumeDocument,
+  renderResumePdfBuffer,
   type CoverLetterMeta,
 } from "@portfolio/ui/resume-pdf";
 import { tailoredResumeSchema, coverLetterSchema } from "@portfolio/ai/schemas";
@@ -74,14 +74,20 @@ export async function POST(request: Request) {
         ? (layouts.find((item) => item.id === body.layoutId) ??
           pickDefaultResumeLayout(layouts))
         : pickDefaultResumeLayout(layouts);
-      const buffer = await renderToBuffer(renderResumeDocument(data, layout));
+      const { buffer, fitReport } = await renderResumePdfBuffer(data, layout);
       const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
+      logger.info("resume pdf export fitted", {
+        userId: auth.id,
+        layoutId: layout?.id ?? null,
+        fitReport,
+      });
       return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${filename}"`,
           "Cache-Control": "no-store",
+          ...(fitReport ? { "X-Resume-Fit-Report": JSON.stringify(fitReport) } : {}),
         },
       });
     }

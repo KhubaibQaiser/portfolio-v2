@@ -13,11 +13,11 @@ export const TONE_DESCRIPTIONS: Record<Tone, string> = {
 
 export const LENGTH_DESCRIPTIONS: Record<Length, string> = {
   short:
-    "Tight. Resume summary ≤ 2 sentences, max 5 roles, 2-page equivalent. Cover letter ≈ 180-220 words.",
+    "Tight. Resume summary ≤ 2 sentences, max 5 roles. Respect the selected layout's page budget. Cover letter ≈ 180-220 words.",
   standard:
-    "Balanced. Resume summary 2-3 sentences, max 5 roles, 2-page equivalent. Cover letter ≈ 240-320 words.",
+    "Balanced. Resume summary 2-3 sentences, max 5 roles. Respect the selected layout's page budget. Cover letter ≈ 240-320 words.",
   detailed:
-    "Thorough but never padded. Resume summary 3 sentences max, max 5 roles, 2-page equivalent. Cover letter ≈ 340-420 words.",
+    "Thorough but never padded. Resume summary 3 sentences max, max 5 roles. Respect the selected layout's page budget. Cover letter ≈ 340-420 words.",
 };
 
 export const LANGUAGE_LABELS: Record<Language, string> = {

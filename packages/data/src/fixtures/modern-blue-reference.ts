@@ -1,0 +1,191 @@
+import type { ResumeData } from "@portfolio/shared/resume-data";
+
+export const modernBlueReferenceResume: ResumeData = {
+  name: "Khubaib Qaiser",
+  title: "Senior Software Engineer",
+  location: "Islamabad, Pakistan",
+  phone: "+92 336 553 2933",
+  email: "khubaib.dev@gmail.com",
+  website: "khubaibqaiser.com",
+  socialLinks: [
+    {
+      platform: "github",
+      url: "https://github.com/khubaibqaiser",
+      label: "github.com/khubaibqaiser",
+    },
+  ],
+  summary:
+    "I have spent 10 years building web products that feel as good as they function. My work spans **design systems adopted by 40+ engineers**, marketing and commerce interfaces serving millions of users, and **animations and interactions** that make pages come alive. I think like a designer, build like an engineer, and care deeply about the details that make a product feel right. I want to be part of a team where craft and quality matter, and where the goal is to build something people genuinely love using.",
+  experience: [
+    {
+      role: "Senior Software Engineer",
+      company: "Shopsense AI",
+      period: "Aug 2024 – Jul 2026",
+      location: "San Francisco, CA · Remote",
+      contractType: "Full-time",
+      bullets: [
+        "Led **Embeds**, an AI-powered content-to-commerce platform, from concept to production across 10+ publisher sites with 150K+ daily impressions and 0.5% CTR, owning the full frontend including component architecture, animations, and per-publisher branding.",
+        "Architected the AWS serverless platform using CDK and Infrastructure as Code, designing REST APIs that powered five embed types deployed across partner websites.",
+        "Led the shift from a monolithic backend to microservices, splitting the system into independently deployable services communicating over internal APIs.",
+        "Designed and launched Shopsense's first **A/B testing platform** with experiment tracking, analytics, and feature flags so product teams could validate decisions with real user data.",
+        "Introduced unit testing, smoke testing, and code review practices that raised release confidence. Mentored engineers through pair programming.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior Frontend Engineer",
+      company: "Powerful Web Design",
+      period: "Oct 2023 – Jul 2026",
+      location: "Oregon · Remote",
+      contractType: "Part-time",
+      bullets: [
+        "Built **StagWorks**, a data-dense internal CRM covering billing, inventory, and HR across 26 business areas with 250+ lazy-loaded routes, a rearrangeable widget dashboard, and role-based access at page, tab, and button level.",
+        "Set up React 19 with TypeScript, TanStack Router, Zod validation, Sentry error recovery, and pre-commit checks that kept broken builds off main.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior Web Developer",
+      company: "Achieve",
+      period: "Jul 2023 – Aug 2024",
+      location: "Jersey City, NJ · Remote",
+      contractType: "Full-time",
+      bullets: [
+        "Improved **Core Web Vitals by 60%** on the primary landing page through code splitting, React Suspense, and lazy loading.",
+        "Migrated legacy Create React App projects to Vite and TypeScript. Integrated TanStack Query for scalable data-fetching and caching patterns.",
+        "Drove frontend best practices across product, design, and backend teams.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior React Native Engineer",
+      company: "Tradeblock",
+      period: "Jan 2023 – Jun 2023",
+      location: "Austin, TX · Remote",
+      contractType: "Contract",
+      bullets: [
+        "Shipped a cross-platform trading app with React Native, Next.js, React Native Web, Solito, and Reanimated. Integrated Apollo GraphQL, Auth0, and Storybook. End-to-end testing with Playwright and Detox.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior Software Engineer",
+      company: "GudangAda",
+      period: "Sep 2020 – Jan 2023",
+      location: "Jakarta, Indonesia · Remote",
+      contractType: "Full-time",
+      bullets: [
+        "Architected GudangAda's first **web design system**, a private npm package adopted by **40+ engineers across 8 product teams**, with documentation and automated CI/CD for build and publish.",
+        "Rebuilt the multi-lingual company profile in Next.js with Contentful, i18n, and Tailwind CSS. Improved Core Web Vitals by 70%.",
+        "Led marketplace frontend development and set up the seller-facing web app architecture and CI/CD from scratch.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Software Engineer",
+      company: "STOQO",
+      period: "Feb 2019 – Apr 2020",
+      location: "Jakarta, Indonesia · Remote",
+      contractType: "Full-time",
+      bullets: [
+        "Built transport management dashboards and driver tracking systems covering geofence clustering, route management, and fleet cost tracking. Rewrote the Android driver app in Kotlin (MVVM). Mentored junior engineers.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Mobile App and Game Developer",
+      company: "Knowledge Platform",
+      period: "Sep 2015 – Feb 2019",
+      location: "Islamabad · Onsite",
+      contractType: "Full-time",
+      bullets: [
+        "Developed cross-platform educational games and mobile apps reaching 500K+ students across Pakistan. Built an offline-first survey app for CERP.",
+      ],
+      tech: "",
+    },
+  ],
+  projects: [],
+  education: [
+    {
+      degree: "Bachelor's Computer Science",
+      institution: "Quaid-i-Azam University, Islamabad, Pakistan",
+      year: "2015",
+    },
+  ],
+  certifications: [],
+  skills: [
+    {
+      category: "Design and Frontend",
+      items: [
+        "React",
+        "TypeScript",
+        "Next.js",
+        "Design Systems",
+        "CSS Modules",
+        "Tailwind CSS",
+        "GSAP",
+        "Motion",
+        "Radix UI",
+        "Storybook",
+        "HTML5 / CSS3",
+        "Accessibility (WCAG)",
+        "Core Web Vitals",
+        "Figma",
+      ],
+    },
+    {
+      category: "Backend and Infra",
+      items: [
+        "Node.js",
+        "Express",
+        "REST APIs",
+        "GraphQL",
+        "AWS (CDK, Lambda, S3, SQS)",
+        "Vercel",
+        "Docker",
+        "GitHub Actions",
+        "Pulumi",
+      ],
+    },
+    {
+      category: "State and Data",
+      items: ["TanStack Query", "Redux Toolkit", "Zustand", "Apollo Client"],
+    },
+    {
+      category: "Testing and Analytics",
+      items: [
+        "Jest",
+        "React Testing Library",
+        "Playwright",
+        "Sentry",
+        "PostHog",
+        "Amplitude",
+      ],
+    },
+    {
+      category: "AI Tools",
+      items: ["Claude", "Cursor"],
+    },
+    {
+      category: "Mobile",
+      items: ["React Native CLI", "Expo", "Capacitor"],
+    },
+  ],
+  languages: [
+    { name: "English", level: "Fluent" },
+    { name: "Urdu", level: "Native" },
+    { name: "Punjabi", level: "Native" },
+  ],
+  remoteWorkLine:
+    "7 years fully remote across US, Indonesian, and Pakistani teams. Comfortable across PST, CST, EST, and SGT timezones.",
+  referencesLine: null,
+  keywords: "React, TypeScript, Next.js, Design Systems, AWS",
+  visibleSections: [
+    "summary",
+    "experience",
+    "education",
+    "skills",
+    "languages",
+    "remote",
+  ],
+};
