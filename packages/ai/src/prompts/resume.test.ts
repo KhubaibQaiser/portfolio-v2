@@ -24,6 +24,9 @@ describe("describeLayoutGuidelines", () => {
   it("requires a new summary when regenerateForJob is true", () => {
     const text = describeLayoutGuidelines(classicGuidelines());
     expect(text).toContain("ALWAYS write a new professional summary");
+    expect(text).toContain("maximum 450 characters");
+    expect(text).toContain("Maximum 280 characters per bullet");
+    expect(text).not.toContain("sentences max");
     expect(text).toContain("**double asterisks**");
   });
 });

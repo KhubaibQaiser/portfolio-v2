@@ -3,4 +3,10 @@ export { ResumeModernDocument } from "./resume-modern-document";
 export { CoverLetterDocument, type CoverLetterMeta } from "./cover-letter-document";
 export { COLORS, baseStyles } from "./styles";
 export { renderResumeDocument } from "./layout-registry";
+export {
+  describeFitReport,
+  renderResumePdfBuffer,
+  type RenderedResumePdf,
+} from "./render-resume-pdf";
+export type { FitReport } from "./fit-modern-blue-resume";
 export { registerResumePdfFonts } from "./register-fonts";

@@ -41,6 +41,7 @@ import type {
 } from "@portfolio/shared/types";
 import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
 import { sortRecommendationsByDateDesc } from "@portfolio/shared/recommendation-dates";
+import { normalizeResumeLayoutGuidelines } from "@portfolio/shared/schemas";
 import type { TableNames } from "../dynamo/tables";
 
 type Item = Record<string, unknown>;
@@ -159,6 +160,8 @@ function toResumeLayout(item: Item): ResumeLayout {
   const v = item as ResumeLayout;
   return {
     ...v,
+    version: v.component_key === "modern-blue" && v.version < 2 ? 2 : v.version,
+    guidelines: normalizeResumeLayoutGuidelines(v.component_key, v.version, v.guidelines),
     preview_image_url: v.preview_image_url ?? null,
     is_default: v.is_default ?? false,
   };

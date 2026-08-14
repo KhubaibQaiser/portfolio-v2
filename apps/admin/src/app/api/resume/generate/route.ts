@@ -302,13 +302,14 @@ export async function POST(request: Request) {
         sanitized,
       );
 
-      // Fabrication + tone checks (best-effort; we persist regardless so the
-      // admin can still see and edit the output).
+      // Fabrication violations are retried once and never persisted.
       let aiToneScore: number | null = null;
       let toneHits: string[] = [];
+      let fabricationViolations: string[] = [];
       if (tailoredResume) {
         const res = validateFabrication(tailoredResume, facts.idMap);
         if (!res.ok) {
+          fabricationViolations = res.offending;
           logger.warn("resume fabrication warnings", {
             userId: auth.id,
             offending: res.offending,
@@ -336,11 +337,21 @@ export async function POST(request: Request) {
       let retryApplied = false;
       let retryUsage: ReturnType<typeof formatUsage> | null = null;
       let retryToneScore: number | null = null;
-      if (aiToneScore !== null && aiToneScore >= AI_TONE_THRESHOLD) {
+      if (
+        fabricationViolations.length > 0 ||
+        (aiToneScore !== null && aiToneScore >= AI_TONE_THRESHOLD)
+      ) {
         try {
-          const retryReason = `Previous draft sounded robotic/AI-generated. Tells detected: ${
-            toneHits.slice(0, 8).join(", ") || "generic corporate phrasing"
-          }. Rewrite in a more human, conversational, concrete voice. Do NOT change factual content.`;
+          const retryReason =
+            fabricationViolations.length > 0
+              ? `Previous draft failed factual validation: ${fabricationViolations
+                  .slice(0, 8)
+                  .join(
+                    ", ",
+                  )}. Use only valid experience IDs and source bullet indexes from the fact sheet.`
+              : `Previous draft sounded robotic/AI-generated. Tells detected: ${
+                  toneHits.slice(0, 8).join(", ") || "generic corporate phrasing"
+                }. Rewrite in a more human, conversational, concrete voice. Do NOT change factual content.`;
           const cheap = modelFor("cheap");
           const retryStartedAt = Date.now();
           const retryResult = await generateObject({
@@ -369,6 +380,18 @@ export async function POST(request: Request) {
             userId: auth.id,
             error: err instanceof Error ? err.message : String(err),
           });
+          if (fabricationViolations.length > 0) throw err;
+        }
+      }
+
+      if (finalResume) {
+        const validation = validateFabrication(finalResume, facts.idMap);
+        if (!validation.ok) {
+          throw new Error(
+            `Resume failed factual validation after retry: ${validation.offending
+              .slice(0, 8)
+              .join(", ")}`,
+          );
         }
       }
 

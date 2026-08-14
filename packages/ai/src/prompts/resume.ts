@@ -49,13 +49,13 @@ export function describeLayoutGuidelines(guidelines: VariantGuidelines): string 
   return [
     "LAYOUT GUIDELINES (must follow):",
     emphasis.summaryStrategy.regenerateForJob
-      ? `- ALWAYS write a new professional summary aimed at this job (${emphasis.summaryStrategy.maxSummaryLines} sentences max). Do not paste the generic CMS summary.`
+      ? "- ALWAYS write a new professional summary aimed at this job (maximum 450 characters, usually 2-3 sentences). Do not paste the generic CMS summary."
       : "- Keep the existing summary unless a small tweak clearly improves JD fit.",
     emphasis.experienceStrategy.reorderByRelevance
       ? "- Reorder experience roles by JD relevance, then recency."
       : "- Keep experience in the given order.",
     rules.bulletRewriting
-      ? `- Rewrite bullets as action → output → method → impact. Max ${emphasis.experienceStrategy.maxBulletLines} lines each.`
+      ? "- Rewrite bullets as action → output → method → impact. Maximum 280 characters per bullet."
       : "- Rephrase bullets only when needed for clarity.",
     emphasis.experienceStrategy.highlightKeywords
       ? "- Wrap JD-matching technical keywords in **double asterisks**."

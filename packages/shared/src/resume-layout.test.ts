@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classicLayoutForm,
   modernBlueLayoutForm,
+  normalizeResumeLayoutGuidelines,
   pickDefaultResumeLayout,
   resumeLayoutSchema,
   variantGuidelinesSchema,
@@ -40,5 +41,18 @@ describe("resume layout guidelines", () => {
       aiTailoringPromptTemplate: "",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("normalizes stored Modern Blue v1 rows to the strict v2 print contract", () => {
+    const legacy = modernBlueLayoutForm().guidelines;
+    legacy.formatting.typography.bodyFont = "Helvetica";
+    legacy.sections.projects = true;
+
+    const normalized = normalizeResumeLayoutGuidelines("modern-blue", 1, legacy);
+
+    expect(normalized.formatting.typography.bodyFont).toBe("DM Sans");
+    expect(normalized.sections.projects).toBe(false);
+    expect(normalized.validation.maxPageCount).toBe(1);
+    expect(normalized.validation.minExperienceItems).toBe(5);
   });
 });
