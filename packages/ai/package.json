@@ -33,6 +33,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@portfolio/shared": "workspace:*",
     "@aws-sdk/client-secrets-manager": "^3.1075.0",
     "@ai-sdk/anthropic": "^2.0.55",
     "@ai-sdk/groq": "^3.0.35",

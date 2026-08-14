@@ -10,6 +10,10 @@ import {
   testimonialSchema,
   siteConfigSchema,
   resumeSchema,
+  resumeLayoutSchema,
+  classicLayoutForm,
+  modernBlueLayoutForm,
+  cloneLayoutForm,
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
@@ -268,5 +272,134 @@ export async function saveResume(
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resume layouts
+// ---------------------------------------------------------------------------
+
+export async function saveResumeLayout(
+  id: string | null,
+  values: z.infer<typeof resumeLayoutSchema>,
+): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const normalized = {
+    ...values,
+    preview_image_url:
+      values.preview_image_url != null && String(values.preview_image_url).trim() !== ""
+        ? String(values.preview_image_url).trim()
+        : null,
+  };
+  const parsed = resumeLayoutSchema.safeParse(normalized);
+  if (!parsed.success) return { success: false, error: parsed.error.message };
+
+  try {
+    if (id) {
+      const current = await repo.getResumeLayoutById(id);
+      if (!current) return { success: false, error: "Layout not found" };
+      if (current.is_default && parsed.data.is_default === false) {
+        return {
+          success: false,
+          error: "Set another layout as default before unsetting this one.",
+        };
+      }
+      await repo.updateResumeLayout(id, parsed.data);
+      if (parsed.data.is_default) await ensureSingleDefaultLayout(id);
+    } else {
+      const created = await repo.insertResumeLayout({
+        ...parsed.data,
+        is_default: false,
+      });
+      if (parsed.data.is_default) await ensureSingleDefaultLayout(created.id);
+    }
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+export async function createResumeLayoutFromTemplate(
+  template: "classic" | "modern-blue",
+): Promise<ActionResult & { id?: string }> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const source =
+    template === "modern-blue" ? modernBlueLayoutForm() : classicLayoutForm();
+  const values = cloneLayoutForm(source, { name: `${source.name} copy` });
+
+  try {
+    const created = await repo.insertResumeLayout(values);
+    return { success: true, id: created.id };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+export async function setDefaultResumeLayout(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    const current = await repo.getResumeLayoutById(id);
+    if (!current) return { success: false, error: "Layout not found" };
+    await ensureSingleDefaultLayout(id);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+export async function deleteResumeLayout(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    const layouts = await repo.getResumeLayouts();
+    const current = layouts.find((layout) => layout.id === id);
+    if (!current) return { success: false, error: "Layout not found" };
+    if (current.is_default) {
+      return { success: false, error: "Cannot delete the default layout." };
+    }
+    if (layouts.length <= 1) {
+      return { success: false, error: "Keep at least one layout." };
+    }
+    await repo.deleteResumeLayout(id);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+export async function applyTailoredSummary(summary: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const trimmed = summary.trim();
+  if (trimmed.length < 40) {
+    return { success: false, error: "Summary is too short to apply." };
+  }
+  if (trimmed.length > 2000) {
+    return { success: false, error: "Summary exceeds 2000 characters." };
+  }
+
+  try {
+    await repo.upsertResume({ default_summary: trimmed });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
+async function ensureSingleDefaultLayout(id: string): Promise<void> {
+  const layouts = await repo.getResumeLayouts();
+  for (const layout of layouts) {
+    const shouldBeDefault = layout.id === id;
+    if (layout.is_default !== shouldBeDefault) {
+      await repo.updateResumeLayout(layout.id, { is_default: shouldBeDefault });
+    }
   }
 }

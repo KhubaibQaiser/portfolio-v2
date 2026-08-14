@@ -42,6 +42,11 @@ export type ResumeDataProject = {
   bullets: string[];
 };
 
+export type ResumeDataLanguage = {
+  name: string;
+  level: string;
+};
+
 export type ResumeData = {
   name: string;
   title: string;
@@ -58,6 +63,9 @@ export type ResumeData = {
   education: ResumeDataEducation[];
   certifications: { name: string; issuer: string }[];
   skills: ResumeDataSkillGroup[];
+  languages: ResumeDataLanguage[];
+  remoteWorkLine: string | null;
+  referencesLine: string | null;
 };
 
 export type GetResumeDataOptions = {
@@ -183,6 +191,12 @@ export async function getResumeData(
       issuer: c.issuer ?? "",
     })),
     skills: skillGroups,
+    languages: (resume.languages ?? []).map((lang) => ({
+      name: lang.name,
+      level: lang.level,
+    })),
+    remoteWorkLine: resume.remote_work_line?.trim() || null,
+    referencesLine: resume.references_line?.trim() || null,
   };
 }
 

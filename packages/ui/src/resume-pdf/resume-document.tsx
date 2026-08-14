@@ -1,6 +1,11 @@
 import { Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
 import type { ResumeData } from "@portfolio/shared/resume-data";
+import type { VariantGuidelines } from "@portfolio/shared/schemas";
 import { COLORS, baseStyles } from "./styles";
+import { PdfBulletList } from "./pdf-bullet-list";
+import { PdfMetaSections } from "./pdf-meta-sections";
+import { RichPdfText } from "./rich-pdf-text";
+import { showResumePdfSection } from "./section-visibility";
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -66,6 +71,7 @@ const s = StyleSheet.create({
   certBullet: { width: 10, fontSize: 10, color: COLORS.accent },
   certText: { flex: 1, fontSize: 9.5, color: COLORS.body },
   certIssuer: { color: COLORS.secondary },
+  metaBody: { fontSize: 9.5, color: COLORS.body, lineHeight: 1.35 },
 });
 
 function socialLinkLabel(link: { platform: string; label: string }): string {
@@ -78,13 +84,34 @@ function formatEducationLine(edu: ResumeData["education"][number]): string {
   return `${edu.degree}, ${edu.institution} · ${edu.year}`;
 }
 
-export function ResumeDocument({ data }: { data: ResumeData }) {
+export function ResumeDocument({
+  data,
+  guidelines,
+}: {
+  data: ResumeData;
+  guidelines?: VariantGuidelines;
+}) {
   const show = (key: string) => data.visibleSections.includes(key);
   const showExperience = show("experience");
   const showProjects = show("projects") && data.projects.length > 0;
   const showEducation = show("education") && data.education.length > 0;
   const showCertifications = show("certifications") && data.certifications.length > 0;
   const showSkills = show("skills") && data.skills.length > 0;
+  const showLanguages = showResumePdfSection(data, guidelines, "languages", "languages");
+  const showRemote = showResumePdfSection(
+    data,
+    guidelines,
+    "remote",
+    "remoteWorkExperience",
+  );
+  const showReferences = showResumePdfSection(
+    data,
+    guidelines,
+    "references",
+    "references",
+  );
+
+  const pageSize = guidelines?.formatting.layout.pageSize ?? "LETTER";
 
   const [firstExp, ...restExp] = data.experience;
   const [firstProject, ...restProjects] = data.projects;
@@ -99,7 +126,7 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
       subject={`Resume of ${data.name}, ${data.title}`}
       keywords={data.keywords}
     >
-      <Page size="LETTER" style={s.page}>
+      <Page size={pageSize} style={s.page}>
         <View style={s.headerBand}>
           <Text style={s.headerName}>{data.name}</Text>
           <Text style={s.headerTitle}>{data.title}</Text>
@@ -137,7 +164,7 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
 
         <View style={s.section} wrap={false}>
           <Text style={s.sectionTitle}>Professional Summary</Text>
-          <Text style={s.summary}>{data.summary}</Text>
+          <RichPdfText value={data.summary} style={s.summary} />
         </View>
 
         {showExperience ? (
@@ -168,14 +195,15 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                       <Text style={s.expLocation}>{firstExp.location}</Text>
                     </View>
                   </View>
-                  <View style={s.bulletList}>
-                    {firstExp.bullets.map((bullet, i) => (
-                      <View key={i} style={s.bulletRow}>
-                        <Text style={s.bulletDot}>-</Text>
-                        <Text style={s.bulletText}>{bullet}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <PdfBulletList
+                    bullets={firstExp.bullets}
+                    styles={{
+                      list: s.bulletList,
+                      row: s.bulletRow,
+                      dot: s.bulletDot,
+                      text: s.bulletText,
+                    }}
+                  />
                 </View>
               ) : null}
             </View>
@@ -200,14 +228,15 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                     <Text style={s.expLocation}>{exp.location}</Text>
                   </View>
                 </View>
-                <View style={s.bulletList}>
-                  {exp.bullets.map((bullet, i) => (
-                    <View key={i} style={s.bulletRow}>
-                      <Text style={s.bulletDot}>-</Text>
-                      <Text style={s.bulletText}>{bullet}</Text>
-                    </View>
-                  ))}
-                </View>
+                <PdfBulletList
+                  bullets={exp.bullets}
+                  styles={{
+                    list: s.bulletList,
+                    row: s.bulletRow,
+                    dot: s.bulletDot,
+                    text: s.bulletText,
+                  }}
+                />
               </View>
             ))}
           </View>
@@ -234,14 +263,15 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                       ) : null}
                     </Text>
                   </View>
-                  <View style={s.bulletList}>
-                    {firstProject.bullets.map((bullet, i) => (
-                      <View key={i} style={s.bulletRow}>
-                        <Text style={s.bulletDot}>-</Text>
-                        <Text style={s.bulletText}>{bullet}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <PdfBulletList
+                    bullets={firstProject.bullets}
+                    styles={{
+                      list: s.bulletList,
+                      row: s.bulletRow,
+                      dot: s.bulletDot,
+                      text: s.bulletText,
+                    }}
+                  />
                 </View>
               ) : null}
             </View>
@@ -261,14 +291,15 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
                     ) : null}
                   </Text>
                 </View>
-                <View style={s.bulletList}>
-                  {project.bullets.map((bullet, i) => (
-                    <View key={i} style={s.bulletRow}>
-                      <Text style={s.bulletDot}>-</Text>
-                      <Text style={s.bulletText}>{bullet}</Text>
-                    </View>
-                  ))}
-                </View>
+                <PdfBulletList
+                  bullets={project.bullets}
+                  styles={{
+                    list: s.bulletList,
+                    row: s.bulletRow,
+                    dot: s.bulletDot,
+                    text: s.bulletText,
+                  }}
+                />
               </View>
             ))}
           </View>
@@ -339,6 +370,18 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
             ))}
           </View>
         ) : null}
+
+        <PdfMetaSections
+          languages={data.languages}
+          remoteWorkLine={data.remoteWorkLine}
+          referencesLine={data.referencesLine}
+          showLanguages={showLanguages}
+          showRemote={showRemote}
+          showReferences={showReferences}
+          titleStyle={s.sectionTitle}
+          bodyStyle={s.metaBody}
+          sectionStyle={s.section}
+        />
       </Page>
     </Document>
   );

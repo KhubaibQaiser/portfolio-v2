@@ -16,6 +16,13 @@ describe("FixtureContentRepository", () => {
     expect((await repo.getResume()).education).toHaveLength(1);
   });
 
+  it("returns seeded resume layouts with a default", async () => {
+    const layouts = await repo.getResumeLayouts();
+    expect(layouts.length).toBeGreaterThanOrEqual(2);
+    expect(layouts.some((layout) => layout.is_default)).toBe(true);
+    expect(layouts.some((layout) => layout.component_key === "modern-blue")).toBe(true);
+  });
+
   it("returns experience sorted by recency (most recent first)", async () => {
     const rows = await repo.getExperience();
     expect(rows[0]?.company).toBe("Shopsense AI");
@@ -105,6 +112,8 @@ describe("FixtureContentRepository", () => {
       usage: { costUsd: 0.25 },
       resume_pdf_url: null,
       cover_letter_pdf_url: null,
+      layout_id: null,
+      applied_changes: [],
       archived_at: null,
       deleted_at: null,
     });

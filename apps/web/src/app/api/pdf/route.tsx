@@ -1,5 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
-import { ResumeDocument } from "@portfolio/ui/resume-pdf";
+import { renderResumeDocument } from "@portfolio/ui/resume-pdf";
+import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
+import { getContentRepository } from "@portfolio/data";
 import { getResumeData } from "@/lib/resume-data";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
@@ -7,8 +9,13 @@ import { toError } from "@/lib/to-error";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const data = await getResumeData();
-  const document = <ResumeDocument data={data} />;
+  const repo = getContentRepository();
+  const [data, layouts] = await Promise.all([
+    getResumeData(),
+    repo.getResumeLayouts().catch(() => []),
+  ]);
+  const layout = pickDefaultResumeLayout(layouts);
+  const document = renderResumeDocument(data, layout);
 
   try {
     const buffer = await renderToBuffer(document);

@@ -17,6 +17,8 @@ import type {
   ResumeFormData,
   ResumeVariant,
   ResumeVariantFormData,
+  ResumeLayout,
+  ResumeLayoutFormData,
   Media,
   MediaInsert,
   ResumeGeneration,
@@ -98,6 +100,13 @@ export type ContentRepository = {
   insertResumeVariant(values: ResumeVariantFormData): Promise<ResumeVariant>;
   updateResumeVariant(id: string, values: Partial<ResumeVariantFormData>): Promise<void>;
   deleteResumeVariant(id: string): Promise<void>;
+
+  // Resume layout variants (visual templates + AI guidelines)
+  getResumeLayouts(): Promise<ResumeLayout[]>;
+  getResumeLayoutById(id: string): Promise<ResumeLayout | null>;
+  insertResumeLayout(values: ResumeLayoutFormData): Promise<ResumeLayout>;
+  updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>): Promise<void>;
+  deleteResumeLayout(id: string): Promise<void>;
 
   // Media
   getMedia(): Promise<Media[]>;

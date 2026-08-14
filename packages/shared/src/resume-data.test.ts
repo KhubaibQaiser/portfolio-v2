@@ -53,6 +53,9 @@ const base: ResumeData = {
   education: [{ degree: "BS CS", institution: "State U", year: "2018" }],
   certifications: [],
   skills: [{ category: "Frontend", items: ["React", "TypeScript"] }],
+  languages: [{ name: "English", level: "Fluent" }],
+  remoteWorkLine: "Remote-first.",
+  referencesLine: "References available on request",
 };
 
 function emptyProjectsRepo(
@@ -86,6 +89,9 @@ function emptyProjectsRepo(
       visible_sections: ["experience", "projects"],
       is_projects_visible: true,
       voice_sample: null,
+      languages: [{ name: "English", level: "Fluent" }],
+      remote_work_line: "Remote-first.",
+      references_line: "References available on request",
       created_at: "",
       updated_at: "",
     }),
@@ -249,6 +255,9 @@ describe("getResumeData", () => {
   it("returns an empty projects array when none are opted in", async () => {
     const data = await getResumeData(emptyProjectsRepo());
     expect(data.projects).toEqual([]);
+    expect(data.languages).toEqual([{ name: "English", level: "Fluent" }]);
+    expect(data.remoteWorkLine).toBe("Remote-first.");
+    expect(data.referencesLine).toBe("References available on request");
   });
 });
 

@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { getContentRepository } from "@portfolio/data";
+import { getResumeData } from "@portfolio/shared/resume-data";
+import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { GeneratorClient } from "./_components/generator-client";
+import { UsageStat } from "./_components/usage-stat";
 import type { HistoryItem } from "./_components/types";
 
 export const dynamic = "force-dynamic";
@@ -24,8 +27,6 @@ export default async function ResumeGeneratorPage() {
       repo.sumMonthlyUsage(auth.id),
     ]);
   } catch (err) {
-    // Capture the real cause (the page otherwise surfaces only a bare 500),
-    // then rethrow so Next still renders its error boundary.
     logger.error("resume-generator page data load failed", {
       userId: auth.id,
       error: err instanceof Error ? err : new Error(String(err)),
@@ -33,11 +34,17 @@ export default async function ResumeGeneratorPage() {
     throw err;
   }
 
+  const [layouts, baseResume] = await Promise.all([
+    repo.getResumeLayouts().catch(() => []),
+    getResumeData(repo).catch(() => null),
+  ]);
+
   logger.info("resume-generator page loaded", {
     userId: auth.id,
     historyCount: historyRows.length,
     dailyUsd: daily.totalUsd,
     monthlyRuns: monthly.count,
+    layoutCount: layouts.length,
   });
 
   const history: HistoryItem[] = historyRows.map((r) => ({
@@ -50,7 +57,10 @@ export default async function ResumeGeneratorPage() {
     hasResume: r.resume !== null,
     hasCoverLetter: r.cover_letter !== null,
     hasAts: r.ats !== null,
+    layoutId: r.layout_id,
   }));
+
+  const defaultLayoutId = pickDefaultResumeLayout(layouts)?.id ?? "";
 
   return (
     <>
@@ -58,37 +68,32 @@ export default async function ResumeGeneratorPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Resume AI</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Generate a JD-tailored resume and cover letter from your live portfolio data.
+            Tailor your resume to a job description using a layout&apos;s guidelines.
+            Summary and bullets are rewritten from live CMS data. Cover letter and ATS
+            stay available as secondary tools.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-right text-xs">
-          <Stat
+          <UsageStat
             label="Today"
             value={`$${daily.totalUsd.toFixed(3)}`}
             sub={`of $${DAILY_CAP.toFixed(2)} cap`}
           />
-          <Stat
+          <UsageStat
             label="This month"
             value={`$${monthly.totalUsd.toFixed(2)}`}
             sub={`${monthly.count} runs`}
           />
-          <Stat label="History" value={String(history.length)} sub="recent" />
+          <UsageStat label="History" value={String(history.length)} sub="recent" />
         </div>
       </div>
 
-      <GeneratorClient initialHistory={history} dailyCap={DAILY_CAP} />
+      <GeneratorClient
+        initialHistory={history}
+        layouts={layouts}
+        defaultLayoutId={defaultLayoutId}
+        baseResume={baseResume}
+      />
     </>
-  );
-}
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="border-border/60 bg-muted/20 rounded-lg border px-3 py-2 text-left">
-      <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm font-semibold">{value}</p>
-      {sub && <p className="text-muted-foreground text-[10px]">{sub}</p>}
-    </div>
   );
 }
