@@ -9,6 +9,10 @@ import {
   type ResumeLayoutFormData,
 } from "../../../shared/src/schemas";
 import { createModernBlueStyles } from "./modern-blue-print-spec";
+import {
+  projectModernBlueResume,
+  removeLeastRelevantBullet,
+} from "./fit-modern-blue-resume";
 import { renderResumePdfBuffer } from "./render-resume-pdf";
 
 function layoutFromForm(id: string, form: ResumeLayoutFormData): ResumeLayout {
@@ -37,7 +41,7 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
     expect(result.fitReport?.pageCount).toBe(1);
     expect(result.fitReport?.droppedRoles).toBe(0);
-    expect(result.fitReport?.droppedBullets).toBe(0);
+    expect(result.fitReport?.droppedBullets).toBe(2);
     expect(result.fitReport?.droppedSkills).toBe(0);
     expect(result.fitReport?.droppedSkillGroups).toBe(0);
   }, 30_000);
@@ -49,6 +53,41 @@ describe("Modern Blue PDF rendering", () => {
 
     expect(result.fitReport?.pageCount).toBe(1);
   }, 30_000);
+
+  it("allocates more bullets to recent roles and caps older roles", () => {
+    const guidelines = modernBlueLayoutForm().guidelines;
+    const projection = projectModernBlueResume(modernBlueReferenceResume, guidelines);
+
+    expect(projection.data.experience.map((item) => item.company)).toEqual([
+      "Shopsense AI",
+      "Powerful Web Design",
+      "Achieve",
+      "Tradeblock",
+      "GudangAda",
+      "STOQO",
+      "Knowledge Platform",
+    ]);
+    expect(projection.projectedBulletBudgets).toEqual([5, 4, 3, 2, 1, 1, 1]);
+    expect(projection.data.experience.map((item) => item.bullets.length)).toEqual([
+      5, 2, 3, 1, 1, 1, 1,
+    ]);
+  });
+
+  it("trims older roles before reducing the newest role", () => {
+    const data = {
+      ...modernBlueReferenceResume,
+      experience: modernBlueReferenceResume.experience.slice(0, 4).map((item) => ({
+        ...item,
+        bullets: Array.from({ length: 5 }, (_, index) => `Bullet ${index + 1}`),
+      })),
+    };
+    const projection = projectModernBlueResume(data, modernBlueLayoutForm().guidelines);
+
+    expect(removeLeastRelevantBullet(projection)).toBe(true);
+    expect(projection.data.experience.map((item) => item.bullets.length)).toEqual([
+      5, 4, 3, 1,
+    ]);
+  });
 
   it("deterministically reduces a maximum-density payload to one page", async () => {
     const source = await getResumeData(createFixtureContentRepository());
@@ -75,6 +114,9 @@ describe("Modern Blue PDF rendering", () => {
         (result.fitReport?.droppedRoles ?? 0) +
         (result.fitReport?.droppedSkills ?? 0),
     ).toBeGreaterThan(0);
+    if ((result.fitReport?.droppedRoles ?? 0) > 0) {
+      expect(result.fitReport?.density).toBe("fitCompact");
+    }
   }, 60_000);
 
   it("leaves the Classic rendering path unfitted", async () => {

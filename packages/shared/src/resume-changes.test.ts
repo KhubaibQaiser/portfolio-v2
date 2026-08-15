@@ -16,6 +16,8 @@ const base: ResumeData = {
     {
       company: "Alpha",
       role: "Eng",
+      startDate: "Jan 2024",
+      endDate: null,
       period: "2024 - Present",
       location: "Remote",
       contractType: "Full-time",
@@ -25,6 +27,8 @@ const base: ResumeData = {
     {
       company: "Beta",
       role: "Eng",
+      startDate: "Jan 2022",
+      endDate: "Jan 2024",
       period: "2022 - 2024",
       location: "Remote",
       contractType: "Full-time",

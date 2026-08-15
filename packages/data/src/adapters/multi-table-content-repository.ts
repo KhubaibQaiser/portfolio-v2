@@ -160,7 +160,7 @@ function toResumeLayout(item: Item): ResumeLayout {
   const v = item as ResumeLayout;
   return {
     ...v,
-    version: v.component_key === "modern-blue" && v.version < 2 ? 2 : v.version,
+    version: v.component_key === "modern-blue" && v.version < 3 ? 3 : v.version,
     guidelines: normalizeResumeLayoutGuidelines(v.component_key, v.version, v.guidelines),
     preview_image_url: v.preview_image_url ?? null,
     is_default: v.is_default ?? false,

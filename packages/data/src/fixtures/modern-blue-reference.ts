@@ -20,6 +20,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Senior Software Engineer",
       company: "Shopsense AI",
+      startDate: "Aug 2024",
+      endDate: "Jul 2026",
       period: "Aug 2024 – Jul 2026",
       location: "San Francisco, CA · Remote",
       contractType: "Full-time",
@@ -35,6 +37,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Senior Frontend Engineer",
       company: "Powerful Web Design",
+      startDate: "Oct 2023",
+      endDate: "Jul 2026",
       period: "Oct 2023 – Jul 2026",
       location: "Oregon · Remote",
       contractType: "Part-time",
@@ -47,6 +51,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Senior Web Developer",
       company: "Achieve",
+      startDate: "Jul 2023",
+      endDate: "Aug 2024",
       period: "Jul 2023 – Aug 2024",
       location: "Jersey City, NJ · Remote",
       contractType: "Full-time",
@@ -60,6 +66,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Senior React Native Engineer",
       company: "Tradeblock",
+      startDate: "Jan 2023",
+      endDate: "Jun 2023",
       period: "Jan 2023 – Jun 2023",
       location: "Austin, TX · Remote",
       contractType: "Contract",
@@ -71,6 +79,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Senior Software Engineer",
       company: "GudangAda",
+      startDate: "Sep 2020",
+      endDate: "Jan 2023",
       period: "Sep 2020 – Jan 2023",
       location: "Jakarta, Indonesia · Remote",
       contractType: "Full-time",
@@ -84,6 +94,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Software Engineer",
       company: "STOQO",
+      startDate: "Feb 2019",
+      endDate: "Apr 2020",
       period: "Feb 2019 – Apr 2020",
       location: "Jakarta, Indonesia · Remote",
       contractType: "Full-time",
@@ -95,6 +107,8 @@ export const modernBlueReferenceResume: ResumeData = {
     {
       role: "Mobile App and Game Developer",
       company: "Knowledge Platform",
+      startDate: "Sep 2015",
+      endDate: "Feb 2019",
       period: "Sep 2015 – Feb 2019",
       location: "Islamabad · Onsite",
       contractType: "Full-time",

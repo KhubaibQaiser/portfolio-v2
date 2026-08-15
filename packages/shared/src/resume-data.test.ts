@@ -24,6 +24,8 @@ const base: ResumeData = {
     {
       company: "Alpha Co",
       role: "Senior Engineer",
+      startDate: "Jan 2024",
+      endDate: null,
       period: "2024 - Present",
       location: "SF · Remote",
       contractType: "Full-time",
@@ -33,6 +35,8 @@ const base: ResumeData = {
     {
       company: "Beta Co",
       role: "Engineer",
+      startDate: "Jan 2022",
+      endDate: "Jan 2024",
       period: "2022 - 2024",
       location: "NYC · Remote",
       contractType: "Full-time",
@@ -42,6 +46,8 @@ const base: ResumeData = {
     {
       company: "Gamma Co",
       role: "Junior Engineer",
+      startDate: "Jan 2018",
+      endDate: "Jan 2022",
       period: "2018 - 2022",
       location: "Austin · Remote",
       contractType: "Full-time",
@@ -278,7 +284,7 @@ describe("stableExperienceIndex", () => {
 });
 
 describe("applyTailoredResume", () => {
-  it("includes only tailored experiences in AI order", () => {
+  it("includes only tailored experiences in recency order", () => {
     const result = applyTailoredResume(base, {
       summary: "Tailored summary.",
       keywords: ["React"],
@@ -299,9 +305,9 @@ describe("applyTailoredResume", () => {
     expect(result.title).toBe("Staff Engineer");
     expect(result.summary).toBe("Tailored summary.");
     expect(result.experience).toHaveLength(2);
-    expect(result.experience[0]!.company).toBe("Beta Co");
-    expect(result.experience[1]!.company).toBe("Alpha Co");
-    expect(result.experience[0]!.bullets[0]).toBe("Rewritten beta bullet.");
+    expect(result.experience[0]!.company).toBe("Alpha Co");
+    expect(result.experience[1]!.company).toBe("Beta Co");
+    expect(result.experience[1]!.bullets[0]).toBe("Rewritten beta bullet.");
   });
 
   it("drops experiences omitted from tailored payload", () => {
@@ -319,5 +325,30 @@ describe("applyTailoredResume", () => {
 
     expect(result.experience).toHaveLength(1);
     expect(result.experience[0]!.company).toBe("Alpha Co");
+  });
+
+  it("enforces recency-weighted limits after AI tailoring", () => {
+    const repeatedBullets = (prefix: string) =>
+      Array.from({ length: 5 }, (_, index) => ({ text: `${prefix} ${index + 1}` }));
+    const result = applyTailoredResume(
+      base,
+      {
+        summary: "Tailored summary.",
+        keywords: [],
+        experiences: [
+          { experienceId: "e3", bullets: repeatedBullets("Gamma") },
+          { experienceId: "e2", bullets: repeatedBullets("Beta") },
+          { experienceId: "e1", bullets: repeatedBullets("Alpha") },
+        ],
+        skills: [],
+      },
+      { maxRoles: 2, maxBullets: 5 },
+    );
+
+    expect(result.experience.map((item) => item.company)).toEqual([
+      "Alpha Co",
+      "Beta Co",
+    ]);
+    expect(result.experience.map((item) => item.bullets.length)).toEqual([5, 4]);
   });
 });

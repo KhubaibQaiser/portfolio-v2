@@ -1,4 +1,8 @@
 import { SKILL_CATEGORIES, getSkillCategorySortWeight } from "./constants";
+import {
+  allocateRecencyBulletBudgets,
+  sortDatedExperiencesByRecency,
+} from "./experience-bullet-budget";
 import type { ContentRepository } from "./ports/content-repository";
 import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
 import { filterProjectsForResume } from "./schemas/project";
@@ -18,6 +22,8 @@ export type ResumeSocialLink = {
 export type ResumeDataExperience = {
   company: string;
   role: string;
+  startDate: string;
+  endDate: string | null;
   period: string;
   location: string;
   contractType: string;
@@ -178,6 +184,8 @@ export async function getResumeData(
     experience: filterExperienceForResume(experience).map((exp) => ({
       company: exp.company,
       role: exp.role,
+      startDate: exp.start_date,
+      endDate: exp.end_date,
       period: `${exp.start_date} - ${exp.end_date ?? "Present"}`,
       location: formatExpLocation(exp.location, exp.location_type),
       contractType: getContractTypeLabel(exp.contract_type),
@@ -221,18 +229,29 @@ export function applyTailoredResume(
     skills: Array<{ category: string; items: string[] }>;
     titleOverride?: string | null;
   },
+  limits?: {
+    maxRoles: number;
+    maxBullets: number;
+  },
 ): ResumeData {
-  const experience = tailored.experiences
-    .map((te) => {
-      const index = stableExperienceIndex(te.experienceId);
+  const selectedExperience = tailored.experiences
+    .map((tailoredExperience) => {
+      const index = stableExperienceIndex(tailoredExperience.experienceId);
       if (index === null || index >= base.experience.length) return null;
       const exp = base.experience[index]!;
       return {
         ...exp,
-        bullets: te.bullets.map((b) => b.text),
+        bullets: tailoredExperience.bullets.map((bullet) => bullet.text),
       };
     })
     .filter((exp): exp is ResumeDataExperience => exp !== null);
+  const sortedExperience = sortDatedExperiencesByRecency(selectedExperience);
+  const limitedExperience = limits
+    ? sortedExperience.slice(0, limits.maxRoles)
+    : sortedExperience;
+  const experience = limits
+    ? allocateRecencyBulletBudgets(limitedExperience, limits.maxBullets).experiences
+    : limitedExperience;
 
   const tailoredSkills =
     tailored.skills.length > 0

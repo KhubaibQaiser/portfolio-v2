@@ -1,5 +1,9 @@
 import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { VariantGuidelines } from "@portfolio/shared/schemas";
+import {
+  allocateRecencyBulletBudgets,
+  sortDatedExperiencesByRecency,
+} from "@portfolio/shared/experience-bullet-budget";
 import type { ModernBlueDensity } from "./modern-blue-print-spec";
 
 const MAX_SKILL_GROUPS = 8;
@@ -22,6 +26,7 @@ export type FitReport = {
 export type ModernBlueProjection = {
   data: ResumeData;
   report: FitReport;
+  projectedBulletBudgets: number[];
 };
 
 export function createFitReport(): FitReport {
@@ -55,11 +60,15 @@ export function projectModernBlueResume(
     guidelines.validation.maxBulletsPerRole,
     guidelines.formatting.layout.maxBulletsPerJob,
   );
-  const experience = source.experience.slice(0, maxRoles).map((item) => {
-    report.droppedBullets += Math.max(0, item.bullets.length - maxBullets);
-    return { ...item, bullets: item.bullets.slice(0, maxBullets) };
-  });
-  report.droppedRoles = Math.max(0, source.experience.length - experience.length);
+  const sortedExperience = sortDatedExperiencesByRecency(source.experience);
+  const selectedExperience = sortedExperience.slice(0, maxRoles);
+  const allocatedExperience = allocateRecencyBulletBudgets(
+    selectedExperience,
+    maxBullets,
+  );
+  const experience = allocatedExperience.experiences;
+  report.droppedBullets = allocatedExperience.droppedBullets;
+  report.droppedRoles = Math.max(0, sortedExperience.length - experience.length);
 
   const skills = source.skills.slice(0, MAX_SKILL_GROUPS).map((group) => {
     report.droppedSkills += Math.max(0, group.items.length - MAX_SKILLS_PER_GROUP);
@@ -78,13 +87,40 @@ export function projectModernBlueResume(
       })),
     },
     report,
+    projectedBulletBudgets: allocatedExperience.budgets.slice(0, maxRoles),
   };
 }
 
 export function removeLeastRelevantBullet(projection: ModernBlueProjection): boolean {
-  for (let index = projection.data.experience.length - 1; index >= 0; index -= 1) {
-    const experience = projection.data.experience[index]!;
-    if (experience.bullets.length <= 1) continue;
+  const lastIndex = projection.data.experience.length - 1;
+  const trimFromOldest = (minimumForIndex: (index: number) => number): boolean => {
+    for (let index = lastIndex; index >= 0; index -= 1) {
+      const experience = projection.data.experience[index]!;
+      if (experience.bullets.length <= minimumForIndex(index)) continue;
+      experience.bullets = experience.bullets.slice(0, -1);
+      projection.report.droppedBullets += 1;
+      return true;
+    }
+    return false;
+  };
+
+  if (trimFromOldest((index) => (index >= 3 ? 1 : Number.MAX_SAFE_INTEGER))) {
+    return true;
+  }
+  if (
+    trimFromOldest((index) => (index >= 1 && index <= 2 ? 2 : Number.MAX_SAFE_INTEGER))
+  ) {
+    return true;
+  }
+  if (
+    trimFromOldest((index) => (index >= 1 && index <= 2 ? 1 : Number.MAX_SAFE_INTEGER))
+  ) {
+    return true;
+  }
+
+  const newestFloor = Math.max(2, (projection.projectedBulletBudgets[0] ?? 1) - 1);
+  const experience = projection.data.experience[0];
+  if (experience && experience.bullets.length > newestFloor) {
     experience.bullets = experience.bullets.slice(0, -1);
     projection.report.droppedBullets += 1;
     return true;
@@ -98,6 +134,7 @@ export function removeLeastRelevantRole(
 ): boolean {
   if (projection.data.experience.length <= minimumRoles) return false;
   projection.data.experience = projection.data.experience.slice(0, -1);
+  projection.projectedBulletBudgets = projection.projectedBulletBudgets.slice(0, -1);
   projection.report.droppedRoles += 1;
   return true;
 }

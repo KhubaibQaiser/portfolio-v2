@@ -43,7 +43,7 @@ describe("resume layout guidelines", () => {
     expect(result.success).toBe(false);
   });
 
-  it("normalizes stored Modern Blue v1 rows to the strict v2 print contract", () => {
+  it("normalizes stored Modern Blue v1 rows to the strict v3 print contract", () => {
     const legacy = modernBlueLayoutForm().guidelines;
     legacy.formatting.typography.bodyFont = "Helvetica";
     legacy.sections.projects = true;
@@ -53,6 +53,18 @@ describe("resume layout guidelines", () => {
     expect(normalized.formatting.typography.bodyFont).toBe("DM Sans");
     expect(normalized.sections.projects).toBe(false);
     expect(normalized.validation.maxPageCount).toBe(1);
-    expect(normalized.validation.minExperienceItems).toBe(5);
+    expect(normalized.validation.minExperienceItems).toBe(3);
+  });
+
+  it("migrates Modern Blue v2 validation without replacing color overrides", () => {
+    const stored = modernBlueLayoutForm().guidelines;
+    stored.formatting.colorPalette.primary = "#123456";
+    stored.validation.minExperienceItems = 5;
+
+    const normalized = normalizeResumeLayoutGuidelines("modern-blue", 2, stored);
+
+    expect(normalized.validation.minExperienceItems).toBe(3);
+    expect(normalized.validation.maxPageCount).toBe(1);
+    expect(normalized.formatting.colorPalette.primary).toBe("#123456");
   });
 });

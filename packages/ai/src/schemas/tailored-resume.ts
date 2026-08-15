@@ -25,7 +25,7 @@ export type TailoredBullet = z.infer<typeof tailoredBulletSchema>;
 
 export const tailoredExperienceSchema = z.object({
   experienceId: z.string().min(1),
-  bullets: z.array(tailoredBulletSchema).min(1).max(4),
+  bullets: z.array(tailoredBulletSchema).min(1).max(10),
 });
 
 export type TailoredExperience = z.infer<typeof tailoredExperienceSchema>;
@@ -54,7 +54,7 @@ export const tailoredResumeSchema = z.object({
     .array(z.string().min(1))
     .max(25)
     .describe("ATS keyword list the summary + bullets cover. Truthful to source only."),
-  experiences: z.array(tailoredExperienceSchema).min(1).max(5),
+  experiences: z.array(tailoredExperienceSchema).min(1).max(8),
   skills: z
     .array(tailoredSkillGroupSchema)
     .min(1)

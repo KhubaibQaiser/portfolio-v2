@@ -68,12 +68,24 @@ export async function POST(request: Request) {
   try {
     if (body.kind === "resume") {
       const tailored = sanitizeLlmObject(body.resume);
-      const data = applyTailoredResume(base, tailored);
       const layouts = await repo.getResumeLayouts().catch(() => []);
       const layout = body.layoutId
         ? (layouts.find((item) => item.id === body.layoutId) ??
           pickDefaultResumeLayout(layouts))
         : pickDefaultResumeLayout(layouts);
+      const data = applyTailoredResume(
+        base,
+        tailored,
+        layout
+          ? {
+              maxRoles: layout.guidelines.validation.maxExperienceItems,
+              maxBullets: Math.min(
+                layout.guidelines.validation.maxBulletsPerRole,
+                layout.guidelines.formatting.layout.maxBulletsPerJob,
+              ),
+            }
+          : undefined,
+      );
       const { buffer, fitReport } = await renderResumePdfBuffer(data, layout);
       const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
       logger.info("resume pdf export fitted", {

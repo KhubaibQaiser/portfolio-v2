@@ -1,4 +1,8 @@
 import type { VariantGuidelines } from "@portfolio/shared/schemas";
+import {
+  bulletBudgetForRole,
+  describeBulletBudgetRules,
+} from "@portfolio/shared/experience-bullet-budget";
 import type { CandidateFacts } from "../context/build-candidate-facts";
 import {
   ANTI_FABRICATION_RULES,
@@ -20,18 +24,37 @@ export type ResumePromptOptions = {
   retryReason?: string;
 };
 
-const DEFAULT_OUTPUT_SHAPE = `OUTPUT SHAPE:
+function outputShape(facts: CandidateFacts, guidelines?: VariantGuidelines): string {
+  const maxRoles = guidelines?.validation.maxExperienceItems ?? 5;
+  const maxBullets = guidelines
+    ? Math.min(
+        guidelines.validation.maxBulletsPerRole,
+        guidelines.formatting.layout.maxBulletsPerJob,
+      )
+    : 4;
+  const budgetHints = (facts.experienceTimeline ?? [])
+    .map(
+      (experience, index) =>
+        `${experience.experienceId}: ${bulletBudgetForRole({
+          index,
+          maxBullets,
+          startDate: experience.startDate,
+          endDate: experience.endDate,
+        })}`,
+    )
+    .join(", ");
+  return `OUTPUT SHAPE:
 - Return JSON matching the provided schema exactly.
 - summary: 2-3 sentences, max 450 characters. Lead with years + core stack + best metric. No AI-tooling mention unless the JD asks for it.
 - titleOverride: optional JD-aligned title when truthful (Senior/Staff/Full-Stack). Omit if default title fits.
-- experiences: include ONLY roles relevant to the JD, max 5 total, ordered by JD relevance. Drop oldest or least relevant roles entirely.
-- Bullet budget by relevance (top = most JD-relevant after reordering):
-  - Top 2 roles: up to 4 bullets each, max ~22 words per bullet.
-  - Next 2 roles: 2-3 bullets each.
-  - 5th role (if included): 1-2 bullets max.
+- experiences: select only roles relevant to the JD, max ${maxRoles} total, then order selected roles newest-first.
+- Bullet budget: ${describeBulletBudgetRules(maxBullets)}
+${budgetHints ? `- Source-order per-role bullet caps: ${budgetHints}.` : ""}
+- Each bullet is max ~22 words.
 - Weave 1-2 stack terms into each bullet inline. Do NOT add a separate Technologies footer.
 - skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS / GCP, etc.).
 - keywords: max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.`;
+}
 
 export function interpolateTailoringTemplate(
   template: string,
@@ -52,7 +75,7 @@ export function describeLayoutGuidelines(guidelines: VariantGuidelines): string 
       ? "- ALWAYS write a new professional summary aimed at this job (maximum 450 characters, usually 2-3 sentences). Do not paste the generic CMS summary."
       : "- Keep the existing summary unless a small tweak clearly improves JD fit.",
     emphasis.experienceStrategy.reorderByRelevance
-      ? "- Reorder experience roles by JD relevance, then recency."
+      ? "- Select roles for JD relevance, then return the selected roles in reverse chronological order."
       : "- Keep experience in the given order.",
     rules.bulletRewriting
       ? "- Rewrite bullets as action → output → method → impact. Maximum 280 characters per bullet."
@@ -63,6 +86,12 @@ export function describeLayoutGuidelines(guidelines: VariantGuidelines): string 
     emphasis.experienceStrategy.filterOutIrrelevant
       ? `- Drop unrelated roles and bullets. Min ${validation.minExperienceItems}, max ${validation.maxExperienceItems} roles. Max ${validation.maxBulletsPerRole} bullets per role.`
       : `- Include at least ${validation.minExperienceItems} role(s). Max ${validation.maxExperienceItems} roles, ${validation.maxBulletsPerRole} bullets each.`,
+    `- ${describeBulletBudgetRules(
+      Math.min(
+        validation.maxBulletsPerRole,
+        guidelines.formatting.layout.maxBulletsPerJob,
+      ),
+    )}`,
     emphasis.skillsStrategy.matchJobDescription
       ? "- Reorder skill groups so JD-required skills come first. Do not invent skills."
       : "- Keep skill grouping truthful to the source.",
@@ -104,7 +133,7 @@ export function buildResumeSystemPrompt(
     fromTemplate,
     roleLine,
     describeOptions(opts),
-    DEFAULT_OUTPUT_SHAPE,
+    outputShape(facts, guidelines),
     guidelines ? describeLayoutGuidelines(guidelines) : "",
     PROMPT_INJECTION_RULES,
     ANTI_FABRICATION_RULES,
