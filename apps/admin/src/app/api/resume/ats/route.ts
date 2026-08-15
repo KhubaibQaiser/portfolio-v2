@@ -25,21 +25,29 @@ import {
 } from "@portfolio/ai/guardrails/output-sanitize";
 import { buildAtsSystemPrompt, buildAtsUserPrompt } from "@portfolio/ai/prompts/ats";
 import { refineAtsScore } from "@portfolio/ai/guardrails/ats-refine";
+import { enforceResumeGenerationPolicy } from "@portfolio/ai/policy/resume-generation-policy";
 import { getContentRepository } from "@portfolio/data";
 import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
+import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
+import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const bodySchema = z.object({
-  generationId: z.string().uuid().optional(),
-  resume: tailoredResumeSchema.optional(),
-  jobDescription: z.string().min(20).max(20_000),
-});
+const bodySchema = z
+  .object({
+    generationId: z.string().min(1),
+    resume: tailoredResumeSchema,
+    layoutId: z.string().min(1),
+    sourceHash: z.string().min(1),
+    guidelineHash: z.string().min(1),
+    jobDescription: z.string().min(20).max(20_000),
+  })
+  .strict();
 
 type Body = z.infer<typeof bodySchema>;
 
@@ -56,13 +64,6 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid body";
     return NextResponse.json({ error: message }, { status: 400 });
-  }
-
-  if (!body.resume && !body.generationId) {
-    return NextResponse.json(
-      { error: "Provide either `resume` or `generationId`" },
-      { status: 400 },
-    );
   }
 
   const rate = await checkResumeAiRateLimit(auth.id);
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await ensureAiApiKeys();
+    await ensureAiApiKeys("cheap");
   } catch (error) {
     logger.error("failed to load AI API keys from Secrets Manager", {
       error: error instanceof Error ? error : new Error(String(error)),
@@ -103,28 +104,44 @@ export async function POST(request: Request) {
     );
   }
 
-  let tailored = body.resume;
-  if (!tailored && body.generationId) {
-    const row = await repo.getResumeGenerationById(body.generationId);
-    if (!row || !row.resume) {
-      return NextResponse.json(
-        { error: "Generation not found or has no resume" },
-        { status: 404 },
-      );
-    }
-    const parsed = tailoredResumeSchema.safeParse(row.resume);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Stored resume is incompatible with current schema" },
-        { status: 409 },
-      );
-    }
-    tailored = parsed.data;
+  const row = await repo.getResumeGenerationById(body.generationId);
+  if (
+    !row ||
+    row.created_by !== auth.id ||
+    row.deleted_at ||
+    !row.source_snapshot ||
+    row.layout_id !== body.layoutId
+  ) {
+    return NextResponse.json(
+      { error: "Generation is missing, legacy, or does not match the layout." },
+      { status: 409 },
+    );
   }
-
-  if (!tailored) {
-    return NextResponse.json({ error: "Missing resume" }, { status: 400 });
+  const layout = await repo.getResumeLayoutById(body.layoutId);
+  if (!layout) {
+    return NextResponse.json(
+      { error: "Resume layout no longer exists." },
+      { status: 409 },
+    );
   }
+  const facts = await loadCandidateFactsUncached();
+  const snapshot = createGenerationSnapshot(facts, layout.guidelines, layout.version);
+  if (
+    body.sourceHash !== row.source_snapshot.sourceHash ||
+    body.sourceHash !== snapshot.sourceHash ||
+    body.guidelineHash !== row.source_snapshot.guidelineHash ||
+    body.guidelineHash !== snapshot.guidelineHash
+  ) {
+    return NextResponse.json(
+      { error: "Resume source or layout changed. Regenerate before ATS scoring." },
+      { status: 409 },
+    );
+  }
+  const tailored = enforceResumeGenerationPolicy(
+    sanitizeLlmObject(body.resume),
+    facts,
+    layout.guidelines,
+  ).resume;
 
   const wrappedJd = wrapUntrusted(
     trimJobDescription(stripPromptInjection(body.jobDescription)),
@@ -199,30 +216,35 @@ export async function POST(request: Request) {
     }
   }
 
-  const ats = refineAtsScore(sanitizeLlmObject(result.object) as AtsScore);
+  const ats: AtsScore = refineAtsScore(sanitizeLlmObject(result.object));
   const usageRecord = formatUsage(result.usage, chosen.modelId, {
     latencyMs: Date.now() - startedAt,
     fallbackUsed,
   });
 
-  if (body.generationId) {
-    try {
-      const row = await repo.getResumeGenerationById(body.generationId);
-      const prevUsage = (row?.usage as Record<string, unknown> | null | undefined) ?? {};
-      await repo.updateResumeGeneration(body.generationId, {
-        ats: (ats as unknown as Record<string, unknown>) ?? null,
-        usage: {
-          ...prevUsage,
-          ats: usageRecord,
-        } as unknown as ResumeGenerationUsage,
-      });
-    } catch (err) {
-      logger.error("ats persist failed", {
-        userId: auth.id,
-        generationId: body.generationId,
-        error: err instanceof Error ? err : new Error(String(err)),
-      });
-    }
+  try {
+    const prevUsage = row.usage ?? {};
+    await repo.updateResumeGeneration(body.generationId, {
+      ats: { ...ats },
+      usage: {
+        ...prevUsage,
+        ats: usageRecord,
+        inputTokens: (prevUsage.inputTokens ?? 0) + (usageRecord.inputTokens ?? 0),
+        outputTokens: (prevUsage.outputTokens ?? 0) + (usageRecord.outputTokens ?? 0),
+        totalTokens: (prevUsage.totalTokens ?? 0) + (usageRecord.totalTokens ?? 0),
+        costUsd: (prevUsage.costUsd ?? 0) + (usageRecord.costUsd ?? 0),
+      } as ResumeGenerationUsage,
+    });
+  } catch (err) {
+    logger.error("ats persist failed", {
+      userId: auth.id,
+      generationId: body.generationId,
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
+    return NextResponse.json(
+      { error: "ATS score could not be saved. Please retry." },
+      { status: 500 },
+    );
   }
 
   logger.info("ats scoring completed", {

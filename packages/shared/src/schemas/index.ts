@@ -87,6 +87,7 @@ export {
   type ResumeGenLength,
   type ResumeGenSource,
   type ResumeGenerationUsage,
+  type ResumeGenerationSourceSnapshot,
   type ResumeGeneration,
   type ResumeGenerationInsert,
   type ResumeGenerationUpdate,

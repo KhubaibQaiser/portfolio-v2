@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { parsePartialJson } from "ai";
 import { Download, RefreshCw, Square, Zap } from "lucide-react";
 import {
   atsScoreSchema,
-  combinedSchema,
   coverLetterSchema,
+  resumeGenerationSuccessSchema,
+  storedTailoredResumeSchema,
   tailoredResumeSchema,
-  type CoverLetter,
   type TailoredResume,
 } from "@portfolio/ai/schemas";
 import type { ResumeLayout } from "@portfolio/shared/schemas";
@@ -39,6 +38,14 @@ type Props = {
   layouts: ResumeLayout[];
   defaultLayoutId: string;
   baseResume: ResumeData | null;
+};
+
+type ArtifactContext = {
+  generationId: string;
+  layoutId: string;
+  sourceHash: string;
+  guidelineHash: string;
+  jobDescription: string;
 };
 
 const DEFAULT_OPTS: OptionsState = {
@@ -75,6 +82,11 @@ export function GeneratorClient({
   const [history, setHistory] = useState<HistoryItem[]>(initialHistory);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
   const [previewRevision, setPreviewRevision] = useState(0);
+  const [resumeContext, setResumeContext] = useState<ArtifactContext | null>(null);
+  const [coverLetterContext, setCoverLetterContext] = useState<ArtifactContext | null>(
+    null,
+  );
+  const [resumeDirty, setResumeDirty] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -83,6 +95,14 @@ export function GeneratorClient({
   }, []);
 
   const canGenerate = jd.trim().length >= 20 && !streaming;
+  const resumeStale = Boolean(
+    resumeContext &&
+    (resumeContext.layoutId !== layoutId ||
+      resumeContext.jobDescription.trim() !== jd.trim()),
+  );
+  const resumeIsValid = generation.resume
+    ? tailoredResumeSchema.safeParse(generation.resume).success
+    : false;
 
   function recordChanges(resume: TailoredResume | null) {
     if (!resume || !baseResume) {
@@ -100,14 +120,13 @@ export function GeneratorClient({
     setError(null);
     setStreaming(kind);
     const regenerateFromId = activeHistoryId;
-    setActiveHistoryId(null);
-
-    if (kind === "resume" || kind === "both") {
-      setGeneration((g) => ({ ...g, resume: null, ats: null }));
-      setAppliedChanges([]);
-    }
-    if (kind === "cover_letter" || kind === "both") {
-      setGeneration((g) => ({ ...g, coverLetter: null }));
+    if (
+      resumeDirty &&
+      (kind === "resume" || kind === "both") &&
+      !window.confirm("Replace your unsaved resume edits with a new generation?")
+    ) {
+      setStreaming(null);
+      return;
     }
 
     const controller = new AbortController();
@@ -135,36 +154,45 @@ export function GeneratorClient({
         }),
       });
 
-      if (!res.ok || !res.body) {
-        const json = await res.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(json?.error ?? `HTTP ${res.status}`);
+      const json: unknown = await res.json().catch(() => null);
+      if (!res.ok) {
+        const message =
+          typeof json === "object" &&
+          json !== null &&
+          "error" in json &&
+          typeof json.error === "object" &&
+          json.error !== null &&
+          "message" in json.error &&
+          typeof json.error.message === "string"
+            ? json.error.message
+            : "Generation failed. Please retry.";
+        throw new Error(message);
       }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let lastResume: TailoredResume | null = null;
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const parsed = await parsePartialJson(buffer);
-        if (parsed.value && typeof parsed.value === "object") {
-          lastResume = applyPartial(kind, parsed.value as Record<string, unknown>);
-        }
+      const parsed = resumeGenerationSuccessSchema.safeParse(json);
+      if (!parsed.success) {
+        throw new Error("The server returned an incomplete generation. Please retry.");
       }
-
-      const final = await parsePartialJson(buffer);
-      if (final.value) {
-        lastResume = applyPartial(kind, final.value as Record<string, unknown>);
-      }
-
-      if (kind === "resume" || kind === "both") {
-        recordChanges(lastResume);
+      const context: ArtifactContext = {
+        generationId: parsed.data.generationId,
+        layoutId: parsed.data.layout.id,
+        sourceHash: parsed.data.layout.sourceHash,
+        guidelineHash: parsed.data.layout.guidelineHash,
+        jobDescription: jd,
+      };
+      setGeneration((current) => ({
+        resume: parsed.data.resume ?? current.resume,
+        coverLetter: parsed.data.coverLetter ?? current.coverLetter,
+        ats: parsed.data.resume ? null : current.ats,
+      }));
+      setActiveHistoryId(parsed.data.generationId);
+      if (parsed.data.resume) {
+        setResumeContext(context);
+        setResumeDirty(false);
+        setAppliedChanges(parsed.data.appliedChanges);
         setPreviewRevision((n) => n + 1);
-        void refreshHistory();
       }
+      if (parsed.data.coverLetter) setCoverLetterContext(context);
+      await refreshHistory();
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -172,40 +200,6 @@ export function GeneratorClient({
       setStreaming(null);
       abortRef.current = null;
     }
-  }
-
-  function applyPartial(
-    kind: GenKind,
-    value: Record<string, unknown>,
-  ): TailoredResume | null {
-    if (kind === "both") {
-      const res = combinedSchema.partial().safeParse(value);
-      if (res.success) {
-        setGeneration((g) => ({
-          ...g,
-          resume: (res.data.resume as TailoredResume) ?? g.resume,
-          coverLetter: (res.data.coverLetter as CoverLetter) ?? g.coverLetter,
-        }));
-        return (res.data.resume as TailoredResume) ?? null;
-      }
-      return null;
-    }
-
-    if (kind === "resume") {
-      const res = tailoredResumeSchema.partial().safeParse(value);
-      if (res.success) {
-        const next = res.data as TailoredResume;
-        setGeneration((g) => ({ ...g, resume: next }));
-        return next;
-      }
-      return null;
-    }
-
-    const res = coverLetterSchema.partial().safeParse(value);
-    if (res.success) {
-      setGeneration((g) => ({ ...g, coverLetter: res.data as CoverLetter }));
-    }
-    return null;
   }
 
   function stop() {
@@ -219,6 +213,9 @@ export function GeneratorClient({
     setActiveHistoryId(null);
     setError(null);
     setPreviewRevision(0);
+    setResumeContext(null);
+    setCoverLetterContext(null);
+    setResumeDirty(false);
   }
 
   async function refreshHistory() {
@@ -234,7 +231,7 @@ export function GeneratorClient({
 
   const runAts = useCallback(
     async (nudge = false) => {
-      if (!generation.resume) return;
+      if (!generation.resume || !resumeContext) return;
       setAtsBusy(true);
       setError(null);
       try {
@@ -242,7 +239,11 @@ export function GeneratorClient({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            generationId: resumeContext.generationId,
             resume: generation.resume,
+            layoutId,
+            sourceHash: resumeContext.sourceHash,
+            guidelineHash: resumeContext.guidelineHash,
             jobDescription: jd,
           }),
         });
@@ -264,7 +265,7 @@ export function GeneratorClient({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [generation.resume, jd, layoutId],
+    [generation.resume, jd, layoutId, resumeContext],
   );
 
   async function copyTo(kind: "resume" | "cover_letter") {
@@ -287,15 +288,28 @@ export function GeneratorClient({
     try {
       const body =
         kind === "resume"
-          ? { kind, resume: generation.resume, layoutId }
+          ? resumeContext
+            ? {
+                kind,
+                generationId: resumeContext.generationId,
+                resume: generation.resume,
+                layoutId,
+                sourceHash: resumeContext.sourceHash,
+                guidelineHash: resumeContext.guidelineHash,
+              }
+            : null
           : {
               kind,
+              generationId: coverLetterContext?.generationId,
               coverLetter: generation.coverLetter,
               meta: {
                 company: options.company || undefined,
                 role: options.role || undefined,
               },
             };
+      if (!body || !body.generationId) {
+        throw new Error("Regenerate this legacy result before exporting.");
+      }
 
       const res = await fetch("/api/resume/export", {
         method: "POST",
@@ -303,10 +317,18 @@ export function GeneratorClient({
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const json = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        setError(json?.error ?? "Download failed");
+        const json: unknown = await res.json().catch(() => null);
+        const message =
+          typeof json === "object" &&
+          json !== null &&
+          "error" in json &&
+          typeof json.error === "object" &&
+          json.error !== null &&
+          "message" in json.error &&
+          typeof json.error.message === "string"
+            ? json.error.message
+            : "Download failed";
+        setError(message);
         return;
       }
 
@@ -350,7 +372,7 @@ export function GeneratorClient({
       if (!res.ok) throw new Error(json?.error ?? "Failed to load");
 
       const resume = json.row.resume
-        ? tailoredResumeSchema.safeParse(json.row.resume)
+        ? storedTailoredResumeSchema.safeParse(json.row.resume)
         : null;
       const cover = json.row.cover_letter
         ? coverLetterSchema.safeParse(json.row.cover_letter)
@@ -376,6 +398,23 @@ export function GeneratorClient({
       if (typeof json.row.layout_id === "string" && json.row.layout_id) {
         setLayoutId(json.row.layout_id);
       }
+      const snapshot = json.row.source_snapshot;
+      const context =
+        snapshot &&
+        typeof snapshot.sourceHash === "string" &&
+        typeof snapshot.guidelineHash === "string" &&
+        typeof json.row.layout_id === "string"
+          ? {
+              generationId: id,
+              layoutId: json.row.layout_id,
+              sourceHash: snapshot.sourceHash,
+              guidelineHash: snapshot.guidelineHash,
+              jobDescription: json.row.jd_text ?? "",
+            }
+          : null;
+      setResumeContext(nextResume ? context : null);
+      setCoverLetterContext(cover?.success ? context : null);
+      setResumeDirty(false);
       if (
         Array.isArray(json.row.applied_changes) &&
         json.row.applied_changes.length > 0
@@ -391,7 +430,10 @@ export function GeneratorClient({
   }
 
   return (
-    <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)_minmax(240px,280px)]">
+    <div
+      className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)_minmax(240px,280px)]"
+      aria-busy={Boolean(streaming)}
+    >
       <section className="space-y-4">
         <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
           Layout
@@ -473,7 +515,16 @@ export function GeneratorClient({
           </button>
         </div>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        )}
+        {resumeStale ? (
+          <p className="text-c-card-muted text-sm" role="status">
+            The job description or layout changed. Regenerate before ATS or PDF export.
+          </p>
+        ) : null}
       </section>
 
       <section className="min-w-0 space-y-4">
@@ -517,23 +568,32 @@ export function GeneratorClient({
                 <button
                   type="button"
                   onClick={() => void download("resume")}
-                  disabled={Boolean(exporting)}
+                  disabled={
+                    Boolean(exporting) || resumeStale || !resumeContext || !resumeIsValid
+                  }
                   className={cn(
-                    "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
+                    "bg-accent relative flex min-w-13 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
                     "text-accent-foreground font-medium hover:opacity-90 disabled:opacity-50",
                   )}
                 >
+                  <span
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      exporting === "resume" && "invisible",
+                    )}
+                  >
+                    <Download className="h-3 w-3" /> PDF
+                  </span>
                   {exporting === "resume" ? (
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Download className="h-3 w-3" />
-                  )}
-                  {exporting === "resume" ? "Preparing…" : "PDF"}
+                    <RefreshCw className="absolute h-3 w-3 animate-spin" />
+                  ) : null}
                 </button>
                 <button
                   type="button"
                   onClick={() => void applySummary()}
-                  disabled={Boolean(streaming)}
+                  disabled={
+                    Boolean(streaming) || resumeStale || !resumeContext || !resumeIsValid
+                  }
                   className="border-border hover:bg-muted rounded-md border px-2.5 py-1 text-xs disabled:opacity-50"
                 >
                   Apply summary to CMS
@@ -557,18 +617,23 @@ export function GeneratorClient({
                 <button
                   type="button"
                   onClick={() => void download("cover_letter")}
-                  disabled={Boolean(exporting)}
+                  disabled={Boolean(exporting) || !coverLetterContext}
                   className={cn(
-                    "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
+                    "bg-accent relative flex min-w-13 items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
                     "text-accent-foreground font-medium hover:opacity-90 disabled:opacity-50",
                   )}
                 >
+                  <span
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      exporting === "cover_letter" && "invisible",
+                    )}
+                  >
+                    <Download className="h-3 w-3" /> PDF
+                  </span>
                   {exporting === "cover_letter" ? (
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Download className="h-3 w-3" />
-                  )}
-                  {exporting === "cover_letter" ? "Preparing…" : "PDF"}
+                    <RefreshCw className="absolute h-3 w-3 animate-spin" />
+                  ) : null}
                 </button>
               </>
             ) : null}
@@ -584,6 +649,7 @@ export function GeneratorClient({
                 streaming={streaming === "resume" || streaming === "both"}
                 onChange={(next) => {
                   setGeneration((g) => ({ ...g, resume: next }));
+                  setResumeDirty(true);
                   recordChanges(next);
                 }}
               />
@@ -594,6 +660,8 @@ export function GeneratorClient({
                     resume={generation.resume}
                     layoutId={layoutId}
                     revision={previewRevision}
+                    context={resumeContext}
+                    stale={resumeStale}
                   />
                 </>
               ) : null}
@@ -615,7 +683,9 @@ export function GeneratorClient({
             <AtsPanel
               value={generation.ats}
               busy={atsBusy}
-              canRun={Boolean(generation.resume)}
+              canRun={Boolean(
+                generation.resume && resumeContext && !resumeStale && resumeIsValid,
+              )}
               canNudge={Boolean(
                 generation.ats &&
                 generation.ats.missingKeywords.length > 0 &&

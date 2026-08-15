@@ -47,16 +47,16 @@ const baseInput: BuildCandidateFactsInput = {
 };
 
 describe("buildCandidateFacts", () => {
-  it("assigns stable ids after sorting experience by recency", () => {
+  it("keeps immutable source ids after sorting experience by recency", () => {
     const facts = buildCandidateFacts(baseInput);
 
-    expect(facts.factSheet.indexOf("[e1] Senior Engineer")).toBeLessThan(
-      facts.factSheet.indexOf("[e2] Engineer"),
+    expect(facts.factSheet.indexOf("[recent] Senior Engineer")).toBeLessThan(
+      facts.factSheet.indexOf("[older] Engineer"),
     );
-    expect(facts.idMap.experiences.e1?.id).toBe("recent");
+    expect(facts.idMap.experiences.recent?.legacyId).toBe("e1");
     expect(facts.experienceTimeline).toEqual([
-      { experienceId: "e1", startDate: "Jan 2024", endDate: null },
-      { experienceId: "e2", startDate: "Jan 2020", endDate: "Jan 2022" },
+      { experienceId: "recent", startDate: "Jan 2024", endDate: null },
+      { experienceId: "older", startDate: "Jan 2020", endDate: "Jan 2022" },
     ]);
   });
 });

@@ -26,6 +26,7 @@
     "./guardrails/ai-tone": "./src/guardrails/ai-tone.ts",
     "./guardrails/fabrication-check": "./src/guardrails/fabrication-check.ts",
     "./guardrails/ats-refine": "./src/guardrails/ats-refine.ts",
+    "./policy/resume-generation-policy": "./src/policy/resume-generation-policy.ts",
     "./load-api-keys": "./src/load-api-keys.ts"
   },
   "scripts": {

@@ -22,6 +22,27 @@ export type ResumeGenerationUsage = {
   latencyMs?: number;
   fallbackUsed?: boolean;
   model?: string;
+  finishReason?: string;
+  attempts?: Array<{
+    model: string;
+    reason: string;
+    finishReason: string | null;
+    inputTokens?: number;
+    outputTokens?: number;
+    latencyMs: number;
+  }>;
+  fitReport?: Record<string, unknown>;
+};
+
+export type ResumeGenerationSourceSnapshot = {
+  sourceHash: string;
+  guidelineHash: string;
+  layoutVersion: number;
+  experience: Array<{
+    id: string;
+    bulletHashes: string[];
+  }>;
+  skills: string[];
 };
 
 /**
@@ -52,6 +73,8 @@ export type ResumeGeneration = {
   cover_letter_pdf_url: string | null;
   layout_id: string | null;
   applied_changes: string[];
+  generation_version?: 2;
+  source_snapshot?: ResumeGenerationSourceSnapshot;
   archived_at: string | null;
   deleted_at: string | null;
   created_at: string;

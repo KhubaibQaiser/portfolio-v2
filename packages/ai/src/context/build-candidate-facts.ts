@@ -64,8 +64,9 @@ export type BuildCandidateFactsInput = {
 };
 
 export type CandidateIdMap = {
-  experiences: Record<string, { id: string; stableId: string; bullets: string[] }>;
+  experiences: Record<string, { id: string; legacyId: string; bullets: string[] }>;
   skillCategories: string[];
+  skills: Record<string, { name: string; category: string }>;
 };
 
 export type CandidateFacts = {
@@ -106,6 +107,7 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
   const idMap: CandidateIdMap = {
     experiences: {},
     skillCategories: [],
+    skills: {},
   };
 
   const socialLine = siteConfig.social_links
@@ -117,15 +119,15 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
   const experienceTimeline: CandidateFacts["experienceTimeline"] = [];
   const sortedExperiences = sortExperienceByRecencyDesc(experiences);
   sortedExperiences.forEach((exp, i) => {
-    const stableId = `e${i + 1}`;
+    const legacyId = `e${i + 1}`;
     const bullets = splitBullets(exp.description);
-    idMap.experiences[stableId] = {
+    idMap.experiences[exp.id] = {
       id: exp.id,
-      stableId,
+      legacyId,
       bullets,
     };
     experienceTimeline.push({
-      experienceId: stableId,
+      experienceId: exp.id,
       startDate: exp.start_date,
       endDate: exp.end_date,
     });
@@ -134,7 +136,7 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
 
     const tech = exp.tech_tags.slice(0, 12).join(", ");
     expBlocks.push(
-      `[${stableId}] ${exp.role} @ ${exp.company} | ${renderPeriod(
+      `[${exp.id}] ${exp.role} @ ${exp.company} | ${renderPeriod(
         exp.start_date,
         exp.end_date,
       )} | ${exp.location} (${exp.location_type})\n${bulletLines}\n  tech: ${tech}`,
@@ -143,6 +145,12 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
 
   const grouped = groupSkills(skills);
   idMap.skillCategories = Object.keys(grouped);
+  for (const skill of skills) {
+    idMap.skills[skill.name.trim().toLocaleLowerCase()] = {
+      name: skill.name,
+      category: skill.category,
+    };
+  }
   const skillBlock = Object.entries(grouped)
     .map(([cat, items]) => `${cat}: ${items.slice(0, 16).join(", ")}`)
     .join("\n");

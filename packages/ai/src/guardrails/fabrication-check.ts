@@ -24,6 +24,7 @@ export function validateFabrication(
       offending.push(`experienceId:${exp.experienceId}`);
       continue;
     }
+    const sourceIndexes = new Set<number>();
     for (const bullet of exp.bullets) {
       if (bullet.experienceId !== exp.experienceId) {
         offending.push(
@@ -38,6 +39,12 @@ export function validateFabrication(
           `${exp.experienceId}.sourceBulletIndex:${bullet.sourceBulletIndex}`,
         );
       }
+      if (sourceIndexes.has(bullet.sourceBulletIndex)) {
+        offending.push(
+          `${exp.experienceId}.duplicateSourceBulletIndex:${bullet.sourceBulletIndex}`,
+        );
+      }
+      sourceIndexes.add(bullet.sourceBulletIndex);
     }
   }
 

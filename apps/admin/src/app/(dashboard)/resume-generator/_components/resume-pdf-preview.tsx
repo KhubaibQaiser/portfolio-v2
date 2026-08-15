@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { TailoredResume } from "@portfolio/ai/schemas";
+import { tailoredResumeSchema, type TailoredResume } from "@portfolio/ai/schemas";
 import type { FitReport } from "@portfolio/ui/resume-pdf";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,12 @@ type Props = {
   resume: TailoredResume | null;
   layoutId: string;
   revision: number;
+  context: {
+    generationId: string;
+    sourceHash: string;
+    guidelineHash: string;
+  } | null;
+  stale: boolean;
 };
 
 const PREVIEW_DEBOUNCE_MS = 600;
@@ -39,12 +45,13 @@ function describeFit(report: FitReport): string {
   return `One A4 page · removed ${report.droppedRoles} roles, ${report.droppedBullets} bullets, and ${report.droppedSkills} skills`;
 }
 
-export function ResumePdfPreview({ resume, layoutId, revision }: Props) {
+export function ResumePdfPreview({ resume, layoutId, revision, context, stale }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fitReport, setFitReport] = useState<FitReport | null>(null);
   const urlRef = useRef<string | null>(null);
+  const requestVersionRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -53,7 +60,7 @@ export function ResumePdfPreview({ resume, layoutId, revision }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!resume) {
+    if (!resume || !context || stale) {
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
@@ -65,8 +72,17 @@ export function ResumePdfPreview({ resume, layoutId, revision }: Props) {
       return;
     }
 
+    const validatedResume = tailoredResumeSchema.safeParse(resume);
+    if (!validatedResume.success) {
+      setError("Fix the highlighted resume fields before previewing the PDF.");
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const controller = new AbortController();
+    const requestVersion = requestVersionRef.current + 1;
+    requestVersionRef.current = requestVersion;
 
     const timer = window.setTimeout(() => {
       setLoading(true);
@@ -80,20 +96,28 @@ export function ResumePdfPreview({ resume, layoutId, revision }: Props) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               kind: "resume",
-              resume,
-              layoutId: layoutId || undefined,
+              generationId: context.generationId,
+              resume: validatedResume.data,
+              layoutId,
+              sourceHash: context.sourceHash,
+              guidelineHash: context.guidelineHash,
             }),
           });
           if (!res.ok) {
             const json = await res.json().catch(() => ({}));
             throw new Error(
-              typeof json.error === "string" ? json.error : "PDF preview failed",
+              typeof json.error === "object" &&
+                json.error !== null &&
+                "message" in json.error &&
+                typeof json.error.message === "string"
+                ? json.error.message
+                : "PDF preview failed",
             );
           }
           const nextFitReport = parseFitReport(res.headers.get("X-Resume-Fit-Report"));
           const blob = await res.blob();
           const nextUrl = URL.createObjectURL(blob);
-          if (cancelled) {
+          if (cancelled || requestVersion !== requestVersionRef.current) {
             URL.revokeObjectURL(nextUrl);
             return;
           }
@@ -115,9 +139,9 @@ export function ResumePdfPreview({ resume, layoutId, revision }: Props) {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [resume, layoutId, revision]);
+  }, [resume, layoutId, revision, context, stale]);
 
-  if (!resume) {
+  if (!resume || !context || stale) {
     return (
       <p className="text-muted-foreground text-xs">
         Tailor a resume to see the PDF for the selected layout.

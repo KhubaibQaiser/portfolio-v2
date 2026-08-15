@@ -34,7 +34,10 @@ export async function getSecretString(secretId: string): Promise<string> {
  * Populates `process.env.GROQ_API_KEY` for the Vercel AI SDK after fetch.
  */
 export async function ensureGroqApiKey(): Promise<void> {
-  if (groqLoaded) return;
+  if (groqLoaded || process.env.GROQ_API_KEY) {
+    groqLoaded = true;
+    return;
+  }
 
   const secretArn = process.env.GROQ_API_KEY_SECRET_ARN;
   if (!secretArn) {
@@ -50,7 +53,10 @@ export async function ensureGroqApiKey(): Promise<void> {
  * Populates `process.env.ANTHROPIC_API_KEY` for the Vercel AI SDK after fetch.
  */
 export async function ensureAnthropicApiKey(): Promise<void> {
-  if (anthropicLoaded) return;
+  if (anthropicLoaded || process.env.ANTHROPIC_API_KEY) {
+    anthropicLoaded = true;
+    return;
+  }
 
   const secretArn = process.env.ANTHROPIC_API_KEY_SECRET_ARN;
   if (!secretArn) {
@@ -61,7 +67,18 @@ export async function ensureAnthropicApiKey(): Promise<void> {
   anthropicLoaded = true;
 }
 
-/** Resolve Groq + Anthropic keys before resume/ATS model calls. */
-export async function ensureAiApiKeys(): Promise<void> {
-  await Promise.all([ensureGroqApiKey(), ensureAnthropicApiKey()]);
+/** Load only the provider capabilities available for the selected model path. */
+export async function ensureAiApiKeys(mode: "quality" | "fast" | "cheap"): Promise<void> {
+  await ensureGroqApiKey();
+  if (
+    mode === "quality" &&
+    (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY_SECRET_ARN)
+  ) {
+    try {
+      await ensureAnthropicApiKey();
+    } catch {
+      // Groq remains a complete quality-mode fallback.
+      delete process.env.ANTHROPIC_API_KEY;
+    }
+  }
 }

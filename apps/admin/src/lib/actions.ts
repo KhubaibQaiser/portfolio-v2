@@ -379,11 +379,14 @@ export async function applyTailoredSummary(summary: string): Promise<ActionResul
   if (!auth.ok) return { success: false, error: auth.error };
 
   const trimmed = summary.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
-  if (trimmed.length < 40) {
+  if (trimmed.length < 80) {
     return { success: false, error: "Summary is too short to apply." };
   }
-  if (trimmed.length > 2000) {
-    return { success: false, error: "Summary exceeds 2000 characters." };
+  if (trimmed.length > 450) {
+    return { success: false, error: "Summary exceeds 450 characters." };
+  }
+  if (!/[.!?]["')\]]?$/.test(trimmed)) {
+    return { success: false, error: "Summary must end with a complete sentence." };
   }
 
   try {

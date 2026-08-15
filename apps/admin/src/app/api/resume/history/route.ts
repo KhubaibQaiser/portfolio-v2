@@ -11,7 +11,9 @@ export async function GET() {
   }
 
   try {
-    const rows = await getContentRepository().getResumeGenerations({ limit: 20 });
+    const rows = (await getContentRepository().getResumeGenerations({ limit: 50 }))
+      .filter((row) => row.created_by === auth.id)
+      .slice(0, 20);
     return NextResponse.json({
       items: rows.map((r) => ({
         id: r.id,

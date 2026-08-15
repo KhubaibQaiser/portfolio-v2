@@ -24,22 +24,12 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
     );
   }
 
-  // Streamed partial JSON may omit fields until the model fills them.
-  const v = value as Partial<TailoredResume>;
-  const summary = v.summary ?? "";
-  const keywords = v.keywords ?? [];
-  const experiences = v.experiences ?? [];
-  const skills = v.skills ?? [];
-
+  const resume = value;
   const editable = !streaming && Boolean(onChange);
 
   function update(mutator: (draft: TailoredResume) => void) {
     if (!onChange) return;
-    const clone = structuredClone(value) as TailoredResume;
-    clone.summary ??= "";
-    clone.keywords ??= [];
-    clone.experiences ??= [];
-    clone.skills ??= [];
+    const clone = structuredClone(resume);
     mutator(clone);
     onChange(clone);
   }
@@ -48,7 +38,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
     <div className="space-y-6">
       <Section title="Summary">
         <textarea
-          value={summary}
+          value={value.summary}
           onChange={(e) => update((d) => (d.summary = e.target.value))}
           rows={4}
           disabled={!editable}
@@ -56,9 +46,9 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
         />
       </Section>
 
-      <Section title={`Keywords (${keywords.length})`}>
+      <Section title={`Keywords (${value.keywords.length})`}>
         <p className="flex flex-wrap gap-1.5 text-xs">
-          {keywords.map((k) => (
+          {value.keywords.map((k) => (
             <span
               key={k}
               className="border-border/60 bg-muted/30 text-muted-foreground rounded-full border px-2 py-0.5"
@@ -71,19 +61,19 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
 
       <Section title="Experience">
         <div className="space-y-4">
-          {experiences.map((exp, ei) => (
+          {value.experiences.map((exp, ei) => (
             <div
-              key={`${exp.experienceId ?? "exp"}-${ei}`}
+              key={exp.experienceId}
               className="border-border/60 bg-muted/10 rounded-lg border p-3"
             >
               <p className="text-muted-foreground mb-2 text-xs">
-                {exp.experienceId ?? "…"} · {(exp.bullets ?? []).length} bullets
+                {exp.experienceId} · {exp.bullets.length} bullets
               </p>
               <div className="space-y-2">
-                {(exp.bullets ?? []).map((b, bi) => (
+                {exp.bullets.map((b, bi) => (
                   <textarea
                     key={bi}
-                    value={b.text ?? ""}
+                    value={b.text}
                     onChange={(e) =>
                       update((d) => {
                         d.experiences[ei]!.bullets[bi]!.text = e.target.value;
@@ -102,7 +92,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
 
       <Section title="Skills">
         <div className="space-y-2">
-          {skills.map((g, gi) => (
+          {value.skills.map((g, gi) => (
             <div
               key={`${g.category}-${gi}`}
               className="grid gap-2 sm:grid-cols-[160px_1fr]"
@@ -114,7 +104,7 @@ export function ResumePreview({ value, streaming, onChange }: Props) {
                 className={cn(textareaCls, "font-medium")}
               />
               <input
-                value={(g.items ?? []).join(", ")}
+                value={g.items.join(", ")}
                 onChange={(e) =>
                   update(
                     (d) =>
