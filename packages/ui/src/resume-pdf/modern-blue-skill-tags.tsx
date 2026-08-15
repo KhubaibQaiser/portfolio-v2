@@ -5,21 +5,26 @@ import { ModernBlueSectionHeading } from "./modern-blue-section-heading";
 
 type Props = {
   group: ResumeDataSkillGroup;
-  highlighted: boolean;
+  highlightedSkills: ReadonlySet<string>;
   styles: ModernBlueStyles;
 };
 
-export function ModernBlueSkillTags({ group, highlighted, styles }: Props) {
+export function ModernBlueSkillTags({ group, highlightedSkills, styles }: Props) {
   return (
     <View wrap={false}>
       <ModernBlueSectionHeading styles={styles}>
         {group.category}
       </ModernBlueSectionHeading>
       <View style={styles.tags}>
-        {group.items.map((item, index) => (
+        {group.items.map((item) => (
           <Text
             key={item}
-            style={[styles.tag, highlighted && index < 10 ? styles.highlightedTag : {}]}
+            style={[
+              styles.tag,
+              highlightedSkills.has(item.trim().toLocaleLowerCase())
+                ? styles.highlightedTag
+                : {},
+            ]}
           >
             {item}
           </Text>

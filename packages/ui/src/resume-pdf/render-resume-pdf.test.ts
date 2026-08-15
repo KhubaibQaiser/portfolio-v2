@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { extractText, getDocumentProxy } from "unpdf";
 import { createFixtureContentRepository } from "../../../data/src/adapters/fixture-content-repository";
 import { modernBlueReferenceResume } from "../../../data/src/fixtures/modern-blue-reference";
 import { getResumeData } from "../../../shared/src/resume-data";
@@ -24,6 +25,16 @@ function layoutFromForm(id: string, form: ResumeLayoutFormData): ResumeLayout {
   };
 }
 
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const document = await getDocumentProxy(new Uint8Array(buffer));
+  try {
+    const extracted = await extractText(document, { mergePages: true });
+    return Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text;
+  } finally {
+    await document.destroy();
+  }
+}
+
 describe("Modern Blue PDF rendering", () => {
   it("converts the golden CSS measurements to PDF points", () => {
     const guidelines = modernBlueLayoutForm().guidelines;
@@ -44,6 +55,13 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.fitReport?.droppedBullets).toBe(2);
     expect(result.fitReport?.droppedSkills).toBe(0);
     expect(result.fitReport?.droppedSkillGroups).toBe(0);
+    expect(result.fitReport?.retainedRoles).toBe(8);
+    expect(result.fitReport?.acceptedBulletCounts[0]).toBeGreaterThanOrEqual(4);
+    expect(result.fitReport?.acceptedBulletCounts[1]).toBeGreaterThanOrEqual(2);
+    const text = await extractPdfText(result.buffer);
+    expect(text).toContain("Knowledge Platform");
+    expect(text).not.toContain("**");
+    expect(result.fitReport?.mode).toBe("canonical");
   }, 30_000);
 
   it("fits the current production CMS projection to one page", async () => {
@@ -64,12 +82,13 @@ describe("Modern Blue PDF rendering", () => {
       "Achieve",
       "Tradeblock",
       "GudangAda",
+      "Nordic Tech Clients",
       "STOQO",
       "Knowledge Platform",
     ]);
-    expect(projection.projectedBulletBudgets).toEqual([5, 4, 3, 2, 1, 1, 1]);
+    expect(projection.projectedBulletBudgets).toEqual([5, 4, 2, 2, 2, 2, 2, 2]);
     expect(projection.data.experience.map((item) => item.bullets.length)).toEqual([
-      5, 2, 3, 1, 1, 1, 1,
+      5, 2, 2, 1, 2, 1, 1, 1,
     ]);
   });
 
@@ -85,7 +104,7 @@ describe("Modern Blue PDF rendering", () => {
 
     expect(removeLeastRelevantBullet(projection)).toBe(true);
     expect(projection.data.experience.map((item) => item.bullets.length)).toEqual([
-      5, 4, 3, 1,
+      5, 4, 2, 1,
     ]);
   });
 
@@ -118,6 +137,48 @@ describe("Modern Blue PDF rendering", () => {
       expect(result.fitReport?.density).toBe("fitCompact");
     }
   }, 60_000);
+
+  it("drops the oldest role only when all-role minimums genuinely overflow", async () => {
+    const longBullet =
+      "Delivered a production platform spanning architecture, accessibility, observability, testing, cloud infrastructure, stakeholder collaboration, performance improvements, and measurable customer outcomes across multiple international product teams.";
+    const data = {
+      ...modernBlueReferenceResume,
+      summary: modernBlueReferenceResume.summary.repeat(2).slice(0, 550),
+      experience: Array.from({ length: 20 }, (_, index) => ({
+        ...modernBlueReferenceResume.experience[0]!,
+        company: `Company ${index + 1}`,
+        role: `Senior Platform Engineering Role ${index + 1}`,
+        startDate: `Jan ${2026 - index}`,
+        endDate: `Dec ${2026 - index}`,
+        period: `${2026 - index}`,
+        bullets: [longBullet],
+      })),
+      skills: [],
+      projects: [],
+      certifications: [],
+      languages: [],
+      remoteWorkLine: null,
+      referencesLine: null,
+    };
+    const layout = layoutFromForm("modern-blue-overflow", modernBlueLayoutForm());
+    const result = await renderResumePdfBuffer(data, layout);
+
+    expect(result.fitReport?.pageCount).toBe(1);
+    expect(result.fitReport?.droppedRoles).toBeGreaterThan(0);
+    expect(result.fitReport?.fallbackSteps).toContain("removed-oldest-role");
+    expect(result.fitReport?.roleDropReason).not.toBeNull();
+  }, 60_000);
+
+  it("records tailored rendering mode explicitly", async () => {
+    const layout = layoutFromForm("modern-blue-tailored", modernBlueLayoutForm());
+    const result = await renderResumePdfBuffer(modernBlueReferenceResume, layout, {
+      mode: "tailored",
+      highlightedSkills: ["React", "Invented Skill"],
+    });
+
+    expect(result.fitReport?.mode).toBe("tailored");
+    expect(result.fitReport?.pageCount).toBe(1);
+  }, 30_000);
 
   it("leaves the Classic rendering path unfitted", async () => {
     const data = await getResumeData(createFixtureContentRepository());

@@ -5,6 +5,7 @@ import { COLORS, baseStyles } from "./styles";
 import { PdfBulletList } from "./pdf-bullet-list";
 import { PdfMetaSections } from "./pdf-meta-sections";
 import { RichPdfText } from "./rich-pdf-text";
+import type { ResumePdfMode } from "./resume-render-options";
 import { showResumePdfSection } from "./section-visibility";
 
 Font.registerHyphenationCallback((word) => [word]);
@@ -87,10 +88,13 @@ function formatEducationLine(edu: ResumeData["education"][number]): string {
 export function ResumeDocument({
   data,
   guidelines,
+  mode = "canonical",
 }: {
   data: ResumeData;
   guidelines?: VariantGuidelines;
+  mode?: ResumePdfMode;
 }) {
+  const richText = mode === "tailored";
   const show = (key: string) => data.visibleSections.includes(key);
   const showExperience = show("experience");
   const showProjects = show("projects") && data.projects.length > 0;
@@ -164,7 +168,7 @@ export function ResumeDocument({
 
         <View style={s.section} wrap={false}>
           <Text style={s.sectionTitle}>Professional Summary</Text>
-          <RichPdfText value={data.summary} style={s.summary} />
+          <RichPdfText value={data.summary} style={s.summary} enabled={richText} />
         </View>
 
         {showExperience ? (
@@ -203,6 +207,7 @@ export function ResumeDocument({
                       dot: s.bulletDot,
                       text: s.bulletText,
                     }}
+                    richText={richText}
                   />
                 </View>
               ) : null}
@@ -236,6 +241,7 @@ export function ResumeDocument({
                     dot: s.bulletDot,
                     text: s.bulletText,
                   }}
+                  richText={richText}
                 />
               </View>
             ))}
@@ -271,6 +277,7 @@ export function ResumeDocument({
                       dot: s.bulletDot,
                       text: s.bulletText,
                     }}
+                    richText={richText}
                   />
                 </View>
               ) : null}
@@ -299,6 +306,7 @@ export function ResumeDocument({
                     dot: s.bulletDot,
                     text: s.bulletText,
                   }}
+                  richText={richText}
                 />
               </View>
             ))}

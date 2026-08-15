@@ -2,9 +2,11 @@ import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { VariantGuidelines } from "@portfolio/shared/schemas";
 import {
   allocateRecencyBulletBudgets,
+  bulletFloorForRole,
   sortDatedExperiencesByRecency,
 } from "@portfolio/shared/experience-bullet-budget";
 import type { ModernBlueDensity } from "./modern-blue-print-spec";
+import type { ResumePdfMode } from "./resume-render-options";
 
 const MAX_SKILL_GROUPS = 8;
 const MAX_SKILLS_PER_GROUP = 14;
@@ -12,8 +14,15 @@ const SUMMARY_HARD_LIMIT = 560;
 const BULLET_HARD_LIMIT = 320;
 
 export type FitReport = {
+  mode: ResumePdfMode;
   density: ModernBlueDensity;
   pageCount: number;
+  candidateRoles: number;
+  retainedRoles: number;
+  acceptedBulletCounts: number[];
+  fallbackSteps: string[];
+  roleDropReason: string | null;
+  renderAttempts: number;
   droppedRoles: number;
   droppedBullets: number;
   droppedSkillGroups: number;
@@ -29,10 +38,17 @@ export type ModernBlueProjection = {
   projectedBulletBudgets: number[];
 };
 
-export function createFitReport(): FitReport {
+export function createFitReport(mode: ResumePdfMode = "canonical"): FitReport {
   return {
+    mode,
     density: "reference",
     pageCount: 0,
+    candidateRoles: 0,
+    retainedRoles: 0,
+    acceptedBulletCounts: [],
+    fallbackSteps: [],
+    roleDropReason: null,
+    renderAttempts: 0,
     droppedRoles: 0,
     droppedBullets: 0,
     droppedSkillGroups: 0,
@@ -53,22 +69,33 @@ function clampAtWord(value: string, maxCharacters: number): string {
 export function projectModernBlueResume(
   source: ResumeData,
   guidelines: VariantGuidelines,
+  options: {
+    mode?: ResumePdfMode;
+    minimumBullets?: boolean;
+  } = {},
 ): ModernBlueProjection {
-  const report = createFitReport();
-  const maxRoles = guidelines.validation.maxExperienceItems;
+  const report = createFitReport(options.mode);
   const maxBullets = Math.min(
     guidelines.validation.maxBulletsPerRole,
     guidelines.formatting.layout.maxBulletsPerJob,
   );
   const sortedExperience = sortDatedExperiencesByRecency(source.experience);
-  const selectedExperience = sortedExperience.slice(0, maxRoles);
-  const allocatedExperience = allocateRecencyBulletBudgets(
-    selectedExperience,
-    maxBullets,
+  const allocatedExperience = allocateRecencyBulletBudgets(sortedExperience, maxBullets);
+  const projectedBulletBudgets = allocatedExperience.budgets;
+  const experience = allocatedExperience.experiences.map((item, index) => ({
+    ...item,
+    bullets: options.minimumBullets
+      ? item.bullets.slice(0, bulletFloorForRole(index, maxBullets))
+      : item.bullets,
+  }));
+  report.candidateRoles = sortedExperience.length;
+  report.retainedRoles = experience.length;
+  report.acceptedBulletCounts = experience.map((item) => item.bullets.length);
+  report.droppedBullets = sortedExperience.reduce(
+    (total, item, index) =>
+      total + Math.max(0, item.bullets.length - experience[index]!.bullets.length),
+    0,
   );
-  const experience = allocatedExperience.experiences;
-  report.droppedBullets = allocatedExperience.droppedBullets;
-  report.droppedRoles = Math.max(0, sortedExperience.length - experience.length);
 
   const skills = source.skills.slice(0, MAX_SKILL_GROUPS).map((group) => {
     report.droppedSkills += Math.max(0, group.items.length - MAX_SKILLS_PER_GROUP);
@@ -87,8 +114,76 @@ export function projectModernBlueResume(
       })),
     },
     report,
-    projectedBulletBudgets: allocatedExperience.budgets.slice(0, maxRoles),
+    projectedBulletBudgets,
   };
+}
+
+export function cloneModernBlueProjection(
+  projection: ModernBlueProjection,
+): ModernBlueProjection {
+  return {
+    data: {
+      ...projection.data,
+      experience: projection.data.experience.map((experience) => ({
+        ...experience,
+        bullets: [...experience.bullets],
+      })),
+      skills: projection.data.skills.map((group) => ({
+        ...group,
+        items: [...group.items],
+      })),
+      projects: projection.data.projects.map((project) => ({
+        ...project,
+        bullets: [...project.bullets],
+      })),
+      education: [...projection.data.education],
+      certifications: [...projection.data.certifications],
+      languages: [...projection.data.languages],
+      socialLinks: [...projection.data.socialLinks],
+      visibleSections: [...projection.data.visibleSections],
+    },
+    report: {
+      ...projection.report,
+      acceptedBulletCounts: [...projection.report.acceptedBulletCounts],
+      fallbackSteps: [...projection.report.fallbackSteps],
+      droppedSections: [...projection.report.droppedSections],
+    },
+    projectedBulletBudgets: [...projection.projectedBulletBudgets],
+  };
+}
+
+export function syncModernBlueFitReport(
+  projection: ModernBlueProjection,
+  source: ResumeData,
+): void {
+  projection.report.retainedRoles = projection.data.experience.length;
+  projection.report.acceptedBulletCounts = projection.data.experience.map(
+    (experience) => experience.bullets.length,
+  );
+  projection.report.droppedRoles = Math.max(
+    0,
+    projection.report.candidateRoles - projection.report.retainedRoles,
+  );
+  projection.report.droppedBullets = Math.max(
+    0,
+    source.experience.reduce(
+      (total, experience) => total + experience.bullets.length,
+      0,
+    ) -
+      projection.data.experience.reduce(
+        (total, experience) => total + experience.bullets.length,
+        0,
+      ),
+  );
+  projection.report.droppedSkillGroups = Math.max(
+    0,
+    source.skills.length - projection.data.skills.length,
+  );
+  projection.report.droppedSkills = Math.max(
+    0,
+    source.skills.reduce((total, group) => total + group.items.length, 0) -
+      projection.data.skills.reduce((total, group) => total + group.items.length, 0),
+  );
 }
 
 export function removeLeastRelevantBullet(projection: ModernBlueProjection): boolean {

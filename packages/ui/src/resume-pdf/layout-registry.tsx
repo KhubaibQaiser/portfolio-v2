@@ -6,18 +6,14 @@ import { classicGuidelines } from "@portfolio/shared/schemas";
 import { ResumeDocument } from "./resume-document";
 import { ResumeModernDocument } from "./resume-modern-document";
 import { registerResumePdfFonts } from "./register-fonts";
-import type { ModernBlueDensity } from "./modern-blue-print-spec";
+import type { ResumeDocumentRenderOptions } from "./resume-render-options";
 
 type ResumePdfElement = ReactElement<ComponentProps<typeof Document>>;
-
-type ResumeRenderOptions = {
-  density?: ModernBlueDensity;
-};
 
 export function renderResumeDocument(
   data: ResumeData,
   layout: ResumeLayout | null,
-  options: ResumeRenderOptions = {},
+  options: ResumeDocumentRenderOptions = {},
 ): ResumePdfElement {
   registerResumePdfFonts();
   const guidelines = layout?.guidelines ?? classicGuidelines();
@@ -28,8 +24,12 @@ export function renderResumeDocument(
         data={data}
         guidelines={guidelines}
         density={options.density}
+        mode={options.mode}
+        highlightedSkills={options.highlightedSkills}
       />
     ) as ResumePdfElement;
   }
-  return (<ResumeDocument data={data} guidelines={guidelines} />) as ResumePdfElement;
+  return (
+    <ResumeDocument data={data} guidelines={guidelines} mode={options.mode} />
+  ) as ResumePdfElement;
 }

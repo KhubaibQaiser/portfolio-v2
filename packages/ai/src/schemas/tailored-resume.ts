@@ -54,6 +54,14 @@ export const tailoredResumeSchema = z.object({
     .array(z.string().min(1))
     .max(25)
     .describe("ATS keyword list the summary + bullets cover. Truthful to source only."),
+  highlightedSkills: z
+    .array(z.string().min(1))
+    .max(25)
+    .optional()
+    .default([])
+    .describe(
+      "Exact skill names copied from the source skills that directly match the job description.",
+    ),
   experiences: z.array(tailoredExperienceSchema).min(1).max(8),
   skills: z
     .array(tailoredSkillGroupSchema)

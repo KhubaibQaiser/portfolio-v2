@@ -3,19 +3,36 @@ import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { getContentRepository } from "@portfolio/data";
 import { getResumeData } from "@/lib/resume-data";
 import { logger } from "@/lib/logger";
+import { checkResumePdfRateLimit } from "@/lib/resume-pdf-rate-limit";
 import { toError } from "@/lib/to-error";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const repo = getContentRepository();
-  const [data, layouts] = await Promise.all([
-    getResumeData(),
-    repo.getResumeLayouts().catch(() => []),
-  ]);
-  const layout = pickDefaultResumeLayout(layouts);
+export async function GET(request: Request) {
   try {
-    const { buffer, fitReport } = await renderResumePdfBuffer(data, layout);
+    const rateLimit = await checkResumePdfRateLimit(request);
+    if (!rateLimit.ok) {
+      return Response.json(
+        {
+          error: "Too many PDF requests. Please try again shortly.",
+          retryAfterSeconds: rateLimit.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      );
+    }
+
+    const repo = getContentRepository();
+    const [data, layouts] = await Promise.all([
+      getResumeData(),
+      repo.getResumeLayouts().catch(() => []),
+    ]);
+    const layout = pickDefaultResumeLayout(layouts);
+    const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
+      mode: "canonical",
+    });
     const bytes = new Uint8Array(buffer);
 
     const slug = (value: string) =>

@@ -216,6 +216,27 @@ export function stableExperienceIndex(stableId: string): number | null {
   return index >= 0 ? index : null;
 }
 
+function normalizeSkillName(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+export function getValidatedHighlightedSkills(
+  base: ResumeData,
+  requestedSkills: readonly string[],
+): string[] {
+  const canonicalSkills = new Map(
+    base.skills.flatMap((group) =>
+      group.items.map((skill) => [normalizeSkillName(skill), skill] as const),
+    ),
+  );
+  const highlighted = new Set<string>();
+  for (const requestedSkill of requestedSkills) {
+    const canonical = canonicalSkills.get(normalizeSkillName(requestedSkill));
+    if (canonical) highlighted.add(canonical);
+  }
+  return [...highlighted];
+}
+
 /**
  * Merge tailored AI output into canonical ResumeData for PDF export.
  * Only experiences present in the tailored payload are included, in AI order.

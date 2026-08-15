@@ -28,7 +28,8 @@ describe("describeLayoutGuidelines", () => {
     expect(text).toContain("Maximum 280 characters per bullet");
     expect(text).not.toContain("sentences max");
     expect(text).toContain("**double asterisks**");
-    expect(text).toContain("most recent role up to 5 bullets");
+    expect(text).toContain("most recent role 4-5 bullets");
+    expect(text).toContain("second role 3-4");
     expect(text).toContain("at least 5 years ago");
   });
 });

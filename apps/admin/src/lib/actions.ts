@@ -378,7 +378,7 @@ export async function applyTailoredSummary(summary: string): Promise<ActionResul
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const trimmed = summary.trim();
+  const trimmed = summary.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
   if (trimmed.length < 40) {
     return { success: false, error: "Summary is too short to apply." };
   }

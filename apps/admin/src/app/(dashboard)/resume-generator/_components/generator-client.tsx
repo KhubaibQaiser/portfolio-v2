@@ -70,6 +70,7 @@ export function GeneratorClient({
   const [appliedChanges, setAppliedChanges] = useState<string[]>([]);
   const [streaming, setStreaming] = useState<GenKind | null>(null);
   const [atsBusy, setAtsBusy] = useState(false);
+  const [exporting, setExporting] = useState<"resume" | "cover_letter" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(initialHistory);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
@@ -277,39 +278,52 @@ export function GeneratorClient({
   }
 
   async function download(kind: "resume" | "cover_letter") {
+    if (exporting) return;
     if (kind === "resume" && !generation.resume) return;
     if (kind === "cover_letter" && !generation.coverLetter) return;
+    setExporting(kind);
+    setError(null);
 
-    const body =
-      kind === "resume"
-        ? { kind, resume: generation.resume, layoutId }
-        : {
-            kind,
-            coverLetter: generation.coverLetter,
-            meta: {
-              company: options.company || undefined,
-              role: options.role || undefined,
-            },
-          };
+    try {
+      const body =
+        kind === "resume"
+          ? { kind, resume: generation.resume, layoutId }
+          : {
+              kind,
+              coverLetter: generation.coverLetter,
+              meta: {
+                company: options.company || undefined,
+                role: options.role || undefined,
+              },
+            };
 
-    const res = await fetch("/api/resume/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setError(json?.error ?? "Download failed");
-      return;
+      const res = await fetch("/api/resume/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setError(json?.error ?? "Download failed");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = kind === "resume" ? "resume.pdf" : "cover-letter.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setError(
+        downloadError instanceof Error ? downloadError.message : "Download failed",
+      );
+    } finally {
+      setExporting(null);
     }
-
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = kind === "resume" ? "resume.pdf" : "cover-letter.pdf";
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   async function applySummary() {
@@ -503,12 +517,18 @@ export function GeneratorClient({
                 <button
                   type="button"
                   onClick={() => void download("resume")}
+                  disabled={Boolean(exporting)}
                   className={cn(
                     "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
-                    "text-accent-foreground font-medium hover:opacity-90",
+                    "text-accent-foreground font-medium hover:opacity-90 disabled:opacity-50",
                   )}
                 >
-                  <Download className="h-3 w-3" /> PDF
+                  {exporting === "resume" ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  {exporting === "resume" ? "Preparing…" : "PDF"}
                 </button>
                 <button
                   type="button"
@@ -537,12 +557,18 @@ export function GeneratorClient({
                 <button
                   type="button"
                   onClick={() => void download("cover_letter")}
+                  disabled={Boolean(exporting)}
                   className={cn(
                     "bg-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs",
-                    "text-accent-foreground font-medium hover:opacity-90",
+                    "text-accent-foreground font-medium hover:opacity-90 disabled:opacity-50",
                   )}
                 >
-                  <Download className="h-3 w-3" /> PDF
+                  {exporting === "cover_letter" ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  {exporting === "cover_letter" ? "Preparing…" : "PDF"}
                 </button>
               </>
             ) : null}

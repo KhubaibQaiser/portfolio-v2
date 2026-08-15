@@ -8,7 +8,11 @@ import {
 } from "@portfolio/ui/resume-pdf";
 import { tailoredResumeSchema, coverLetterSchema } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
-import { applyTailoredResume, getResumeData } from "@portfolio/shared/resume-data";
+import {
+  applyTailoredResume,
+  getResumeData,
+  getValidatedHighlightedSkills,
+} from "@portfolio/shared/resume-data";
 import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
@@ -86,7 +90,17 @@ export async function POST(request: Request) {
             }
           : undefined,
       );
-      const { buffer, fitReport } = await renderResumePdfBuffer(data, layout);
+      const highlightedSkills = getValidatedHighlightedSkills(
+        base,
+        tailored.highlightedSkills,
+      );
+      const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
+        mode: "tailored",
+        highlightedSkills: layout?.guidelines.contentEmphasis.skillsStrategy
+          .highlightRequired
+          ? highlightedSkills
+          : [],
+      });
       const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
       logger.info("resume pdf export fitted", {
         userId: auth.id,

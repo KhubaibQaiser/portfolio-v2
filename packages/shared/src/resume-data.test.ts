@@ -5,6 +5,7 @@ import {
   applyTailoredResume,
   formatExpLocation,
   getResumeData,
+  getValidatedHighlightedSkills,
   stableExperienceIndex,
   type ResumeContentSource,
   type ResumeData,
@@ -350,5 +351,18 @@ describe("applyTailoredResume", () => {
       "Beta Co",
     ]);
     expect(result.experience.map((item) => item.bullets.length)).toEqual([5, 4]);
+  });
+});
+
+describe("getValidatedHighlightedSkills", () => {
+  it("returns canonical exact matches and discards unknown AI values", () => {
+    expect(
+      getValidatedHighlightedSkills(base, [
+        " react ",
+        "TYPESCRIPT",
+        "Invented Framework",
+        "React",
+      ]),
+    ).toEqual(["React", "TypeScript"]);
   });
 });
