@@ -60,22 +60,27 @@ export function ResumePdfDownloadLink({
     <div className="flex flex-col items-start gap-2 sm:items-end">
       <button
         type="button"
-        className={className}
+        className={`relative ${className ?? ""}`}
         onClick={() => void downloadPdf()}
         disabled={pending}
         aria-busy={pending}
       >
+        {/* Children stay mounted so the button keeps its resting size while pending. */}
+        <span
+          className={`flex items-center gap-2 ${pending ? "invisible" : ""}`}
+          aria-hidden={pending}
+        >
+          {children}
+        </span>
         {pending ? (
-          <>
+          <span className="absolute inset-0 flex items-center justify-center">
             <span
               aria-hidden="true"
               className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
             />
-            Preparing PDF…
-          </>
-        ) : (
-          children
-        )}
+            <span className="sr-only">Preparing PDF…</span>
+          </span>
+        ) : null}
       </button>
       {error ? (
         <span role="alert" className="text-destructive block text-xs">

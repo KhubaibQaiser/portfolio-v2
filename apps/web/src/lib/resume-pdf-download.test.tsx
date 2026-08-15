@@ -38,10 +38,12 @@ describe("ResumePdfDownloadLink", () => {
     fireEvent.click(button);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(
-      (screen.getByRole("button", { name: "Preparing PDF…" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+    const pendingButton = screen.getByRole("button", {
+      name: "Preparing PDF…",
+    }) as HTMLButtonElement;
+    expect(pendingButton.disabled).toBe(true);
+    // Resting content stays mounted so the button cannot resize and shift layout.
+    expect(pendingButton.textContent).toContain("Download PDF");
 
     resolveResponse?.({
       ok: true,
