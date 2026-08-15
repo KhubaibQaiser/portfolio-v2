@@ -6,37 +6,40 @@ import {
   renderResumePdfBuffer,
   type CoverLetterMeta,
 } from "@portfolio/ui/resume-pdf";
-import { tailoredResumeSchema, coverLetterSchema } from "@portfolio/ai/schemas";
+import { resumeExportRequestSchema, coverLetterSchema } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
+import { enforceResumeGenerationPolicy } from "@portfolio/ai/policy/resume-generation-policy";
 import {
   applyTailoredResume,
   getResumeData,
   getValidatedHighlightedSkills,
 } from "@portfolio/shared/resume-data";
-import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
+import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
+import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const bodySchema = z.discriminatedUnion("kind", [
-  z.object({
+  resumeExportRequestSchema.extend({
     kind: z.literal("resume"),
-    resume: tailoredResumeSchema,
-    layoutId: z.string().min(1).optional(),
   }),
-  z.object({
-    kind: z.literal("cover_letter"),
-    coverLetter: coverLetterSchema,
-    meta: z
-      .object({
-        company: z.string().max(200).optional(),
-        role: z.string().max(200).optional(),
-      })
-      .optional(),
-  }),
+  z
+    .object({
+      kind: z.literal("cover_letter"),
+      generationId: z.string().min(1),
+      coverLetter: coverLetterSchema.strict(),
+      meta: z
+        .object({
+          company: z.string().max(200).optional(),
+          role: z.string().max(200).optional(),
+        })
+        .optional(),
+    })
+    .strict(),
 ]);
 
 function safeFileName(parts: (string | undefined)[]): string {
@@ -47,21 +50,46 @@ function safeFileName(parts: (string | undefined)[]): string {
     .join("-");
 }
 
+function numericClaims(value: string): string[] {
+  return value.match(/[$€£]?\d[\d,.]*(?:%|x|k|m|b)?/gi) ?? [];
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
-  let body: z.infer<typeof bodySchema>;
-  try {
-    body = bodySchema.parse(await request.json());
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Invalid body";
-    return NextResponse.json({ error: message }, { status: 400 });
+  const parsedBody = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsedBody.success) {
+    const fields = z.flattenError(parsedBody.error).fieldErrors;
+    return NextResponse.json(
+      {
+        error: {
+          code: "INVALID_EXPORT_REQUEST",
+          message: "Complete all required resume fields before exporting.",
+          fields,
+        },
+      },
+      { status: 400 },
+    );
   }
+  const body = parsedBody.data;
 
   const repo = getContentRepository();
+  const generation = await repo.getResumeGenerationById(body.generationId);
+  if (!generation || generation.created_by !== auth.id || generation.deleted_at) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "GENERATION_NOT_FOUND",
+          message: "This generation is unavailable or does not belong to you.",
+          fields: {},
+        },
+      },
+      { status: 404 },
+    );
+  }
   const base = await getResumeData(repo);
 
   logger.info("resume pdf export requested", {
@@ -71,32 +99,90 @@ export async function POST(request: Request) {
 
   try {
     if (body.kind === "resume") {
-      const tailored = sanitizeLlmObject(body.resume);
+      if (!generation.source_snapshot) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_SOURCE",
+              message:
+                "This legacy generation has no verified source snapshot. Regenerate it before exporting.",
+              fields: {},
+            },
+          },
+          { status: 409 },
+        );
+      }
       const layouts = await repo.getResumeLayouts().catch(() => []);
-      const layout = body.layoutId
-        ? (layouts.find((item) => item.id === body.layoutId) ??
-          pickDefaultResumeLayout(layouts))
-        : pickDefaultResumeLayout(layouts);
-      const data = applyTailoredResume(
-        base,
-        tailored,
-        layout
-          ? {
-              maxRoles: layout.guidelines.validation.maxExperienceItems,
-              maxBullets: Math.min(
-                layout.guidelines.validation.maxBulletsPerRole,
-                layout.guidelines.formatting.layout.maxBulletsPerJob,
-              ),
-            }
-          : undefined,
+      const layout = layouts.find((item) => item.id === body.layoutId);
+      if (!layout || generation.layout_id !== body.layoutId) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_LAYOUT",
+              message: "The selected layout does not match this generation.",
+              fields: { layoutId: ["Regenerate for the selected layout."] },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const facts = await loadCandidateFactsUncached();
+      const currentSnapshot = createGenerationSnapshot(
+        facts,
+        layout.guidelines,
+        layout.version,
       );
+      if (
+        body.sourceHash !== generation.source_snapshot.sourceHash ||
+        body.sourceHash !== currentSnapshot.sourceHash
+      ) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_SOURCE",
+              message:
+                "Candidate source data changed after generation. Regenerate before exporting.",
+              fields: {},
+            },
+          },
+          { status: 409 },
+        );
+      }
+      if (
+        body.guidelineHash !== generation.source_snapshot.guidelineHash ||
+        body.guidelineHash !== currentSnapshot.guidelineHash
+      ) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_LAYOUT",
+              message:
+                "Layout guidance changed after generation. Regenerate before exporting.",
+              fields: {},
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const tailored = enforceResumeGenerationPolicy(
+        sanitizeLlmObject(body.resume),
+        facts,
+        layout.guidelines,
+      ).resume;
+      const data = applyTailoredResume(base, tailored, {
+        maxRoles: layout.guidelines.validation.maxExperienceItems,
+        maxBullets: Math.min(
+          layout.guidelines.validation.maxBulletsPerRole,
+          layout.guidelines.formatting.layout.maxBulletsPerJob,
+        ),
+      });
       const highlightedSkills = getValidatedHighlightedSkills(
         base,
         tailored.highlightedSkills,
       );
       const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
         mode: "tailored",
-        highlightedSkills: layout?.guidelines.contentEmphasis.skillsStrategy
+        highlightedSkills: layout.guidelines.contentEmphasis.skillsStrategy
           .highlightRequired
           ? highlightedSkills
           : [],
@@ -104,7 +190,7 @@ export async function POST(request: Request) {
       const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
       logger.info("resume pdf export fitted", {
         userId: auth.id,
-        layoutId: layout?.id ?? null,
+        layoutId: layout.id,
         fitReport,
       });
       return new Response(new Uint8Array(buffer), {
@@ -118,7 +204,74 @@ export async function POST(request: Request) {
       });
     }
 
-    const letter = sanitizeLlmObject(body.coverLetter);
+    const letter = coverLetterSchema.strict().parse(sanitizeLlmObject(body.coverLetter));
+    if (!generation.source_snapshot || !generation.layout_id) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "STALE_SOURCE",
+            message:
+              "This legacy cover letter has no verified source snapshot. Regenerate it before exporting.",
+            fields: {},
+          },
+        },
+        { status: 409 },
+      );
+    }
+    const coverLayout = await repo.getResumeLayoutById(generation.layout_id);
+    if (!coverLayout) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "STALE_LAYOUT",
+            message: "The generation layout no longer exists.",
+            fields: {},
+          },
+        },
+        { status: 409 },
+      );
+    }
+    const coverFacts = await loadCandidateFactsUncached();
+    const coverSnapshot = createGenerationSnapshot(
+      coverFacts,
+      coverLayout.guidelines,
+      coverLayout.version,
+    );
+    if (coverSnapshot.sourceHash !== generation.source_snapshot.sourceHash) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "STALE_SOURCE",
+            message:
+              "Candidate source data changed after generation. Regenerate before exporting.",
+            fields: {},
+          },
+        },
+        { status: 409 },
+      );
+    }
+    const sourceNumbers = new Set(
+      numericClaims(coverFacts.factSheet).map((claim) => claim.toLocaleLowerCase()),
+    );
+    const unsupportedNumbers = numericClaims(
+      [letter.greeting, ...letter.body, letter.closing, letter.signOff].join(" "),
+    ).filter((claim) => !sourceNumbers.has(claim.toLocaleLowerCase()));
+    if (unsupportedNumbers.length > 0) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "FACT_VALIDATION_FAILED",
+            message: "The edited cover letter contains unsupported numeric claims.",
+            fields: {
+              coverLetter: [
+                `Remove or verify: ${[...new Set(unsupportedNumbers)].join(", ")}`,
+              ],
+            },
+          },
+        },
+        { status: 422 },
+      );
+    }
     const meta: CoverLetterMeta = {
       company: body.meta?.company,
       role: body.meta?.role,
@@ -143,7 +296,15 @@ export async function POST(request: Request) {
       kind: body.kind,
       error: err instanceof Error ? err : new Error(String(err)),
     });
-    const message = err instanceof Error ? err.message : "Failed to render PDF";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: {
+          code: "FACT_VALIDATION_FAILED",
+          message: "The edited content failed export validation.",
+          fields: {},
+        },
+      },
+      { status: 422 },
+    );
   }
 }

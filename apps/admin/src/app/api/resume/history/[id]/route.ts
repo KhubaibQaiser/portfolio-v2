@@ -16,7 +16,7 @@ export async function GET(
 
   try {
     const row = await getContentRepository().getResumeGenerationById(id);
-    if (!row) {
+    if (!row || row.created_by !== auth.id || row.deleted_at) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json({ row });

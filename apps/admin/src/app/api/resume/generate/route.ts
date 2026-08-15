@@ -1,465 +1,354 @@
 import { NextResponse } from "next/server";
-import { generateObject, streamObject } from "ai";
 import { z } from "zod";
-import {
-  ensureAiApiKeys,
-  fallbackChainFor,
-  formatUsage,
-  isProviderRateLimitError,
-  modelFor,
-  type ModelId,
-  type ResolvedModel,
-} from "@portfolio/ai";
-import {
-  combinedSchema,
-  tailoredResumeSchema,
-  coverLetterSchema,
-  type CombinedGeneration,
-  type TailoredResume,
-  type CoverLetter,
-} from "@portfolio/ai/schemas";
+import { ensureAiApiKeys } from "@portfolio/ai";
+import { resumeGenerationSuccessSchema } from "@portfolio/ai/schemas";
 import { trimJobDescription } from "@portfolio/ai/context/trim-job-description";
 import {
   stripPromptInjection,
   wrapUntrusted,
 } from "@portfolio/ai/guardrails/prompt-injection";
-import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
-import { collectTextForToneCheck, scoreAiTone } from "@portfolio/ai/guardrails/ai-tone";
-import { validateFabrication } from "@portfolio/ai/guardrails/fabrication-check";
-import {
-  buildResumeSystemPrompt,
-  buildResumeUserPrompt,
-} from "@portfolio/ai/prompts/resume";
-import {
-  buildCoverLetterSystemPrompt,
-  buildCoverLetterUserPrompt,
-} from "@portfolio/ai/prompts/cover-letter";
-import type { CandidateFacts } from "@portfolio/ai/context/build-candidate-facts";
 import { getContentRepository } from "@portfolio/data";
-import { getResumeData } from "@portfolio/shared/resume-data";
-import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
 import {
-  classicGuidelines,
+  applyTailoredResume,
+  getResumeData,
+  getValidatedHighlightedSkills,
+} from "@portfolio/shared/resume-data";
+import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
+import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
+import {
   pickDefaultResumeLayout,
-  type ResumeGenerationUsage,
   type VariantGuidelines,
 } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
-import { loadCandidateFacts } from "@/lib/resume-ai/load-candidate-facts";
+import {
+  generateValidatedContent,
+  ValidatedGenerationError,
+} from "@/lib/resume-ai/generate-validated-content";
+import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
+import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { checkCostCap } from "@/lib/resume-ai/cost-cap";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const AI_TONE_THRESHOLD = 35;
+const GENERATION_DEADLINE_MS = 52_000;
 
-const bodySchema = z.object({
-  kind: z.enum(["resume", "cover_letter", "both"]),
-  jobDescription: z.string().min(20).max(20_000),
-  jdSource: z.enum(["paste", "pdf"]).default("paste"),
-  company: z.string().max(200).optional(),
-  role: z.string().max(200).optional(),
-  hiringManager: z.string().max(200).optional(),
-  tone: z.enum(["formal", "friendly", "enthusiastic"]).optional(),
-  length: z.enum(["short", "standard", "detailed"]).optional(),
-  language: z.enum(["en", "de", "fr"]).optional(),
-  model: z.enum(["quality", "fast"]).default("quality"),
-  mustTryToInclude: z.array(z.string().max(80)).max(40).optional(),
-  regenerateFromId: z.string().uuid().optional(),
-  layoutId: z.string().min(1).optional(),
-});
+const bodySchema = z
+  .object({
+    kind: z.enum(["resume", "cover_letter", "both"]),
+    jobDescription: z.string().min(20).max(20_000),
+    jdSource: z.enum(["paste", "pdf"]).default("paste"),
+    company: z.string().max(200).optional(),
+    role: z.string().max(200).optional(),
+    hiringManager: z.string().max(200).optional(),
+    tone: z.enum(["formal", "friendly", "enthusiastic"]).optional(),
+    length: z.enum(["short", "standard", "detailed"]).optional(),
+    language: z.enum(["en", "de", "fr"]).default("en"),
+    model: z.enum(["quality", "fast"]).default("quality"),
+    mustTryToInclude: z.array(z.string().max(80)).max(40).optional(),
+    regenerateFromId: z.string().uuid().optional(),
+    layoutId: z.string().min(1).optional(),
+  })
+  .strict();
 
-type Body = z.infer<typeof bodySchema>;
-
-function schemaFor(kind: Body["kind"]) {
-  if (kind === "both") return combinedSchema;
-  if (kind === "resume") return tailoredResumeSchema;
-  return coverLetterSchema;
-}
-
-function extractResumeAndCoverLetter(
-  kind: Body["kind"],
-  object: unknown,
-): { resume: TailoredResume | null; coverLetter: CoverLetter | null } {
-  if (kind === "both") {
-    const obj = object as CombinedGeneration;
-    return { resume: obj.resume, coverLetter: obj.coverLetter };
-  }
-  if (kind === "resume") {
-    return { resume: object as TailoredResume, coverLetter: null };
-  }
-  return { resume: null, coverLetter: object as CoverLetter };
+function generationError(
+  code:
+    | "INVALID_MODEL_OUTPUT"
+    | "OUTPUT_TRUNCATED"
+    | "FACT_VALIDATION_FAILED"
+    | "PROVIDER_UNAVAILABLE"
+    | "GENERATION_TIMEOUT"
+    | "PERSISTENCE_FAILED",
+  message: string,
+  status: number,
+  retryable = true,
+) {
+  return NextResponse.json(
+    { error: { code, message, retryable } },
+    { status, headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
+    return NextResponse.json(
+      { error: { code: "UNAUTHORIZED", message: auth.error, retryable: false } },
+      { status: 401 },
+    );
   }
 
-  let body: Body;
-  try {
-    const json = await request.json();
-    body = bodySchema.parse(json);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Invalid request body";
-    return NextResponse.json({ error: message }, { status: 400 });
+  const parsedBody = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "INVALID_REQUEST",
+          message: "Check the job description and generation options.",
+          retryable: false,
+        },
+      },
+      { status: 400 },
+    );
   }
+  const body = parsedBody.data;
 
   const rate = await checkResumeAiRateLimit(auth.id);
   if (!rate.ok) {
     return NextResponse.json(
       {
-        error: "Generation rate limit reached. Try again shortly or adjust the limit.",
-        retryAfterSeconds: rate.retryAfterSeconds,
+        error: {
+          code: "RATE_LIMITED",
+          message: "Generation rate limit reached. Try again shortly.",
+          retryable: true,
+        },
       },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
-    );
-  }
-
-  let cap: Awaited<ReturnType<typeof checkCostCap>>;
-  try {
-    cap = await checkCostCap(auth.id);
-  } catch {
-    return NextResponse.json(
-      { error: "Unable to verify usage limits right now. Please try again shortly." },
-      { status: 503 },
-    );
-  }
-  if (!cap.ok) {
-    return NextResponse.json(
       {
-        error: `Daily cost cap reached ($${cap.spentUsd.toFixed(2)} / $${cap.capUsd.toFixed(2)}). Try again tomorrow or raise RESUME_GEN_DAILY_USD_CAP.`,
+        status: 429,
+        headers: {
+          "Retry-After": String(rate.retryAfterSeconds),
+          "Cache-Control": "no-store",
+        },
       },
-      { status: 402 },
     );
   }
 
   try {
-    await ensureAiApiKeys();
+    const cap = await checkCostCap(auth.id);
+    if (!cap.ok) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "COST_CAP_REACHED",
+            message: "The daily Resume AI cost cap has been reached.",
+            retryable: false,
+          },
+        },
+        { status: 402 },
+      );
+    }
+  } catch {
+    return generationError(
+      "PROVIDER_UNAVAILABLE",
+      "Usage limits could not be verified. Try again shortly.",
+      503,
+    );
+  }
+
+  try {
+    await ensureAiApiKeys(body.model);
   } catch (error) {
-    logger.error("failed to load AI API keys from Secrets Manager", {
+    logger.error("resume AI provider configuration unavailable", {
+      userId: auth.id,
       error: error instanceof Error ? error : new Error(String(error)),
     });
-    return NextResponse.json(
-      { error: "Resume AI is not configured yet. Please try again later." },
-      { status: 503 },
+    return generationError(
+      "PROVIDER_UNAVAILABLE",
+      "Resume AI is not configured for the selected model.",
+      503,
     );
   }
 
-  const jdTrimmed = trimJobDescription(stripPromptInjection(body.jobDescription));
-  if (jdTrimmed.length < 20) {
+  const jdText = trimJobDescription(stripPromptInjection(body.jobDescription)).trim();
+  if (jdText.length < 20) {
     return NextResponse.json(
-      { error: "Job description too short after cleanup" },
+      {
+        error: {
+          code: "INVALID_REQUEST",
+          message: "The job description is too short after safety cleanup.",
+          retryable: false,
+        },
+      },
       { status: 400 },
     );
   }
-  const wrappedJd = wrapUntrusted(jdTrimmed);
 
   const repo = getContentRepository();
-  const layouts = await repo.getResumeLayouts().catch(() => []);
-  const requestedLayout = body.layoutId
-    ? layouts.find((item) => item.id === body.layoutId)
-    : undefined;
-  if (body.layoutId && layouts.length > 0 && !requestedLayout) {
-    return NextResponse.json({ error: "Unknown resume layout." }, { status: 400 });
+  const layouts = await repo.getResumeLayouts().catch(() => null);
+  if (!layouts) {
+    return generationError(
+      "PERSISTENCE_FAILED",
+      "Resume layouts could not be loaded. Try again shortly.",
+      503,
+    );
   }
-  const layout = requestedLayout ?? pickDefaultResumeLayout(layouts);
-  const guidelines: VariantGuidelines = layout?.guidelines ?? classicGuidelines();
-
-  let facts: CandidateFacts;
-  try {
-    facts = await loadCandidateFacts();
-  } catch {
+  const layout = body.layoutId
+    ? layouts.find((candidate) => candidate.id === body.layoutId)
+    : pickDefaultResumeLayout(layouts);
+  if (!layout) {
     return NextResponse.json(
-      { error: "Failed to load candidate profile. Fill in your resume data first." },
-      { status: 500 },
+      {
+        error: {
+          code: "INVALID_REQUEST",
+          message: body.layoutId
+            ? "The selected resume layout no longer exists."
+            : "No default resume layout is configured.",
+          retryable: false,
+        },
+      },
+      { status: 400 },
     );
   }
 
-  const schema = schemaFor(body.kind);
+  const layoutId = layout.id;
+  const layoutVersion = layout.version;
+  const guidelines: VariantGuidelines = layout.guidelines;
+  const requestDeadline = AbortSignal.any([
+    request.signal,
+    AbortSignal.timeout(GENERATION_DEADLINE_MS),
+  ]);
 
-  function buildSystem(retryReason?: string): string {
-    if (body.kind === "cover_letter") {
-      return buildCoverLetterSystemPrompt(facts, {
-        tone: body.tone,
-        length: body.length,
-        language: body.language,
-        company: body.company,
-        role: body.role,
-        hiringManager: body.hiringManager,
-        retryReason,
-      });
-    }
-
-    const resumePrompt = buildResumeSystemPrompt(
-      facts,
-      {
-        tone: body.tone,
-        length: body.length,
-        language: body.language,
-        company: body.company,
-        role: body.role,
-        mustTryToInclude: body.mustTryToInclude,
-        retryReason,
-      },
-      guidelines,
+  try {
+    const facts = await loadCandidateFactsUncached();
+    const snapshot = createGenerationSnapshot(facts, guidelines, layoutVersion);
+    const canonicalFactText = facts.factSheet.toLocaleLowerCase();
+    const safeMustTryToInclude = body.mustTryToInclude?.filter((keyword) =>
+      canonicalFactText.includes(keyword.trim().toLocaleLowerCase()),
     );
 
-    if (body.kind === "resume") return resumePrompt;
+    logger.info("validated resume generation requested", {
+      userId: auth.id,
+      kind: body.kind,
+      modelMode: body.model,
+      layoutId,
+      layoutVersion,
+      jdSource: body.jdSource,
+      jdLength: jdText.length,
+    });
 
-    const coverPrompt = buildCoverLetterSystemPrompt(facts, {
-      tone: body.tone,
-      length: body.length,
-      language: body.language,
+    const generated = await generateValidatedContent({
+      kind: body.kind,
+      modelMode: body.model,
+      wrappedJobDescription: wrapUntrusted(jdText),
+      facts,
+      guidelines,
+      signal: requestDeadline,
       company: body.company,
       role: body.role,
       hiringManager: body.hiringManager,
-      retryReason,
+      tone: body.tone,
+      length: body.length,
+      language: body.language,
+      mustTryToInclude: safeMustTryToInclude,
     });
-    return `${resumePrompt}\n\n---\n\nAlso generate the cover letter. Follow these additional rules:\n\n${coverPrompt}`;
-  }
 
-  const userPrompt =
-    body.kind === "cover_letter"
-      ? buildCoverLetterUserPrompt(wrappedJd)
-      : buildResumeUserPrompt(wrappedJd);
-
-  const startedAt = Date.now();
-  const primary = modelFor(body.model);
-  const fallbacks = fallbackChainFor(body.model);
-
-  logger.info("resume generation requested", {
-    userId: auth.id,
-    kind: body.kind,
-    modelMode: body.model,
-    model: primary.modelId,
-    jdSource: body.jdSource,
-    jdLength: jdTrimmed.length,
-    hasCompany: Boolean(body.company),
-    hasRole: Boolean(body.role),
-    layoutId: layout?.id ?? null,
-  });
-
-  async function runStream(resolved: ResolvedModel, system: string, signal: AbortSignal) {
-    return streamObject({
-      model: resolved.model,
-      schema,
-      system,
-      prompt: userPrompt,
-      abortSignal: signal,
-      temperature: 0.4,
-      maxOutputTokens: 3000,
-    });
-  }
-
-  let chosen = primary;
-  let fallbackUsed = false;
-  let result: Awaited<ReturnType<typeof runStream>>;
-  try {
-    result = await runStream(primary, buildSystem(), request.signal);
-  } catch (err) {
-    if (isProviderRateLimitError(err) && fallbacks.length > 0) {
-      const fb = fallbacks[0]!;
-      chosen = fb;
-      fallbackUsed = true;
-      logger.warn("primary model rate-limited, falling back", {
-        userId: auth.id,
-        primary: primary.modelId,
-        fallback: fb.modelId,
+    let appliedChanges: string[] = [];
+    let fitReport: Record<string, unknown> | undefined;
+    if (generated.resume) {
+      const base = await getResumeData(repo);
+      appliedChanges = describeAppliedResumeChanges(base, generated.resume, body.role);
+      const pdfData = applyTailoredResume(base, generated.resume, {
+        maxRoles: guidelines.validation.maxExperienceItems,
+        maxBullets: Math.min(
+          guidelines.validation.maxBulletsPerRole,
+          guidelines.formatting.layout.maxBulletsPerJob,
+        ),
       });
-      result = await runStream(fb, buildSystem(), request.signal);
-    } else {
-      logger.error("resume generation failed to start", {
-        userId: auth.id,
-        model: primary.modelId,
-        kind: body.kind,
-        error: err instanceof Error ? err : new Error(String(err)),
+      const rendered = await renderResumePdfBuffer(pdfData, layout, {
+        mode: "tailored",
+        highlightedSkills: getValidatedHighlightedSkills(
+          base,
+          generated.resume.highlightedSkills,
+        ),
       });
-      const message = err instanceof Error ? err.message : "Generator failed";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
-  }
-
-  logger.info("resume generation streaming", {
-    userId: auth.id,
-    model: chosen.modelId,
-    fallbackUsed,
-  });
-
-  // `onFinish` via Response callback: rather than using the streamObject
-  // onFinish option (not strongly typed across AI SDK versions), we attach
-  // a post-processing task that consumes the final `.object` and `.usage`
-  // promises exposed on the result, independent of the response stream.
-  void (async () => {
-    try {
-      const [object, usage] = await Promise.all([result.object, result.usage]);
-      const sanitized = sanitizeLlmObject(object);
-      const { resume: tailoredResume, coverLetter } = extractResumeAndCoverLetter(
-        body.kind,
-        sanitized,
-      );
-
-      // Fabrication violations are retried once and never persisted.
-      let aiToneScore: number | null = null;
-      let toneHits: string[] = [];
-      let fabricationViolations: string[] = [];
-      if (tailoredResume) {
-        const res = validateFabrication(tailoredResume, facts.idMap);
-        if (!res.ok) {
-          fabricationViolations = res.offending;
-          logger.warn("resume fabrication warnings", {
-            userId: auth.id,
-            offending: res.offending,
-          });
-        }
-      }
-      if (tailoredResume || coverLetter) {
-        const tone = scoreAiTone(collectTextForToneCheck(tailoredResume ?? coverLetter));
-        aiToneScore = tone.score;
-        toneHits = tone.hits;
-      }
-
-      const modelId: ModelId = chosen.modelId;
-      const latencyMs = Date.now() - startedAt;
-      const usageRecord = formatUsage(usage, modelId, {
-        latencyMs,
-        fallbackUsed,
-      });
-
-      // Silent tone retry (max 1). If the streamed output sounds robotic,
-      // regenerate once with the cheap model + explicit retry reason, and
-      // persist that polished version as the authoritative row content.
-      let finalResume = tailoredResume;
-      let finalCover = coverLetter;
-      let retryApplied = false;
-      let retryUsage: ReturnType<typeof formatUsage> | null = null;
-      let retryToneScore: number | null = null;
       if (
-        fabricationViolations.length > 0 ||
-        (aiToneScore !== null && aiToneScore >= AI_TONE_THRESHOLD)
+        rendered.fitReport &&
+        rendered.fitReport.pageCount > guidelines.validation.maxPageCount
       ) {
-        try {
-          const retryReason =
-            fabricationViolations.length > 0
-              ? `Previous draft failed factual validation: ${fabricationViolations
-                  .slice(0, 8)
-                  .join(
-                    ", ",
-                  )}. Use only valid experience IDs and source bullet indexes from the fact sheet.`
-              : `Previous draft sounded robotic/AI-generated. Tells detected: ${
-                  toneHits.slice(0, 8).join(", ") || "generic corporate phrasing"
-                }. Rewrite in a more human, conversational, concrete voice. Do NOT change factual content.`;
-          const cheap = modelFor("cheap");
-          const retryStartedAt = Date.now();
-          const retryResult = await generateObject({
-            model: cheap.model,
-            schema,
-            system: buildSystem(retryReason),
-            prompt: userPrompt,
-            temperature: 0.5,
-            maxOutputTokens: 3000,
-          });
-          const retrySanitized = sanitizeLlmObject(retryResult.object);
-          const retryExtracted = extractResumeAndCoverLetter(body.kind, retrySanitized);
-          finalResume = retryExtracted.resume;
-          finalCover = retryExtracted.coverLetter;
-          retryApplied = true;
-          retryUsage = formatUsage(retryResult.usage, cheap.modelId, {
-            latencyMs: Date.now() - retryStartedAt,
-            fallbackUsed: false,
-          });
-          const retryTone = scoreAiTone(
-            collectTextForToneCheck(finalResume ?? finalCover),
-          );
-          retryToneScore = retryTone.score;
-        } catch (err) {
-          logger.warn("resume tone retry failed", {
-            userId: auth.id,
-            error: err instanceof Error ? err.message : String(err),
-          });
-          if (fabricationViolations.length > 0) throw err;
-        }
+        throw new ValidatedGenerationError(
+          "INVALID_MODEL_OUTPUT",
+          "The generated resume could not fit the selected layout.",
+          true,
+        );
       }
-
-      if (finalResume) {
-        const validation = validateFabrication(finalResume, facts.idMap);
-        if (!validation.ok) {
-          throw new Error(
-            `Resume failed factual validation after retry: ${validation.offending
-              .slice(0, 8)
-              .join(", ")}`,
-          );
-        }
-      }
-
-      let appliedChanges: string[] = [];
-      if (finalResume) {
-        try {
-          const base = await getResumeData(repo);
-          appliedChanges = describeAppliedResumeChanges(base, finalResume, body.role);
-        } catch {
-          appliedChanges = [];
-        }
-      }
-
-      await getContentRepository().insertResumeGeneration({
-        created_by: auth.id,
-        company: body.company ?? null,
-        role: body.role ?? null,
-        hiring_manager: body.hiringManager ?? null,
-        language: body.language ?? "en",
-        tone: body.tone ?? null,
-        length: body.length ?? null,
-        jd_text: jdTrimmed,
-        jd_source: body.jdSource,
-        jd_pdf_url: null,
-        model: modelId,
-        fallback_used: fallbackUsed,
-        resume: (finalResume as unknown as Record<string, unknown>) ?? null,
-        cover_letter: (finalCover as unknown as Record<string, unknown>) ?? null,
-        ats: null,
-        usage: {
-          ...usageRecord,
-          aiToneScore,
-          toneHits,
-          threshold: AI_TONE_THRESHOLD,
-          retryApplied,
-          retryUsage,
-          retryToneScore,
-          regenerateFromId: body.regenerateFromId ?? null,
-        } as unknown as ResumeGenerationUsage,
-        resume_pdf_url: null,
-        cover_letter_pdf_url: null,
-        layout_id: layout?.id ?? body.layoutId ?? null,
-        applied_changes: appliedChanges,
-        archived_at: null,
-        deleted_at: null,
-      });
-
-      logger.info("resume generation persisted", {
-        userId: auth.id,
-        model: modelId,
-        fallbackUsed,
-        latencyMs,
-        costUsd: usageRecord.costUsd,
-        retryApplied,
-        aiToneScore,
-      });
-    } catch (err) {
-      logger.error("resume generation persist failed", {
-        userId: auth.id,
-        error: err instanceof Error ? err : new Error(String(err)),
-      });
+      fitReport = rendered.fitReport ? { ...rendered.fitReport } : undefined;
     }
-  })();
 
-  return result.toTextStreamResponse({
-    headers: {
-      "X-Resume-AI-Model": chosen.modelId,
-      "X-Resume-AI-Fallback": fallbackUsed ? "1" : "0",
-    },
-  });
+    if (requestDeadline.aborted) {
+      throw new ValidatedGenerationError(
+        "GENERATION_TIMEOUT",
+        "Generation was cancelled before it could be saved.",
+        true,
+      );
+    }
+
+    const persisted = await repo.insertResumeGeneration({
+      created_by: auth.id,
+      company: body.company ?? null,
+      role: body.role ?? null,
+      hiring_manager: body.hiringManager ?? null,
+      language: body.language,
+      tone: body.tone ?? null,
+      length: body.length ?? null,
+      jd_text: jdText,
+      jd_source: body.jdSource,
+      jd_pdf_url: null,
+      model: generated.model,
+      fallback_used: generated.fallbackUsed,
+      resume: generated.resume as Record<string, unknown> | null,
+      cover_letter: generated.coverLetter as Record<string, unknown> | null,
+      ats: null,
+      usage: { ...generated.usage, ...(fitReport ? { fitReport } : {}) },
+      resume_pdf_url: null,
+      cover_letter_pdf_url: null,
+      layout_id: layoutId,
+      applied_changes: appliedChanges,
+      generation_version: 2,
+      source_snapshot: snapshot,
+      archived_at: null,
+      deleted_at: null,
+    });
+
+    const response = resumeGenerationSuccessSchema.parse({
+      generationId: persisted.id,
+      resume: generated.resume,
+      coverLetter: generated.coverLetter,
+      appliedChanges,
+      layout: {
+        id: layoutId,
+        version: layoutVersion,
+        sourceHash: snapshot.sourceHash,
+        guidelineHash: snapshot.guidelineHash,
+      },
+      metadata: {
+        attempts: generated.attempts,
+        warnings: generated.warnings,
+        fitReport: fitReport ?? null,
+      },
+    });
+
+    logger.info("validated resume generation persisted", {
+      userId: auth.id,
+      generationId: persisted.id,
+      model: generated.model,
+      attempts: generated.attempts.length,
+      attemptReasons: generated.attempts.map((attempt) => attempt.reason),
+      fallbackUsed: generated.fallbackUsed,
+      costUsd: generated.usage.costUsd,
+    });
+
+    return NextResponse.json(response, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (error) {
+    if (error instanceof ValidatedGenerationError) {
+      logger.warn("validated resume generation rejected", {
+        userId: auth.id,
+        code: error.code,
+      });
+      return generationError(error.code, error.message, 422, error.retryable);
+    }
+
+    logger.error("validated resume generation failed", {
+      userId: auth.id,
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return generationError(
+      "PERSISTENCE_FAILED",
+      "The validated generation could not be saved. Nothing was returned.",
+      500,
+    );
+  }
 }

@@ -84,7 +84,7 @@ export class NextjsSite extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(path.join(openNextDir, "server-functions", "default")),
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(30),
+      timeout: cdk.Duration.seconds(60),
       logGroup: this.serverLogGroup,
       environment: {
         CACHE_BUCKET_NAME: this.bucket.bucketName,

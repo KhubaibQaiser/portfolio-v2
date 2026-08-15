@@ -46,15 +46,16 @@ function outputShape(facts: CandidateFacts, guidelines?: VariantGuidelines): str
   return `OUTPUT SHAPE:
 - Return JSON matching the provided schema exactly.
 - summary: 2-3 sentences, max 450 characters. Lead with years + core stack + best metric. No AI-tooling mention unless the JD asks for it.
-- titleOverride: optional JD-aligned title when truthful (Senior/Staff/Full-Stack). Omit if default title fits.
+- titleOverride: JD-aligned title when truthful (Senior/Staff/Full-Stack), otherwise null. This key is required.
 - experiences: select only roles relevant to the JD, max ${maxRoles} total, then order selected roles newest-first.
 - Bullet budget: ${describeBulletBudgetRules(maxBullets)}
 ${budgetHints ? `- Source-order per-role bullet caps: ${budgetHints}.` : ""}
 - Each bullet is max ~22 words.
 - Weave 1-2 stack terms into each bullet inline. Do NOT add a separate Technologies footer.
 - skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS / GCP, etc.).
-- highlightedSkills: exact skill names copied from the returned/source skills that directly match the JD. Never add aliases or invented skills.
-- keywords: max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.`;
+- highlightedSkills: required array of exact skill names copied from the returned/source skills that directly match the JD. Use [] when none match. Never add aliases or invented skills.
+- keywords: required array with max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.
+- Return every schema key. Never omit an array; use [] only where the schema permits an empty array.`;
 }
 
 export function interpolateTailoringTemplate(

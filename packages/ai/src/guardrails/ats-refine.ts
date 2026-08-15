@@ -29,7 +29,8 @@ function dedupeKeywordsPreserveFirst(keywords: string[]): string[] {
 /**
  * Post-processes model output: drop missing items that duplicate a matched
  * concept (spelling variants), strip long phrase-only "keywords", dedupe
- * matched list, and nudge the score when false positives are removed.
+ * matched list. The provider's evidence-based score is not inflated merely
+ * because normalization removed duplicate or malformed keywords.
  */
 export function refineAtsScore(score: AtsScore): AtsScore {
   const matchedDeduped = dedupeKeywordsPreserveFirst(score.matchedKeywords);
@@ -50,13 +51,8 @@ export function refineAtsScore(score: AtsScore): AtsScore {
 
   missing = dedupeKeywordsPreserveFirst(missing);
 
-  const removed = missingBefore.length - missing.length;
-  const scoreBump = Math.min(removed * 2, 15);
-  const newScore = Math.min(100, score.score + scoreBump);
-
   return {
     ...score,
-    score: newScore,
     matchedKeywords: matchedDeduped,
     missingKeywords: missing,
   };

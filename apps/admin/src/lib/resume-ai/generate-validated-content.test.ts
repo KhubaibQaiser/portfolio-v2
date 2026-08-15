@@ -1,0 +1,183 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { classicGuidelines } from "@portfolio/shared/schemas";
+
+import { buildCandidateFacts } from "@portfolio/ai/context/build-candidate-facts";
+
+const mocks = vi.hoisted(() => ({
+  generateObject: vi.fn(),
+}));
+
+vi.mock("ai", () => ({
+  generateObject: mocks.generateObject,
+  NoObjectGeneratedError: {
+    isInstance: (error: unknown) =>
+      typeof error === "object" &&
+      error !== null &&
+      "name" in error &&
+      error.name === "NoObjectGeneratedError",
+  },
+}));
+
+vi.mock("@portfolio/ai", () => ({
+  modelFor: () => ({
+    model: { id: "primary" },
+    modelId: "openai/gpt-oss-120b",
+    provider: "groq",
+  }),
+  fallbackChainFor: () => [
+    {
+      model: { id: "fallback" },
+      modelId: "openai/gpt-oss-20b",
+      provider: "groq",
+    },
+  ],
+  formatUsage: (
+    usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number },
+    model: string,
+    metadata: { latencyMs: number; fallbackUsed: boolean },
+  ) => ({ ...usage, ...metadata, model, costUsd: 0.001 }),
+  isProviderRateLimitError: (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    error.statusCode === 429,
+}));
+
+import {
+  generateValidatedContent,
+  ValidatedGenerationError,
+} from "./generate-validated-content";
+
+const facts = buildCandidateFacts({
+  siteConfig: {
+    name: "Test User",
+    title: "Senior Engineer",
+    email: "test@example.com",
+    location: "Remote",
+    social_links: [],
+  },
+  resume: {
+    default_summary:
+      "Senior engineer building reliable customer products with React and TypeScript.",
+    education: [],
+    certifications: [],
+  },
+  experiences: [
+    {
+      id: "experience-uuid",
+      company: "Source Co",
+      role: "Senior Engineer",
+      location: "Remote",
+      location_type: "remote",
+      contract_type: "full_time",
+      start_date: "Jan 2024",
+      end_date: null,
+      description: "Built React products.",
+      tech_tags: ["React"],
+    },
+  ],
+  skills: [{ category: "frontend", name: "React" }],
+});
+
+const validResume = {
+  summary:
+    "Senior engineer building reliable React products with clear customer and platform impact across production systems.",
+  titleOverride: null,
+  keywords: ["React"],
+  highlightedSkills: ["React"],
+  experiences: [
+    {
+      experienceId: "experience-uuid",
+      bullets: [
+        {
+          experienceId: "experience-uuid",
+          sourceBulletIndex: 0,
+          text: "Built reliable React products for customers.",
+        },
+      ],
+    },
+  ],
+  skills: [{ category: "Frontend & UI", items: ["React"] }],
+};
+
+const baseOptions = {
+  kind: "resume" as const,
+  modelMode: "quality" as const,
+  wrappedJobDescription: "Senior React engineer role building production products.",
+  facts,
+  guidelines: classicGuidelines(),
+  signal: new AbortController().signal,
+};
+
+function generated(object: unknown) {
+  return {
+    object,
+    usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+    finishReason: "stop",
+  };
+}
+
+describe("generateValidatedContent", () => {
+  beforeEach(() => {
+    mocks.generateObject.mockReset();
+  });
+
+  it("returns only a complete policy-validated resume", async () => {
+    mocks.generateObject.mockResolvedValueOnce(generated(validResume));
+
+    const result = await generateValidatedContent(baseOptions);
+
+    expect(result.resume).toEqual(validResume);
+    expect(result.attempts).toHaveLength(1);
+    expect(result.usage.costUsd).toBe(0.001);
+  });
+
+  it("retries invalid source references and accepts only the corrected object", async () => {
+    mocks.generateObject
+      .mockResolvedValueOnce(
+        generated({
+          ...validResume,
+          experiences: [
+            {
+              ...validResume.experiences[0],
+              experienceId: "unknown-id",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(generated(validResume));
+
+    const result = await generateValidatedContent(baseOptions);
+
+    expect(result.resume?.experiences[0]?.experienceId).toBe("experience-uuid");
+    expect(result.attempts.map((attempt) => attempt.reason)).toEqual([
+      "layout_or_fact_validation",
+      "corrective_retry",
+    ]);
+  });
+
+  it("traverses the provider fallback chain after a transient failure", async () => {
+    mocks.generateObject
+      .mockRejectedValueOnce({ statusCode: 429 })
+      .mockResolvedValueOnce(generated(validResume));
+
+    const result = await generateValidatedContent(baseOptions);
+
+    expect(result.fallbackUsed).toBe(true);
+    expect(result.model).toBe("openai/gpt-oss-20b");
+  });
+
+  it("fails both atomically when the cover letter cannot be validated", async () => {
+    const invalidOutput = {
+      name: "NoObjectGeneratedError",
+      finishReason: "error",
+    };
+    mocks.generateObject
+      .mockResolvedValueOnce(generated(validResume))
+      .mockRejectedValue(invalidOutput);
+
+    await expect(
+      generateValidatedContent({ ...baseOptions, kind: "both" }),
+    ).rejects.toBeInstanceOf(ValidatedGenerationError);
+  });
+});

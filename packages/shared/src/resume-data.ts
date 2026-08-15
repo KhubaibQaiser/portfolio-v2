@@ -20,6 +20,8 @@ export type ResumeSocialLink = {
 };
 
 export type ResumeDataExperience = {
+  /** Immutable CMS/DB identifier. Legacy fixtures may omit it. */
+  sourceId?: string;
   company: string;
   role: string;
   startDate: string;
@@ -182,6 +184,7 @@ export async function getResumeData(
     keywords,
     visibleSections,
     experience: filterExperienceForResume(experience).map((exp) => ({
+      sourceId: exp.id,
       company: exp.company,
       role: exp.role,
       startDate: exp.start_date,
@@ -214,6 +217,19 @@ export function stableExperienceIndex(stableId: string): number | null {
   if (!match) return null;
   const index = parseInt(match[1]!, 10) - 1;
   return index >= 0 ? index : null;
+}
+
+export function resolveExperienceIndex(
+  experienceId: string,
+  experiences: readonly ResumeDataExperience[],
+): number | null {
+  const immutableIndex = experiences.findIndex(
+    (experience) => experience.sourceId === experienceId,
+  );
+  if (immutableIndex >= 0) return immutableIndex;
+
+  const legacyIndex = stableExperienceIndex(experienceId);
+  return legacyIndex !== null && legacyIndex < experiences.length ? legacyIndex : null;
 }
 
 function normalizeSkillName(value: string): string {
@@ -257,7 +273,10 @@ export function applyTailoredResume(
 ): ResumeData {
   const selectedExperience = tailored.experiences
     .map((tailoredExperience) => {
-      const index = stableExperienceIndex(tailoredExperience.experienceId);
+      const index = resolveExperienceIndex(
+        tailoredExperience.experienceId,
+        base.experience,
+      );
       if (index === null || index >= base.experience.length) return null;
       const exp = base.experience[index]!;
       return {

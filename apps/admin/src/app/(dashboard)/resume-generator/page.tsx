@@ -33,6 +33,7 @@ export default async function ResumeGeneratorPage() {
     });
     throw err;
   }
+  historyRows = historyRows.filter((row) => row.created_by === auth.id);
 
   const [layouts, baseResume] = await Promise.all([
     repo.getResumeLayouts().catch(() => []),

@@ -196,6 +196,7 @@ describe("getResumeData", () => {
     const data = await getResumeData(repo);
     expect(data.experience).toHaveLength(1);
     expect(data.experience[0]!.company).toBe("Visible Co");
+    expect(data.experience[0]!.sourceId).toBe("1");
     expect(data.experience[0]!.period).toBe("Jan 2024 - Present");
   });
 
@@ -285,6 +286,34 @@ describe("stableExperienceIndex", () => {
 });
 
 describe("applyTailoredResume", () => {
+  it("resolves immutable experience ids before legacy positional ids", () => {
+    const result = applyTailoredResume(
+      {
+        ...base,
+        experience: base.experience.map((experience, index) => ({
+          ...experience,
+          sourceId: `source-${index + 1}`,
+        })),
+      },
+      {
+        summary: "Tailored summary.",
+        keywords: ["React"],
+        titleOverride: null,
+        experiences: [
+          {
+            experienceId: "source-2",
+            bullets: [{ text: "Rewritten immutable source bullet." }],
+          },
+        ],
+        skills: [{ category: "Frontend", items: ["React"] }],
+      },
+    );
+
+    expect(result.experience.map((experience) => experience.company)).toEqual([
+      "Beta Co",
+    ]);
+  });
+
   it("includes only tailored experiences in recency order", () => {
     const result = applyTailoredResume(base, {
       summary: "Tailored summary.",
