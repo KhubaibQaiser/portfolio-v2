@@ -6,6 +6,7 @@
  * Keeping this pure (no DB, no React, no Next) is deliberate so both
  * apps call the same function with data they already have.
  */
+import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
 
 export type FactsInputExperience = {
   id: string;
@@ -70,6 +71,11 @@ export type CandidateIdMap = {
 export type CandidateFacts = {
   factSheet: string;
   idMap: CandidateIdMap;
+  experienceTimeline: Array<{
+    experienceId: string;
+    startDate: string;
+    endDate: string | null;
+  }>;
   voiceSample: string | null;
 };
 
@@ -108,7 +114,9 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
     .join(" | ");
 
   const expBlocks: string[] = [];
-  experiences.forEach((exp, i) => {
+  const experienceTimeline: CandidateFacts["experienceTimeline"] = [];
+  const sortedExperiences = sortExperienceByRecencyDesc(experiences);
+  sortedExperiences.forEach((exp, i) => {
     const stableId = `e${i + 1}`;
     const bullets = splitBullets(exp.description);
     idMap.experiences[stableId] = {
@@ -116,11 +124,15 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
       stableId,
       bullets,
     };
+    experienceTimeline.push({
+      experienceId: stableId,
+      startDate: exp.start_date,
+      endDate: exp.end_date,
+    });
 
     const bulletLines = bullets.map((b, bi) => `  [b${bi}] ${b}`).join("\n");
 
     const tech = exp.tech_tags.slice(0, 12).join(", ");
-
     expBlocks.push(
       `[${stableId}] ${exp.role} @ ${exp.company} | ${renderPeriod(
         exp.start_date,
@@ -169,12 +181,12 @@ export function buildCandidateFacts(input: BuildCandidateFactsInput): CandidateF
     `YOE: ${yoe} | Industries: ${industries}\n\n` +
     `Base summary: ${resume.default_summary.trim()}\n\n` +
     `# EXPERIENCE (rewrite-only; reference bullets by {experienceId, sourceBulletIndex})\n` +
-    `PDF target: use the selected layout's page budget. Include max 5 roles. No per-job tech footer.\n` +
+    `PDF target: use the selected layout's page budget. No per-job tech footer.\n` +
     `${expBlocks.join("\n\n")}\n\n` +
     `# SKILLS\n${skillBlock}\n\n` +
     `# EDUCATION\n${eduBlock}\n\n` +
     `# CERTIFICATIONS\n${certBlock}\n\n` +
     `${voiceBlock}\n`;
 
-  return { factSheet, idMap, voiceSample };
+  return { factSheet, idMap, experienceTimeline, voiceSample };
 }

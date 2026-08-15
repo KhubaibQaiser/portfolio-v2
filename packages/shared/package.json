@@ -13,6 +13,7 @@
     "./constants": "./src/constants.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",
+    "./experience-bullet-budget": "./src/experience-bullet-budget.ts",
     "./recommendation-dates": "./src/recommendation-dates.ts",
     "./experience-stats": "./src/experience-stats.ts",
     "./resume-data": "./src/resume-data.ts",

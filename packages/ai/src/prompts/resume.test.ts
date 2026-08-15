@@ -28,6 +28,8 @@ describe("describeLayoutGuidelines", () => {
     expect(text).toContain("Maximum 280 characters per bullet");
     expect(text).not.toContain("sentences max");
     expect(text).toContain("**double asterisks**");
+    expect(text).toContain("most recent role up to 5 bullets");
+    expect(text).toContain("at least 5 years ago");
   });
 });
 
@@ -36,11 +38,15 @@ describe("buildResumeSystemPrompt", () => {
     const facts = {
       factSheet: "CANDIDATE FACTS",
       idMap: {},
+      experienceTimeline: [{ experienceId: "e1", startDate: "Jan 2024", endDate: null }],
     } as CandidateFacts;
     const prompt = buildResumeSystemPrompt(facts, {}, classicGuidelines());
     expect(prompt).toContain("OUTPUT SHAPE");
     expect(prompt).toContain("LAYOUT GUIDELINES");
     expect(prompt).toContain("CANDIDATE FACTS");
     expect(prompt).toContain("MUST NOT invent");
+    expect(prompt).toContain("order selected roles newest-first");
+    expect(prompt).toContain("e1: 5");
+    expect(prompt).not.toContain("Top 2 roles");
   });
 });

@@ -61,20 +61,23 @@ export async function renderResumePdfBuffer(
       throw new Error("Resume PDF rendered without a page.");
     }
 
-    const changed =
-      removeLeastRelevantBullet(projection) ||
-      removeLeastRelevantRole(
-        projection,
-        Math.max(1, layout.guidelines.validation.minExperienceItems),
-      ) ||
-      removeLowestPriorityOptionalSection(projection) ||
-      removeLeastRelevantSkill(projection);
-    if (changed) continue;
+    if (removeLeastRelevantBullet(projection)) continue;
 
     if (densityIndex < DENSITIES.length - 1) {
       densityIndex += 1;
       continue;
     }
+
+    if (
+      removeLeastRelevantRole(
+        projection,
+        Math.max(1, layout.guidelines.validation.minExperienceItems),
+      )
+    ) {
+      continue;
+    }
+    if (removeLowestPriorityOptionalSection(projection)) continue;
+    if (removeLeastRelevantSkill(projection)) continue;
     if (clampLongestModernBlueContent(projection)) continue;
 
     throw new Error(

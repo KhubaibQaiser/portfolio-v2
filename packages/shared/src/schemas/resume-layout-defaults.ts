@@ -79,13 +79,15 @@ GUIDELINES:
 1. Only modify resume content using existing experience and skills from the provided resume data
 2. Never invent projects, skills, or experience not in the original resume
 3. Always write a new full-width summary for this role (maximum 450 characters). Same person, same seniority, JD-aligned emphasis.
-4. Reorder experience bullets to prioritize relevance to the target job
+4. Select roles for relevance, then return them in reverse chronological order (newest first)
 5. Highlight (bold with **double asterisks**) technical keywords that match the job description
 6. For skills section: prioritize skills mentioned in the job description
 7. Keep the summary within 450 characters and each bullet within 280 characters
 8. Preserve accuracy - every claim must come from the original resume
 9. Tone: Professional, achievement-focused, confident
-10. This layout is a strict one-page A4 two-column resume. Return 3-5 roles, max 4 bullets per role, using concise wording.
+10. This layout is a strict one-page A4 two-column resume. Respect the role limit and per-role bullet budgets in LAYOUT GUIDELINES.
+11. Give the newest role the highest bullet count, taper bullets on each older role, and use only 1-2 bullets for roles at least 5 years old.
+12. If content still exceeds one page, remove the oldest role rather than stripping recent roles of their strongest evidence.
 
 TARGET JOB DESCRIPTION:
 {jobDescription}
@@ -94,7 +96,7 @@ RESUME DATA:
 {resumeData}
 
 TAILORING RULES:
-- Reorder experience bullets by relevance (most relevant first)
+- Reorder bullets within each role by relevance, but keep roles newest-first
 - Bold keywords matching the job description using **keyword**
 - If space-constrained, remove bullets unrelated to the job
 - Adjust summary so it significantly improves fit for this JD
@@ -198,7 +200,7 @@ export function modernBlueGuidelines(): VariantGuidelines {
     aiTailoringPromptTemplate: MODERN_BLUE_PROMPT,
     aiTailoringRules: SHARED_AI_RULES,
     validation: {
-      minExperienceItems: 5,
+      minExperienceItems: 3,
       maxExperienceItems: 7,
       maxBulletsPerRole: 5,
       requireEducation: true,
@@ -222,8 +224,20 @@ export function normalizeResumeLayoutGuidelines(
   version: number,
   guidelines: VariantGuidelines,
 ): VariantGuidelines {
-  if (componentKey !== "modern-blue" || version >= 2) return guidelines;
+  if (componentKey !== "modern-blue" || version >= 3) return guidelines;
   const defaults = modernBlueGuidelines();
+  if (version >= 2) {
+    return {
+      ...guidelines,
+      aiTailoringPromptTemplate: defaults.aiTailoringPromptTemplate,
+      validation: {
+        ...guidelines.validation,
+        minExperienceItems: defaults.validation.minExperienceItems,
+        maxPageCount: defaults.validation.maxPageCount,
+        allowOverflow: defaults.validation.allowOverflow,
+      },
+    };
+  }
   return {
     ...defaults,
     formatting: {
@@ -253,7 +267,7 @@ export function modernBlueLayoutForm(): ResumeLayoutFormData {
   return {
     name: "Modern Blue",
     description: "Two-column A4 resume with blue hierarchy and a skills sidebar.",
-    version: 1,
+    version: 3,
     component_key: "modern-blue",
     preview_image_url: null,
     is_default: false,
