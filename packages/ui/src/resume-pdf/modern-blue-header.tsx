@@ -21,6 +21,9 @@ function displayPhone(value: string): string {
 }
 
 export function ModernBlueHeader({ data, styles }: Props) {
+  const linkedin = data.socialLinks.find(
+    (link) => link.platform.trim().toLowerCase() === "linkedin",
+  );
   const github = data.socialLinks.find(
     (link) => link.platform.trim().toLowerCase() === "github",
   );
@@ -39,6 +42,7 @@ export function ModernBlueHeader({ data, styles }: Props) {
       label: displayUrl(data.website),
       href: /^https?:\/\//i.test(data.website) ? data.website : `https://${data.website}`,
     },
+    ...(linkedin ? [{ label: displayUrl(linkedin.url), href: linkedin.url }] : []),
     ...(github ? [{ label: displayUrl(github.url), href: github.url }] : []),
   ].filter((item) => item.label.trim().length > 0);
 
