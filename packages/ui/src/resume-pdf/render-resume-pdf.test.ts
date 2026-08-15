@@ -180,12 +180,20 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.fitReport?.pageCount).toBe(1);
   }, 30_000);
 
-  it("leaves the Classic rendering path unfitted", async () => {
-    const data = await getResumeData(createFixtureContentRepository());
+  it("renders the Classic section order and URL-based header labels", async () => {
     const classic = layoutFromForm("classic-test", classicLayoutForm());
-    const result = await renderResumePdfBuffer(data, classic);
+    const result = await renderResumePdfBuffer(modernBlueReferenceResume, classic);
+    const text = await extractPdfText(result.buffer);
 
     expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
     expect(result.fitReport).toBeNull();
+    expect(text).toContain("khubaibqaiser.com");
+    expect(text).toContain("linkedin.com/in/khubaib-qaiser");
+    expect(text).toContain("github.com/khubaibqaiser");
+    expect(text).not.toContain("Portfolio");
+    expect(text).toContain("• Led Embeds");
+    expect(text.indexOf("Frontend & UI:")).toBeLessThan(
+      text.indexOf("Bachelor's Computer Science"),
+    );
   }, 30_000);
 });
