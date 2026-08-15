@@ -40,6 +40,8 @@ export const SKILL_CATEGORY_SORT_WEIGHT: Partial<
   backend: 80,
   cloud: 70,
   state: 60,
+  testing: 50,
+  tools: 40
 };
 
 export function getSkillCategorySortWeight(category: string): number {

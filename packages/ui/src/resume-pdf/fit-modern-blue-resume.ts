@@ -2,8 +2,8 @@ import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { VariantGuidelines } from "@portfolio/shared/schemas";
 import type { ModernBlueDensity } from "./modern-blue-print-spec";
 
-const MAX_SKILL_GROUPS = 6;
-const MAX_SKILLS_PER_GROUP = 14;
+const MAX_SKILL_GROUPS = 8;
+const MAX_SKILLS_PER_GROUP = 9;
 const SUMMARY_HARD_LIMIT = 560;
 const BULLET_HARD_LIMIT = 320;
 
