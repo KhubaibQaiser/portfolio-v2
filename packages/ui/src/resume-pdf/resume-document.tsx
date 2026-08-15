@@ -15,6 +15,20 @@ const SHORT_ENTRY_BULLET_LIMIT = 8;
 const s = StyleSheet.create({
   ...baseStyles,
 
+  headerBand: {
+    ...baseStyles.headerBand,
+    paddingBottom: 10,
+    marginBottom: 8,
+  },
+  headerTitle: {
+    ...baseStyles.headerTitle,
+    marginTop: 3,
+  },
+  headerContact: {
+    ...baseStyles.headerContact,
+    marginTop: 5,
+  },
+  summarySection: { marginTop: 8 },
   expEntry: { marginBottom: 6 },
   expHeaderBlock: { marginBottom: 2 },
   expHeader: {
@@ -75,10 +89,8 @@ const s = StyleSheet.create({
   metaBody: { fontSize: 9.5, color: COLORS.body, lineHeight: 1.35 },
 });
 
-function socialLinkLabel(link: { platform: string; label: string }): string {
-  const trimmed = link.label.trim();
-  if (trimmed) return trimmed;
-  return link.platform;
+function displayUrl(value: string): string {
+  return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
 function formatEducationLine(edu: ResumeData["education"][number]): string {
@@ -122,6 +134,15 @@ export function ResumeDocument({
   const [firstEdu, ...restEdu] = data.education;
   const [firstCert, ...restCerts] = data.certifications;
   const [firstSkill, ...restSkills] = data.skills;
+  const portfolioUrl = /^https?:\/\//i.test(data.website)
+    ? data.website
+    : `https://${data.website}`;
+  const socialLinks = ["linkedin", "github"].flatMap((platform) => {
+    const link = data.socialLinks.find(
+      (candidate) => candidate.platform.trim().toLowerCase() === platform,
+    );
+    return link ? [link] : [];
+  });
 
   return (
     <Document
@@ -150,23 +171,21 @@ export function ResumeDocument({
               {data.email}
             </Link>
             <Text style={s.headerSep}>&nbsp;|&nbsp;</Text>
-            <Link src={`https://${data.website}`} style={s.headerLink}>
-              Portfolio
+            <Link src={portfolioUrl} style={s.headerLink}>
+              {displayUrl(data.website)}
             </Link>
-            {data.socialLinks
-              .filter((l) => ["linkedin", "github"].includes(l.platform))
-              .flatMap((link) => [
-                <Text key={`${link.platform}-sep`} style={s.headerSep}>
-                  &nbsp;|&nbsp;
-                </Text>,
-                <Link key={link.platform} src={link.url} style={s.headerLink}>
-                  {socialLinkLabel(link)}
-                </Link>,
-              ])}
+            {socialLinks.flatMap((link) => [
+              <Text key={`${link.platform}-sep`} style={s.headerSep}>
+                &nbsp;|&nbsp;
+              </Text>,
+              <Link key={link.platform} src={link.url} style={s.headerLink}>
+                {displayUrl(link.url)}
+              </Link>,
+            ])}
           </View>
         </View>
 
-        <View style={s.section} wrap={false}>
+        <View style={s.summarySection} wrap={false}>
           <Text style={s.sectionTitle}>Professional Summary</Text>
           <RichPdfText value={data.summary} style={s.summary} enabled={richText} />
         </View>
@@ -208,6 +227,7 @@ export function ResumeDocument({
                       text: s.bulletText,
                     }}
                     richText={richText}
+                    marker="•"
                   />
                 </View>
               ) : null}
@@ -242,6 +262,7 @@ export function ResumeDocument({
                     text: s.bulletText,
                   }}
                   richText={richText}
+                  marker="•"
                 />
               </View>
             ))}
@@ -278,6 +299,7 @@ export function ResumeDocument({
                       text: s.bulletText,
                     }}
                     richText={richText}
+                    marker="•"
                   />
                 </View>
               ) : null}
@@ -307,24 +329,9 @@ export function ResumeDocument({
                     text: s.bulletText,
                   }}
                   richText={richText}
+                  marker="•"
                 />
               </View>
-            ))}
-          </View>
-        ) : null}
-
-        {showEducation ? (
-          <View style={s.section}>
-            <View wrap={false}>
-              <Text style={s.sectionTitle}>Education</Text>
-              {firstEdu ? (
-                <Text style={s.eduLine}>{formatEducationLine(firstEdu)}</Text>
-              ) : null}
-            </View>
-            {restEdu.map((edu) => (
-              <Text key={edu.institution} style={s.eduLine}>
-                {formatEducationLine(edu)}
-              </Text>
             ))}
           </View>
         ) : null}
@@ -335,7 +342,7 @@ export function ResumeDocument({
               <Text style={s.sectionTitle}>Certifications</Text>
               {firstCert ? (
                 <View style={s.certRow}>
-                  <Text style={s.certBullet}>-</Text>
+                  <Text style={s.certBullet}>•</Text>
                   <Text style={s.certText}>
                     {firstCert.name}
                     {firstCert.issuer ? (
@@ -347,7 +354,7 @@ export function ResumeDocument({
             </View>
             {restCerts.map((cert) => (
               <View key={cert.name} style={s.certRow}>
-                <Text style={s.certBullet}>-</Text>
+                <Text style={s.certBullet}>•</Text>
                 <Text style={s.certText}>
                   {cert.name}
                   {cert.issuer ? (
@@ -374,6 +381,22 @@ export function ResumeDocument({
               <Text key={group.category} style={s.skillLine}>
                 <Text style={s.skillCategory}>{group.category}: </Text>
                 {group.items.join(", ")}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        {showEducation ? (
+          <View style={s.section}>
+            <View wrap={false}>
+              <Text style={s.sectionTitle}>Education</Text>
+              {firstEdu ? (
+                <Text style={s.eduLine}>{formatEducationLine(firstEdu)}</Text>
+              ) : null}
+            </View>
+            {restEdu.map((edu) => (
+              <Text key={edu.institution} style={s.eduLine}>
+                {formatEducationLine(edu)}
               </Text>
             ))}
           </View>
