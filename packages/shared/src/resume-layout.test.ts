@@ -43,7 +43,7 @@ describe("resume layout guidelines", () => {
     expect(result.success).toBe(false);
   });
 
-  it("normalizes stored Modern Blue v1 rows to the strict v3 print contract", () => {
+  it("normalizes stored Modern Blue v1 rows to the strict v4 print contract", () => {
     const legacy = modernBlueLayoutForm().guidelines;
     legacy.formatting.typography.bodyFont = "Helvetica";
     legacy.sections.projects = true;
@@ -54,6 +54,7 @@ describe("resume layout guidelines", () => {
     expect(normalized.sections.projects).toBe(false);
     expect(normalized.validation.maxPageCount).toBe(1);
     expect(normalized.validation.minExperienceItems).toBe(3);
+    expect(normalized.validation.maxExperienceItems).toBe(8);
   });
 
   it("migrates Modern Blue v2 validation without replacing color overrides", () => {
@@ -65,6 +66,18 @@ describe("resume layout guidelines", () => {
 
     expect(normalized.validation.minExperienceItems).toBe(3);
     expect(normalized.validation.maxPageCount).toBe(1);
+    expect(normalized.validation.maxExperienceItems).toBe(8);
     expect(normalized.formatting.colorPalette.primary).toBe("#123456");
+  });
+
+  it("migrates Modern Blue v3 role limits without replacing custom colors", () => {
+    const stored = modernBlueLayoutForm().guidelines;
+    stored.validation.maxExperienceItems = 7;
+    stored.formatting.colorPalette.primary = "#654321";
+
+    const normalized = normalizeResumeLayoutGuidelines("modern-blue", 3, stored);
+
+    expect(normalized.validation.maxExperienceItems).toBe(8);
+    expect(normalized.formatting.colorPalette.primary).toBe("#654321");
   });
 });

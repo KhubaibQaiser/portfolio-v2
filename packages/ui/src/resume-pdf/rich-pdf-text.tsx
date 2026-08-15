@@ -6,10 +6,21 @@ type Props = {
   value: string;
   style?: PdfStyle;
   boldFont?: string;
+  enabled?: boolean;
 };
 
-export function RichPdfText({ value, style, boldFont = "Helvetica-Bold" }: Props) {
+export function RichPdfText({
+  value,
+  style,
+  boldFont = "Helvetica-Bold",
+  enabled = true,
+}: Props) {
   const segments = parseRichText(value);
+  if (!enabled) {
+    return (
+      <Text style={style}>{segments.map((segment) => segment.text).join("") || " "}</Text>
+    );
+  }
   if (segments.length === 0) {
     return <Text style={style}> </Text>;
   }

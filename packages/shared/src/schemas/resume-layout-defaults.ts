@@ -201,7 +201,7 @@ export function modernBlueGuidelines(): VariantGuidelines {
     aiTailoringRules: SHARED_AI_RULES,
     validation: {
       minExperienceItems: 3,
-      maxExperienceItems: 7,
+      maxExperienceItems: 8,
       maxBulletsPerRole: 5,
       requireEducation: true,
       requireSummary: true,
@@ -224,7 +224,7 @@ export function normalizeResumeLayoutGuidelines(
   version: number,
   guidelines: VariantGuidelines,
 ): VariantGuidelines {
-  if (componentKey !== "modern-blue" || version >= 3) return guidelines;
+  if (componentKey !== "modern-blue" || version >= 4) return guidelines;
   const defaults = modernBlueGuidelines();
   if (version >= 2) {
     return {
@@ -233,6 +233,7 @@ export function normalizeResumeLayoutGuidelines(
       validation: {
         ...guidelines.validation,
         minExperienceItems: defaults.validation.minExperienceItems,
+        maxExperienceItems: defaults.validation.maxExperienceItems,
         maxPageCount: defaults.validation.maxPageCount,
         allowOverflow: defaults.validation.allowOverflow,
       },
@@ -267,7 +268,7 @@ export function modernBlueLayoutForm(): ResumeLayoutFormData {
   return {
     name: "Modern Blue",
     description: "Two-column A4 resume with blue hierarchy and a skills sidebar.",
-    version: 3,
+    version: 4,
     component_key: "modern-blue",
     preview_image_url: null,
     is_default: false,

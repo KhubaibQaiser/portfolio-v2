@@ -9,6 +9,7 @@ import { ModernBlueSectionHeading } from "./modern-blue-section-heading";
 import { ModernBlueSidebar } from "./modern-blue-sidebar";
 import { ModernBlueSummary } from "./modern-blue-summary";
 import { registerResumePdfFonts } from "./register-fonts";
+import type { ResumePdfMode } from "./resume-render-options";
 import { showResumePdfSection } from "./section-visibility";
 
 Font.registerHyphenationCallback((word) => [word]);
@@ -17,10 +18,19 @@ type Props = {
   data: ResumeData;
   guidelines: VariantGuidelines;
   density?: ModernBlueDensity;
+  mode?: ResumePdfMode;
+  highlightedSkills?: readonly string[];
 };
 
-export function ResumeModernDocument({ data, guidelines, density = "reference" }: Props) {
+export function ResumeModernDocument({
+  data,
+  guidelines,
+  density = "reference",
+  mode = "canonical",
+  highlightedSkills = [],
+}: Props) {
   registerResumePdfFonts();
+  const richText = mode === "tailored";
   const styles = createModernBlueStyles(guidelines, density);
   const isVisible = (section: string) => data.visibleSections.includes(section);
   const showSummary = guidelines.sections.summary && data.summary.length > 0;
@@ -68,7 +78,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
       <Page size="A4" style={styles.page}>
         <ModernBlueHeader data={data} styles={styles} />
         {showSummary ? (
-          <ModernBlueSummary summary={data.summary} styles={styles} />
+          <ModernBlueSummary summary={data.summary} richText={richText} styles={styles} />
         ) : null}
 
         <View style={styles.columns}>
@@ -82,6 +92,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
                   <ModernBlueExperienceEntry
                     key={`${experience.company}-${experience.period}`}
                     experience={experience}
+                    richText={richText}
                     styles={styles}
                   />
                 ))}
@@ -104,6 +115,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
                       styles={bulletStyles}
                       boldFont="DM Sans SemiBold"
                       marker="•"
+                      richText={richText}
                     />
                   </View>
                 ))}
@@ -113,7 +125,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
 
           <ModernBlueSidebar
             data={data}
-            highlightSkills={guidelines.formatting.layout.includeTagHighlighting}
+            highlightedSkills={mode === "tailored" ? highlightedSkills : []}
             showSkills={showSkills}
             showEducation={showEducation}
             showLanguages={showLanguages}

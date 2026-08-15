@@ -53,6 +53,7 @@ ${budgetHints ? `- Source-order per-role bullet caps: ${budgetHints}.` : ""}
 - Each bullet is max ~22 words.
 - Weave 1-2 stack terms into each bullet inline. Do NOT add a separate Technologies footer.
 - skills: max 6 categories, max 8 items per category. JD-relevant categories first. Use standard ATS labels (Frontend, Backend / API, Cloud / AWS / GCP, etc.).
+- highlightedSkills: exact skill names copied from the returned/source skills that directly match the JD. Never add aliases or invented skills.
 - keywords: max 25 atomic ATS terms (technologies, methodologies). No marketing phrases.`;
 }
 

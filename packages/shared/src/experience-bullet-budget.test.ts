@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   allocateRecencyBulletBudgets,
   bulletBudgetForRole,
+  bulletFloorForRole,
   sortDatedExperiencesByRecency,
 } from "./experience-bullet-budget";
 
@@ -26,7 +27,23 @@ describe("experience bullet budgets", () => {
         endDate: "Aug 2024",
         now: NOW,
       }),
-    ).toBe(3);
+    ).toBe(2);
+    expect(
+      bulletBudgetForRole({
+        index: 1,
+        maxBullets: 5,
+        startDate: "Jan 2024",
+        endDate: null,
+        now: NOW,
+      }),
+    ).toBe(4);
+  });
+
+  it("protects explicit recent-role floors", () => {
+    expect([0, 1, 2, 8].map((index) => bulletFloorForRole(index, 5))).toEqual([
+      4, 3, 1, 1,
+    ]);
+    expect(bulletFloorForRole(0, 2)).toBe(2);
   });
 
   it("caps roles at least five years old at two bullets", () => {
@@ -81,5 +98,21 @@ describe("experience bullet budgets", () => {
       { id: "newer", startDate: "Jan 2025", endDate: null },
     ]);
     expect(sorted.map((item) => item.id)).toEqual(["newer", "older"]);
+  });
+
+  it("keeps malformed dates stable and budgets nine roles deterministically", () => {
+    const source = Array.from({ length: 9 }, (_, index) => ({
+      id: `role-${index}`,
+      startDate: "unknown",
+      endDate: "unknown",
+      bullets: ["1", "2", "3", "4", "5"],
+    }));
+
+    const result = allocateRecencyBulletBudgets(source, 5, NOW);
+
+    expect(result.experiences.map((item) => item.id)).toEqual(
+      source.map((item) => item.id),
+    );
+    expect(result.budgets).toEqual([5, 4, 2, 2, 2, 2, 2, 2, 2]);
   });
 });

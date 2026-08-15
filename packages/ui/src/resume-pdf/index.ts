@@ -9,4 +9,9 @@ export {
   type RenderedResumePdf,
 } from "./render-resume-pdf";
 export type { FitReport } from "./fit-modern-blue-resume";
+export type {
+  ResumeDocumentRenderOptions,
+  ResumePdfMode,
+  ResumePdfRenderOptions,
+} from "./resume-render-options";
 export { registerResumePdfFonts } from "./register-fonts";

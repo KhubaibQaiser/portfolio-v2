@@ -5,10 +5,11 @@ import type { ModernBlueStyles } from "./modern-blue-print-spec";
 
 type Props = {
   experience: ResumeDataExperience;
+  richText: boolean;
   styles: ModernBlueStyles;
 };
 
-export function ModernBlueExperienceEntry({ experience, styles }: Props) {
+export function ModernBlueExperienceEntry({ experience, richText, styles }: Props) {
   const [location, workMode] = experience.location.split(" · ", 2);
   const badge = [experience.contractType, workMode].filter(Boolean).join(" · ");
 
@@ -33,6 +34,7 @@ export function ModernBlueExperienceEntry({ experience, styles }: Props) {
               value={bullet}
               style={styles.bulletText}
               boldFont="DM Sans SemiBold"
+              enabled={richText}
             />
           </View>
         ))}

@@ -92,6 +92,19 @@ export const modernBlueReferenceResume: ResumeData = {
       tech: "",
     },
     {
+      role: "React Developer",
+      company: "Nordic Tech Clients",
+      startDate: "May 2020",
+      endDate: "Dec 2020",
+      period: "May 2020 – Dec 2020",
+      location: "Islamabad · Remote",
+      contractType: "Freelance",
+      bullets: [
+        "Built and maintained React Native mobile apps for international clients, integrating native APIs and collaborating with backend engineers and designers.",
+      ],
+      tech: "",
+    },
+    {
       role: "Software Engineer",
       company: "STOQO",
       startDate: "Feb 2019",

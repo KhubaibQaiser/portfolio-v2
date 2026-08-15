@@ -6,7 +6,7 @@ import { ModernBlueSkillTags } from "./modern-blue-skill-tags";
 
 type Props = {
   data: ResumeData;
-  highlightSkills: boolean;
+  highlightedSkills: readonly string[];
   showSkills: boolean;
   showEducation: boolean;
   showLanguages: boolean;
@@ -18,7 +18,7 @@ type Props = {
 
 export function ModernBlueSidebar({
   data,
-  highlightSkills,
+  highlightedSkills,
   showSkills,
   showEducation,
   showLanguages,
@@ -27,14 +27,17 @@ export function ModernBlueSidebar({
   showCertifications,
   styles,
 }: Props) {
+  const highlightedSkillSet = new Set(
+    highlightedSkills.map((skill) => skill.trim().toLocaleLowerCase()),
+  );
   return (
     <View style={styles.sidebar}>
       {showSkills
-        ? data.skills.map((group, index) => (
+        ? data.skills.map((group) => (
             <ModernBlueSkillTags
               key={group.category}
               group={group}
-              highlighted={highlightSkills && index === 0}
+              highlightedSkills={highlightedSkillSet}
               styles={styles}
             />
           ))

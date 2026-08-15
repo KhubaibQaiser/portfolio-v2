@@ -3,6 +3,8 @@ import { parseExperienceDateString } from "./experience-dates";
 
 export const OLD_ROLE_THRESHOLD_YEARS = 5;
 export const OLD_ROLE_MAX_BULLETS = 2;
+export const RECENT_ROLE_MIN_BULLETS = 4;
+export const SECOND_ROLE_MIN_BULLETS = 3;
 
 export type DatedExperience = {
   startDate: string;
@@ -60,11 +62,22 @@ export function bulletBudgetForRole({
   endDate,
   now = new Date(),
 }: BulletBudgetInput): number {
-  const recencyBudget = Math.max(1, maxBullets - index);
+  const recencyBudget =
+    index === 0
+      ? maxBullets
+      : index === 1
+        ? Math.min(maxBullets, 4)
+        : Math.min(maxBullets, 2);
   const age = roleAgeYears(startDate, endDate, now);
   return age !== null && age >= OLD_ROLE_THRESHOLD_YEARS
     ? Math.min(recencyBudget, OLD_ROLE_MAX_BULLETS)
     : recencyBudget;
+}
+
+export function bulletFloorForRole(index: number, maxBullets: number): number {
+  if (index === 0) return Math.min(maxBullets, RECENT_ROLE_MIN_BULLETS);
+  if (index === 1) return Math.min(maxBullets, SECOND_ROLE_MIN_BULLETS);
+  return 1;
 }
 
 export function allocateRecencyBulletBudgets<T extends BudgetableExperience>(
@@ -89,5 +102,5 @@ export function allocateRecencyBulletBudgets<T extends BudgetableExperience>(
 }
 
 export function describeBulletBudgetRules(maxBullets: number): string {
-  return `Keep experiences newest-first. Give the most recent role up to ${maxBullets} bullets, then reduce the budget by one bullet for each older role (minimum one). Roles that ended at least ${OLD_ROLE_THRESHOLD_YEARS} years ago, or ongoing roles that started at least ${OLD_ROLE_THRESHOLD_YEARS} years ago, may have at most ${OLD_ROLE_MAX_BULLETS} bullets.`;
+  return `Keep experiences newest-first. Give the most recent role ${Math.min(maxBullets, RECENT_ROLE_MIN_BULLETS)}-${maxBullets} bullets, the second role ${Math.min(maxBullets, SECOND_ROLE_MIN_BULLETS)}-${Math.min(maxBullets, 4)}, and remaining roles 1-${Math.min(maxBullets, 2)} bullets. Roles that ended at least ${OLD_ROLE_THRESHOLD_YEARS} years ago, or ongoing roles that started at least ${OLD_ROLE_THRESHOLD_YEARS} years ago, may have at most ${OLD_ROLE_MAX_BULLETS} bullets. Never invent filler when the source has fewer bullets.`;
 }
