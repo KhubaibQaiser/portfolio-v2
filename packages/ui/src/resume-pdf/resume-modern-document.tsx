@@ -23,8 +23,7 @@ export function ResumeModernDocument({ data, guidelines, density = "reference" }
   registerResumePdfFonts();
   const styles = createModernBlueStyles(guidelines, density);
   const isVisible = (section: string) => data.visibleSections.includes(section);
-  const showSummary =
-    isVisible("summary") && guidelines.sections.summary && data.summary.length > 0;
+  const showSummary = guidelines.sections.summary && data.summary.length > 0;
   const showExperience =
     isVisible("experience") &&
     guidelines.sections.experience &&
