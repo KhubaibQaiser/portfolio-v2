@@ -9,6 +9,11 @@ export const modernBlueReferenceResume: ResumeData = {
   website: "khubaibqaiser.com",
   socialLinks: [
     {
+      platform: "linkedin",
+      url: "https://linkedin.com/in/khubaib-qaiser",
+      label: "linkedin.com/in/khubaib-qaiser",
+    },
+    {
       platform: "github",
       url: "https://github.com/khubaibqaiser",
       label: "github.com/khubaibqaiser",
