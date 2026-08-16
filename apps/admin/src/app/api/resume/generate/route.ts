@@ -34,6 +34,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const GENERATION_DEADLINE_MS = 52_000;
+const MODEL_PHASE_BUDGET_MS = 40_000;
+const MIN_FIT_CHECK_BUDGET_MS = 15_000;
 
 const bodySchema = z
   .object({
@@ -195,6 +197,8 @@ export async function POST(request: Request) {
   const layoutId = layout.id;
   const layoutVersion = layout.version;
   const guidelines: VariantGuidelines = layout.guidelines;
+  const generationStartedAt = Date.now();
+  const requestDeadlineAt = generationStartedAt + GENERATION_DEADLINE_MS;
   const requestDeadline = AbortSignal.any([
     request.signal,
     AbortSignal.timeout(GENERATION_DEADLINE_MS),
@@ -207,6 +211,10 @@ export async function POST(request: Request) {
     const safeMustTryToInclude = body.mustTryToInclude?.filter((keyword) =>
       canonicalFactText.includes(keyword.trim().toLocaleLowerCase()),
     );
+    const baseResumePromise =
+      body.kind === "resume" || body.kind === "both"
+        ? getResumeData(repo).catch(() => null)
+        : Promise.resolve(null);
 
     logger.info("validated resume generation requested", {
       userId: auth.id,
@@ -225,6 +233,10 @@ export async function POST(request: Request) {
       facts,
       guidelines,
       signal: requestDeadline,
+      deadlineAt: Math.min(
+        generationStartedAt + MODEL_PHASE_BUDGET_MS,
+        requestDeadlineAt,
+      ),
       company: body.company,
       role: body.role,
       hiringManager: body.hiringManager,
@@ -237,7 +249,10 @@ export async function POST(request: Request) {
     let appliedChanges: string[] = [];
     let fitReport: Record<string, unknown> | undefined;
     if (generated.resume) {
-      const base = await getResumeData(repo);
+      const base = await baseResumePromise;
+      if (!base) {
+        throw new Error("Base resume was not loaded for a resume generation.");
+      }
       appliedChanges = describeAppliedResumeChanges(base, generated.resume, body.role);
       const pdfData = applyTailoredResume(base, generated.resume, {
         maxRoles: guidelines.validation.maxExperienceItems,
@@ -246,24 +261,31 @@ export async function POST(request: Request) {
           guidelines.formatting.layout.maxBulletsPerJob,
         ),
       });
-      const rendered = await renderResumePdfBuffer(pdfData, layout, {
-        mode: "tailored",
-        highlightedSkills: getValidatedHighlightedSkills(
-          base,
-          generated.resume.highlightedSkills,
-        ),
-      });
-      if (
-        rendered.fitReport &&
-        rendered.fitReport.pageCount > guidelines.validation.maxPageCount
-      ) {
-        throw new ValidatedGenerationError(
-          "INVALID_MODEL_OUTPUT",
-          "The generated resume could not fit the selected layout.",
-          true,
+      const remainingMs = requestDeadlineAt - Date.now();
+      if (remainingMs >= MIN_FIT_CHECK_BUDGET_MS) {
+        const rendered = await renderResumePdfBuffer(pdfData, layout, {
+          mode: "tailored",
+          highlightedSkills: getValidatedHighlightedSkills(
+            base,
+            generated.resume.highlightedSkills,
+          ),
+        });
+        if (
+          rendered.fitReport &&
+          rendered.fitReport.pageCount > guidelines.validation.maxPageCount
+        ) {
+          throw new ValidatedGenerationError(
+            "INVALID_MODEL_OUTPUT",
+            "The generated resume could not fit the selected layout.",
+            true,
+          );
+        }
+        fitReport = rendered.fitReport ? { ...rendered.fitReport } : undefined;
+      } else {
+        generated.warnings.push(
+          "Skipped the initial page-fit check to stay within the generation time budget. PDF export will validate the final fit.",
         );
       }
-      fitReport = rendered.fitReport ? { ...rendered.fitReport } : undefined;
     }
 
     if (requestDeadline.aborted) {

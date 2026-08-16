@@ -36,6 +36,10 @@ import type { ResumeGenerationUsage, VariantGuidelines } from "@portfolio/shared
 
 const AI_TONE_THRESHOLD = 35;
 const MAX_CORRECTIVE_ATTEMPTS_PER_MODEL = 2;
+const MAX_RESUME_ATTEMPTS = 3;
+const MAX_COVER_LETTER_ATTEMPTS = 2;
+const MAX_ATTEMPT_MS = 30_000;
+const MIN_ATTEMPT_BUDGET_MS = 8_000;
 const RESUME_OUTPUT_TOKENS = 6000;
 const COVER_LETTER_OUTPUT_TOKENS = 3200;
 
@@ -48,6 +52,7 @@ export type ValidatedGenerationOptions = {
   facts: CandidateFacts;
   guidelines: VariantGuidelines;
   signal: AbortSignal;
+  deadlineAt: number;
   company?: string;
   role?: string;
   hiringManager?: string;
@@ -89,8 +94,17 @@ function attemptReason(error: unknown): string {
   }
   if (error instanceof ResumePolicyError) return "layout_or_fact_validation";
   if (isProviderRateLimitError(error)) return "provider_unavailable";
-  if (error instanceof DOMException && error.name === "AbortError") return "aborted";
+  if (isAbortError(error)) return "aborted";
   return "generation_failed";
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
 }
 
 function usageFromError(error: unknown): LlmUsage | null {
@@ -189,74 +203,89 @@ function sumUsage(
   };
 }
 
-async function generateResume(
-  options: ValidatedGenerationOptions,
-  models: ResolvedModel[],
-  attempts: ResumeGenerationAttempt[],
-  usages: ResumeGenerationUsage[],
-): Promise<{ resume: TailoredResume; warnings: string[]; model: ModelId }> {
+type AttemptResult<T> = {
+  value: T;
+  warnings: string[];
+  usage: LlmUsage;
+  finishReason: string | null;
+};
+
+type AttemptContext = {
+  model: ResolvedModel;
+  retry: number;
+  lastError: unknown;
+  signal: AbortSignal;
+};
+
+type AttemptBudget = {
+  artifact: "resume" | "cover letter";
+  models: ResolvedModel[];
+  maxAttempts: number;
+  deadlineAt: number;
+  signal: AbortSignal;
+  attempts: ResumeGenerationAttempt[];
+  usages: ResumeGenerationUsage[];
+};
+
+async function runValidatedAttempts<T>(
+  budget: AttemptBudget,
+  generate: (context: AttemptContext) => Promise<AttemptResult<T>>,
+): Promise<{ value: T; warnings: string[]; model: ModelId }> {
+  const primaryModelId = budget.models[0]!.modelId;
   let lastError: unknown;
-  const prompt = buildResumeUserPrompt(options.wrappedJobDescription);
+  let totalAttempts = 0;
 
-  for (const model of models) {
-    for (let retry = 0; retry < MAX_CORRECTIVE_ATTEMPTS_PER_MODEL; retry += 1) {
-      const startedAt = Date.now();
-      try {
-        const result = await generateObject({
-          model: model.model,
-          schema: tailoredResumeSchema,
-          system: buildResumeSystemPrompt(
-            options.facts,
-            {
-              tone: options.tone,
-              length: options.length,
-              language: options.language,
-              company: options.company,
-              role: options.role,
-              mustTryToInclude: options.mustTryToInclude,
-              retryReason: retry > 0 ? retryReason(lastError) : undefined,
-            },
-            options.guidelines,
-          ),
-          prompt,
-          abortSignal: options.signal,
-          temperature: retry > 0 ? 0.2 : 0.4,
-          maxOutputTokens: RESUME_OUTPUT_TOKENS,
-        });
-        const sanitized = sanitizeLlmObject(result.object);
-        const normalized = enforceResumeGenerationPolicy(
-          sanitized,
-          options.facts,
-          options.guidelines,
+  for (const model of budget.models) {
+    for (
+      let retry = 0;
+      retry < MAX_CORRECTIVE_ATTEMPTS_PER_MODEL && totalAttempts < budget.maxAttempts;
+      retry += 1
+    ) {
+      const remainingMs = budget.deadlineAt - Date.now();
+      if (budget.signal.aborted || remainingMs < MIN_ATTEMPT_BUDGET_MS) {
+        throw new ValidatedGenerationError(
+          "GENERATION_TIMEOUT",
+          `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
+          true,
         );
-        const fabrication = validateFabrication(normalized.resume, options.facts.idMap);
-        if (!fabrication.ok) {
-          throw new ResumePolicyError(fabrication.offending);
-        }
-        const tone = scoreAiTone(collectTextForToneCheck(normalized.resume));
-        if (tone.score >= AI_TONE_THRESHOLD && retry === 0) {
-          throw new ResumePolicyError([
-            `wording is overly synthetic (${tone.hits.slice(0, 6).join(", ")})`,
-          ]);
-        }
+      }
 
+      totalAttempts += 1;
+      const startedAt = Date.now();
+      const attemptSignal = AbortSignal.any([
+        budget.signal,
+        AbortSignal.timeout(Math.min(remainingMs, MAX_ATTEMPT_MS)),
+      ]);
+
+      try {
+        const result = await generate({
+          model,
+          retry,
+          lastError,
+          signal: attemptSignal,
+        });
         const latencyMs = Date.now() - startedAt;
         const usage = formatUsage(result.usage, model.modelId, {
           latencyMs,
-          fallbackUsed: model.modelId !== models[0]!.modelId,
+          fallbackUsed: model.modelId !== primaryModelId,
         });
-        usages.push(usage);
-        attempts.push({
+        budget.usages.push(usage);
+        budget.attempts.push({
           model: model.modelId,
-          reason: retry === 0 ? "initial" : "corrective_retry",
-          finishReason: result.finishReason ?? null,
+          reason:
+            totalAttempts === 1
+              ? "initial"
+              : retry === 0
+                ? "provider_fallback"
+                : "corrective_retry",
+          finishReason: result.finishReason,
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,
           latencyMs,
         });
         return {
-          resume: normalized.resume,
-          warnings: normalized.warnings,
+          value: result.value,
+          warnings: result.warnings,
           model: model.modelId,
         };
       } catch (error) {
@@ -264,14 +293,14 @@ async function generateResume(
         const latencyMs = Date.now() - startedAt;
         const failedUsage = usageFromError(error);
         if (failedUsage) {
-          usages.push(
+          budget.usages.push(
             formatUsage(failedUsage, model.modelId, {
               latencyMs,
-              fallbackUsed: model.modelId !== models[0]!.modelId,
+              fallbackUsed: model.modelId !== primaryModelId,
             }),
           );
         }
-        attempts.push({
+        budget.attempts.push({
           model: model.modelId,
           reason: attemptReason(error),
           finishReason: NoObjectGeneratedError.isInstance(error)
@@ -279,14 +308,15 @@ async function generateResume(
             : null,
           latencyMs,
         });
-        if (options.signal.aborted) {
+
+        if (budget.signal.aborted) {
           throw new ValidatedGenerationError(
             "GENERATION_TIMEOUT",
-            "Resume generation timed out or was cancelled.",
+            `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation timed out or was cancelled.`,
             true,
           );
         }
-        if (isProviderRateLimitError(error)) break;
+        if (isProviderRateLimitError(error) || isAbortError(error)) break;
       }
     }
   }
@@ -294,14 +324,21 @@ async function generateResume(
   if (lastError instanceof ResumePolicyError) {
     throw new ValidatedGenerationError(
       "FACT_VALIDATION_FAILED",
-      "The generated resume could not be verified against your source profile.",
+      `The generated ${budget.artifact} could not be verified against your source profile.`,
       true,
     );
   }
   if (NoObjectGeneratedError.isInstance(lastError)) {
     throw new ValidatedGenerationError(
       lastError.finishReason === "length" ? "OUTPUT_TRUNCATED" : "INVALID_MODEL_OUTPUT",
-      "The model did not return a complete valid resume.",
+      `The model did not return a complete valid ${budget.artifact}.`,
+      true,
+    );
+  }
+  if (isAbortError(lastError) || Date.now() >= budget.deadlineAt) {
+    throw new ValidatedGenerationError(
+      "GENERATION_TIMEOUT",
+      `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
       true,
     );
   }
@@ -312,94 +349,130 @@ async function generateResume(
   );
 }
 
+async function generateResume(
+  options: ValidatedGenerationOptions,
+  models: ResolvedModel[],
+  attempts: ResumeGenerationAttempt[],
+  usages: ResumeGenerationUsage[],
+): Promise<{ resume: TailoredResume; warnings: string[]; model: ModelId }> {
+  const prompt = buildResumeUserPrompt(options.wrappedJobDescription);
+
+  const result = await runValidatedAttempts<TailoredResume>(
+    {
+      artifact: "resume",
+      models,
+      maxAttempts: MAX_RESUME_ATTEMPTS,
+      deadlineAt: options.deadlineAt,
+      signal: options.signal,
+      attempts,
+      usages,
+    },
+    async ({ model, retry, lastError, signal }) => {
+      const generated = await generateObject({
+        model: model.model,
+        schema: tailoredResumeSchema,
+        system: buildResumeSystemPrompt(
+          options.facts,
+          {
+            tone: options.tone,
+            length: options.length,
+            language: options.language,
+            company: options.company,
+            role: options.role,
+            mustTryToInclude: options.mustTryToInclude,
+            retryReason: retry > 0 ? retryReason(lastError) : undefined,
+          },
+          options.guidelines,
+        ),
+        prompt,
+        abortSignal: signal,
+        temperature: retry > 0 ? 0.2 : 0.4,
+        maxOutputTokens: RESUME_OUTPUT_TOKENS,
+      });
+      const normalized = enforceResumeGenerationPolicy(
+        sanitizeLlmObject(generated.object),
+        options.facts,
+        options.guidelines,
+      );
+      const fabrication = validateFabrication(normalized.resume, options.facts.idMap);
+      if (!fabrication.ok) {
+        throw new ResumePolicyError(fabrication.offending);
+      }
+
+      const warnings = [...normalized.warnings];
+      const tone = scoreAiTone(collectTextForToneCheck(normalized.resume));
+      if (tone.score >= AI_TONE_THRESHOLD) {
+        warnings.push(
+          `Wording may read as AI-generated (${tone.hits.slice(0, 4).join(", ")}). Review before sending.`,
+        );
+      }
+
+      return {
+        value: normalized.resume,
+        warnings,
+        usage: generated.usage,
+        finishReason: generated.finishReason ?? null,
+      };
+    },
+  );
+
+  return {
+    resume: result.value,
+    warnings: result.warnings,
+    model: result.model,
+  };
+}
+
 async function generateCoverLetter(
   options: ValidatedGenerationOptions,
   models: ResolvedModel[],
   attempts: ResumeGenerationAttempt[],
   usages: ResumeGenerationUsage[],
 ): Promise<{ coverLetter: CoverLetter; model: ModelId }> {
-  let lastError: unknown;
   const prompt = buildCoverLetterUserPrompt(options.wrappedJobDescription);
+  const schema = coverLetterSchema.strict();
 
-  for (const model of models) {
-    for (let retry = 0; retry < MAX_CORRECTIVE_ATTEMPTS_PER_MODEL; retry += 1) {
-      const startedAt = Date.now();
-      try {
-        const result = await generateObject({
-          model: model.model,
-          schema: coverLetterSchema.strict(),
-          system: buildCoverLetterSystemPrompt(options.facts, {
-            tone: options.tone,
-            length: options.length,
-            language: options.language,
-            company: options.company,
-            role: options.role,
-            hiringManager: options.hiringManager,
-            retryReason: retry > 0 ? retryReason(lastError) : undefined,
-          }),
-          prompt,
-          abortSignal: options.signal,
-          temperature: retry > 0 ? 0.2 : 0.4,
-          maxOutputTokens: COVER_LETTER_OUTPUT_TOKENS,
-        });
-        const coverLetter = coverLetterSchema
-          .strict()
-          .parse(sanitizeLlmObject(result.object));
-        validateCoverLetterFacts(coverLetter, options);
-        const latencyMs = Date.now() - startedAt;
-        const usage = formatUsage(result.usage, model.modelId, {
-          latencyMs,
-          fallbackUsed: model.modelId !== models[0]!.modelId,
-        });
-        usages.push(usage);
-        attempts.push({
-          model: model.modelId,
-          reason: retry === 0 ? "initial" : "corrective_retry",
-          finishReason: result.finishReason ?? null,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          latencyMs,
-        });
-        return { coverLetter, model: model.modelId };
-      } catch (error) {
-        lastError = error;
-        const latencyMs = Date.now() - startedAt;
-        const failedUsage = usageFromError(error);
-        if (failedUsage) {
-          usages.push(
-            formatUsage(failedUsage, model.modelId, {
-              latencyMs,
-              fallbackUsed: model.modelId !== models[0]!.modelId,
-            }),
-          );
-        }
-        attempts.push({
-          model: model.modelId,
-          reason: attemptReason(error),
-          finishReason: NoObjectGeneratedError.isInstance(error)
-            ? (error.finishReason ?? null)
-            : null,
-          latencyMs,
-        });
-        if (options.signal.aborted) {
-          throw new ValidatedGenerationError(
-            "GENERATION_TIMEOUT",
-            "Cover-letter generation timed out or was cancelled.",
-            true,
-          );
-        }
-        if (isProviderRateLimitError(error)) break;
-      }
-    }
-  }
+  const result = await runValidatedAttempts<CoverLetter>(
+    {
+      artifact: "cover letter",
+      models,
+      maxAttempts: MAX_COVER_LETTER_ATTEMPTS,
+      deadlineAt: options.deadlineAt,
+      signal: options.signal,
+      attempts,
+      usages,
+    },
+    async ({ model, retry, lastError, signal }) => {
+      const generated = await generateObject({
+        model: model.model,
+        schema,
+        system: buildCoverLetterSystemPrompt(options.facts, {
+          tone: options.tone,
+          length: options.length,
+          language: options.language,
+          company: options.company,
+          role: options.role,
+          hiringManager: options.hiringManager,
+          retryReason: retry > 0 ? retryReason(lastError) : undefined,
+        }),
+        prompt,
+        abortSignal: signal,
+        temperature: retry > 0 ? 0.2 : 0.4,
+        maxOutputTokens: COVER_LETTER_OUTPUT_TOKENS,
+      });
+      const coverLetter = schema.parse(sanitizeLlmObject(generated.object));
+      validateCoverLetterFacts(coverLetter, options);
 
-  throw new ValidatedGenerationError(
-    NoObjectGeneratedError.isInstance(lastError)
-      ? "INVALID_MODEL_OUTPUT"
-      : "PROVIDER_UNAVAILABLE",
-    "The model did not return a complete valid cover letter.",
-    true,
+      return {
+        value: coverLetter,
+        warnings: [],
+        usage: generated.usage,
+        finishReason: generated.finishReason ?? null,
+      };
+    },
   );
+
+  return { coverLetter: result.value, model: result.model };
 }
 
 export async function generateValidatedContent(
@@ -413,13 +486,31 @@ export async function generateValidatedContent(
   let warnings: string[] = [];
   let chosenModel = models[0]!.modelId;
 
-  if (options.kind === "resume" || options.kind === "both") {
+  if (options.kind === "both") {
+    const siblingAbort = new AbortController();
+    const parallelOptions = {
+      ...options,
+      signal: AbortSignal.any([options.signal, siblingAbort.signal]),
+    };
+    try {
+      const [resumeResult, coverLetterResult] = await Promise.all([
+        generateResume(parallelOptions, models, attempts, usages),
+        generateCoverLetter(parallelOptions, models, attempts, usages),
+      ]);
+      resume = resumeResult.resume;
+      coverLetter = coverLetterResult.coverLetter;
+      warnings = resumeResult.warnings;
+      chosenModel = resumeResult.model;
+    } catch (error) {
+      siblingAbort.abort();
+      throw error;
+    }
+  } else if (options.kind === "resume") {
     const result = await generateResume(options, models, attempts, usages);
     resume = result.resume;
     warnings = result.warnings;
     chosenModel = result.model;
-  }
-  if (options.kind === "cover_letter" || options.kind === "both") {
+  } else {
     const result = await generateCoverLetter(options, models, attempts, usages);
     coverLetter = result.coverLetter;
     chosenModel = result.model;

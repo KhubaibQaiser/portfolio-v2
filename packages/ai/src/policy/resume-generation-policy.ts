@@ -123,6 +123,9 @@ export function enforceResumeGenerationPolicy(
     seenExperienceIds.add(experience.experienceId);
 
     const seenIndexes = new Set<number>();
+    const roleSourceNumbers = new Set(
+      source.bullets.flatMap(numericClaims).map(normalize),
+    );
     for (const bullet of experience.bullets) {
       if (bullet.experienceId !== experience.experienceId) {
         violations.push(`mismatched bullet experienceId ${bullet.experienceId}`);
@@ -144,9 +147,8 @@ export function enforceResumeGenerationPolicy(
 
       const sourceBullet = source.bullets[bullet.sourceBulletIndex];
       if (sourceBullet) {
-        const sourceNumbers = new Set(numericClaims(sourceBullet).map(normalize));
         const inventedNumbers = numericClaims(bullet.text).filter(
-          (claim) => !sourceNumbers.has(normalize(claim)),
+          (claim) => !roleSourceNumbers.has(normalize(claim)),
         );
         if (inventedNumbers.length > 0) {
           violations.push(

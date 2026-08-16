@@ -31,7 +31,8 @@ const facts = buildCandidateFacts({
       contract_type: "full_time",
       start_date: "Jan 2024",
       end_date: null,
-      description: "Built React products.\nImproved platform reliability.",
+      description:
+        "Built React products.\nImproved platform reliability for 40 customers.",
       tech_tags: ["React", "TypeScript"],
     },
   ],
@@ -139,7 +140,7 @@ describe("enforceResumeGenerationPolicy", () => {
               bullets: [
                 {
                   ...validResume.experiences[0]!.bullets[0]!,
-                  text: "Built Kubernetes products that improved conversion by 40%.",
+                  text: "Built Kubernetes products that improved conversion by 99%.",
                 },
               ],
             },
@@ -149,5 +150,28 @@ describe("enforceResumeGenerationPolicy", () => {
         classicGuidelines(),
       ),
     ).toThrow(ResumePolicyError);
+  });
+
+  it("accepts a numeric claim traced to another source bullet in the same role", () => {
+    const result = enforceResumeGenerationPolicy(
+      {
+        ...validResume,
+        experiences: [
+          {
+            ...validResume.experiences[0],
+            bullets: [
+              {
+                ...validResume.experiences[0]!.bullets[0]!,
+                text: "Built reliable React products supporting 40 customers.",
+              },
+            ],
+          },
+        ],
+      },
+      facts,
+      classicGuidelines(),
+    );
+
+    expect(result.resume.experiences[0]?.bullets[0]?.text).toContain("40 customers");
   });
 });

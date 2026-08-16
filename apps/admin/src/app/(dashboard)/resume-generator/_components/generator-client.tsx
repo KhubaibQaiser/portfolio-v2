@@ -29,6 +29,7 @@ import { AppliedChangesList } from "./applied-changes-list";
 import { ResumePdfPreview } from "./resume-pdf-preview";
 import { GenButton } from "./gen-button";
 import { CopyButton } from "./copy-button";
+import { GenerationWarnings } from "./generation-warnings";
 import type { GenKind, GenerationState, HistoryItem, OptionsState } from "./types";
 
 type Tab = "resume" | "cover_letter" | "ats";
@@ -87,6 +88,7 @@ export function GeneratorClient({
     null,
   );
   const [resumeDirty, setResumeDirty] = useState(false);
+  const [generationWarnings, setGenerationWarnings] = useState<string[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -128,6 +130,7 @@ export function GeneratorClient({
       setStreaming(null);
       return;
     }
+    setGenerationWarnings([]);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -184,6 +187,7 @@ export function GeneratorClient({
         coverLetter: parsed.data.coverLetter ?? current.coverLetter,
         ats: parsed.data.resume ? null : current.ats,
       }));
+      setGenerationWarnings(parsed.data.metadata.warnings);
       setActiveHistoryId(parsed.data.generationId);
       if (parsed.data.resume) {
         setResumeContext(context);
@@ -216,6 +220,7 @@ export function GeneratorClient({
     setResumeContext(null);
     setCoverLetterContext(null);
     setResumeDirty(false);
+    setGenerationWarnings([]);
   }
 
   async function refreshHistory() {
@@ -385,6 +390,7 @@ export function GeneratorClient({
         coverLetter: cover?.success ? cover.data : null,
         ats: ats?.success ? ats.data : null,
       });
+      setGenerationWarnings([]);
       setJd(json.row.jd_text ?? "");
       setJdSource(json.row.jd_source ?? "paste");
       setOptions({
@@ -525,6 +531,7 @@ export function GeneratorClient({
             The job description or layout changed. Regenerate before ATS or PDF export.
           </p>
         ) : null}
+        <GenerationWarnings warnings={generationWarnings} />
       </section>
 
       <section className="min-w-0 space-y-4">
