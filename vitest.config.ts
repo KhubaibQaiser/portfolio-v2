@@ -1,9 +1,9 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 
-// Root Vitest config. Unit and integration tests for the pure-logic packages
-// run in the node environment. Component tests (jsdom) are added per package
-// in the frontend test workstream, where React resolves from that package.
+// Root Vitest config. Shared logic uses the default project; app-route tests
+// use an app-specific project so each `@` alias resolves to the correct source.
+// Individual component tests opt into jsdom with a file environment directive.
 export default defineConfig({
   resolve: {
     alias: {
@@ -30,6 +30,19 @@ export default defineConfig({
             "apps/*/src/lib/**/*.{test,spec}.{ts,tsx}",
           ],
           exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/.turbo/**"],
+        },
+      },
+      {
+        resolve: {
+          alias: {
+            "@": fileURLToPath(new URL("./apps/admin/src", import.meta.url)),
+          },
+        },
+        test: {
+          name: "admin-app",
+          environment: "node",
+          include: ["apps/admin/src/app/**/*.{test,spec}.{ts,tsx}"],
+          exclude: ["**/node_modules/**", "**/.next/**", "**/.turbo/**"],
         },
       },
     ],

@@ -1,6 +1,6 @@
 /**
- * Regex-based "AI tell" detector. Used to decide whether a generation
- * should be silently retried once with a stricter re-ask.
+ * Regex-based "AI tell" detector. Used to surface non-blocking review
+ * warnings after factual and schema validation have passed.
  *
  * This is a heuristic, not a classifier — the goal is to catch the
  * most common, low-hanging signals (buzzwords, formulaic openers,
@@ -8,7 +8,7 @@
  */
 
 const TELL_PATTERNS: ReadonlyArray<{ id: string; re: RegExp; weight: number }> = [
-  // One em dash (U+2014) or one semicolon triggers retry (threshold 35 in generate route)
+  // One em dash (U+2014) or semicolon reaches the review-warning threshold.
   { id: "em-dash", re: /—/g, weight: 35 },
   { id: "semicolon", re: /;/g, weight: 35 },
   {

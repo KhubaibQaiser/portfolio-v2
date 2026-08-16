@@ -107,6 +107,7 @@ const baseOptions = {
   facts,
   guidelines: classicGuidelines(),
   signal: new AbortController().signal,
+  deadlineAt: Number.MAX_SAFE_INTEGER,
 };
 
 function generated(object: unknown) {
@@ -130,6 +131,23 @@ describe("generateValidatedContent", () => {
     expect(result.resume).toEqual(validResume);
     expect(result.attempts).toHaveLength(1);
     expect(result.usage.costUsd).toBe(0.001);
+  });
+
+  it("reports AI-tone heuristics without retrying a valid resume", async () => {
+    mocks.generateObject.mockResolvedValueOnce(
+      generated({
+        ...validResume,
+        summary:
+          "Senior engineer building reliable React products — with clear customer and platform impact.",
+      }),
+    );
+
+    const result = await generateValidatedContent(baseOptions);
+
+    expect(mocks.generateObject).toHaveBeenCalledTimes(1);
+    expect(result.warnings).toEqual([
+      expect.stringContaining("Wording may read as AI-generated"),
+    ]);
   });
 
   it("retries invalid source references and accepts only the corrected object", async () => {
@@ -165,6 +183,34 @@ describe("generateValidatedContent", () => {
 
     expect(result.fallbackUsed).toBe(true);
     expect(result.model).toBe("openai/gpt-oss-20b");
+  });
+
+  it("never exceeds the shared attempt cap", async () => {
+    mocks.generateObject.mockResolvedValue(
+      generated({
+        ...validResume,
+        experiences: [
+          {
+            ...validResume.experiences[0],
+            experienceId: "unknown-id",
+          },
+        ],
+      }),
+    );
+
+    await expect(generateValidatedContent(baseOptions)).rejects.toMatchObject({
+      code: "FACT_VALIDATION_FAILED",
+    });
+    expect(mocks.generateObject).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not start a provider call without enough deadline budget", async () => {
+    await expect(
+      generateValidatedContent({ ...baseOptions, deadlineAt: Date.now() + 1 }),
+    ).rejects.toMatchObject({
+      code: "GENERATION_TIMEOUT",
+    });
+    expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 
   it("fails both atomically when the cover letter cannot be validated", async () => {
