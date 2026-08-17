@@ -15,6 +15,7 @@ export const heroRowSchema = heroSchema.extend({
   id: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
+  revision: z.number().int().min(1).default(1),
 });
 
 export type Hero = z.infer<typeof heroRowSchema>;

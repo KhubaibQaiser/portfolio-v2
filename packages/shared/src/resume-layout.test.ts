@@ -21,6 +21,7 @@ describe("resume layout guidelines", () => {
       is_default: false,
       created_at: "",
       updated_at: "",
+      revision: 1,
     };
     const modern = {
       id: "b",
@@ -28,6 +29,7 @@ describe("resume layout guidelines", () => {
       is_default: true,
       created_at: "",
       updated_at: "",
+      revision: 1,
     };
     expect(pickDefaultResumeLayout([])).toBeNull();
     expect(pickDefaultResumeLayout([classic])?.id).toBe("a");

@@ -44,6 +44,7 @@ export const resumeRowSchema = resumeSchema.extend({
   id: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
+  revision: z.number().int().min(1).default(1),
 });
 
 export type Resume = z.infer<typeof resumeRowSchema>;
@@ -61,6 +62,7 @@ export const resumeVariantRowSchema = resumeVariantSchema.extend({
   id: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
+  revision: z.number().int().min(1).default(1),
 });
 
 export type ResumeVariant = z.infer<typeof resumeVariantRowSchema>;

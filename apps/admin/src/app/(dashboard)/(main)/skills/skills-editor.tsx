@@ -98,6 +98,7 @@ export function SkillsEditor({ initialData }: SkillsEditorProps) {
       sort_order: 0,
       created_at: "",
       updated_at: "",
+      revision: 1,
     };
     applySkills(insertNewSkill(skills, draft));
   }

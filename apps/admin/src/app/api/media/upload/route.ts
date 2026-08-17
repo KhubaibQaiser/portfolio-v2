@@ -9,17 +9,17 @@ export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
+
   const mediaStore = await getMediaStore();
   if (!mediaStore.isConfigured()) {
     return NextResponse.json(
       { error: "Media storage is not configured." },
       { status: 503 },
     );
-  }
-
-  const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   let formData: FormData;

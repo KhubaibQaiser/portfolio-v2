@@ -33,7 +33,10 @@ export function HeroForm({ initialData }: HeroFormProps) {
 
   async function onSubmit(data: HeroFormData) {
     setSaving(true);
-    const result = await runServerAction(() => saveHero(data), toast);
+    const result = await runServerAction(
+      () => saveHero(data, initialData?.revision),
+      toast,
+    );
     setSaving(false);
     if (result.success) reset(data);
   }

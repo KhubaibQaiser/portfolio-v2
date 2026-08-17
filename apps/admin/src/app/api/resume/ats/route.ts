@@ -31,7 +31,7 @@ import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
-import { checkCostCap } from "@/lib/resume-ai/cost-cap";
+import { estimateAtsReservationUsd, reserveAiUsage } from "@/lib/resume-ai/cost-cap";
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
 import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 
@@ -74,27 +74,47 @@ export async function POST(request: Request) {
     );
   }
 
-  let cap: Awaited<ReturnType<typeof checkCostCap>>;
+  let usageGuard: Awaited<ReturnType<typeof reserveAiUsage>>;
   try {
-    cap = await checkCostCap(auth.id);
+    usageGuard = await reserveAiUsage(auth.id, estimateAtsReservationUsd());
   } catch {
     return NextResponse.json(
       { error: "Unable to verify usage limits right now. Please try again shortly." },
       { status: 503 },
     );
   }
-  if (!cap.ok) {
+  if (!usageGuard.ok) {
     return NextResponse.json(
       {
-        error: `Daily cost cap reached ($${cap.spentUsd.toFixed(2)} / $${cap.capUsd.toFixed(2)}).`,
+        error: `Daily cost cap reached ($${usageGuard.spentUsd.toFixed(2)} / $${usageGuard.capUsd.toFixed(2)}).`,
       },
       { status: 402 },
+    );
+  }
+
+  const userId = auth.id;
+  const usageState: { actualUsd?: number } = {};
+  async function cleanupReservation() {
+    if (!usageGuard.ok) return;
+    const guard = usageGuard;
+    const operation =
+      usageState.actualUsd === undefined
+        ? guard.reservation.release(userId, guard.reservedUsd)
+        : guard.reservation.settle(userId, guard.reservedUsd, usageState.actualUsd);
+    await operation.catch((error) =>
+      logger.warn("ats usage reservation cleanup failed", {
+        userId,
+        reservedUsd: guard.reservedUsd,
+        actualUsd: usageState.actualUsd,
+        error: error instanceof Error ? error : new Error(String(error)),
+      }),
     );
   }
 
   try {
     await ensureAiApiKeys("cheap");
   } catch (error) {
+    await cleanupReservation();
     logger.error("failed to load AI API keys from Secrets Manager", {
       error: error instanceof Error ? error : new Error(String(error)),
     });
@@ -112,6 +132,7 @@ export async function POST(request: Request) {
     !row.source_snapshot ||
     row.layout_id !== body.layoutId
   ) {
+    await cleanupReservation();
     return NextResponse.json(
       { error: "Generation is missing, legacy, or does not match the layout." },
       { status: 409 },
@@ -119,6 +140,7 @@ export async function POST(request: Request) {
   }
   const layout = await repo.getResumeLayoutById(body.layoutId);
   if (!layout) {
+    await cleanupReservation();
     return NextResponse.json(
       { error: "Resume layout no longer exists." },
       { status: 409 },
@@ -132,6 +154,7 @@ export async function POST(request: Request) {
     body.guidelineHash !== row.source_snapshot.guidelineHash ||
     body.guidelineHash !== snapshot.guidelineHash
   ) {
+    await cleanupReservation();
     return NextResponse.json(
       { error: "Resume source or layout changed. Regenerate before ATS scoring." },
       { status: 409 },
@@ -206,6 +229,7 @@ export async function POST(request: Request) {
       });
       result = await runGen(chosen);
     } else {
+      await cleanupReservation();
       logger.error("ats scoring failed", {
         userId: auth.id,
         model: primary.modelId,
@@ -221,6 +245,7 @@ export async function POST(request: Request) {
     latencyMs: Date.now() - startedAt,
     fallbackUsed,
   });
+  usageState.actualUsd = usageRecord.costUsd;
 
   try {
     const prevUsage = row.usage ?? {};
@@ -236,6 +261,7 @@ export async function POST(request: Request) {
       } as ResumeGenerationUsage,
     });
   } catch (err) {
+    await cleanupReservation();
     logger.error("ats persist failed", {
       userId: auth.id,
       generationId: body.generationId,
@@ -246,6 +272,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  await cleanupReservation();
 
   logger.info("ats scoring completed", {
     userId: auth.id,

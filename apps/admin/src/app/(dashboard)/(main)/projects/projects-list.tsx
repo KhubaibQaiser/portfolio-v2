@@ -40,18 +40,18 @@ const EMPTY: ProjectFormData = {
   resume_description: "",
 };
 
-type ProjectEditForm = ProjectFormData & { id?: string };
+type ProjectEditForm = ProjectFormData & { id?: string; revision?: number };
 type ListFormValues = { items: Project[] };
 
 function projectRowToForm(row: Project): ProjectEditForm {
-  const { id, created_at: _c, updated_at: _u, ...rest } = row;
-  return { ...projectSchema.parse(rest), id };
+  const { id, created_at: _c, updated_at: _u, revision, ...rest } = row;
+  return { ...projectSchema.parse(rest), id, revision };
 }
 
 export function ProjectsList({ initialData }: ProjectsListProps) {
-  const [editing, setEditing] = useState<(ProjectFormData & { id?: string }) | null>(
-    null,
-  );
+  const [editing, setEditing] = useState<
+    (ProjectFormData & { id?: string; revision?: number }) | null
+  >(null);
 
   if (editing) {
     return <ProjectEditPanel entry={editing} onClose={() => setEditing(null)} />;
@@ -65,7 +65,7 @@ function ProjectsListPanel({
   onEdit,
 }: {
   initialData: Project[];
-  onEdit: (entry: ProjectFormData & { id?: string }) => void;
+  onEdit: (entry: ProjectFormData & { id?: string; revision?: number }) => void;
 }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,7 @@ function ProjectsListPanel({
   const items =
     useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
 
-  function openEdit(entry: ProjectFormData & { id?: string }) {
+  function openEdit(entry: ProjectFormData & { id?: string; revision?: number }) {
     if (!tryLeaveForm(form, defaultValues)) return;
     onEdit(entry);
   }
@@ -177,7 +177,7 @@ function ProjectEditPanel({
   entry,
   onClose,
 }: {
-  entry: ProjectFormData & { id?: string };
+  entry: ProjectFormData & { id?: string; revision?: number };
   onClose: () => void;
 }) {
   const toast = useToast();
@@ -198,9 +198,13 @@ function ProjectEditPanel({
       ...rest,
       resume_status: rest.resume_status?.trim() ? rest.resume_status.trim() : null,
     };
-    const result = await runServerAction(() => saveProject(id ?? null, payload), toast, {
-      onSuccess: () => window.location.reload(),
-    });
+    const result = await runServerAction(
+      () => saveProject(id ?? null, payload, entry.revision),
+      toast,
+      {
+        onSuccess: () => window.location.reload(),
+      },
+    );
     setSaving(false);
     if (result.success) reset(formValues);
   }

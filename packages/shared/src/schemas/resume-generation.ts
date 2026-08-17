@@ -79,11 +79,12 @@ export type ResumeGeneration = {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  revision: number;
 };
 
 export type ResumeGenerationInsert = Omit<
   ResumeGeneration,
-  "id" | "created_at" | "updated_at"
+  "id" | "created_at" | "updated_at" | "revision"
 >;
 
 export type ResumeGenerationUpdate = Partial<ResumeGenerationInsert>;

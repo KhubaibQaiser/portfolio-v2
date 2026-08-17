@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   checkRateLimit: vi.fn(),
-  checkCostCap: vi.fn(),
+  reserveAiUsage: vi.fn(),
+  estimateGenerationReservationUsd: vi.fn(() => 0.25),
   ensureAiApiKeys: vi.fn(),
   generateValidatedContent: vi.fn(),
   renderResumePdfBuffer: vi.fn(),
@@ -83,7 +84,8 @@ vi.mock("@/lib/resume-ai/rate-limit", () => ({
   checkResumeAiRateLimit: mocks.checkRateLimit,
 }));
 vi.mock("@/lib/resume-ai/cost-cap", () => ({
-  checkCostCap: mocks.checkCostCap,
+  reserveAiUsage: mocks.reserveAiUsage,
+  estimateGenerationReservationUsd: mocks.estimateGenerationReservationUsd,
 }));
 
 import { POST } from "./route";
@@ -151,7 +153,14 @@ describe("POST /api/resume/generate", () => {
   beforeEach(() => {
     mocks.requireAdmin.mockResolvedValue({ ok: true, id: "admin-id" });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
-    mocks.checkCostCap.mockResolvedValue({ ok: true });
+    mocks.reserveAiUsage.mockResolvedValue({
+      ok: true,
+      reservation: {
+        settle: vi.fn().mockResolvedValue(undefined),
+        release: vi.fn().mockResolvedValue(undefined),
+      },
+      reservedUsd: 0.25,
+    });
     mocks.ensureAiApiKeys.mockResolvedValue(undefined);
     mocks.getResumeLayouts.mockResolvedValue([layout]);
     mocks.loadCandidateFacts.mockResolvedValue({ factSheet: "React engineering facts" });
@@ -202,7 +211,12 @@ describe("POST /api/resume/generate", () => {
   });
 
   it("rejects a request when the daily cost cap is exhausted", async () => {
-    mocks.checkCostCap.mockResolvedValue({ ok: false });
+    mocks.reserveAiUsage.mockResolvedValue({
+      ok: false,
+      spentUsd: 2,
+      capUsd: 2,
+      reason: "cost-cap",
+    });
 
     const response = await POST(request());
 

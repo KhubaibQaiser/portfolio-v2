@@ -80,6 +80,7 @@ function emptyProjectsRepo(
       tech_stack: [],
       created_at: "",
       updated_at: "",
+      revision: 1,
     }),
     getResume: async () => ({
       id: "resume",
@@ -101,6 +102,7 @@ function emptyProjectsRepo(
       references_line: "References available on request",
       created_at: "",
       updated_at: "",
+      revision: 1,
     }),
     getExperience: async () => [
       {
@@ -120,6 +122,7 @@ function emptyProjectsRepo(
         show_in_resume: true,
         created_at: "",
         updated_at: "",
+        revision: 1,
       },
     ],
     getSkills: async () => [],
@@ -171,6 +174,7 @@ describe("getResumeData", () => {
           show_in_resume: true,
           created_at: "",
           updated_at: "",
+          revision: 1,
         },
         {
           id: "2",
@@ -189,6 +193,7 @@ describe("getResumeData", () => {
           show_in_resume: false,
           created_at: "",
           updated_at: "",
+          revision: 1,
         },
       ],
     });
@@ -224,6 +229,7 @@ describe("getResumeData", () => {
           resume_description: "Multi-tenant coaching platform\nBuilt billing and roles",
           created_at: "",
           updated_at: "",
+          revision: 1,
         },
         {
           id: "p2",
@@ -246,6 +252,7 @@ describe("getResumeData", () => {
           resume_description: "Should not appear",
           created_at: "",
           updated_at: "",
+          revision: 1,
         },
       ],
     });

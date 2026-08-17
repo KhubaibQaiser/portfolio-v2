@@ -1,7 +1,4 @@
-import type {
-  ChatResponseCache,
-  ChatResponseCacheEntry,
-} from "@portfolio/shared/ports";
+import type { ChatResponseCache, ChatResponseCacheEntry } from "@portfolio/shared/ports";
 
 type MemoryRow = {
   text: string;

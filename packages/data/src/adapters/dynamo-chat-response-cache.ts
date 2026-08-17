@@ -3,10 +3,7 @@ import {
   GetCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type {
-  ChatResponseCache,
-  ChatResponseCacheEntry,
-} from "@portfolio/shared/ports";
+import type { ChatResponseCache, ChatResponseCacheEntry } from "@portfolio/shared/ports";
 
 /**
  * Chat response cache backed by DynamoDB with TTL auto-expiry.

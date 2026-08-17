@@ -41,25 +41,32 @@ const EMPTY: ExperienceFormData = {
 
 type ExperienceEditForm = ExperienceFormData & {
   id?: string;
+  revision?: number;
   tech_tags_input: string;
 };
 
 type ListFormValues = { items: Experience[] };
 
 function experienceRowToForm(row: Experience): ExperienceEditForm {
-  const { id, created_at: _c, updated_at: _u, ...rest } = row;
+  const { id, created_at: _c, updated_at: _u, revision, ...rest } = row;
   const parsed = experienceSchema.parse(rest);
-  return { ...parsed, id, tech_tags_input: parsed.tech_tags.join(", ") };
+  return { ...parsed, id, revision, tech_tags_input: parsed.tech_tags.join(", ") };
 }
 
-function toEditForm(entry: ExperienceFormData & { id?: string }): ExperienceEditForm {
+function toEditForm(
+  entry: ExperienceFormData & { id?: string; revision?: number },
+): ExperienceEditForm {
   return { ...entry, tech_tags_input: entry.tech_tags.join(", ") };
 }
 
 export function ExperienceList({ initialData }: ExperienceListProps) {
-  const [editing, setEditing] = useState<(ExperienceFormData & { id?: string }) | null>(
-    null,
-  );
+  const [editing, setEditing] = useState<
+    | (ExperienceFormData & {
+        id?: string;
+        revision?: number;
+      })
+    | null
+  >(null);
 
   if (editing) {
     return <ExperienceEditPanel entry={editing} onClose={() => setEditing(null)} />;
@@ -73,7 +80,7 @@ function ExperienceListPanel({
   onEdit,
 }: {
   initialData: Experience[];
-  onEdit: (entry: ExperienceFormData & { id?: string }) => void;
+  onEdit: (entry: ExperienceFormData & { id?: string; revision?: number }) => void;
 }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
@@ -89,7 +96,7 @@ function ExperienceListPanel({
   const items =
     useWatch({ control, name: "items", defaultValue: initialData }) ?? initialData;
 
-  function openEdit(entry: ExperienceFormData & { id?: string }) {
+  function openEdit(entry: ExperienceFormData & { id?: string; revision?: number }) {
     if (!tryLeaveForm(form, defaultValues)) return;
     onEdit(entry);
   }
@@ -176,7 +183,7 @@ function ExperienceEditPanel({
   entry,
   onClose,
 }: {
-  entry: ExperienceFormData & { id?: string };
+  entry: ExperienceFormData & { id?: string; revision?: number };
   onClose: () => void;
 }) {
   const toast = useToast();
@@ -201,7 +208,7 @@ function ExperienceEditPanel({
       .map((tag) => tag.trim())
       .filter(Boolean);
     const result = await runServerAction(
-      () => saveExperience(id ?? null, { ...rest, tech_tags }),
+      () => saveExperience(id ?? null, { ...rest, tech_tags }, entry.revision),
       toast,
       { onSuccess: () => window.location.reload() },
     );

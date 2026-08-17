@@ -1,6 +1,6 @@
 /**
  * Skill category display labels — used by both admin editor and web UI.
- * This is configuration, not data, so it stays here rather than in Supabase.
+ * This is configuration, not data, so it stays here rather than in DynamoDB.
  */
 import type { NavLink } from "./schemas/site-config";
 
@@ -41,7 +41,7 @@ export const SKILL_CATEGORY_SORT_WEIGHT: Partial<
   cloud: 70,
   state: 60,
   testing: 50,
-  tools: 40
+  tools: 40,
 };
 
 export function getSkillCategorySortWeight(category: string): number {

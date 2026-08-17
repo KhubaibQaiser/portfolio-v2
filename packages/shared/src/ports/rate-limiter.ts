@@ -5,7 +5,7 @@ export type RateLimitResult =
 export type RateLimitOptions = {
   /** Max requests allowed within the window. */
   max: number;
-  /** Sliding window size in seconds. */
+  /** Fixed window size in seconds. */
   windowSec: number;
   /** Optional namespace to isolate counters across features. */
   prefix?: string;

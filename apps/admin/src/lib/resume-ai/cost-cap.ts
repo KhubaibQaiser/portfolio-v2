@@ -1,22 +1,45 @@
-import { getCostCap } from "@portfolio/data";
-import type { CostCapResult } from "@portfolio/shared/ports";
+import { getUsageReservation } from "@portfolio/data";
+import type { UsageReservation, UsageReservationResult } from "@portfolio/shared/ports";
 
-export type { CostCapResult };
+export type CostCapResult = UsageReservationResult;
 
-function parseCapUsd(): number {
-  const raw = process.env.RESUME_GEN_DAILY_USD_CAP;
-  if (!raw) return 2;
-  const n = Number.parseFloat(raw);
-  return Number.isFinite(n) && n > 0 ? n : 2;
+export type UsageReservationGuard = {
+  reservation: UsageReservation;
+  reservedUsd: number;
+};
+
+function parsePositiveUsd(raw: string | undefined, fallback: number): number {
+  if (!raw) return fallback;
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+export function parseDailyCapUsd(): number {
+  return parsePositiveUsd(process.env.RESUME_GEN_DAILY_USD_CAP, 2);
+}
+
+export function estimateGenerationReservationUsd(model: "quality" | "fast"): number {
+  const fallback = model === "quality" ? 0.25 : 0.05;
+  return parsePositiveUsd(process.env.RESUME_GEN_RESERVE_USD, fallback);
+}
+
+export function estimateAtsReservationUsd(): number {
+  return parsePositiveUsd(process.env.RESUME_ATS_RESERVE_USD, 0.02);
 }
 
 /**
- * Check whether the admin has headroom under today's USD cap.
- *
- * Backed by the CostCap port (DynamoDB usage aggregation). Store errors are
- * **propagated**, not swallowed into a fail-open "allowed" — the caller decides
- * policy and surfaces the failure (see error-handling rule).
+ * Atomically reserve estimated AI spend for today's window. The reservation is
+ * the enforcement source; generation history remains an audit/reporting record.
+ * Store errors propagate so callers fail closed and surface a 503.
  */
-export async function checkCostCap(userId: string): Promise<CostCapResult> {
-  return getCostCap().check(userId, parseCapUsd());
+export async function reserveAiUsage(
+  userId: string,
+  estimatedUsd: number,
+): Promise<
+  (UsageReservationGuard & { ok: true }) | (UsageReservationResult & { ok: false })
+> {
+  const reservation = getUsageReservation();
+  const result = await reservation.reserve(userId, estimatedUsd, parseDailyCapUsd());
+  if (!result.ok) return result;
+  return { ok: true, reservation, reservedUsd: estimatedUsd };
 }

@@ -11,6 +11,7 @@
     "./ports": "./src/ports/index.ts",
     "./ports/*": "./src/ports/*.ts",
     "./constants": "./src/constants.ts",
+    "./concurrency": "./src/concurrency.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",
     "./experience-bullet-budget": "./src/experience-bullet-budget.ts",

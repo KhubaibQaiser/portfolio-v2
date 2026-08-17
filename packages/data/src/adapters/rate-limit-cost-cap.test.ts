@@ -6,6 +6,8 @@ import { createFixtureContentRepository } from "./fixture-content-repository";
 import { createContentCostCap } from "./content-cost-cap";
 import { createDynamoRateLimiter } from "./dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./noop-rate-limiter";
+import { createDynamoUsageReservation } from "./dynamo-usage-reservation";
+import { createMemoryUsageReservation } from "./memory-usage-reservation";
 
 function generation(createdBy: string, costUsd: number): ResumeGenerationInsert {
   return {
@@ -107,6 +109,87 @@ describe("createDynamoRateLimiter", () => {
     const limiter = createDynamoRateLimiter(client, "portfolio");
 
     await expect(limiter.check("ip:1.2.3.4", { max: 1, windowSec: 60 })).rejects.toThrow(
+      "dynamo unavailable",
+    );
+  });
+});
+
+describe("createMemoryUsageReservation", () => {
+  it("reserves, settles, and releases spend per user", async () => {
+    const reservation = createMemoryUsageReservation();
+
+    expect(await reservation.reserve("user-1", 0.5, 1)).toEqual({
+      ok: true,
+      spentUsd: 0.5,
+      capUsd: 1,
+    });
+    await reservation.settle("user-1", 0.5, 0.25);
+    expect(await reservation.reserve("user-1", 0.75, 1)).toEqual({
+      ok: true,
+      spentUsd: 1,
+      capUsd: 1,
+    });
+    await reservation.release("user-1", 0.75);
+    expect(await reservation.reserve("user-1", 0.25, 1)).toEqual({
+      ok: true,
+      spentUsd: 0.5,
+      capUsd: 1,
+    });
+  });
+
+  it("rejects reservations that would exceed the cap", async () => {
+    const reservation = createMemoryUsageReservation();
+    await reservation.reserve("user-1", 0.8, 1);
+
+    expect(await reservation.reserve("user-1", 0.3, 1)).toEqual({
+      ok: false,
+      spentUsd: 1.1,
+      capUsd: 1,
+      reason: "cost-cap",
+    });
+    expect(await reservation.reserve("user-2", 0.3, 1)).toEqual({
+      ok: true,
+      spentUsd: 0.3,
+      capUsd: 1,
+    });
+  });
+});
+
+describe("createDynamoUsageReservation", () => {
+  it("uses a conditional atomic update for reservations", async () => {
+    const sent: unknown[] = [];
+    const client = {
+      send: async (command: unknown) => {
+        sent.push(command);
+        return { Attributes: { spentUsd: 0.5 } };
+      },
+    } as unknown as DynamoDBDocumentClient;
+    const reservation = createDynamoUsageReservation(client, "portfolio-rate-limit");
+
+    await expect(reservation.reserve("user-1", 0.5, 2)).resolves.toEqual({
+      ok: true,
+      spentUsd: 0.5,
+      capUsd: 2,
+    });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      input: {
+        TableName: "portfolio-rate-limit",
+        ConditionExpression: "attribute_not_exists(#spent) OR #spent <= :cap",
+        UpdateExpression: "ADD #spent :delta SET #ttl = :ttl",
+      },
+    });
+  });
+
+  it("propagates store errors instead of silently allowing", async () => {
+    const client = {
+      send: async () => {
+        throw new Error("dynamo unavailable");
+      },
+    } as unknown as DynamoDBDocumentClient;
+    const reservation = createDynamoUsageReservation(client, "portfolio-rate-limit");
+
+    await expect(reservation.reserve("user-1", 0.5, 2)).rejects.toThrow(
       "dynamo unavailable",
     );
   });

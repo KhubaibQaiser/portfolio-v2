@@ -13,6 +13,7 @@ import type {
   SkillUpsert,
   UsageSummary,
 } from "@portfolio/shared/ports";
+import { ContentConflictError } from "@portfolio/shared/concurrency";
 import type {
   About,
   AboutFormData,
@@ -41,7 +42,21 @@ import type {
 } from "@portfolio/shared/types";
 import { sortExperienceByRecencyDesc } from "@portfolio/shared/experience-dates";
 import { sortRecommendationsByDateDesc } from "@portfolio/shared/recommendation-dates";
-import { normalizeResumeLayoutGuidelines } from "@portfolio/shared/schemas";
+import {
+  aboutRowSchema,
+  experienceRowSchema,
+  heroRowSchema,
+  mediaRowSchema,
+  normalizeResumeLayoutGuidelines,
+  projectRowSchema,
+  resumeLayoutRowSchema,
+  resumeRowSchema,
+  resumeVariantRowSchema,
+  siteConfigRowSchema,
+  skillRowSchema,
+  testimonialRowSchema,
+} from "@portfolio/shared/schemas";
+import { z } from "zod";
 import type { TableNames } from "../dynamo/tables";
 
 type Item = Record<string, unknown>;
@@ -83,27 +98,45 @@ function stripNullUrl<T extends { url?: string | null }>(
   return items.map(({ url, ...rest }) => (url == null ? rest : { ...rest, url }));
 }
 
-// --- Boundary mappers: turn a stored item back into the null-shaped domain type.
+// --- Boundary mappers: normalize DynamoDB's absent attributes, then validate the
+// complete domain row with the shared Zod schema before it can reach callers.
+
+function parseRow<T>(schema: z.ZodType<T>, label: string, item: Item): T {
+  const result = schema.safeParse(item);
+  if (!result.success) {
+    const key = (item.id ?? item.section ?? "unknown").toString();
+    throw new Error(
+      `Invalid ${label} record "${key}": ${result.error.issues
+        .slice(0, 3)
+        .map((issue) => `${issue.path.join(".") || "root"} ${issue.message}`)
+        .join("; ")}`,
+    );
+  }
+  return result.data;
+}
 
 function toHero(item: Item): Hero {
   const { section: _section, ...rest } = item;
-  return { id: SECTION.hero, ...(rest as Omit<Hero, "id">) };
+  return parseRow(heroRowSchema, "hero", { id: SECTION.hero, ...rest });
 }
 
 function toAbout(item: Item): About {
   const { section: _section, ...rest } = item;
-  return { id: SECTION.about, ...(rest as Omit<About, "id">) };
+  return parseRow(aboutRowSchema, "about", { id: SECTION.about, ...rest });
 }
 
 function toSiteConfig(item: Item): SiteConfig {
   const { section: _section, ...rest } = item;
-  return { id: SECTION.siteConfig, ...(rest as Omit<SiteConfig, "id">) };
+  return parseRow(siteConfigRowSchema, "site config", {
+    id: SECTION.siteConfig,
+    ...rest,
+  });
 }
 
 function toResume(item: Item): Resume {
   const { section: _section, ...rest } = item;
-  const r = rest as Omit<Resume, "id">;
-  return {
+  const r = rest as Partial<Omit<Resume, "id">>;
+  return parseRow(resumeRowSchema, "resume", {
     id: SECTION.resume,
     ...r,
     education: (r.education ?? []).map((e) => ({ ...e, url: e.url ?? null })),
@@ -112,23 +145,23 @@ function toResume(item: Item): Resume {
     languages: r.languages ?? [],
     remote_work_line: r.remote_work_line ?? null,
     references_line: r.references_line ?? null,
-  };
+  });
 }
 
 function toExperience(item: Item): Experience {
-  const e = item as Experience;
-  return {
+  const e = item as Partial<Experience>;
+  return parseRow(experienceRowSchema, "experience", {
     ...e,
     end_date: e.end_date ?? null,
     logo_url: e.logo_url ?? null,
     company_url: e.company_url ?? null,
     show_in_resume: e.show_in_resume ?? true,
-  };
+  });
 }
 
 function toProject(item: Item): Project {
-  const p = item as Project;
-  return {
+  const p = item as Partial<Project>;
+  return parseRow(projectRowSchema, "project", {
     ...p,
     cover_url: p.cover_url ?? null,
     github_url: p.github_url ?? null,
@@ -138,62 +171,103 @@ function toProject(item: Item): Project {
     show_in_resume: p.show_in_resume ?? false,
     resume_status: p.resume_status ?? null,
     resume_description: p.resume_description ?? "",
-  };
+  });
 }
 
 function toSkill(item: Item): Skill {
-  const s = item as Skill;
-  return { ...s, icon: s.icon ?? null };
+  const s = item as Partial<Skill>;
+  return parseRow(skillRowSchema, "skill", { ...s, icon: s.icon ?? null });
 }
 
 function toTestimonial(item: Item): Testimonial {
-  const t = item as Testimonial;
-  return { ...t, avatar_url: t.avatar_url ?? null };
+  const t = item as Partial<Testimonial>;
+  return parseRow(testimonialRowSchema, "testimonial", {
+    ...t,
+    avatar_url: t.avatar_url ?? null,
+  });
 }
 
 function toResumeVariant(item: Item): ResumeVariant {
-  const v = item as ResumeVariant;
-  return { ...v, summary_override: v.summary_override ?? null };
+  const v = item as Partial<ResumeVariant>;
+  return parseRow(resumeVariantRowSchema, "resume variant", {
+    ...v,
+    summary_override: v.summary_override ?? null,
+  });
 }
 
 function toResumeLayout(item: Item): ResumeLayout {
-  const v = item as ResumeLayout;
-  return {
+  const v = item as Partial<ResumeLayout>;
+  const componentKey = v.component_key ?? "classic";
+  const version =
+    componentKey === "modern-blue" && typeof v.version === "number" && v.version < 4
+      ? 4
+      : v.version;
+  return parseRow(resumeLayoutRowSchema, "resume layout", {
     ...v,
-    version: v.component_key === "modern-blue" && v.version < 4 ? 4 : v.version,
-    guidelines: normalizeResumeLayoutGuidelines(v.component_key, v.version, v.guidelines),
+    version,
+    guidelines: v.guidelines
+      ? normalizeResumeLayoutGuidelines(componentKey, version ?? 1, v.guidelines)
+      : undefined,
     preview_image_url: v.preview_image_url ?? null,
     is_default: v.is_default ?? false,
-  };
+  });
 }
 
 function toMedia(item: Item): Media {
-  const m = item as Media;
-  return { ...m, alt_text: m.alt_text ?? null };
+  const m = item as Partial<Media>;
+  return parseRow(mediaRowSchema, "media", { ...m, alt_text: m.alt_text ?? null });
 }
+
+const resumeGenerationRowSchema = z
+  .object({
+    id: z.string().min(1),
+    created_by: z.string().min(1),
+    company: z.string().nullable().default(null),
+    role: z.string().nullable().default(null),
+    hiring_manager: z.string().nullable().default(null),
+    language: z.enum(["en", "de", "fr"]),
+    tone: z.enum(["formal", "friendly", "enthusiastic"]).nullable().default(null),
+    length: z.enum(["short", "standard", "detailed"]).nullable().default(null),
+    jd_text: z.string(),
+    jd_source: z.enum(["paste", "pdf"]),
+    jd_pdf_url: z.string().nullable().default(null),
+    model: z.string().min(1),
+    fallback_used: z.boolean(),
+    resume: z.record(z.string(), z.unknown()).nullable().default(null),
+    cover_letter: z.record(z.string(), z.unknown()).nullable().default(null),
+    ats: z.record(z.string(), z.unknown()).nullable().default(null),
+    usage: z.record(z.string(), z.unknown()).nullable().default(null),
+    resume_pdf_url: z.string().nullable().default(null),
+    cover_letter_pdf_url: z.string().nullable().default(null),
+    layout_id: z.string().nullable().default(null),
+    applied_changes: z.array(z.string()).default([]),
+    generation_version: z.literal(2).optional(),
+    source_snapshot: z
+      .object({
+        sourceHash: z.string().min(1),
+        guidelineHash: z.string().min(1),
+        layoutVersion: z.number().int().min(1),
+        experience: z.array(
+          z.object({ id: z.string().min(1), bulletHashes: z.array(z.string()) }),
+        ),
+        skills: z.array(z.string()),
+      })
+      .optional(),
+    archived_at: z.string().nullable().default(null),
+    deleted_at: z.string().nullable().default(null),
+    created_at: z.string().min(1),
+    updated_at: z.string().min(1),
+    revision: z.number().int().min(1).default(1),
+  })
+  .strip();
 
 function toResumeGeneration(item: Item): ResumeGeneration {
   const { recent_pk: _recentPk, ...rest } = item;
-  const r = rest as ResumeGeneration;
-  return {
-    ...r,
-    company: r.company ?? null,
-    role: r.role ?? null,
-    hiring_manager: r.hiring_manager ?? null,
-    tone: r.tone ?? null,
-    length: r.length ?? null,
-    jd_pdf_url: r.jd_pdf_url ?? null,
-    resume: r.resume ?? null,
-    cover_letter: r.cover_letter ?? null,
-    ats: r.ats ?? null,
-    usage: r.usage ?? null,
-    resume_pdf_url: r.resume_pdf_url ?? null,
-    cover_letter_pdf_url: r.cover_letter_pdf_url ?? null,
-    layout_id: r.layout_id ?? null,
-    applied_changes: r.applied_changes ?? [],
-    archived_at: r.archived_at ?? null,
-    deleted_at: r.deleted_at ?? null,
-  };
+  return parseRow(
+    resumeGenerationRowSchema,
+    "resume generation",
+    rest,
+  ) as ResumeGeneration;
 }
 
 /**
@@ -220,6 +294,44 @@ export function createMultiTableContentRepository(
     await client.send(new PutCommand({ TableName: table, Item: item }));
   }
 
+  function revisionOf(item: Item | null): number {
+    const value = item?.revision;
+    return typeof value === "number" && Number.isInteger(value) && value >= 1 ? value : 1;
+  }
+
+  async function putWithRevision(
+    table: string,
+    keyName: "id" | "section",
+    item: Item,
+    expectedRevision?: number,
+  ): Promise<void> {
+    try {
+      await client.send(
+        new PutCommand({
+          TableName: table,
+          Item: item,
+          ConditionExpression:
+            expectedRevision === undefined
+              ? `attribute_not_exists(${keyName})`
+              : `attribute_not_exists(${keyName}) OR revision = :expectedRevision OR attribute_not_exists(revision)`,
+          ...(expectedRevision !== undefined
+            ? { ExpressionAttributeValues: { ":expectedRevision": expectedRevision } }
+            : {}),
+        }),
+      );
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        throw new ContentConflictError();
+      }
+      throw error;
+    }
+  }
+
   /** Full, paginated scan — never truncates at the 1MB page boundary. Used only
    *  for the small, read-mostly content/collection tables. */
   async function listItems(table: string): Promise<Item[]> {
@@ -240,16 +352,27 @@ export function createMultiTableContentRepository(
   }
 
   /** Reads, merges the (null-stripped) patch, and writes the whole singleton. */
-  async function upsertSingleton(section: string, values: WriteValues): Promise<void> {
-    const current = (await getItem(tables.content, { section })) ?? {};
-    const created_at = (current.created_at as string | undefined) ?? now();
-    await putItem(tables.content, {
-      ...current,
-      ...writable(values),
-      section,
-      created_at,
-      updated_at: now(),
-    });
+  async function upsertSingleton(
+    section: string,
+    values: WriteValues,
+    expectedRevision?: number,
+  ): Promise<void> {
+    const current = await getItem(tables.content, { section });
+    const revision = revisionOf(current);
+    const created_at = (current?.created_at as string | undefined) ?? now();
+    await putWithRevision(
+      tables.content,
+      "section",
+      {
+        ...(current ?? {}),
+        ...writable(values),
+        section,
+        created_at,
+        updated_at: now(),
+        revision: revision + 1,
+      },
+      expectedRevision ?? (current ? revision : undefined),
+    );
   }
 
   /** Reads a list row by id, merges a patch, and writes it back. */
@@ -258,10 +381,23 @@ export function createMultiTableContentRepository(
     id: string,
     label: string,
     values: WriteValues,
+    expectedRevision?: number,
   ): Promise<void> {
     const current = await getItem(table, { id });
     if (!current) throw new Error(`${label} not found: ${id}`);
-    await putItem(table, { ...current, ...writable(values), id, updated_at: now() });
+    const revision = revisionOf(current);
+    await putWithRevision(
+      table,
+      "id",
+      {
+        ...current,
+        ...writable(values),
+        id,
+        updated_at: now(),
+        revision: revision + 1,
+      },
+      expectedRevision ?? revision,
+    );
   }
 
   function insertRow(values: WriteValues): Item {
@@ -271,6 +407,7 @@ export function createMultiTableContentRepository(
       id: randomUUID(),
       created_at: timestamp,
       updated_at: timestamp,
+      revision: 1,
     };
   }
 
@@ -281,8 +418,8 @@ export function createMultiTableContentRepository(
       if (!item) throw new Error("Hero is not configured");
       return toHero(item);
     },
-    async upsertHero(values: Partial<HeroFormData>) {
-      await upsertSingleton(SECTION.hero, values);
+    async upsertHero(values: Partial<HeroFormData>, expectedRevision?: number) {
+      await upsertSingleton(SECTION.hero, values, expectedRevision);
     },
 
     // About
@@ -291,8 +428,8 @@ export function createMultiTableContentRepository(
       if (!item) throw new Error("About is not configured");
       return toAbout(item);
     },
-    async upsertAbout(values: Partial<AboutFormData>) {
-      await upsertSingleton(SECTION.about, values);
+    async upsertAbout(values: Partial<AboutFormData>, expectedRevision?: number) {
+      await upsertSingleton(SECTION.about, values, expectedRevision);
     },
 
     // Experience
@@ -310,8 +447,12 @@ export function createMultiTableContentRepository(
       await putItem(tables.experience, row);
       return toExperience(row);
     },
-    async updateExperience(id: string, values: Partial<ExperienceFormData>) {
-      await patchRow(tables.experience, id, "Experience", values);
+    async updateExperience(
+      id: string,
+      values: Partial<ExperienceFormData>,
+      expectedRevision?: number,
+    ) {
+      await patchRow(tables.experience, id, "Experience", values, expectedRevision);
     },
     async deleteExperience(id: string) {
       await deleteItem(tables.experience, { id });
@@ -351,8 +492,12 @@ export function createMultiTableContentRepository(
       await putItem(tables.project, row);
       return toProject(row);
     },
-    async updateProject(id: string, values: Partial<ProjectFormData>) {
-      await patchRow(tables.project, id, "Project", values);
+    async updateProject(
+      id: string,
+      values: Partial<ProjectFormData>,
+      expectedRevision?: number,
+    ) {
+      await patchRow(tables.project, id, "Project", values, expectedRevision);
     },
     async deleteProject(id: string) {
       await deleteItem(tables.project, { id });
@@ -394,8 +539,12 @@ export function createMultiTableContentRepository(
       await putItem(tables.testimonial, row);
       return toTestimonial(row);
     },
-    async updateTestimonial(id: string, values: Partial<TestimonialFormData>) {
-      await patchRow(tables.testimonial, id, "Testimonial", values);
+    async updateTestimonial(
+      id: string,
+      values: Partial<TestimonialFormData>,
+      expectedRevision?: number,
+    ) {
+      await patchRow(tables.testimonial, id, "Testimonial", values, expectedRevision);
     },
     async deleteTestimonial(id: string) {
       await deleteItem(tables.testimonial, { id });
@@ -407,8 +556,11 @@ export function createMultiTableContentRepository(
       if (!item) throw new Error("Site config is not configured");
       return toSiteConfig(item);
     },
-    async upsertSiteConfig(values: Partial<SiteConfigFormData>) {
-      await upsertSingleton(SECTION.siteConfig, values);
+    async upsertSiteConfig(
+      values: Partial<SiteConfigFormData>,
+      expectedRevision?: number,
+    ) {
+      await upsertSingleton(SECTION.siteConfig, values, expectedRevision);
     },
 
     // Resume
@@ -417,13 +569,13 @@ export function createMultiTableContentRepository(
       if (!item) throw new Error("Resume is not configured");
       return toResume(item);
     },
-    async upsertResume(values: Partial<ResumeFormData>) {
+    async upsertResume(values: Partial<ResumeFormData>, expectedRevision?: number) {
       const sanitized: WriteValues = { ...values };
       if (values.education) sanitized.education = stripNullUrl(values.education);
       if (values.certifications) {
         sanitized.certifications = stripNullUrl(values.certifications);
       }
-      await upsertSingleton(SECTION.resume, sanitized);
+      await upsertSingleton(SECTION.resume, sanitized, expectedRevision);
     },
 
     // Resume variants
@@ -440,8 +592,12 @@ export function createMultiTableContentRepository(
       await putItem(tables.resumeVariant, row);
       return toResumeVariant(row);
     },
-    async updateResumeVariant(id: string, values: Partial<ResumeVariantFormData>) {
-      await patchRow(tables.resumeVariant, id, "ResumeVariant", values);
+    async updateResumeVariant(
+      id: string,
+      values: Partial<ResumeVariantFormData>,
+      expectedRevision?: number,
+    ) {
+      await patchRow(tables.resumeVariant, id, "ResumeVariant", values, expectedRevision);
     },
     async deleteResumeVariant(id: string) {
       await deleteItem(tables.resumeVariant, { id });
@@ -461,8 +617,12 @@ export function createMultiTableContentRepository(
       await putItem(tables.resumeLayout, row);
       return toResumeLayout(row);
     },
-    async updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>) {
-      await patchRow(tables.resumeLayout, id, "ResumeLayout", values);
+    async updateResumeLayout(
+      id: string,
+      values: Partial<ResumeLayoutFormData>,
+      expectedRevision?: number,
+    ) {
+      await patchRow(tables.resumeLayout, id, "ResumeLayout", values, expectedRevision);
     },
     async deleteResumeLayout(id: string) {
       await deleteItem(tables.resumeLayout, { id });
@@ -503,8 +663,18 @@ export function createMultiTableContentRepository(
       await putItem(tables.resumeGeneration, row);
       return toResumeGeneration(row);
     },
-    async updateResumeGeneration(id: string, values: ResumeGenerationUpdate) {
-      await patchRow(tables.resumeGeneration, id, "ResumeGeneration", values);
+    async updateResumeGeneration(
+      id: string,
+      values: ResumeGenerationUpdate,
+      expectedRevision?: number,
+    ) {
+      await patchRow(
+        tables.resumeGeneration,
+        id,
+        "ResumeGeneration",
+        values,
+        expectedRevision,
+      );
     },
     async getResumeGenerations(options: ResumeGenerationListOptions = {}) {
       const limit = options.limit ?? 20;

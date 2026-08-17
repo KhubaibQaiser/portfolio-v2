@@ -12,8 +12,6 @@ export type {
   CostCap,
   CostCapResult,
 } from "./rate-limiter";
-export type {
-  ChatResponseCache,
-  ChatResponseCacheEntry,
-} from "./chat-response-cache";
+export type { ChatResponseCache, ChatResponseCacheEntry } from "./chat-response-cache";
+export type { UsageReservation, UsageReservationResult } from "./usage-reservation";
 export type { AuthProvider, AdminIdentity } from "./auth-provider";

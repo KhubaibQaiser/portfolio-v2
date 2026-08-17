@@ -8,7 +8,7 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
+import { appErrorMetric, grantAdminDataAccess, ssmPaths } from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -96,7 +96,7 @@ export class AdminStack extends cdk.Stack {
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
       },
       grantServer: (fn) => {
-        grantAppDataAccess(this, fn, config, mediaBucketName);
+        grantAdminDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
         anthropicSecret.grantRead(fn);
         googleOAuthSecret.grantRead(fn);
