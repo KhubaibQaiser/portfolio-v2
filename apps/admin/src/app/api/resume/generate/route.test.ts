@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   insertResumeGeneration: vi.fn(),
   getResumeLayouts: vi.fn(),
   getResumeData: vi.fn(),
+  loggerWarn: vi.fn(),
 }));
 
 vi.mock("@portfolio/ai", () => ({
@@ -55,7 +56,7 @@ vi.mock("@/lib/auth-guard", () => ({
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: vi.fn(),
-    warn: vi.fn(),
+    warn: mocks.loggerWarn,
     error: vi.fn(),
   },
 }));
@@ -66,6 +67,7 @@ vi.mock("@/lib/resume-ai/generate-validated-content", () => ({
       readonly code: string,
       message: string,
       readonly retryable: boolean,
+      readonly diagnostics: Array<Record<string, unknown>> = [],
     ) {
       super(message);
     }
@@ -88,6 +90,10 @@ vi.mock("@/lib/resume-ai/cost-cap", () => ({
   estimateGenerationReservationUsd: mocks.estimateGenerationReservationUsd,
 }));
 
+import {
+  ValidatedGenerationError,
+  type GenerationFailureDiagnostic,
+} from "@/lib/resume-ai/generate-validated-content";
 import { POST } from "./route";
 
 const resume = {
@@ -231,6 +237,43 @@ describe("POST /api/resume/generate", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
+  });
+
+  it("logs sanitized attempt diagnostics for a rejected generation", async () => {
+    const diagnostics: GenerationFailureDiagnostic[] = [
+      {
+        artifact: "resume",
+        model: "openai/gpt-oss-120b",
+        provider: "groq",
+        attempt: 1,
+        retry: 0,
+        category: "authentication",
+        statusCode: 401,
+        errorName: "AI_APICallError",
+        providerErrorCode: "invalid_api_key",
+        latencyMs: 20,
+      },
+    ];
+    mocks.generateValidatedContent.mockRejectedValue(
+      new ValidatedGenerationError(
+        "PROVIDER_UNAVAILABLE",
+        "All configured AI providers are temporarily unavailable.",
+        true,
+        diagnostics,
+      ),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(422);
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      "validated resume generation rejected",
+      expect.objectContaining({
+        code: "PROVIDER_UNAVAILABLE",
+        retryable: true,
+        attemptDiagnostics: diagnostics,
+      }),
+    );
   });
 
   it("skips the initial fit render when generation consumed its headroom", async () => {

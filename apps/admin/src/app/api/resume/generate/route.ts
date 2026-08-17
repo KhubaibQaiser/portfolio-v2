@@ -398,6 +398,8 @@ export async function POST(request: Request) {
       logger.warn("validated resume generation rejected", {
         userId: auth.id,
         code: error.code,
+        retryable: error.retryable,
+        attemptDiagnostics: error.diagnostics,
       });
       return generationError(error.code, error.message, 422, error.retryable);
     }

@@ -213,6 +213,60 @@ describe("generateValidatedContent", () => {
     expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 
+  it("attaches sanitized provider diagnostics without logging raw error messages", async () => {
+    mocks.generateObject.mockRejectedValue({
+      name: "AI_APICallError",
+      statusCode: 401,
+      code: "invalid_api_key",
+      message: "Unauthorized request using sk-sensitive-key-fragment",
+    });
+
+    const error = await generateValidatedContent(baseOptions).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(ValidatedGenerationError);
+    expect(error).toMatchObject({
+      code: "PROVIDER_UNAVAILABLE",
+      diagnostics: [
+        {
+          artifact: "resume",
+          model: "openai/gpt-oss-120b",
+          provider: "groq",
+          attempt: 1,
+          retry: 0,
+          category: "authentication",
+          statusCode: 401,
+          errorName: "AI_APICallError",
+          providerErrorCode: "invalid_api_key",
+        },
+        {
+          artifact: "resume",
+          model: "openai/gpt-oss-120b",
+          provider: "groq",
+          attempt: 2,
+          retry: 1,
+          category: "authentication",
+          statusCode: 401,
+          errorName: "AI_APICallError",
+          providerErrorCode: "invalid_api_key",
+        },
+        {
+          artifact: "resume",
+          model: "openai/gpt-oss-20b",
+          provider: "groq",
+          attempt: 3,
+          retry: 0,
+          category: "authentication",
+          statusCode: 401,
+          errorName: "AI_APICallError",
+          providerErrorCode: "invalid_api_key",
+        },
+      ],
+    });
+    expect(JSON.stringify(error)).not.toContain("sk-sensitive-key-fragment");
+  });
+
   it("fails both atomically when the cover letter cannot be validated", async () => {
     const invalidOutput = {
       name: "NoObjectGeneratedError",
