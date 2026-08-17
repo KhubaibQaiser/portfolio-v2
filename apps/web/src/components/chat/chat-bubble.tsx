@@ -20,6 +20,12 @@ const SUGGESTED_QUESTIONS = [
 const GREETING =
   "Hi! I'm Khubaib. Ask me anything about my experience, projects, or skills.";
 
+const CHAT_TITLE_ID = "chat-dialog-title";
+const CHAT_INPUT_ID = "chat-message";
+
+const FOCUS_RING =
+  "focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden";
+
 function getTextContent(msg: { parts?: Array<{ type: string; text?: string }> }): string {
   return (
     msg.parts
@@ -95,6 +101,7 @@ export function ChatBubble() {
   const [cooldownSecondsLeft, setCooldownSecondsLeft] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
   const prevOpen = useRef(false);
 
   const {
@@ -120,8 +127,24 @@ export function ChatBubble() {
     }
     if (!open && prevOpen.current) {
       capturePortfolioEvent(PortfolioEvents.chatClosed);
+      const frame = window.requestAnimationFrame(() => {
+        launcherRef.current?.focus();
+      });
+      prevOpen.current = open;
+      return () => window.cancelAnimationFrame(frame);
     }
     prevOpen.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      e.preventDefault();
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
   useEffect(() => {
@@ -225,6 +248,8 @@ export function ChatBubble() {
             />
 
             <motion.button
+              ref={launcherRef}
+              type="button"
               onClick={() => setOpen(true)}
               variants={floatingBubble}
               animate="animate"
@@ -235,8 +260,11 @@ export function ChatBubble() {
                 "bg-accent text-accent-foreground rounded-full",
                 "shadow-accent/40 shadow-[0_8px_30px_-4px]",
                 "cursor-pointer",
+                FOCUS_RING,
               )}
               aria-label="Open AI chat"
+              aria-haspopup="dialog"
+              aria-expanded={false}
             >
               <motion.span variants={iconSwap} initial="initial" animate="animate">
                 <MessageCircle className="h-6 w-6" />
@@ -253,6 +281,8 @@ export function ChatBubble() {
       <AnimatePresence>
         {open && (
           <motion.div
+            role="dialog"
+            aria-labelledby={CHAT_TITLE_ID}
             initial={{ opacity: 0, y: 24, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.92 }}
@@ -273,7 +303,12 @@ export function ChatBubble() {
                   <Bot className="text-accent h-4 w-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm leading-tight font-semibold">Ask Khubaib</span>
+                  <span
+                    id={CHAT_TITLE_ID}
+                    className="text-sm leading-tight font-semibold"
+                  >
+                    Ask Khubaib
+                  </span>
                   <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
                     AI-powered
@@ -281,8 +316,12 @@ export function ChatBubble() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1.5 transition-colors"
+                className={cn(
+                  "text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1.5 transition-colors",
+                  FOCUS_RING,
+                )}
                 aria-label="Close chat"
               >
                 <X className="h-4 w-4" />
@@ -341,6 +380,7 @@ export function ChatBubble() {
                         "transition-all duration-150",
                         "hover:border-accent/30 hover:bg-accent/5 hover:text-foreground",
                         "disabled:pointer-events-none disabled:opacity-40",
+                        FOCUS_RING,
                       )}
                     >
                       {q}
@@ -355,7 +395,11 @@ export function ChatBubble() {
               className="border-border/60 bg-muted/20 border-t p-3"
             >
               <div className="flex items-center gap-2">
+                <label htmlFor={CHAT_INPUT_ID} className="sr-only">
+                  Message
+                </label>
                 <input
+                  id={CHAT_INPUT_ID}
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -364,7 +408,8 @@ export function ChatBubble() {
                     "border-border bg-background flex-1 rounded-xl border px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground/50",
                     "transition-colors duration-150",
-                    "focus:border-accent/60 focus:ring-accent/10 focus:ring-2 focus:outline-hidden",
+                    "focus:border-accent/60",
+                    FOCUS_RING,
                   )}
                   disabled={isLoading || isCoolingDown}
                   maxLength={500}
@@ -372,6 +417,7 @@ export function ChatBubble() {
                 />
                 <button
                   type="submit"
+                  aria-label="Send message"
                   disabled={isLoading || isCoolingDown || !inputValue.trim()}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-xl",
@@ -379,6 +425,7 @@ export function ChatBubble() {
                     "transition-all duration-150",
                     "hover:brightness-110 active:scale-95",
                     "disabled:opacity-40 disabled:hover:brightness-100",
+                    FOCUS_RING,
                   )}
                 >
                   <Send className="h-4 w-4" />

@@ -26,6 +26,7 @@ export function ThemeToggle() {
         "relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full",
         "bg-muted/50 text-foreground transition-all duration-300",
         "hover:bg-muted hover:scale-105 active:scale-95",
+        "focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
       )}
       aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
     >

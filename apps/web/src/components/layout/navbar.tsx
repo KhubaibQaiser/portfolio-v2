@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type MouseEvent } from "react";
+import { useState, useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -52,6 +52,14 @@ type NavLink = { label: string; href: string };
 
 const MotionLink = motion.create(Link);
 
+const MOBILE_MENU_ID = "mobile-nav-menu";
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const FOCUS_RING =
+  "focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden";
+
 type NavbarProps = {
   name: string;
   navLinks: NavLink[];
@@ -60,6 +68,9 @@ type NavbarProps = {
 export function Navbar({ name, navLinks }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const wasMobileOpen = useRef(false);
 
   useEffect(() => {
     const { pathname, hash } = window.location;
@@ -86,6 +97,69 @@ export function Navbar({ name, navLinks }: NavbarProps) {
     return () => {
       document.body.classList.remove("overflow-hidden");
     };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      wasMobileOpen.current = true;
+      const frame = window.requestAnimationFrame(() => {
+        menuPanelRef.current?.querySelector("a")?.focus();
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (wasMobileOpen.current) {
+      wasMobileOpen.current = false;
+      menuButtonRef.current?.focus();
+    }
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMobileOpen(false);
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const header = menuButtonRef.current?.closest("header");
+      const panel = menuPanelRef.current;
+      if (!header || !panel) return;
+
+      const focusable = [
+        ...header.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+        ...panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ].filter((el) => el.getClientRects().length > 0);
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const inScope =
+        (active instanceof HTMLElement && header.contains(active)) ||
+        (active instanceof HTMLElement && panel.contains(active));
+
+      if (e.shiftKey) {
+        if (active === first || !inScope) {
+          e.preventDefault();
+          last?.focus();
+        }
+        return;
+      }
+
+      if (active === last || !inScope) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
 
   const firstName = name.split(" ")[0];
@@ -148,10 +222,16 @@ export function Navbar({ name, navLinks }: NavbarProps) {
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
             <button
+              ref={menuButtonRef}
+              type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="bg-muted/50 text-foreground flex h-9 w-9 items-center justify-center rounded-full"
+              className={cn(
+                "bg-muted/50 text-foreground flex h-9 w-9 items-center justify-center rounded-full",
+                FOCUS_RING,
+              )}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
+              aria-controls={MOBILE_MENU_ID}
             >
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -162,6 +242,8 @@ export function Navbar({ name, navLinks }: NavbarProps) {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
+            ref={menuPanelRef}
+            id={MOBILE_MENU_ID}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -180,7 +262,7 @@ export function Navbar({ name, navLinks }: NavbarProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="text-foreground text-lg font-medium"
+                className={cn("text-foreground text-lg font-medium", FOCUS_RING)}
               >
                 <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
                 {link.label}
@@ -195,7 +277,10 @@ export function Navbar({ name, navLinks }: NavbarProps) {
                 trackNav("/resume", "Resume");
                 setMobileOpen(false);
               }}
-              className="border-accent text-accent rounded-full border px-6 py-2 text-sm font-medium"
+              className={cn(
+                "border-accent text-accent rounded-full border px-6 py-2 text-sm font-medium",
+                FOCUS_RING,
+              )}
             >
               Resume
             </MotionLink>
