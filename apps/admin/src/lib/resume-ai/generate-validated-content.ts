@@ -72,6 +72,33 @@ export type ValidatedGenerationResult = {
   fallbackUsed: boolean;
 };
 
+export type GenerationFailureCategory =
+  | "authentication"
+  | "authorization"
+  | "billing_or_quota"
+  | "rate_limit_or_overload"
+  | "model_not_found"
+  | "bad_request"
+  | "provider_server_error"
+  | "network"
+  | "timeout_or_abort"
+  | "invalid_model_output"
+  | "validation"
+  | "unknown";
+
+export type GenerationFailureDiagnostic = {
+  artifact: "resume" | "cover letter";
+  model: ModelId;
+  provider: ResolvedModel["provider"];
+  attempt: number;
+  retry: number;
+  category: GenerationFailureCategory;
+  statusCode?: number;
+  errorName: string;
+  providerErrorCode?: string;
+  latencyMs: number;
+};
+
 export class ValidatedGenerationError extends Error {
   constructor(
     readonly code:
@@ -82,10 +109,108 @@ export class ValidatedGenerationError extends Error {
       | "GENERATION_TIMEOUT",
     message: string,
     readonly retryable: boolean,
+    readonly diagnostics: GenerationFailureDiagnostic[] = [],
   ) {
     super(message);
     this.name = "ValidatedGenerationError";
   }
+}
+
+function errorRecord(error: unknown): Record<string, unknown> | null {
+  return typeof error === "object" && error !== null
+    ? (error as Record<string, unknown>)
+    : null;
+}
+
+function errorCause(error: unknown): unknown {
+  return errorRecord(error)?.cause;
+}
+
+function errorText(error: unknown): string {
+  const record = errorRecord(error);
+  const direct = record?.message;
+  const caused = errorRecord(record?.cause)?.message;
+  return [direct, caused]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLocaleLowerCase();
+}
+
+function statusCodeFromError(error: unknown): number | undefined {
+  for (const candidate of [errorRecord(error), errorRecord(errorCause(error))]) {
+    const value = candidate?.statusCode ?? candidate?.status;
+    if (
+      typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= 100 &&
+      value <= 599
+    ) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function safeErrorIdentifier(value: unknown): string | undefined {
+  return typeof value === "string" && /^[A-Za-z0-9_.:-]{1,80}$/.test(value)
+    ? value
+    : undefined;
+}
+
+function errorNameFromError(error: unknown): string {
+  return (
+    safeErrorIdentifier(errorRecord(error)?.name) ??
+    safeErrorIdentifier(errorRecord(errorCause(error))?.name) ??
+    "UnknownError"
+  );
+}
+
+function providerErrorCodeFromError(error: unknown): string | undefined {
+  const code =
+    safeErrorIdentifier(errorRecord(error)?.code) ??
+    safeErrorIdentifier(errorRecord(errorCause(error))?.code);
+  return code &&
+    /^(?:invalid|rate_limit|model|insufficient|context|server|service|authentication|permission|billing|quota|overloaded)[A-Za-z0-9_.:-]*$/.test(
+      code,
+    )
+    ? code
+    : undefined;
+}
+
+function failureCategory(error: unknown): GenerationFailureCategory {
+  if (NoObjectGeneratedError.isInstance(error)) return "invalid_model_output";
+  if (error instanceof ResumePolicyError) return "validation";
+  if (isAbortError(error)) return "timeout_or_abort";
+
+  const statusCode = statusCodeFromError(error);
+  const message = errorText(error);
+  if (statusCode === 401 || /invalid api key|authentication|unauthorized/.test(message)) {
+    return "authentication";
+  }
+  if (statusCode === 403 || /forbidden|permission denied/.test(message)) {
+    return "authorization";
+  }
+  if (
+    statusCode === 402 ||
+    /billing|insufficient (?:credit|fund)|credit balance|quota exhausted/.test(message)
+  ) {
+    return "billing_or_quota";
+  }
+  if (statusCode === 429 || statusCode === 529 || /rate limit|overloaded/.test(message)) {
+    return "rate_limit_or_overload";
+  }
+  if (
+    statusCode === 404 ||
+    /model .*(?:not found|decommissioned)|unknown model/.test(message)
+  ) {
+    return "model_not_found";
+  }
+  if (statusCode !== undefined && statusCode >= 500) return "provider_server_error";
+  if (statusCode === 400 || statusCode === 422) return "bad_request";
+  if (/network|fetch failed|socket|dns|econnreset|econnrefused|enotfound/.test(message)) {
+    return "network";
+  }
+  return "unknown";
 }
 
 function attemptReason(error: unknown): string {
@@ -99,11 +224,13 @@ function attemptReason(error: unknown): string {
 }
 
 function isAbortError(error: unknown): boolean {
+  const name = errorRecord(error)?.name;
+  const causeName = errorRecord(errorCause(error))?.name;
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    (error.name === "AbortError" || error.name === "TimeoutError")
+    name === "AbortError" ||
+    name === "TimeoutError" ||
+    causeName === "AbortError" ||
+    causeName === "TimeoutError"
   );
 }
 
@@ -232,6 +359,7 @@ async function runValidatedAttempts<T>(
   generate: (context: AttemptContext) => Promise<AttemptResult<T>>,
 ): Promise<{ value: T; warnings: string[]; model: ModelId }> {
   const primaryModelId = budget.models[0]!.modelId;
+  const diagnostics: GenerationFailureDiagnostic[] = [];
   let lastError: unknown;
   let totalAttempts = 0;
 
@@ -247,6 +375,7 @@ async function runValidatedAttempts<T>(
           "GENERATION_TIMEOUT",
           `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
           true,
+          diagnostics,
         );
       }
 
@@ -291,6 +420,18 @@ async function runValidatedAttempts<T>(
       } catch (error) {
         lastError = error;
         const latencyMs = Date.now() - startedAt;
+        diagnostics.push({
+          artifact: budget.artifact,
+          model: model.modelId,
+          provider: model.provider,
+          attempt: totalAttempts,
+          retry,
+          category: failureCategory(error),
+          statusCode: statusCodeFromError(error),
+          errorName: errorNameFromError(error),
+          providerErrorCode: providerErrorCodeFromError(error),
+          latencyMs,
+        });
         const failedUsage = usageFromError(error);
         if (failedUsage) {
           budget.usages.push(
@@ -314,6 +455,7 @@ async function runValidatedAttempts<T>(
             "GENERATION_TIMEOUT",
             `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation timed out or was cancelled.`,
             true,
+            diagnostics,
           );
         }
         if (isProviderRateLimitError(error) || isAbortError(error)) break;
@@ -326,6 +468,7 @@ async function runValidatedAttempts<T>(
       "FACT_VALIDATION_FAILED",
       `The generated ${budget.artifact} could not be verified against your source profile.`,
       true,
+      diagnostics,
     );
   }
   if (NoObjectGeneratedError.isInstance(lastError)) {
@@ -333,6 +476,7 @@ async function runValidatedAttempts<T>(
       lastError.finishReason === "length" ? "OUTPUT_TRUNCATED" : "INVALID_MODEL_OUTPUT",
       `The model did not return a complete valid ${budget.artifact}.`,
       true,
+      diagnostics,
     );
   }
   if (isAbortError(lastError) || Date.now() >= budget.deadlineAt) {
@@ -340,12 +484,14 @@ async function runValidatedAttempts<T>(
       "GENERATION_TIMEOUT",
       `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
       true,
+      diagnostics,
     );
   }
   throw new ValidatedGenerationError(
     "PROVIDER_UNAVAILABLE",
     "All configured AI providers are temporarily unavailable.",
     true,
+    diagnostics,
   );
 }
 
