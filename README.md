@@ -28,7 +28,7 @@ The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lam
 ### Why these pieces
 
 - **OpenNext + Lambda + CloudFront:** full Next.js 16 feature support (SSR, ISR, RSC streaming, image optimization) on serverless AWS, behind a global CDN — no always-on servers, scale-to-zero, pay-per-request.
-- **Time-based ISR (1 hour):** the public site revalidates cached pages every 3600 seconds. Admin saves go straight to DynamoDB; visitors see updates within the revalidation window. No on-demand invalidation, tag cache, SQS, or revalidation Lambda.
+- **Time-based ISR (10 seconds):** the public site revalidates cached content pages every 10 seconds. Admin saves go straight to DynamoDB; visitors see updates within the revalidation window. No on-demand invalidation, tag cache, SQS, or revalidation Lambda.
 - **DynamoDB (table-per-entity):** each aggregate gets its own table with a clean, readable key schema. On-demand billing, point-in-time recovery on durable tables, and TTL on the ephemeral rate-limit table.
 - **Better Auth (stateless):** Google OAuth for admin sign-in with encrypted cookie sessions — no auth database. Access is gated by an email allowlist at sign-in and on every mutation.
 - **S3 + CloudFront:** media uploads from admin (presigned), served from a public CDN URL.
@@ -72,7 +72,7 @@ Each site (`web` and `admin`) uses OpenNext with:
 
 - **S3 incremental cache** — stores ISR/SSG output (`_cache` prefix in the site bucket).
 - **`queue: "direct"`** — when a page is stale, the server Lambda triggers regeneration via a self HEAD request (no SQS or separate revalidation Lambda).
-- **`disableTagCache: true`** — no DynamoDB tag cache; pages use `export const revalidate = 3600` and data loaders use React `cache()` for per-request dedup.
+- **`disableTagCache: true`** — no DynamoDB tag cache; content pages use `export const revalidate = 10` and data loaders use React `cache()` for per-request dedup.
 
 The admin app is `force-dynamic` — it always reads fresh content from DynamoDB.
 
@@ -122,12 +122,12 @@ portfolio-v2/
 
 ### Public site (`apps/web`)
 
-| Concern            | Implementation                                                  |
-| ------------------ | --------------------------------------------------------------- |
-| Content            | DynamoDB via `ContentRepository`; pages use `revalidate = 3600` |
-| Chat               | Vercel AI SDK + Groq (prompt from DynamoDB content)             |
-| Resume PDF         | `@react-pdf/renderer` (dynamic route handler)                   |
-| Analytics / errors | PostHog (events, `$exception`, source maps)                     |
+| Concern            | Implementation                                                        |
+| ------------------ | --------------------------------------------------------------------- |
+| Content            | DynamoDB via `ContentRepository`; content pages use `revalidate = 10` |
+| Chat               | Vercel AI SDK + Groq (prompt from DynamoDB content)                   |
+| Resume PDF         | `@react-pdf/renderer` (dynamic route handler)                         |
+| Analytics / errors | PostHog (events, `$exception`, source maps)                           |
 
 ### Admin (`apps/admin`)
 
@@ -298,7 +298,7 @@ DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
   pnpm --filter @portfolio/data seed
 ```
 
-After seeding, allow up to one hour for the public site ISR window to reflect changes (or redeploy to pick up fresh build output).
+After seeding, allow a short ISR window for the public site to reflect changes (or redeploy to pick up fresh build output).
 
 ### Custom domain
 

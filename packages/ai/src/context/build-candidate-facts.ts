@@ -1,5 +1,5 @@
 /**
- * Pure function: turns already-loaded Supabase rows into a compact
+ * Pure function: turns already-loaded repository rows into a compact
  * Markdown "fact sheet" the LLM sees, plus a stable idMap used by the
  * fabrication guardrail.
  *

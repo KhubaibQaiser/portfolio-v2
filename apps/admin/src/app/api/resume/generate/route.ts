@@ -28,7 +28,11 @@ import {
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
 import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
-import { checkCostCap } from "@/lib/resume-ai/cost-cap";
+import {
+  estimateGenerationReservationUsd,
+  reserveAiUsage,
+  type UsageReservationGuard,
+} from "@/lib/resume-ai/cost-cap";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -70,6 +74,26 @@ function generationError(
   return NextResponse.json(
     { error: { code, message, retryable } },
     { status, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+async function releaseUsageReservation(
+  userId: string,
+  usageGuard: UsageReservationGuard,
+  actualUsd?: number,
+): Promise<void> {
+  const operation =
+    actualUsd === undefined
+      ? usageGuard.reservation.release(userId, usageGuard.reservedUsd)
+      : usageGuard.reservation.settle(userId, usageGuard.reservedUsd, actualUsd);
+
+  await operation.catch((error) =>
+    logger.warn("resume AI usage reservation cleanup failed", {
+      userId,
+      reservedUsd: usageGuard.reservedUsd,
+      actualUsd,
+      error: error instanceof Error ? error : new Error(String(error)),
+    }),
   );
 }
 
@@ -117,20 +141,12 @@ export async function POST(request: Request) {
     );
   }
 
+  let reservation: Awaited<ReturnType<typeof reserveAiUsage>>;
   try {
-    const cap = await checkCostCap(auth.id);
-    if (!cap.ok) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "COST_CAP_REACHED",
-            message: "The daily Resume AI cost cap has been reached.",
-            retryable: false,
-          },
-        },
-        { status: 402 },
-      );
-    }
+    reservation = await reserveAiUsage(
+      auth.id,
+      estimateGenerationReservationUsd(body.model),
+    );
   } catch {
     return generationError(
       "PROVIDER_UNAVAILABLE",
@@ -138,10 +154,24 @@ export async function POST(request: Request) {
       503,
     );
   }
+  if (!reservation.ok) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "COST_CAP_REACHED",
+          message: "The daily Resume AI cost cap has been reached.",
+          retryable: false,
+        },
+      },
+      { status: 402 },
+    );
+  }
+  const usageGuard: UsageReservationGuard = reservation;
 
   try {
     await ensureAiApiKeys(body.model);
   } catch (error) {
+    await releaseUsageReservation(auth.id, usageGuard);
     logger.error("resume AI provider configuration unavailable", {
       userId: auth.id,
       error: error instanceof Error ? error : new Error(String(error)),
@@ -155,6 +185,7 @@ export async function POST(request: Request) {
 
   const jdText = trimJobDescription(stripPromptInjection(body.jobDescription)).trim();
   if (jdText.length < 20) {
+    await releaseUsageReservation(auth.id, usageGuard);
     return NextResponse.json(
       {
         error: {
@@ -170,6 +201,7 @@ export async function POST(request: Request) {
   const repo = getContentRepository();
   const layouts = await repo.getResumeLayouts().catch(() => null);
   if (!layouts) {
+    await releaseUsageReservation(auth.id, usageGuard);
     return generationError(
       "PERSISTENCE_FAILED",
       "Resume layouts could not be loaded. Try again shortly.",
@@ -180,6 +212,7 @@ export async function POST(request: Request) {
     ? layouts.find((candidate) => candidate.id === body.layoutId)
     : pickDefaultResumeLayout(layouts);
   if (!layout) {
+    await releaseUsageReservation(auth.id, usageGuard);
     return NextResponse.json(
       {
         error: {
@@ -203,6 +236,7 @@ export async function POST(request: Request) {
     request.signal,
     AbortSignal.timeout(GENERATION_DEADLINE_MS),
   ]);
+  let incurredUsageUsd: number | undefined;
 
   try {
     const facts = await loadCandidateFactsUncached();
@@ -245,6 +279,7 @@ export async function POST(request: Request) {
       language: body.language,
       mustTryToInclude: safeMustTryToInclude,
     });
+    incurredUsageUsd = generated.usage.costUsd ?? 0;
 
     let appliedChanges: string[] = [];
     let fitReport: Record<string, unknown> | undefined;
@@ -341,6 +376,8 @@ export async function POST(request: Request) {
       },
     });
 
+    await releaseUsageReservation(auth.id, usageGuard, incurredUsageUsd);
+
     logger.info("validated resume generation persisted", {
       userId: auth.id,
       generationId: persisted.id,
@@ -355,6 +392,8 @@ export async function POST(request: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
+    await releaseUsageReservation(auth.id, usageGuard, incurredUsageUsd);
+
     if (error instanceof ValidatedGenerationError) {
       logger.warn("validated resume generation rejected", {
         userId: auth.id,

@@ -31,6 +31,7 @@ export const heroFixture: Hero = {
   ...raw.hero,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 } as Hero;
 
 export const aboutFixture: About = {
@@ -38,6 +39,7 @@ export const aboutFixture: About = {
   ...raw.about,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 } as About;
 
 export const siteConfigFixture: SiteConfig = {
@@ -45,6 +47,7 @@ export const siteConfigFixture: SiteConfig = {
   ...raw.siteConfig,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 } as SiteConfig;
 
 export const resumeFixture: Resume = {
@@ -55,6 +58,7 @@ export const resumeFixture: Resume = {
   references_line: raw.resume.references_line ?? null,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 } as Resume;
 
 export const experienceFixtures: Experience[] = raw.experience.map((row) => ({
@@ -62,6 +66,7 @@ export const experienceFixtures: Experience[] = raw.experience.map((row) => ({
   show_in_resume: (row as { show_in_resume?: boolean }).show_in_resume ?? true,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 })) as Experience[];
 
 export const projectFixtures: Project[] = raw.projects.map((row) => {
@@ -77,6 +82,7 @@ export const projectFixtures: Project[] = raw.projects.map((row) => {
     resume_description: r.resume_description ?? "",
     created_at: TS,
     updated_at: TS,
+    revision: 1,
   };
 }) as Project[];
 
@@ -84,12 +90,14 @@ export const skillFixtures: Skill[] = raw.skills.map((row) => ({
   ...row,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 })) as Skill[];
 
 export const testimonialFixtures: Testimonial[] = raw.testimonials.map((row) => ({
   ...row,
   created_at: TS,
   updated_at: TS,
+  revision: 1,
 })) as Testimonial[];
 
 /** Media metadata rows (object bytes live in S3; seed stores the catalog row). */
@@ -101,11 +109,13 @@ export const resumeLayoutFixtures: ResumeLayout[] = [
     ...classicLayoutForm(),
     created_at: TS,
     updated_at: TS,
+    revision: 1,
   },
   {
     id: MODERN_BLUE_LAYOUT_ID,
     ...modernBlueLayoutForm(),
     created_at: TS,
     updated_at: TS,
+    revision: 1,
   },
 ];

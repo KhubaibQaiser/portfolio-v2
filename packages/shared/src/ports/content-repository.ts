@@ -52,17 +52,21 @@ export type ResumeGenerationListOptions = {
 export type ContentRepository = {
   // Hero (singleton)
   getHero(): Promise<Hero>;
-  upsertHero(values: Partial<HeroFormData>): Promise<void>;
+  upsertHero(values: Partial<HeroFormData>, expectedRevision?: number): Promise<void>;
 
   // About (singleton)
   getAbout(): Promise<About>;
-  upsertAbout(values: Partial<AboutFormData>): Promise<void>;
+  upsertAbout(values: Partial<AboutFormData>, expectedRevision?: number): Promise<void>;
 
   // Experience
   getExperience(): Promise<Experience[]>;
   getExperienceById(id: string): Promise<Experience>;
   insertExperience(values: ExperienceFormData): Promise<Experience>;
-  updateExperience(id: string, values: Partial<ExperienceFormData>): Promise<void>;
+  updateExperience(
+    id: string,
+    values: Partial<ExperienceFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
   deleteExperience(id: string): Promise<void>;
 
   // Projects
@@ -71,7 +75,11 @@ export type ContentRepository = {
   getProjectById(id: string): Promise<Project>;
   getProjectBySlug(slug: string): Promise<Project | null>;
   insertProject(values: ProjectFormData): Promise<Project>;
-  updateProject(id: string, values: Partial<ProjectFormData>): Promise<void>;
+  updateProject(
+    id: string,
+    values: Partial<ProjectFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
   deleteProject(id: string): Promise<void>;
 
   // Skills
@@ -83,29 +91,44 @@ export type ContentRepository = {
   // Testimonials
   getTestimonials(): Promise<Testimonial[]>;
   insertTestimonial(values: TestimonialFormData): Promise<Testimonial>;
-  updateTestimonial(id: string, values: Partial<TestimonialFormData>): Promise<void>;
+  updateTestimonial(
+    id: string,
+    values: Partial<TestimonialFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
   deleteTestimonial(id: string): Promise<void>;
 
   // Site config (singleton)
   getSiteConfig(): Promise<SiteConfig>;
-  upsertSiteConfig(values: Partial<SiteConfigFormData>): Promise<void>;
+  upsertSiteConfig(
+    values: Partial<SiteConfigFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
 
   // Resume (singleton)
   getResume(): Promise<Resume>;
-  upsertResume(values: Partial<ResumeFormData>): Promise<void>;
+  upsertResume(values: Partial<ResumeFormData>, expectedRevision?: number): Promise<void>;
 
   // Resume variants
   getResumeVariants(): Promise<ResumeVariant[]>;
   getResumeVariantById(id: string): Promise<ResumeVariant | null>;
   insertResumeVariant(values: ResumeVariantFormData): Promise<ResumeVariant>;
-  updateResumeVariant(id: string, values: Partial<ResumeVariantFormData>): Promise<void>;
+  updateResumeVariant(
+    id: string,
+    values: Partial<ResumeVariantFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
   deleteResumeVariant(id: string): Promise<void>;
 
   // Resume layout variants (visual templates + AI guidelines)
   getResumeLayouts(): Promise<ResumeLayout[]>;
   getResumeLayoutById(id: string): Promise<ResumeLayout | null>;
   insertResumeLayout(values: ResumeLayoutFormData): Promise<ResumeLayout>;
-  updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>): Promise<void>;
+  updateResumeLayout(
+    id: string,
+    values: Partial<ResumeLayoutFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
   deleteResumeLayout(id: string): Promise<void>;
 
   // Media
@@ -116,7 +139,11 @@ export type ContentRepository = {
 
   // Resume generations (AI history)
   insertResumeGeneration(values: ResumeGenerationInsert): Promise<ResumeGeneration>;
-  updateResumeGeneration(id: string, values: ResumeGenerationUpdate): Promise<void>;
+  updateResumeGeneration(
+    id: string,
+    values: ResumeGenerationUpdate,
+    expectedRevision?: number,
+  ): Promise<void>;
   getResumeGenerations(
     options?: ResumeGenerationListOptions,
   ): Promise<ResumeGeneration[]>;

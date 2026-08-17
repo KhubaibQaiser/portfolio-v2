@@ -3,11 +3,14 @@ import type {
   ContentRepository,
   CostCap,
   RateLimiter,
+  UsageReservation,
 } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+import { createDynamoUsageReservation } from "./adapters/dynamo-usage-reservation";
+import { createMemoryUsageReservation } from "./adapters/memory-usage-reservation";
 import { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
 import { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
 import { createContentCostCap } from "./adapters/content-cost-cap";
@@ -18,6 +21,8 @@ export { createFixtureContentRepository } from "./adapters/fixture-content-repos
 export { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
 export { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 export { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
+export { createDynamoUsageReservation } from "./adapters/dynamo-usage-reservation";
+export { createMemoryUsageReservation } from "./adapters/memory-usage-reservation";
 export { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
 export { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
 export { createContentCostCap } from "./adapters/content-cost-cap";
@@ -84,10 +89,7 @@ export function getChatResponseCache(): ChatResponseCache {
   if (!cachedChatResponseCache) {
     cachedChatResponseCache =
       resolveDataBackend() === "dynamo"
-        ? createDynamoChatResponseCache(
-            createDynamoClient(),
-            buildTableNames().chatCache,
-          )
+        ? createDynamoChatResponseCache(createDynamoClient(), buildTableNames().chatCache)
         : createMemoryChatResponseCache();
   }
   return cachedChatResponseCache;
@@ -96,4 +98,20 @@ export function getChatResponseCache(): ChatResponseCache {
 /** Returns the cost cap bound to the active content repository. */
 export function getCostCap(): CostCap {
   return createContentCostCap(getContentRepository());
+}
+
+let cachedUsageReservation: UsageReservation | undefined;
+
+/**
+ * Returns the atomic usage reservation adapter: DynamoDB in production,
+ * in-memory for fixture/local so tests exercise the same port semantics.
+ */
+export function getUsageReservation(): UsageReservation {
+  if (!cachedUsageReservation) {
+    cachedUsageReservation =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoUsageReservation(createDynamoClient(), buildTableNames().rateLimit)
+        : createMemoryUsageReservation();
+  }
+  return cachedUsageReservation;
 }

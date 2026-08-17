@@ -68,7 +68,10 @@ export function SiteConfigForm({ initialData }: SiteConfigFormProps) {
       ...data,
       social_links: data.social_links.map(({ _clientId: _c, ...rest }) => rest),
     };
-    const result = await runServerAction(() => saveSiteConfig(payload), toast);
+    const result = await runServerAction(
+      () => saveSiteConfig(payload, initialData?.revision),
+      toast,
+    );
     setSaving(false);
     if (result.success) reset(data);
   }

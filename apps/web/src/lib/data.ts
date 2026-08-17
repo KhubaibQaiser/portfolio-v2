@@ -4,7 +4,7 @@ import { getContentRepository } from "@portfolio/data";
 // ---------------------------------------------------------------------------
 // All data is loaded through the content repository port (fixtures by default,
 // DynamoDB when DATA_BACKEND=dynamo). React cache() deduplicates within a
-// request; page-level `export const revalidate = 3600` owns cross-request ISR.
+// request; page-level `export const revalidate = 10` owns cross-request ISR.
 // ---------------------------------------------------------------------------
 
 const repo = getContentRepository();

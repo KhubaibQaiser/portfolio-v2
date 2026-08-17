@@ -149,7 +149,10 @@ export function ResumeForm({ initialData }: ResumeFormProps) {
       voice_sample:
         (data.voice_sample ?? "").trim() === "" ? null : (data.voice_sample ?? null),
     };
-    const result = await runServerAction(() => saveResume(payload), toast);
+    const result = await runServerAction(
+      () => saveResume(payload, initialData?.revision),
+      toast,
+    );
     setSaving(false);
     if (result.success) reset(data);
   }

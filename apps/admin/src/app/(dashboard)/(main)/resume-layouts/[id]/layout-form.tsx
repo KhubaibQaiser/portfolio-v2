@@ -57,7 +57,10 @@ export function LayoutForm({ layout }: Props) {
 
   async function onSubmit(data: FormValues) {
     setSaving(true);
-    const result = await runServerAction(() => saveResumeLayout(layout.id, data), toast);
+    const result = await runServerAction(
+      () => saveResumeLayout(layout.id, data, layout.revision),
+      toast,
+    );
     setSaving(false);
     if (result.success) router.refresh();
   }

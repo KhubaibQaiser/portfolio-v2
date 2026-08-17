@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { ContentConflictError } from "@portfolio/shared/concurrency";
 import type { ContentRepository } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./fixture-content-repository";
 
@@ -34,6 +35,16 @@ describe("FixtureContentRepository", () => {
     expect(featured.every((p) => p.is_featured)).toBe(true);
     // Achieve Web Platform (sort_order 2) is not featured in seed/content.json.
     expect(featured.map((p) => p.sort_order)).toEqual([0, 1, 3, 4]);
+  });
+
+  it("increments revisions and rejects stale writes", async () => {
+    const hero = await repo.getHero();
+    await repo.upsertHero({ headline: "Updated headline" }, hero.revision);
+    expect((await repo.getHero()).revision).toBe(hero.revision + 1);
+
+    await expect(
+      repo.upsertHero({ headline: "Stale headline" }, hero.revision),
+    ).rejects.toBeInstanceOf(ContentConflictError);
   });
 
   it("looks up a project by slug", async () => {

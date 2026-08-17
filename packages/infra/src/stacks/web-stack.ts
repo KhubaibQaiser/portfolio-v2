@@ -8,7 +8,7 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import { appErrorMetric, grantAppDataAccess, ssmPaths } from "../naming";
+import { appErrorMetric, grantWebDataAccess, ssmPaths } from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -99,7 +99,7 @@ export class WebStack extends cdk.Stack {
           : {}),
       },
       grantServer: (fn) => {
-        grantAppDataAccess(this, fn, config, mediaBucketName);
+        grantWebDataAccess(this, fn, config, mediaBucketName);
         groqSecret.grantRead(fn);
         resendSecret.grantRead(fn);
         turnstileSecret.grantRead(fn);

@@ -25,6 +25,7 @@ function skill(
     years: 3,
     created_at: "",
     updated_at: "",
+    revision: 1,
   };
 }
 

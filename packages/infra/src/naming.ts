@@ -54,11 +54,50 @@ export function tableArnPatterns(scope: Construct, config: InfraConfig): string[
 }
 
 /**
- * Grants an app server function read/write to the content tables (by ARN
- * pattern) and the media bucket (by discovered name) — no imported constructs,
- * so the app stacks stay decoupled from the DataStack.
+ * App data grants use ARN patterns/discovered names rather than imported
+ * constructs, so the app stacks stay decoupled from the DataStack. Web receives
+ * only the read/counter access it needs; admin receives CMS write access.
  */
-export function grantAppDataAccess(
+/** Public-site permissions: content reads, ephemeral counters/cache writes, media reads. */
+export function grantWebDataAccess(
+  scope: Construct,
+  fn: lambda.Function,
+  config: InfraConfig,
+  mediaBucketName: string,
+): void {
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "DynamoContentRead",
+      actions: [
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable",
+      ],
+      resources: tableArnPatterns(scope, config),
+    }),
+  );
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "DynamoEphemeralCounterAccess",
+      actions: ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"],
+      resources: tableArnPatterns(scope, config),
+    }),
+  );
+
+  const bucketArn = `arn:aws:s3:::${mediaBucketName}`;
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "MediaObjectRead",
+      actions: ["s3:GetObject"],
+      resources: [`${bucketArn}/*`],
+    }),
+  );
+}
+
+/** Admin CMS permissions: full content/media and AI history management. */
+export function grantAdminDataAccess(
   scope: Construct,
   fn: lambda.Function,
   config: InfraConfig,

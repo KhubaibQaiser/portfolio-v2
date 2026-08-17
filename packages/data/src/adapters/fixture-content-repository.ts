@@ -7,6 +7,7 @@ import type {
   SkillUpsert,
   UsageSummary,
 } from "@portfolio/shared/ports";
+import { ContentConflictError } from "@portfolio/shared/concurrency";
 import type {
   About,
   AboutFormData,
@@ -82,21 +83,33 @@ export function createFixtureContentRepository(): ContentRepository {
     return row;
   }
 
+  function assertRevision(current: number, expected?: number): void {
+    if (expected !== undefined && current !== expected) {
+      throw new ContentConflictError();
+    }
+  }
+
+  function nextRevision(row: { revision: number }): number {
+    return row.revision + 1;
+  }
+
   return {
     // Hero
     async getHero() {
       return clone(hero);
     },
-    async upsertHero(values: Partial<HeroFormData>) {
-      hero = { ...hero, ...values, updated_at: now() };
+    async upsertHero(values: Partial<HeroFormData>, expectedRevision?: number) {
+      assertRevision(hero.revision, expectedRevision);
+      hero = { ...hero, ...values, updated_at: now(), revision: nextRevision(hero) };
     },
 
     // About
     async getAbout() {
       return clone(about);
     },
-    async upsertAbout(values: Partial<AboutFormData>) {
-      about = { ...about, ...values, updated_at: now() };
+    async upsertAbout(values: Partial<AboutFormData>, expectedRevision?: number) {
+      assertRevision(about.revision, expectedRevision);
+      about = { ...about, ...values, updated_at: now(), revision: nextRevision(about) };
     },
 
     // Experience
@@ -112,13 +125,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       experience.push(row);
       return clone(row);
     },
-    async updateExperience(id: string, values: Partial<ExperienceFormData>) {
+    async updateExperience(
+      id: string,
+      values: Partial<ExperienceFormData>,
+      expectedRevision?: number,
+    ) {
       const row = requireById(experience, id, "Experience");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async deleteExperience(id: string) {
       const idx = experience.findIndex((r) => r.id === id);
@@ -147,13 +166,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       projects.push(row);
       return clone(row);
     },
-    async updateProject(id: string, values: Partial<ProjectFormData>) {
+    async updateProject(
+      id: string,
+      values: Partial<ProjectFormData>,
+      expectedRevision?: number,
+    ) {
       const row = requireById(projects, id, "Project");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async deleteProject(id: string) {
       const idx = projects.findIndex((r) => r.id === id);
@@ -177,6 +202,7 @@ export function createFixtureContentRepository(): ContentRepository {
           id: randomUUID(),
           created_at: now(),
           updated_at: now(),
+          revision: 1,
         });
       }
     },
@@ -200,13 +226,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       testimonials.push(row);
       return clone(row);
     },
-    async updateTestimonial(id: string, values: Partial<TestimonialFormData>) {
+    async updateTestimonial(
+      id: string,
+      values: Partial<TestimonialFormData>,
+      expectedRevision?: number,
+    ) {
       const row = requireById(testimonials, id, "Testimonial");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async deleteTestimonial(id: string) {
       const idx = testimonials.findIndex((r) => r.id === id);
@@ -217,16 +249,31 @@ export function createFixtureContentRepository(): ContentRepository {
     async getSiteConfig() {
       return clone(siteConfig);
     },
-    async upsertSiteConfig(values: Partial<SiteConfigFormData>) {
-      siteConfig = { ...siteConfig, ...values, updated_at: now() };
+    async upsertSiteConfig(
+      values: Partial<SiteConfigFormData>,
+      expectedRevision?: number,
+    ) {
+      assertRevision(siteConfig.revision, expectedRevision);
+      siteConfig = {
+        ...siteConfig,
+        ...values,
+        updated_at: now(),
+        revision: nextRevision(siteConfig),
+      };
     },
 
     // Resume
     async getResume() {
       return clone(resume);
     },
-    async upsertResume(values: Partial<ResumeFormData>) {
-      resume = { ...resume, ...values, updated_at: now() };
+    async upsertResume(values: Partial<ResumeFormData>, expectedRevision?: number) {
+      assertRevision(resume.revision, expectedRevision);
+      resume = {
+        ...resume,
+        ...values,
+        updated_at: now(),
+        revision: nextRevision(resume),
+      };
     },
 
     // Resume variants
@@ -243,13 +290,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       resumeVariants.push(row);
       return clone(row);
     },
-    async updateResumeVariant(id: string, values: Partial<ResumeVariantFormData>) {
+    async updateResumeVariant(
+      id: string,
+      values: Partial<ResumeVariantFormData>,
+      expectedRevision?: number,
+    ) {
       const row = requireById(resumeVariants, id, "ResumeVariant");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async deleteResumeVariant(id: string) {
       const idx = resumeVariants.findIndex((r) => r.id === id);
@@ -270,13 +323,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       resumeLayouts.push(row);
       return clone(row);
     },
-    async updateResumeLayout(id: string, values: Partial<ResumeLayoutFormData>) {
+    async updateResumeLayout(
+      id: string,
+      values: Partial<ResumeLayoutFormData>,
+      expectedRevision?: number,
+    ) {
       const row = requireById(resumeLayouts, id, "ResumeLayout");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async deleteResumeLayout(id: string) {
       const idx = resumeLayouts.findIndex((r) => r.id === id);
@@ -315,13 +374,19 @@ export function createFixtureContentRepository(): ContentRepository {
         id: randomUUID(),
         created_at: now(),
         updated_at: now(),
+        revision: 1,
       };
       resumeGenerations.push(row);
       return clone(row);
     },
-    async updateResumeGeneration(id: string, values: ResumeGenerationUpdate) {
+    async updateResumeGeneration(
+      id: string,
+      values: ResumeGenerationUpdate,
+      expectedRevision?: number,
+    ) {
       const row = requireById(resumeGenerations, id, "ResumeGeneration");
-      Object.assign(row, values, { updated_at: now() });
+      assertRevision(row.revision, expectedRevision);
+      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
     },
     async getResumeGenerations(options: ResumeGenerationListOptions = {}) {
       const limit = options.limit ?? 20;

@@ -17,7 +17,7 @@ type RecommendationsListProps = {
   initialData: Testimonial[];
 };
 
-const EMPTY: Omit<Testimonial, "id" | "created_at" | "updated_at"> = {
+const EMPTY: Omit<Testimonial, "id" | "created_at" | "updated_at" | "revision"> = {
   full_name: "",
   profile_url: "",
   role_title: "",
@@ -27,7 +27,7 @@ const EMPTY: Omit<Testimonial, "id" | "created_at" | "updated_at"> = {
   avatar_url: null,
 };
 
-type RecommendationEditForm = typeof EMPTY & { id?: string };
+type RecommendationEditForm = typeof EMPTY & { id?: string; revision?: number };
 type ListFormValues = { items: Testimonial[] };
 
 const FORM_FIELDS = [
@@ -180,7 +180,7 @@ function RecommendationEditPanel({
       avatar_url: rest.avatar_url?.trim() ? rest.avatar_url.trim() : null,
     };
     const result = await runServerAction(
-      () => saveTestimonial(id ?? null, payload),
+      () => saveTestimonial(id ?? null, payload, entry.revision),
       toast,
       { onSuccess: () => window.location.reload() },
     );

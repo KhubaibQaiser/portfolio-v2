@@ -1,6 +1,7 @@
 "use server";
 
 import { getContentRepository } from "@portfolio/data";
+import { isContentConflictError } from "@portfolio/shared/concurrency";
 import {
   heroSchema,
   aboutSchema,
@@ -22,12 +23,26 @@ export type ActionResult = { success: true } | { success: false; error: string }
 
 const repo = getContentRepository();
 
+function actionError(error: unknown): ActionResult {
+  if (isContentConflictError(error)) {
+    return {
+      success: false,
+      error: "This content changed in another session. Refresh and re-apply your edit.",
+    };
+  }
+  return {
+    success: false,
+    error: error instanceof Error ? error.message : "Unknown error",
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Hero
 // ---------------------------------------------------------------------------
 
 export async function saveHero(
   values: z.infer<typeof heroSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -36,10 +51,10 @@ export async function saveHero(
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    await repo.upsertHero(parsed.data);
+    await repo.upsertHero(parsed.data, expectedRevision);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -49,6 +64,7 @@ export async function saveHero(
 
 export async function saveAbout(
   values: z.infer<typeof aboutSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -57,10 +73,10 @@ export async function saveAbout(
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    await repo.upsertAbout(parsed.data);
+    await repo.upsertAbout(parsed.data, expectedRevision);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -71,6 +87,7 @@ export async function saveAbout(
 export async function saveExperience(
   id: string | null,
   values: z.infer<typeof experienceSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -80,13 +97,13 @@ export async function saveExperience(
 
   try {
     if (id) {
-      await repo.updateExperience(id, parsed.data);
+      await repo.updateExperience(id, parsed.data, expectedRevision);
     } else {
       await repo.insertExperience(parsed.data);
     }
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -98,7 +115,7 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
     await repo.deleteExperience(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -109,6 +126,7 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
 export async function saveProject(
   id: string | null,
   values: z.infer<typeof projectSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -118,13 +136,13 @@ export async function saveProject(
 
   try {
     if (id) {
-      await repo.updateProject(id, parsed.data);
+      await repo.updateProject(id, parsed.data, expectedRevision);
     } else {
       await repo.insertProject(parsed.data);
     }
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -136,7 +154,7 @@ export async function deleteProject(id: string): Promise<ActionResult> {
     await repo.deleteProject(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -167,7 +185,7 @@ export async function saveSkills(
     }
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -179,7 +197,7 @@ export async function deleteSkill(id: string): Promise<ActionResult> {
     await repo.deleteSkill(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -190,6 +208,7 @@ export async function deleteSkill(id: string): Promise<ActionResult> {
 export async function saveTestimonial(
   id: string | null,
   values: z.infer<typeof testimonialSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -199,13 +218,13 @@ export async function saveTestimonial(
 
   try {
     if (id) {
-      await repo.updateTestimonial(id, parsed.data);
+      await repo.updateTestimonial(id, parsed.data, expectedRevision);
     } else {
       await repo.insertTestimonial(parsed.data);
     }
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -217,7 +236,7 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
     await repo.deleteTestimonial(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -227,6 +246,7 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
 
 export async function saveSiteConfig(
   values: z.infer<typeof siteConfigSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -235,10 +255,10 @@ export async function saveSiteConfig(
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    await repo.upsertSiteConfig(parsed.data);
+    await repo.upsertSiteConfig(parsed.data, expectedRevision);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -248,6 +268,7 @@ export async function saveSiteConfig(
 
 export async function saveResume(
   values: z.infer<typeof resumeSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -268,10 +289,10 @@ export async function saveResume(
   if (!parsed.success) return { success: false, error: parsed.error.message };
 
   try {
-    await repo.upsertResume(parsed.data);
+    await repo.upsertResume(parsed.data, expectedRevision);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -282,6 +303,7 @@ export async function saveResume(
 export async function saveResumeLayout(
   id: string | null,
   values: z.infer<typeof resumeLayoutSchema>,
+  expectedRevision?: number,
 ): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
@@ -306,7 +328,7 @@ export async function saveResumeLayout(
           error: "Set another layout as default before unsetting this one.",
         };
       }
-      await repo.updateResumeLayout(id, parsed.data);
+      await repo.updateResumeLayout(id, parsed.data, expectedRevision);
       if (parsed.data.is_default) await ensureSingleDefaultLayout(id);
     } else {
       const created = await repo.insertResumeLayout({
@@ -317,7 +339,7 @@ export async function saveResumeLayout(
     }
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -335,7 +357,7 @@ export async function createResumeLayoutFromTemplate(
     const created = await repo.insertResumeLayout(values);
     return { success: true, id: created.id };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -349,7 +371,7 @@ export async function setDefaultResumeLayout(id: string): Promise<ActionResult> 
     await ensureSingleDefaultLayout(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -370,7 +392,7 @@ export async function deleteResumeLayout(id: string): Promise<ActionResult> {
     await repo.deleteResumeLayout(id);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
@@ -390,10 +412,11 @@ export async function applyTailoredSummary(summary: string): Promise<ActionResul
   }
 
   try {
-    await repo.upsertResume({ default_summary: trimmed });
+    const current = await repo.getResume();
+    await repo.upsertResume({ default_summary: trimmed }, current.revision);
     return { success: true };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    return actionError(e);
   }
 }
 
