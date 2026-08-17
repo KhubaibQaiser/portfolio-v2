@@ -135,14 +135,14 @@ export function ContactSection({ email }: ContactSectionProps) {
           <div className="mt-6 flex items-center justify-center gap-2">
             <a
               href={`mailto:${email}`}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex items-center gap-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
             >
               <Mail className="h-4 w-4" />
               {email}
             </a>
             <button
               onClick={handleCopyEmail}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-1.5 transition-colors"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background rounded-md p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
               aria-label="Copy email"
             >
               {copied ? (
@@ -171,7 +171,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                   className={cn(
                     "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
                     "text-foreground placeholder:text-muted-foreground/50 text-sm",
-                    "focus:border-accent transition-colors duration-200 focus:outline-hidden",
+                    "focus:border-accent focus-visible:ring-ring focus-visible:ring-offset-background transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                   )}
                   placeholder="Your name"
                 />
@@ -188,7 +188,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                   className={cn(
                     "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
                     "text-foreground placeholder:text-muted-foreground/50 text-sm",
-                    "focus:border-accent transition-colors duration-200 focus:outline-hidden",
+                    "focus:border-accent focus-visible:ring-ring focus-visible:ring-offset-background transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                   )}
                   placeholder="your@email.com"
                 />
@@ -206,7 +206,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                 className={cn(
                   "border-border bg-muted/30 w-full rounded-lg border px-4 py-2.5",
                   "text-foreground placeholder:text-muted-foreground/50 text-sm",
-                  "focus:border-accent transition-colors duration-200 focus:outline-hidden",
+                  "focus:border-accent focus-visible:ring-ring focus-visible:ring-offset-background transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                 )}
                 placeholder="What's this about?"
               />
@@ -224,20 +224,26 @@ export function ContactSection({ email }: ContactSectionProps) {
                 className={cn(
                   "border-border bg-muted/30 w-full resize-none rounded-lg border px-4 py-2.5",
                   "text-foreground placeholder:text-muted-foreground/50 text-sm",
-                  "focus:border-accent transition-colors duration-200 focus:outline-hidden",
+                  "focus:border-accent focus-visible:ring-ring focus-visible:ring-offset-background transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                 )}
                 placeholder="Your message..."
               />
             </div>
 
             {status === "success" && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400">
+              <div
+                role="status"
+                className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400"
+              >
                 <CheckCircle className="h-4 w-4" />
                 Message sent! I&apos;ll get back to you soon.
               </div>
             )}
             {status === "error" && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
+              <div
+                role="alert"
+                className="flex items-center gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400"
+              >
                 <AlertCircle className="h-4 w-4" />
                 {errorMessage || "Failed to send. Please try again."}
               </div>
@@ -251,6 +257,7 @@ export function ContactSection({ email }: ContactSectionProps) {
                 "text-accent-foreground text-sm font-medium transition-all duration-200",
                 "hover:opacity-90 active:scale-[0.98]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
+                "focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
               )}
             >
               {status === "submitting" ? (

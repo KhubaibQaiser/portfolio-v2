@@ -89,7 +89,8 @@ export function HeroTechCarousel({
                   "transition-all duration-200",
                   isActive && "scale-105",
                   isMonoBrand && "hero-tech-mono-brand",
-                  "hover:border-border/70 hover:bg-muted/40 focus-visible:border-border/70 focus-visible:bg-muted/40 focus-visible:outline-hidden",
+                  "hover:border-border/70 hover:bg-muted/40 focus-visible:border-border/70 focus-visible:bg-muted/40",
+                  "focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                 );
 
                 if (tech.iconKey === "AwsBrand") {

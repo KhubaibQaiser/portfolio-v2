@@ -62,170 +62,160 @@ export function CommandPalette() {
     [runCommand],
   );
 
-  if (!open) return null;
-
   const github = socialLinks.find((l) => l.platform === "github")?.url;
   const linkedin = socialLinks.find((l) => l.platform === "linkedin")?.url;
 
   return (
-    <div className="fixed inset-0 z-100">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => setOpen(false)}
-      />
-      <div className="flex items-start justify-center pt-[20vh]">
-        <Command
+    <Command.Dialog
+      open={open}
+      onOpenChange={setOpen}
+      label="Command palette"
+      overlayClassName="fixed inset-0 z-100 bg-black/50 backdrop-blur-sm"
+      contentClassName="fixed top-[20vh] left-1/2 z-100 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 outline-hidden"
+      className={cn(
+        "border-border relative overflow-hidden rounded-2xl border",
+        "bg-background shadow-2xl",
+      )}
+    >
+      <div className="border-border flex items-center gap-2 border-b px-4">
+        <Search className="text-muted-foreground h-4 w-4" aria-hidden />
+        <Command.Input
+          placeholder="Type a command or search..."
           className={cn(
-            "border-border relative w-full max-w-lg overflow-hidden rounded-2xl border",
-            "bg-background shadow-2xl",
+            "placeholder:text-muted-foreground/50 h-12 flex-1 bg-transparent text-sm",
+            "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
           )}
-        >
-          <div className="border-border flex items-center gap-2 border-b px-4">
-            <Search className="text-muted-foreground h-4 w-4" />
-            <Command.Input
-              placeholder="Type a command or search..."
-              className="placeholder:text-muted-foreground/50 h-12 flex-1 bg-transparent text-sm outline-hidden"
-            />
-            <kbd className="border-border text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]">
-              ESC
-            </kbd>
-          </div>
-          <Command.List className="max-h-72 overflow-y-auto p-2">
-            <Command.Empty className="text-muted-foreground py-6 text-center text-sm">
-              No results found.
-            </Command.Empty>
-
-            <Command.Group heading="Navigation" className="px-1 pb-2">
-              <CommandItem
-                icon={Home}
-                label="Home"
-                onSelect={() => runTracked("nav_home", () => router.push("/"))}
-              />
-              <CommandItem
-                icon={FolderOpen}
-                label="Projects"
-                onSelect={() =>
-                  runTracked("nav_projects", () => router.push("/projects"))
-                }
-              />
-              <CommandItem
-                icon={FileText}
-                label="Resume"
-                onSelect={() => runTracked("nav_resume", () => router.push("/resume"))}
-              />
-              <CommandItem
-                icon={BarChart3}
-                label="Analytics"
-                onSelect={() =>
-                  runTracked("nav_analytics", () => router.push("/analytics"))
-                }
-              />
-            </Command.Group>
-
-            <Command.Separator className="bg-border my-1 h-px" />
-
-            <Command.Group heading="Sections" className="px-1 pb-2">
-              <CommandItem
-                icon={User}
-                label="About"
-                onSelect={() =>
-                  runTracked("section_about", () => {
-                    document
-                      .getElementById("about")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  })
-                }
-              />
-              <CommandItem
-                icon={Zap}
-                label="Skills"
-                onSelect={() =>
-                  runTracked("section_skills", () => {
-                    document
-                      .getElementById("skills")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  })
-                }
-              />
-              <CommandItem
-                icon={Briefcase}
-                label="Experience"
-                onSelect={() =>
-                  runTracked("section_experience", () => {
-                    document
-                      .getElementById("experience")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  })
-                }
-              />
-              <CommandItem
-                icon={Mail}
-                label="Contact"
-                onSelect={() =>
-                  runTracked("section_contact", () => {
-                    document
-                      .getElementById("contact")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  })
-                }
-              />
-            </Command.Group>
-
-            <Command.Separator className="bg-border my-1 h-px" />
-
-            <Command.Group heading="Theme" className="px-1 pb-2">
-              <CommandItem
-                icon={Sun}
-                label="Light Mode"
-                onSelect={() => runTracked("theme_light", () => setTheme("light"))}
-              />
-              <CommandItem
-                icon={Moon}
-                label="Dark Mode"
-                onSelect={() => runTracked("theme_dark", () => setTheme("dark"))}
-              />
-              <CommandItem
-                icon={Monitor}
-                label="System Theme"
-                onSelect={() => runTracked("theme_system", () => setTheme("system"))}
-              />
-            </Command.Group>
-
-            <Command.Separator className="bg-border my-1 h-px" />
-
-            <Command.Group heading="Links" className="px-1 pb-2">
-              {github && (
-                <CommandItem
-                  icon={GitHubIcon}
-                  label="GitHub"
-                  onSelect={() =>
-                    runTracked("link_github", () => window.open(github, "_blank"))
-                  }
-                />
-              )}
-              {linkedin && (
-                <CommandItem
-                  icon={LinkedInIcon}
-                  label="LinkedIn"
-                  onSelect={() =>
-                    runTracked("link_linkedin", () => window.open(linkedin, "_blank"))
-                  }
-                />
-              )}
-              {email && (
-                <CommandItem
-                  icon={Mail}
-                  label="Copy Email"
-                  onSelect={() =>
-                    runTracked("copy_email", () => navigator.clipboard.writeText(email))
-                  }
-                />
-              )}
-            </Command.Group>
-          </Command.List>
-        </Command>
+        />
+        <kbd className="border-border text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]">
+          ESC
+        </kbd>
       </div>
-    </div>
+      <Command.List className="max-h-72 overflow-y-auto p-2">
+        <Command.Empty className="text-muted-foreground py-6 text-center text-sm">
+          No results found.
+        </Command.Empty>
+
+        <Command.Group heading="Navigation" className="px-1 pb-2">
+          <CommandItem
+            icon={Home}
+            label="Home"
+            onSelect={() => runTracked("nav_home", () => router.push("/"))}
+          />
+          <CommandItem
+            icon={FolderOpen}
+            label="Projects"
+            onSelect={() => runTracked("nav_projects", () => router.push("/projects"))}
+          />
+          <CommandItem
+            icon={FileText}
+            label="Resume"
+            onSelect={() => runTracked("nav_resume", () => router.push("/resume"))}
+          />
+          <CommandItem
+            icon={BarChart3}
+            label="Analytics"
+            onSelect={() => runTracked("nav_analytics", () => router.push("/analytics"))}
+          />
+        </Command.Group>
+
+        <Command.Separator className="bg-border my-1 h-px" />
+
+        <Command.Group heading="Sections" className="px-1 pb-2">
+          <CommandItem
+            icon={User}
+            label="About"
+            onSelect={() =>
+              runTracked("section_about", () => {
+                document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
+              })
+            }
+          />
+          <CommandItem
+            icon={Zap}
+            label="Skills"
+            onSelect={() =>
+              runTracked("section_skills", () => {
+                document.getElementById("skills")?.scrollIntoView({ behavior: "smooth" });
+              })
+            }
+          />
+          <CommandItem
+            icon={Briefcase}
+            label="Experience"
+            onSelect={() =>
+              runTracked("section_experience", () => {
+                document
+                  .getElementById("experience")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              })
+            }
+          />
+          <CommandItem
+            icon={Mail}
+            label="Contact"
+            onSelect={() =>
+              runTracked("section_contact", () => {
+                document
+                  .getElementById("contact")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              })
+            }
+          />
+        </Command.Group>
+
+        <Command.Separator className="bg-border my-1 h-px" />
+
+        <Command.Group heading="Theme" className="px-1 pb-2">
+          <CommandItem
+            icon={Sun}
+            label="Light Mode"
+            onSelect={() => runTracked("theme_light", () => setTheme("light"))}
+          />
+          <CommandItem
+            icon={Moon}
+            label="Dark Mode"
+            onSelect={() => runTracked("theme_dark", () => setTheme("dark"))}
+          />
+          <CommandItem
+            icon={Monitor}
+            label="System Theme"
+            onSelect={() => runTracked("theme_system", () => setTheme("system"))}
+          />
+        </Command.Group>
+
+        <Command.Separator className="bg-border my-1 h-px" />
+
+        <Command.Group heading="Links" className="px-1 pb-2">
+          {github && (
+            <CommandItem
+              icon={GitHubIcon}
+              label="GitHub"
+              onSelect={() =>
+                runTracked("link_github", () => window.open(github, "_blank"))
+              }
+            />
+          )}
+          {linkedin && (
+            <CommandItem
+              icon={LinkedInIcon}
+              label="LinkedIn"
+              onSelect={() =>
+                runTracked("link_linkedin", () => window.open(linkedin, "_blank"))
+              }
+            />
+          )}
+          {email && (
+            <CommandItem
+              icon={Mail}
+              label="Copy Email"
+              onSelect={() =>
+                runTracked("copy_email", () => navigator.clipboard.writeText(email))
+              }
+            />
+          )}
+        </Command.Group>
+      </Command.List>
+    </Command.Dialog>
   );
 }
 
