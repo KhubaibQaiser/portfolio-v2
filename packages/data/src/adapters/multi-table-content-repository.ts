@@ -316,7 +316,7 @@ export function createMultiTableContentRepository(
               : "attribute_not_exists(#pk) OR #revision = :expectedRevision OR attribute_not_exists(#revision)",
           ExpressionAttributeNames: {
             "#pk": keyName,
-            "#revision": "revision",
+            ...(expectedRevision !== undefined ? { "#revision": "revision" } : {}),
           },
           ...(expectedRevision !== undefined
             ? { ExpressionAttributeValues: { ":expectedRevision": expectedRevision } }
