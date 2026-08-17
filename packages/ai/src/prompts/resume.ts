@@ -8,16 +8,10 @@ import {
   ANTI_FABRICATION_RULES,
   ANTI_ROBOTIC_RULES,
   PROMPT_INJECTION_RULES,
-  describeOptions,
-  type Language,
-  type Length,
-  type Tone,
+  RESUME_AI_VOICE_RULES,
 } from "./shared";
 
 export type ResumePromptOptions = {
-  tone?: Tone;
-  length?: Length;
-  language?: Language;
   company?: string;
   role?: string;
   mustTryToInclude?: string[];
@@ -45,7 +39,7 @@ function outputShape(facts: CandidateFacts, guidelines?: VariantGuidelines): str
     .join(", ");
   return `OUTPUT SHAPE:
 - Return JSON matching the provided schema exactly.
-- summary: 2-3 sentences, max 450 characters. Lead with years + core stack + best metric. No AI-tooling mention unless the JD asks for it.
+- summary: 2 sentences, max 450 characters. Lead with years + core stack + best metric. No AI-tooling mention unless the JD asks for it.
 - titleOverride: JD-aligned title when truthful (Senior/Staff/Full-Stack), otherwise null. This key is required.
 - experiences: select only roles relevant to the JD, max ${maxRoles} total, then order selected roles newest-first.
 - Bullet budget: ${describeBulletBudgetRules(maxBullets)}
@@ -74,7 +68,7 @@ export function describeLayoutGuidelines(guidelines: VariantGuidelines): string 
   return [
     "LAYOUT GUIDELINES (must follow):",
     emphasis.summaryStrategy.regenerateForJob
-      ? "- ALWAYS write a new professional summary aimed at this job (maximum 450 characters, usually 2-3 sentences). Do not paste the generic CMS summary."
+      ? "- ALWAYS write a new professional summary aimed at this job (maximum 450 characters, 2 sentences). Do not paste the generic CMS summary."
       : "- Keep the existing summary unless a small tweak clearly improves JD fit.",
     emphasis.experienceStrategy.reorderByRelevance
       ? "- Select roles for JD relevance, then return the selected roles in reverse chronological order."
@@ -134,7 +128,7 @@ export function buildResumeSystemPrompt(
   return [
     fromTemplate,
     roleLine,
-    describeOptions(opts),
+    RESUME_AI_VOICE_RULES,
     outputShape(facts, guidelines),
     guidelines ? describeLayoutGuidelines(guidelines) : "",
     PROMPT_INJECTION_RULES,

@@ -1,4 +1,4 @@
-import { MODEL_IDS, type ModelId } from "./models";
+import { MODEL_IDS, type ModelId } from "./model-ids";
 
 export type LlmUsage = {
   inputTokens?: number;

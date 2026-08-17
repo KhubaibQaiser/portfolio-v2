@@ -58,7 +58,7 @@ export function AtsPanel({ value, busy, canRun, canNudge, onRun, onNudge }: Prop
       </div>
 
       {!value ? (
-        <div className="border-border/60 rounded-lg border border-dashed p-8 text-center">
+        <div className="border-border/60 rounded-lg border border-dashed p-4 text-center">
           <p className="text-muted-foreground text-sm font-medium">No ATS score yet</p>
           <p className="text-muted-foreground mt-1 text-xs">
             Generate a resume first, then run ATS scoring.

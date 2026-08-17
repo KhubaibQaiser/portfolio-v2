@@ -19,7 +19,7 @@ export function parseDailyCapUsd(): number {
 }
 
 export function estimateGenerationReservationUsd(model: "quality" | "fast"): number {
-  const fallback = model === "quality" ? 0.25 : 0.05;
+  const fallback = model === "quality" ? 0.08 : 0.05;
   return parsePositiveUsd(process.env.RESUME_GEN_RESERVE_USD, fallback);
 }
 

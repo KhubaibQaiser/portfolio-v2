@@ -49,9 +49,6 @@ const bodySchema = z
     company: z.string().max(200).optional(),
     role: z.string().max(200).optional(),
     hiringManager: z.string().max(200).optional(),
-    tone: z.enum(["formal", "friendly", "enthusiastic"]).optional(),
-    length: z.enum(["short", "standard", "detailed"]).optional(),
-    language: z.enum(["en", "de", "fr"]).default("en"),
     model: z.enum(["quality", "fast"]).default("quality"),
     mustTryToInclude: z.array(z.string().max(80)).max(40).optional(),
     regenerateFromId: z.string().uuid().optional(),
@@ -145,7 +142,7 @@ export async function POST(request: Request) {
   try {
     reservation = await reserveAiUsage(
       auth.id,
-      estimateGenerationReservationUsd(body.model),
+      estimateGenerationReservationUsd("quality"),
     );
   } catch {
     return generationError(
@@ -169,7 +166,7 @@ export async function POST(request: Request) {
   const usageGuard: UsageReservationGuard = reservation;
 
   try {
-    await ensureAiApiKeys(body.model);
+    await ensureAiApiKeys("quality");
   } catch (error) {
     await releaseUsageReservation(auth.id, usageGuard);
     logger.error("resume AI provider configuration unavailable", {
@@ -253,7 +250,7 @@ export async function POST(request: Request) {
     logger.info("validated resume generation requested", {
       userId: auth.id,
       kind: body.kind,
-      modelMode: body.model,
+      modelMode: "quality",
       layoutId,
       layoutVersion,
       jdSource: body.jdSource,
@@ -262,7 +259,7 @@ export async function POST(request: Request) {
 
     const generated = await generateValidatedContent({
       kind: body.kind,
-      modelMode: body.model,
+      modelMode: "quality",
       wrappedJobDescription: wrapUntrusted(jdText),
       facts,
       guidelines,
@@ -274,9 +271,6 @@ export async function POST(request: Request) {
       company: body.company,
       role: body.role,
       hiringManager: body.hiringManager,
-      tone: body.tone,
-      length: body.length,
-      language: body.language,
       mustTryToInclude: safeMustTryToInclude,
     });
     incurredUsageUsd = generated.usage.costUsd ?? 0;
@@ -336,9 +330,9 @@ export async function POST(request: Request) {
       company: body.company ?? null,
       role: body.role ?? null,
       hiring_manager: body.hiringManager ?? null,
-      language: body.language,
-      tone: body.tone ?? null,
-      length: body.length ?? null,
+      language: "en",
+      tone: null,
+      length: null,
       jd_text: jdText,
       jd_source: body.jdSource,
       jd_pdf_url: null,

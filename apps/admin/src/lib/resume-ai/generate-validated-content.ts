@@ -3,6 +3,7 @@ import {
   fallbackChainFor,
   formatUsage,
   isProviderRateLimitError,
+  isRequestTooLargeError,
   modelFor,
   type ModelId,
   type ModelMode,
@@ -40,8 +41,8 @@ const MAX_RESUME_ATTEMPTS = 3;
 const MAX_COVER_LETTER_ATTEMPTS = 2;
 const MAX_ATTEMPT_MS = 30_000;
 const MIN_ATTEMPT_BUDGET_MS = 8_000;
-const RESUME_OUTPUT_TOKENS = 6000;
-const COVER_LETTER_OUTPUT_TOKENS = 3200;
+const RESUME_OUTPUT_TOKENS = 2500;
+const COVER_LETTER_OUTPUT_TOKENS = 1200;
 
 type ArtifactKind = "resume" | "cover_letter" | "both";
 
@@ -56,9 +57,6 @@ export type ValidatedGenerationOptions = {
   company?: string;
   role?: string;
   hiringManager?: string;
-  tone?: "formal" | "friendly" | "enthusiastic";
-  length?: "short" | "standard" | "detailed";
-  language?: "en" | "de" | "fr";
   mustTryToInclude?: string[];
 };
 
@@ -76,6 +74,7 @@ export type GenerationFailureCategory =
   | "authentication"
   | "authorization"
   | "billing_or_quota"
+  | "request_too_large"
   | "rate_limit_or_overload"
   | "model_not_found"
   | "bad_request"
@@ -189,6 +188,9 @@ function failureCategory(error: unknown): GenerationFailureCategory {
   }
   if (statusCode === 403 || /forbidden|permission denied/.test(message)) {
     return "authorization";
+  }
+  if (isRequestTooLargeError(error)) {
+    return "request_too_large";
   }
   if (
     statusCode === 402 ||
@@ -308,8 +310,8 @@ function validateCoverLetterFacts(
   }
 }
 
-function orderedModels(mode: Exclude<ModelMode, "cheap">): ResolvedModel[] {
-  const models = [modelFor(mode), ...fallbackChainFor(mode)];
+function orderedModels(): ResolvedModel[] {
+  const models = [modelFor("quality"), ...fallbackChainFor("quality")];
   return models.filter(
     (model, index) =>
       models.findIndex((candidate) => candidate.modelId === model.modelId) === index,
@@ -373,7 +375,7 @@ async function runValidatedAttempts<T>(
       if (budget.signal.aborted || remainingMs < MIN_ATTEMPT_BUDGET_MS) {
         throw new ValidatedGenerationError(
           "GENERATION_TIMEOUT",
-          `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
+          `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again.`,
           true,
           diagnostics,
         );
@@ -482,7 +484,7 @@ async function runValidatedAttempts<T>(
   if (isAbortError(lastError) || Date.now() >= budget.deadlineAt) {
     throw new ValidatedGenerationError(
       "GENERATION_TIMEOUT",
-      `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again or use the faster model.`,
+      `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again.`,
       true,
       diagnostics,
     );
@@ -520,9 +522,6 @@ async function generateResume(
         system: buildResumeSystemPrompt(
           options.facts,
           {
-            tone: options.tone,
-            length: options.length,
-            language: options.language,
             company: options.company,
             role: options.role,
             mustTryToInclude: options.mustTryToInclude,
@@ -593,9 +592,6 @@ async function generateCoverLetter(
         model: model.model,
         schema,
         system: buildCoverLetterSystemPrompt(options.facts, {
-          tone: options.tone,
-          length: options.length,
-          language: options.language,
           company: options.company,
           role: options.role,
           hiringManager: options.hiringManager,
@@ -624,7 +620,7 @@ async function generateCoverLetter(
 export async function generateValidatedContent(
   options: ValidatedGenerationOptions,
 ): Promise<ValidatedGenerationResult> {
-  const models = orderedModels(options.modelMode);
+  const models = orderedModels();
   const attempts: ResumeGenerationAttempt[] = [];
   const usages: ResumeGenerationUsage[] = [];
   let resume: TailoredResume | null = null;

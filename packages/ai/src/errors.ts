@@ -27,48 +27,69 @@ export class AiToneRejectedError extends Error {
   }
 }
 
+function statusFromError(error: unknown): number | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const record = error as { statusCode?: unknown; status?: unknown };
+  for (const value of [record.statusCode, record.status]) {
+    if (
+      typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= 100 &&
+      value <= 599
+    ) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message.toLowerCase();
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    if (typeof message === "string") return message.toLowerCase();
+  }
+  return "";
+}
+
 /**
- * Detect "rate limited / overloaded" style errors across Anthropic, Groq,
- * and generic fetch failures. Covers common shapes from the AI SDK.
+ * Groq on-demand TPM rejects oversized requests with HTTP 413.
+ * The body often includes a billing URL; this is payload size, not an unpaid invoice.
+ */
+export function isRequestTooLargeError(error: unknown): boolean {
+  if (!error) return false;
+  const status = statusFromError(error);
+  if (status === 413) return true;
+  const msg = errorMessage(error);
+  return (
+    msg.includes("413") ||
+    msg.includes("tokens per minute") ||
+    msg.includes("request too large") ||
+    msg.includes("payload too large") ||
+    /\btpm\b/.test(msg)
+  );
+}
+
+/**
+ * Detect errors that mean "skip this model and try the next one":
+ * rate limits, overloads, 5xx, and request/TPM 413s.
  */
 export function isProviderRateLimitError(error: unknown): boolean {
   if (!error) return false;
+  if (isRequestTooLargeError(error)) return true;
 
-  if (
-    typeof error === "object" &&
-    "statusCode" in error &&
-    typeof (error as { statusCode: unknown }).statusCode === "number"
-  ) {
-    const code = (error as { statusCode: number }).statusCode;
-    if (code === 429 || code === 529 || (code >= 500 && code < 600)) {
-      return true;
-    }
+  const code = statusFromError(error);
+  if (code === 429 || code === 529 || (code !== undefined && code >= 500 && code < 600)) {
+    return true;
   }
 
-  if (
-    typeof error === "object" &&
-    "status" in error &&
-    typeof (error as { status: unknown }).status === "number"
-  ) {
-    const code = (error as { status: number }).status;
-    if (code === 429 || code === 529 || (code >= 500 && code < 600)) {
-      return true;
-    }
-  }
-
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes("429") ||
-      msg.includes("529") ||
-      msg.includes("rate limit") ||
-      msg.includes("overloaded") ||
-      msg.includes("service unavailable") ||
-      msg.includes("internal server error")
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  const msg = errorMessage(error);
+  return (
+    msg.includes("429") ||
+    msg.includes("529") ||
+    msg.includes("rate limit") ||
+    msg.includes("overloaded") ||
+    msg.includes("service unavailable") ||
+    msg.includes("internal server error")
+  );
 }
