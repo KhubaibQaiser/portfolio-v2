@@ -52,7 +52,7 @@ export const tailoredResumeSchema = z
       .string()
       .min(80)
       .max(450)
-      .describe("Professional summary tailored to the JD. 2-3 sentences. No AI cliches."),
+      .describe("Professional summary tailored to the JD. 2 sentences. No AI cliches."),
     titleOverride: z
       .string()
       .max(80)

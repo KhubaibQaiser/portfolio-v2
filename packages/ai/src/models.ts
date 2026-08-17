@@ -1,19 +1,7 @@
 import "server-only";
 import type { LanguageModel } from "ai";
+import { MODEL_IDS, qualityGenerateChainIds, type ModelId } from "./model-ids";
 import { anthropic, groq } from "./providers";
-
-/**
- * Canonical model ids. Centralized so upgrades happen in one place.
- * Groq IDs follow console.groq.com/docs/models (Llama 4 Scout + 3.1 8B retired).
- */
-export const MODEL_IDS = {
-  anthropicSonnet: "claude-sonnet-4-5",
-  anthropicHaiku: "claude-haiku-4-5",
-  groqGptOss120b: "openai/gpt-oss-120b",
-  groqGptOss20b: "openai/gpt-oss-20b",
-} as const;
-
-export type ModelId = (typeof MODEL_IDS)[keyof typeof MODEL_IDS];
 
 export type ModelMode = "quality" | "fast" | "cheap";
 
@@ -23,78 +11,49 @@ export type ResolvedModel = {
   provider: "anthropic" | "groq";
 };
 
+function hasAnthropicKey(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+function resolveModel(modelId: ModelId): ResolvedModel {
+  if (modelId === MODEL_IDS.anthropicHaiku || modelId === MODEL_IDS.anthropicSonnet) {
+    return { model: anthropic(modelId), modelId, provider: "anthropic" };
+  }
+  return { model: groq(modelId), modelId, provider: "groq" };
+}
+
 /**
  * Resolve a model for a given use case.
  *
- * - `quality`: best writing/reasoning; Claude Sonnet 4.5 when available,
- *   otherwise Groq `openai/gpt-oss-120b`.
+ * - `quality`: resume generate; Claude Haiku 4.5 when Anthropic is configured,
+ *   otherwise Groq `openai/gpt-oss-20b`.
  * - `fast`:    portfolio chat / low-latency; Groq `openai/gpt-oss-120b`.
- * - `cheap`:   tiny/cheap pass (ATS scoring, AI-tone retry); Groq `openai/gpt-oss-20b`.
+ * - `cheap`:   tiny/cheap pass (ATS scoring); Groq `openai/gpt-oss-20b`.
  */
 export function modelFor(mode: ModelMode): ResolvedModel {
   if (mode === "quality") {
-    if (process.env.ANTHROPIC_API_KEY) {
-      return {
-        model: anthropic(MODEL_IDS.anthropicSonnet),
-        modelId: MODEL_IDS.anthropicSonnet,
-        provider: "anthropic",
-      };
-    }
-    return {
-      model: groq(MODEL_IDS.groqGptOss120b),
-      modelId: MODEL_IDS.groqGptOss120b,
-      provider: "groq",
-    };
+    return resolveModel(qualityGenerateChainIds(hasAnthropicKey())[0]!);
   }
 
   if (mode === "fast") {
-    return {
-      model: groq(MODEL_IDS.groqGptOss120b),
-      modelId: MODEL_IDS.groqGptOss120b,
-      provider: "groq",
-    };
+    return resolveModel(MODEL_IDS.groqGptOss120b);
   }
 
-  return {
-    model: groq(MODEL_IDS.groqGptOss20b),
-    modelId: MODEL_IDS.groqGptOss20b,
-    provider: "groq",
-  };
+  return resolveModel(MODEL_IDS.groqGptOss20b);
 }
 
 /**
  * The fallback chain used when the primary model for a mode errors with
- * a transient provider failure (429 / 5xx / overloaded).
- *
- * Ordered from "best quality that's still available" to "will almost
- * certainly work".
+ * a transient provider failure (429 / 413 / 5xx / overloaded).
  */
 export function fallbackChainFor(mode: ModelMode): ResolvedModel[] {
   if (mode === "quality") {
-    const chain: ResolvedModel[] = [];
-    if (process.env.ANTHROPIC_API_KEY) {
-      chain.push({
-        model: groq(MODEL_IDS.groqGptOss120b),
-        modelId: MODEL_IDS.groqGptOss120b,
-        provider: "groq",
-      });
-    }
-    chain.push({
-      model: groq(MODEL_IDS.groqGptOss20b),
-      modelId: MODEL_IDS.groqGptOss20b,
-      provider: "groq",
-    });
-    return chain;
+    const [, ...rest] = qualityGenerateChainIds(hasAnthropicKey());
+    return rest.map(resolveModel);
   }
 
   if (mode === "fast") {
-    return [
-      {
-        model: groq(MODEL_IDS.groqGptOss20b),
-        modelId: MODEL_IDS.groqGptOss20b,
-        provider: "groq",
-      },
-    ];
+    return [resolveModel(MODEL_IDS.groqGptOss20b)];
   }
 
   return [];

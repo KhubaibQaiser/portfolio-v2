@@ -21,14 +21,14 @@ vi.mock("ai", () => ({
 vi.mock("@portfolio/ai", () => ({
   modelFor: () => ({
     model: { id: "primary" },
-    modelId: "openai/gpt-oss-120b",
-    provider: "groq",
+    modelId: "claude-haiku-4-5",
+    provider: "anthropic",
   }),
   fallbackChainFor: () => [
     {
       model: { id: "fallback" },
-      modelId: "openai/gpt-oss-20b",
-      provider: "groq",
+      modelId: "claude-sonnet-4-5",
+      provider: "anthropic",
     },
   ],
   formatUsage: (
@@ -36,11 +36,16 @@ vi.mock("@portfolio/ai", () => ({
     model: string,
     metadata: { latencyMs: number; fallbackUsed: boolean },
   ) => ({ ...usage, ...metadata, model, costUsd: 0.001 }),
+  isRequestTooLargeError: (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    error.statusCode === 413,
   isProviderRateLimitError: (error: unknown) =>
     typeof error === "object" &&
     error !== null &&
     "statusCode" in error &&
-    error.statusCode === 429,
+    (error.statusCode === 429 || error.statusCode === 413),
 }));
 
 import {
@@ -182,7 +187,27 @@ describe("generateValidatedContent", () => {
     const result = await generateValidatedContent(baseOptions);
 
     expect(result.fallbackUsed).toBe(true);
-    expect(result.model).toBe("openai/gpt-oss-20b");
+    expect(result.model).toBe("claude-sonnet-4-5");
+  });
+
+  it("skips the current model after a Groq 413 TPM rejection", async () => {
+    mocks.generateObject
+      .mockRejectedValueOnce({
+        statusCode: 413,
+        message:
+          "Request too large for tokens per minute. See https://console.groq.com/settings/billing",
+      })
+      .mockResolvedValueOnce(generated(validResume));
+
+    const result = await generateValidatedContent(baseOptions);
+
+    expect(mocks.generateObject).toHaveBeenCalledTimes(2);
+    expect(result.fallbackUsed).toBe(true);
+    expect(result.model).toBe("claude-sonnet-4-5");
+    expect(result.attempts[0]).toMatchObject({
+      model: "claude-haiku-4-5",
+      reason: "provider_unavailable",
+    });
   });
 
   it("never exceeds the shared attempt cap", async () => {
@@ -231,8 +256,8 @@ describe("generateValidatedContent", () => {
       diagnostics: [
         {
           artifact: "resume",
-          model: "openai/gpt-oss-120b",
-          provider: "groq",
+          model: "claude-haiku-4-5",
+          provider: "anthropic",
           attempt: 1,
           retry: 0,
           category: "authentication",
@@ -242,8 +267,8 @@ describe("generateValidatedContent", () => {
         },
         {
           artifact: "resume",
-          model: "openai/gpt-oss-120b",
-          provider: "groq",
+          model: "claude-haiku-4-5",
+          provider: "anthropic",
           attempt: 2,
           retry: 1,
           category: "authentication",
@@ -253,8 +278,8 @@ describe("generateValidatedContent", () => {
         },
         {
           artifact: "resume",
-          model: "openai/gpt-oss-20b",
-          provider: "groq",
+          model: "claude-sonnet-4-5",
+          provider: "anthropic",
           attempt: 3,
           retry: 0,
           category: "authentication",

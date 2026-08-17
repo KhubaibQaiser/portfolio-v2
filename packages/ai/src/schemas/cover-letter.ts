@@ -6,15 +6,13 @@ export const coverLetterSchema = z.object({
     .min(2)
     .max(120)
     .describe(
-      "Salutation, e.g. 'Dear Hiring Manager,' or 'Dear {name},'. Language-matched.",
+      "Salutation, e.g. 'Dear {Hiring Manager},' or 'Dear Alex,'. Placeholders stay in curly braces when the name is unknown.",
     ),
   body: z
-    .array(z.string().min(40).max(900))
-    .min(2)
+    .array(z.string().min(20).max(900))
+    .min(1)
     .max(5)
-    .describe(
-      "Paragraphs. Each 40-900 chars. No AI cliches, no triples, vary sentence length.",
-    ),
+    .describe("1-2 short paragraphs preferred. Each 20-900 chars. No AI cliches, no triples."),
   closing: z.string().min(10).max(300).describe("Closing paragraph inviting next steps."),
   signOff: z
     .string()

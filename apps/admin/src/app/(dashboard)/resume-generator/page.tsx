@@ -70,8 +70,7 @@ export default async function ResumeGeneratorPage() {
           <h1 className="text-2xl font-bold tracking-tight">Resume AI</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Tailor your resume to a job description using a layout&apos;s guidelines.
-            Summary and bullets are rewritten from live CMS data. Cover letter and ATS
-            stay available as secondary tools.
+            Summary and bullets are rewritten from live CMS data.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-right text-xs">

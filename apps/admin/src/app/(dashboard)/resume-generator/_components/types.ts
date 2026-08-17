@@ -15,17 +15,10 @@ export type HistoryItem = {
 
 export type GenKind = "resume" | "cover_letter" | "both";
 
-export type Tone = "formal" | "friendly" | "enthusiastic";
-export type Length = "short" | "standard" | "detailed";
-export type Language = "en" | "de" | "fr";
-
 export type OptionsState = {
   company: string;
   role: string;
   hiringManager: string;
-  tone: Tone | "";
-  length: Length | "";
-  language: Language;
 };
 
 export type GenerationState = {

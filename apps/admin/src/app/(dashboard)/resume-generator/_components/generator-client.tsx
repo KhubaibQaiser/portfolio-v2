@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, RefreshCw, Square, Zap } from "lucide-react";
+import { Download, RefreshCw, Square } from "lucide-react";
 import {
   atsScoreSchema,
   coverLetterSchema,
@@ -18,7 +18,7 @@ import { applyTailoredSummary } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import { JdInput } from "./jd-input";
-import { OptionsForm } from "./options-form";
+import { JobMetaFields } from "./job-meta-fields";
 import { ResumePreview } from "./resume-preview";
 import { CoverLetterPreview } from "./cover-letter-preview";
 import { AtsPanel } from "./ats-panel";
@@ -32,7 +32,7 @@ import { CopyButton } from "./copy-button";
 import { GenerationWarnings } from "./generation-warnings";
 import type { GenKind, GenerationState, HistoryItem, OptionsState } from "./types";
 
-type Tab = "resume" | "cover_letter" | "ats";
+type Tab = "resume" | "cover_letter";
 
 type Props = {
   initialHistory: HistoryItem[];
@@ -53,9 +53,6 @@ const DEFAULT_OPTS: OptionsState = {
   company: "",
   role: "",
   hiringManager: "",
-  tone: "",
-  length: "",
-  language: "en",
 };
 
 export function GeneratorClient({
@@ -114,10 +111,7 @@ export function GeneratorClient({
     setAppliedChanges(describeAppliedResumeChanges(baseResume, resume, options.role));
   }
 
-  async function runGenerate(
-    kind: GenKind,
-    opts?: { mode?: "quality" | "fast"; mustTryToInclude?: string[] },
-  ) {
+  async function runGenerate(kind: GenKind, opts?: { mustTryToInclude?: string[] }) {
     if (!canGenerate) return;
     setError(null);
     setStreaming(kind);
@@ -147,10 +141,6 @@ export function GeneratorClient({
           company: options.company || undefined,
           role: options.role || undefined,
           hiringManager: options.hiringManager || undefined,
-          tone: options.tone || undefined,
-          length: options.length || undefined,
-          language: options.language,
-          model: opts?.mode ?? "quality",
           mustTryToInclude: opts?.mustTryToInclude,
           regenerateFromId: regenerateFromId ?? undefined,
           layoutId: layoutId || undefined,
@@ -208,19 +198,6 @@ export function GeneratorClient({
 
   function stop() {
     abortRef.current?.abort();
-  }
-
-  function startOver() {
-    stop();
-    setGeneration({ resume: null, coverLetter: null, ats: null });
-    setAppliedChanges([]);
-    setActiveHistoryId(null);
-    setError(null);
-    setPreviewRevision(0);
-    setResumeContext(null);
-    setCoverLetterContext(null);
-    setResumeDirty(false);
-    setGenerationWarnings([]);
   }
 
   async function refreshHistory() {
@@ -397,9 +374,6 @@ export function GeneratorClient({
         company: json.row.company ?? "",
         role: json.row.role ?? "",
         hiringManager: json.row.hiring_manager ?? "",
-        tone: json.row.tone ?? "",
-        length: json.row.length ?? "",
-        language: json.row.language ?? "en",
       });
       if (typeof json.row.layout_id === "string" && json.row.layout_id) {
         setLayoutId(json.row.layout_id);
@@ -437,10 +411,10 @@ export function GeneratorClient({
 
   return (
     <div
-      className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)_minmax(240px,280px)]"
+      className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(240px,280px)]"
       aria-busy={Boolean(streaming)}
     >
-      <section className="space-y-4">
+      <section className="min-w-0 space-y-4">
         <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
           Layout
         </h2>
@@ -464,10 +438,10 @@ export function GeneratorClient({
           disabled={Boolean(streaming)}
         />
 
-        <h2 className="text-accent mt-4 text-sm font-semibold tracking-wider uppercase">
-          Options
+        <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
+          Cover letter details
         </h2>
-        <OptionsForm
+        <JobMetaFields
           value={options}
           onChange={setOptions}
           disabled={Boolean(streaming)}
@@ -487,18 +461,6 @@ export function GeneratorClient({
             streaming={streaming === "cover_letter"}
             disabled={!canGenerate}
           />
-          <button
-            type="button"
-            onClick={() => runGenerate("resume", { mode: "fast" })}
-            disabled={!canGenerate}
-            className={cn(
-              "border-border bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5",
-              "hover:bg-muted/50 text-sm font-medium disabled:opacity-50",
-            )}
-            title="Faster, lower quality draft"
-          >
-            <Zap className="h-3.5 w-3.5" /> Fast draft
-          </button>
           {streaming ? (
             <button
               type="button"
@@ -511,14 +473,6 @@ export function GeneratorClient({
               <Square className="h-3.5 w-3.5" /> Stop
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={startOver}
-            disabled={Boolean(streaming)}
-            className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline disabled:opacity-50"
-          >
-            Start over
-          </button>
         </div>
 
         {error && (
@@ -532,15 +486,28 @@ export function GeneratorClient({
           </p>
         ) : null}
         <GenerationWarnings warnings={generationWarnings} />
-      </section>
 
-      <section className="min-w-0 space-y-4">
+        <h2 className="text-accent text-sm font-semibold tracking-wider uppercase">
+          ATS match
+        </h2>
+        <AtsPanel
+          value={generation.ats}
+          busy={atsBusy}
+          canRun={Boolean(
+            generation.resume && resumeContext && !resumeStale && resumeIsValid,
+          )}
+          canNudge={Boolean(
+            generation.ats && generation.ats.missingKeywords.length > 0 && canGenerate,
+          )}
+          onRun={() => void runAts(false)}
+          onNudge={() => void runAts(true)}
+        />
+
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
               ["resume", "Resume"],
               ["cover_letter", "Cover letter"],
-              ["ats", "ATS match"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -685,22 +652,6 @@ export function GeneratorClient({
                 <PolishChecklist kind="cover_letter" />
               ) : null}
             </div>
-          )}
-          {tab === "ats" && (
-            <AtsPanel
-              value={generation.ats}
-              busy={atsBusy}
-              canRun={Boolean(
-                generation.resume && resumeContext && !resumeStale && resumeIsValid,
-              )}
-              canNudge={Boolean(
-                generation.ats &&
-                generation.ats.missingKeywords.length > 0 &&
-                canGenerate,
-              )}
-              onRun={() => void runAts(false)}
-              onNudge={() => void runAts(true)}
-            />
           )}
         </div>
       </section>

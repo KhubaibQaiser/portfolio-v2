@@ -48,6 +48,9 @@ describe("buildResumeSystemPrompt", () => {
     expect(prompt).toContain("MUST NOT invent");
     expect(prompt).toContain("order selected roles newest-first");
     expect(prompt).toContain("e1: 5");
+    expect(prompt).toContain("C1");
+    expect(prompt).toContain("2 sentences, max 450 characters");
     expect(prompt).not.toContain("Top 2 roles");
+    expect(prompt).not.toContain("Tone: friendly");
   });
 });

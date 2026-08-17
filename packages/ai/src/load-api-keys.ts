@@ -77,7 +77,7 @@ export async function ensureAiApiKeys(mode: "quality" | "fast" | "cheap"): Promi
     try {
       await ensureAnthropicApiKey();
     } catch {
-      // Groq remains a complete quality-mode fallback.
+      // Groq 20b remains a last-resort quality fallback when Anthropic cannot load.
       delete process.env.ANTHROPIC_API_KEY;
     }
   }

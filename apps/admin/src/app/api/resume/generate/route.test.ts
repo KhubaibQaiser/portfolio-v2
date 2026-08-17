@@ -130,7 +130,7 @@ const generated = {
   coverLetter: null,
   attempts: [
     {
-      model: "claude-sonnet-4-5",
+      model: "claude-haiku-4-5",
       reason: "initial",
       finishReason: "stop",
       latencyMs: 1,
@@ -138,7 +138,7 @@ const generated = {
   ],
   warnings: [],
   usage: { costUsd: 0.01 },
-  model: "claude-sonnet-4-5",
+  model: "claude-haiku-4-5",
   fallbackUsed: false,
 };
 
@@ -193,12 +193,29 @@ describe("POST /api/resume/generate", () => {
     expect(body.generationId).toBe("generation-id");
     expect(mocks.generateValidatedContent).toHaveBeenCalledWith(
       expect.objectContaining({
+        modelMode: "quality",
         deadlineAt: expect.any(Number),
         signal: expect.any(AbortSignal),
       }),
     );
+    const payload = mocks.generateValidatedContent.mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(payload).not.toHaveProperty("tone");
+    expect(payload).not.toHaveProperty("length");
+    expect(payload).not.toHaveProperty("language");
+    expect(mocks.estimateGenerationReservationUsd).toHaveBeenCalledWith("quality");
+    expect(mocks.ensureAiApiKeys).toHaveBeenCalledWith("quality");
     expect(mocks.renderResumePdfBuffer).toHaveBeenCalledOnce();
     expect(mocks.insertResumeGeneration).toHaveBeenCalledOnce();
+  });
+
+  it("rejects unknown generation options such as tone", async () => {
+    const response = await POST(request({ tone: "formal" }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
   });
 
   it("rejects a rate-limited request before calling a provider", async () => {

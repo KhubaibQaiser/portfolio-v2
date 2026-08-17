@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Wider canvas than `(main)` max-w-4xl — JD, options, preview, and history.
+ * Wider canvas than `(main)` max-w-4xl — JD, preview, and history.
  */
 export default function ResumeGeneratorLayout({ children }: { children: ReactNode }) {
   return (
