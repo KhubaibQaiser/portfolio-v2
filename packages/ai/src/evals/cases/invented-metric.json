@@ -1,0 +1,26 @@
+{
+  "id": "invented-metric",
+  "description": "Rejects numeric claims that do not appear in the source role bullets",
+  "guidelines": "classic",
+  "expect": "fail",
+  "expectViolationIncludes": "unsupported numeric claims",
+  "modelOutput": {
+    "summary": "Senior engineer building reliable React and TypeScript products with clear customer and platform impact.",
+    "titleOverride": null,
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": ["React"],
+    "experiences": [
+      {
+        "experienceId": "experience-uuid",
+        "bullets": [
+          {
+            "experienceId": "experience-uuid",
+            "sourceBulletIndex": 0,
+            "text": "Built React products that improved conversion by 99%."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "TypeScript"] }]
+  }
+}

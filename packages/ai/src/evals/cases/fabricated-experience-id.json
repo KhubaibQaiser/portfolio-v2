@@ -1,0 +1,26 @@
+{
+  "id": "fabricated-experience-id",
+  "description": "Rejects experience ids that are not in the candidate idMap",
+  "guidelines": "classic",
+  "expect": "fail",
+  "expectViolationIncludes": "unknown experienceId",
+  "modelOutput": {
+    "summary": "Senior engineer building reliable React and TypeScript products with clear customer and platform impact.",
+    "titleOverride": null,
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": ["React"],
+    "experiences": [
+      {
+        "experienceId": "not-a-real-id",
+        "bullets": [
+          {
+            "experienceId": "not-a-real-id",
+            "sourceBulletIndex": 0,
+            "text": "Built reliable **React** products for customers."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "TypeScript"] }]
+  }
+}
