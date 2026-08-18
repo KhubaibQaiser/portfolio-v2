@@ -23,7 +23,6 @@ import {
   websiteJsonLd,
 } from "@/lib/json-ld";
 import { SITE_URL } from "@/lib/seo";
-import { env } from "@/lib/env";
 import "@/styles/globals.css";
 
 function asSocialLinks(config: SiteConfig): SocialLink[] {
@@ -74,12 +73,6 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,
-    },
-    verification: {
-      google: env.GOOGLE_SITE_VERIFICATION,
-      other: env.BING_SITE_VERIFICATION
-        ? { "msvalidate.01": env.BING_SITE_VERIFICATION }
-        : undefined,
     },
   };
 }

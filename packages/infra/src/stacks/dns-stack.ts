@@ -2,6 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
+import { googleSiteVerificationTxtValue } from "../dns/google-site-verification";
 
 export type DnsStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -29,6 +30,14 @@ export class DnsStack extends cdk.Stack {
     this.hostedZone = new route53.PublicHostedZone(this, "HostedZone", {
       zoneName: props.config.domainName,
     });
+
+    if (props.config.googleDnsSiteVerification) {
+      new route53.TxtRecord(this, "GoogleSiteVerification", {
+        zone: this.hostedZone,
+        values: [googleSiteVerificationTxtValue(props.config.googleDnsSiteVerification)],
+        comment: "Google Search Console domain verification",
+      });
+    }
 
     new cdk.CfnOutput(this, "HostedZoneId", {
       value: this.hostedZone.hostedZoneId,

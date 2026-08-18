@@ -69,15 +69,11 @@ export type InfraConfig = {
    */
   posthogEnvironment?: string;
   /**
-   * Google Search Console HTML-tag verification token (public meta content).
-   * Pass via `-c googleSiteVerification=…`.
+   * Google Search Console Domain verification TXT value
+   * (`google-site-verification=…`, or the token alone).
+   * Pass via `-c googleDnsSiteVerification=…`. Creates an apex TXT record.
    */
-  googleSiteVerification?: string;
-  /**
-   * Bing Webmaster Tools `msvalidate.01` token (public meta content).
-   * Pass via `-c bingSiteVerification=…`.
-   */
-  bingSiteVerification?: string;
+  googleDnsSiteVerification?: string;
   /** Monthly cost budget (USD) that triggers SNS alerts at 80%/100%. */
   monthlyBudgetUsd: number;
   /**
@@ -152,8 +148,7 @@ export function resolveConfig(app: App): InfraConfig {
     posthogProjectToken: ctx("posthogProjectToken"),
     posthogHost: ctx("posthogHost"),
     posthogEnvironment: ctx("posthogEnvironment"),
-    googleSiteVerification: ctx("googleSiteVerification"),
-    bingSiteVerification: ctx("bingSiteVerification"),
+    googleDnsSiteVerification: ctx("googleDnsSiteVerification"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),

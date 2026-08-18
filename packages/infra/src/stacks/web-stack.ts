@@ -98,12 +98,6 @@ export class WebStack extends cdk.Stack {
                 : {}),
             }
           : {}),
-        ...(config.googleSiteVerification
-          ? { GOOGLE_SITE_VERIFICATION: config.googleSiteVerification }
-          : {}),
-        ...(config.bingSiteVerification
-          ? { BING_SITE_VERIFICATION: config.bingSiteVerification }
-          : {}),
       },
       grantServer: (fn) => {
         grantWebDataAccess(this, fn, config, mediaBucketName);
