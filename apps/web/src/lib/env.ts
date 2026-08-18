@@ -36,8 +36,6 @@ export const env = createEnv({
     S3_MEDIA_BUCKET: z.string().min(1).optional(),
     MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
     OPEN_NEXT_BUILD_ID: z.string().min(1).optional(),
-    GOOGLE_SITE_VERIFICATION: z.string().min(1).optional(),
-    BING_SITE_VERIFICATION: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
@@ -79,8 +77,6 @@ export const env = createEnv({
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     MEDIA_PUBLIC_BASE_URL: process.env.MEDIA_PUBLIC_BASE_URL,
     OPEN_NEXT_BUILD_ID: process.env.OPEN_NEXT_BUILD_ID,
-    GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
-    BING_SITE_VERIFICATION: process.env.BING_SITE_VERIFICATION,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
