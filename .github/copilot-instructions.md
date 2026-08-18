@@ -8,7 +8,7 @@ This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, and packages
 - Admin mutations call `requireAdmin()` (`apps/admin/src/lib/auth-guard.ts`).
   The static check is `apps/admin/src/lib/authorization-guardrail.test.ts`.
 - Resume AI: Zod `.strict()` schemas, then `enforceResumeGenerationPolicy` and
-  `validateFabrication`.
+  `validateFabrication`. Spec: `specs/resume-ai.md`.
 - Untrusted job-description text: `stripPromptInjection` then `wrapUntrusted`.
 - Apps depend on ports in `packages/shared`, not AWS SDKs.
 - Infra: ADR 0001 (no CFN exports for data/auth) and ADR 0002 (one AppErrors
