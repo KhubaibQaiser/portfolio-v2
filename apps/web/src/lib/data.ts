@@ -20,3 +20,4 @@ export const fetchProjectBySlug = cache(async (slug: string) =>
 export const fetchSkills = cache(async () => repo.getSkills());
 export const fetchTestimonials = cache(async () => repo.getTestimonials());
 export const fetchSiteConfig = cache(async () => repo.getSiteConfig());
+export const fetchResume = cache(async () => repo.getResume());

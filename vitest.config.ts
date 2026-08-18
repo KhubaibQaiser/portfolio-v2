@@ -27,6 +27,7 @@ export default defineConfig({
             "packages/ai/**/*.{test,spec}.ts",
             "packages/ui/**/*.{test,spec}.ts",
             "packages/deploy/**/*.{test,spec}.ts",
+            "packages/infra/**/*.{test,spec}.ts",
             "apps/*/src/lib/**/*.{test,spec}.{ts,tsx}",
           ],
           exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/.turbo/**"],

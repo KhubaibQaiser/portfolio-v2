@@ -73,6 +73,7 @@ export class AdminStack extends cdk.Stack {
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
+      noindex: true,
       ...(config.domainEnabled && props.certificate
         ? {
             domain: {

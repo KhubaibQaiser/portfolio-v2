@@ -6,7 +6,7 @@ import { MediaAssetCard } from "@portfolio/ui/media-asset-card";
 import { MediaDropzone } from "@portfolio/ui/media-dropzone";
 import { formatBytes } from "@portfolio/shared/utils";
 import type { Media as MediaRow } from "@portfolio/shared/schemas";
-import { deleteMediaAsset } from "@/lib/media-actions";
+import { deleteMediaAsset, updateMediaAlt } from "@/lib/media-actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 
@@ -72,6 +72,19 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
     [router, storageReady, toast],
   );
 
+  async function handleAltSave(id: string, alt: string) {
+    await runServerAction(() => updateMediaAlt(id, alt), toast, {
+      successMessage: "Alt text saved",
+      onSuccess: () => {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, alt_text: alt || null } : item,
+          ),
+        );
+      },
+    });
+  }
+
   async function handleCopy(id: string, url: string) {
     await navigator.clipboard.writeText(url);
     setCopiedId(id);
@@ -122,6 +135,7 @@ export function MediaLibrary({ initialItems, storageReady }: MediaLibraryProps) 
             onCopyUrl={() => handleCopy(item.id, item.url)}
             onDelete={() => handleDelete(item.id)}
             imageAlt={item.alt_text ?? undefined}
+            onAltSave={(alt) => handleAltSave(item.id, alt)}
           />
         ))}
       </div>

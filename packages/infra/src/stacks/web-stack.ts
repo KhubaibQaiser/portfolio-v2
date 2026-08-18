@@ -69,6 +69,7 @@ export class WebStack extends cdk.Stack {
               domainNames: [config.domainName, `www.${config.domainName}`],
               certificate: props.certificate,
             },
+            canonicalApexHost: config.domainName,
           }
         : {}),
       environment: {
@@ -96,6 +97,12 @@ export class WebStack extends cdk.Stack {
                 ? { POSTHOG_ENVIRONMENT: config.posthogEnvironment }
                 : {}),
             }
+          : {}),
+        ...(config.googleSiteVerification
+          ? { GOOGLE_SITE_VERIFICATION: config.googleSiteVerification }
+          : {}),
+        ...(config.bingSiteVerification
+          ? { BING_SITE_VERIFICATION: config.bingSiteVerification }
           : {}),
       },
       grantServer: (fn) => {

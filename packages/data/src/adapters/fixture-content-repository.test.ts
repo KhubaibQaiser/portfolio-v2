@@ -53,6 +53,19 @@ describe("FixtureContentRepository", () => {
     expect(await repo.getProjectBySlug("does-not-exist")).toBeNull();
   });
 
+  it("stores and updates media alt text", async () => {
+    const row = await repo.insertMedia({
+      filename: "hero-background.webp",
+      url: "https://cdn.example.com/hero-background.webp",
+      mime_type: "image/webp",
+      size: 12,
+      alt_text: "hero background",
+    });
+    expect(row.alt_text).toBe("hero background");
+    await repo.updateMedia(row.id, { alt_text: "Hero portrait" });
+    expect((await repo.getMediaById(row.id)).alt_text).toBe("Hero portrait");
+  });
+
   it("isolates state between instances", async () => {
     await repo.insertTestimonial({
       full_name: "Test User",

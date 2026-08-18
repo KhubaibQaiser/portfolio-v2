@@ -362,6 +362,10 @@ export function createFixtureContentRepository(): ContentRepository {
       media.push(row);
       return clone(row);
     },
+    async updateMedia(id: string, values: { alt_text: string | null }) {
+      const row = requireById(media, id, "Media");
+      row.alt_text = values.alt_text;
+    },
     async deleteMediaRow(id: string) {
       const idx = media.findIndex((r) => r.id === id);
       if (idx >= 0) media.splice(idx, 1);

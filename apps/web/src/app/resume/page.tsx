@@ -6,16 +6,18 @@ import {
   ResumeViewTracker,
 } from "@/components/analytics/resume-analytics";
 import { getResumeData } from "@/lib/resume-data";
+import { fetchAbout } from "@/lib/data";
+import { PageBreadcrumbs } from "@/components/layout/page-breadcrumbs";
 import { buildPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(
   _props: object,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
+  const about = await fetchAbout();
   return buildPageMetadata(parent, {
     title: "Resume",
-    description:
-      "Senior Software Engineer resume with 11+ years of experience in React, Next.js, TypeScript, AWS, and React Native.",
+    description: `Senior Software Engineer resume with ${about.years_experience}+ years of experience in React, Next.js, TypeScript, AWS, and React Native.`,
     path: "/resume",
   });
 }
@@ -29,7 +31,8 @@ export default async function ResumePage() {
     <div className="py-32">
       <ResumeViewTracker />
       <div className="mx-auto max-w-3xl px-(--container-padding)">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageBreadcrumbs items={[{ label: "Home", href: "/" }, { label: "Resume" }]} />
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-h1 font-bold tracking-tight">{resume.name}</h1>
             <p className="text-body-lg text-accent mt-1 font-medium">{resume.title}</p>

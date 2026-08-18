@@ -35,6 +35,7 @@ export async function buildPageMetadata(
     alternates: { canonical },
     openGraph: {
       ...previous.openGraph,
+      type: "website",
       url: canonical,
       title: input.title,
       description: input.description,

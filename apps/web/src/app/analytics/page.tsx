@@ -16,7 +16,7 @@ export async function generateMetadata(
   // Placeholder/thin content (all stats are "—", charts are "coming in Phase 4") —
   // keep it reachable for visitors but excluded from search results until it
   // has real data. Also dropped from sitemap.ts for the same reason.
-  return { ...metadata, robots: { index: false, follow: true } };
+  return { ...metadata, robots: { index: false, follow: false } };
 }
 
 const placeholderStats = [
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
         {/* Placeholder charts */}
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
-            <h3 className="font-semibold">Visitor Trends</h3>
+            <h2 className="font-semibold">Visitor Trends</h2>
             <p className="text-muted-foreground mt-1 text-sm">
               Daily visitors over the past 30 days
             </p>
@@ -68,21 +68,21 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
-            <h3 className="font-semibold">Traffic Sources</h3>
+            <h2 className="font-semibold">Traffic Sources</h2>
             <p className="text-muted-foreground mt-1 text-sm">Where visitors come from</p>
             <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Donut chart coming in Phase 4
             </div>
           </div>
           <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
-            <h3 className="font-semibold">Top Pages</h3>
+            <h2 className="font-semibold">Top Pages</h2>
             <p className="text-muted-foreground mt-1 text-sm">Most visited pages</p>
             <div className="text-muted-foreground/50 mt-6 flex h-48 items-center justify-center text-sm">
               Bar chart coming in Phase 4
             </div>
           </div>
           <div className="border-border/50 bg-muted/20 rounded-xl border p-6">
-            <h3 className="font-semibold">Core Web Vitals</h3>
+            <h2 className="font-semibold">Core Web Vitals</h2>
             <p className="text-muted-foreground mt-1 text-sm">
               LCP, INP, CLS from real users
             </p>

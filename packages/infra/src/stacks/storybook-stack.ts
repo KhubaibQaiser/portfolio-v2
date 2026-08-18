@@ -28,6 +28,7 @@ export class StorybookStack extends cdk.Stack {
 
     const site = new StaticSite(this, "Site", {
       assetDir: props.assetDir,
+      noindex: true,
       ...(config.domainEnabled && props.certificate
         ? {
             domain: {

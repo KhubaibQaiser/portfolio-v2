@@ -16,6 +16,8 @@ export type StaticSiteProps = {
   assetDir: string;
   /** Optional custom domain + cert (cert must be in us-east-1 for CloudFront). */
   domain?: StaticSiteDomain;
+  /** When true, every response includes `X-Robots-Tag: noindex, nofollow`. */
+  noindex?: boolean;
 };
 
 /**
@@ -42,6 +44,17 @@ export class StaticSite extends Construct {
       autoDeleteObjects: true,
     });
 
+    const noindexHeaders = props.noindex
+      ? new cloudfront.ResponseHeadersPolicy(this, "NoIndexHeaders", {
+          comment: "Prevent search indexing of this distribution",
+          customHeadersBehavior: {
+            customHeaders: [
+              { header: "X-Robots-Tag", value: "noindex, nofollow", override: true },
+            ],
+          },
+        })
+      : undefined;
+
     this.distribution = new cloudfront.Distribution(this, "Distribution", {
       defaultRootObject: "index.html",
       defaultBehavior: {
@@ -50,6 +63,7 @@ export class StaticSite extends Construct {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         compress: true,
+        responseHeadersPolicy: noindexHeaders,
       },
       // OAC returns 403 for missing keys; serve the app entry so deep links work.
       errorResponses: [

@@ -11,6 +11,7 @@ import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as iam from "aws-cdk-lib/aws-iam";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
 import { Construct } from "constructs";
+import { wwwRedirectFunctionCode } from "../cloudfront/www-redirect";
 
 const CACHE_PREFIX = "_cache";
 const ASSETS_PREFIX = "_assets";
@@ -31,6 +32,13 @@ export type NextjsSiteProps = {
   environment?: Record<string, string>;
   /** Optional custom domain + cert (cert must be in us-east-1). */
   domain?: NextjsSiteDomain;
+  /**
+   * When set, a viewer-request CloudFront Function 301s `www.{host}` to
+   * `https://{host}` (path + query preserved). Use the apex hostname only.
+   */
+  canonicalApexHost?: string;
+  /** When true, every response includes `X-Robots-Tag: noindex, nofollow`. */
+  noindex?: boolean;
   /** Hook to grant the server function access to app resources (table, media). */
   grantServer?: (serverFunction: lambda.Function) => void;
 };
@@ -162,12 +170,44 @@ export class NextjsSite extends Construct {
       code: lambda.Code.fromAsset(path.join(lambdaDir, "sign-post-body")),
     });
 
+    const wwwRedirectFn = props.canonicalApexHost
+      ? new cloudfront.Function(this, "WwwRedirectFn", {
+          comment: `301 www to https://${props.canonicalApexHost}`,
+          runtime: cloudfront.FunctionRuntime.JS_2_0,
+          code: cloudfront.FunctionCode.fromInline(
+            wwwRedirectFunctionCode(props.canonicalApexHost),
+          ),
+        })
+      : undefined;
+    const viewerRequestAssociation: cloudfront.FunctionAssociation[] | undefined =
+      wwwRedirectFn
+        ? [
+            {
+              function: wwwRedirectFn,
+              eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            },
+          ]
+        : undefined;
+
+    const noindexHeaders = props.noindex
+      ? new cloudfront.ResponseHeadersPolicy(this, "NoIndexHeaders", {
+          comment: "Prevent search indexing of this distribution",
+          customHeadersBehavior: {
+            customHeaders: [
+              { header: "X-Robots-Tag", value: "noindex, nofollow", override: true },
+            ],
+          },
+        })
+      : undefined;
+
     const serverBehavior: cloudfront.BehaviorOptions = {
       origin: serverOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
       cachePolicy: serverCachePolicy,
       originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      functionAssociations: viewerRequestAssociation,
+      responseHeadersPolicy: noindexHeaders,
       edgeLambdas: [
         {
           functionVersion: signBodyFn.currentVersion,
@@ -181,9 +221,14 @@ export class NextjsSite extends Construct {
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
       cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      functionAssociations: viewerRequestAssociation,
+      responseHeadersPolicy: noindexHeaders,
     };
 
     this.distribution = new cloudfront.Distribution(this, "Distribution", {
+      // llms.txt is server-rendered (apps/web/src/app/llms.txt/route.ts) so
+      // it can reflect live CMS data — it must go through serverBehavior
+      // (the distribution default), not a static S3 behavior, to reach Lambda.
       defaultBehavior: serverBehavior,
       additionalBehaviors: {
         "_next/image*": {
@@ -193,14 +238,12 @@ export class NextjsSite extends Construct {
           cachePolicy: imageCachePolicy,
           originRequestPolicy:
             cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          functionAssociations: viewerRequestAssociation,
+          responseHeadersPolicy: noindexHeaders,
         },
         "_next/data/*": serverBehavior,
         "_next/*": staticBehavior,
         BUILD_ID: staticBehavior,
-        // llms.txt is server-rendered (apps/web/src/app/llms.txt/route.ts) so
-        // it can reflect live CMS data — it must go through serverBehavior
-        // (the distribution default), not staticBehavior, to reach the Lambda.
-        "manifest.json": staticBehavior,
       },
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,

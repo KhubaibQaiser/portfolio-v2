@@ -13,13 +13,27 @@ import { Footer } from "@/components/layout/footer";
 import { DeferredWidgets } from "@/components/layout/deferred-widgets";
 import { SiteConfigProvider } from "@/components/layout/site-config-provider";
 import { MAIN_NAV_LINKS } from "@portfolio/shared/constants";
-import { fetchSiteConfig } from "@/lib/data";
+import type { SiteConfig, Skill, SocialLink } from "@portfolio/shared/schemas";
+import { fetchSiteConfig, fetchSkills } from "@/lib/data";
+import {
+  knowsAboutFromSkills,
+  personJsonLd,
+  profilePageJsonLd,
+  twitterCreatorHandle,
+  websiteJsonLd,
+} from "@/lib/json-ld";
 import { SITE_URL } from "@/lib/seo";
 import { env } from "@/lib/env";
 import "@/styles/globals.css";
 
+function asSocialLinks(config: SiteConfig): SocialLink[] {
+  return config.social_links as unknown as SocialLink[];
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const config = await fetchSiteConfig();
+  const socialLinks = asSocialLinks(config);
+  const twitter = twitterCreatorHandle(socialLinks);
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -48,13 +62,12 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: config.name,
       title: `${config.name} | ${config.title}`,
       description: config.description,
-      // images intentionally omitted — populated from opengraph-image.tsx
     },
     twitter: {
       card: "summary_large_image",
       title: `${config.name} | ${config.title}`,
       description: config.description,
-      // images intentionally omitted — populated from twitter-image.tsx
+      ...(twitter ? { creator: twitter } : {}),
     },
     robots: {
       index: true,
@@ -62,9 +75,6 @@ export async function generateMetadata(): Promise<Metadata> {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
-    // Populated once GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION are set
-    // (see Cloud Agents / deploy secrets) — omitted entirely until then so no
-    // empty verification meta tags are emitted.
     verification: {
       google: env.GOOGLE_SITE_VERIFICATION,
       other: env.BING_SITE_VERIFICATION
@@ -85,56 +95,40 @@ export const viewport: Viewport = {
 
 function JsonLd({
   config,
+  skills,
   siteUrl,
 }: {
-  config: Awaited<ReturnType<typeof fetchSiteConfig>>;
+  config: SiteConfig;
+  skills: Skill[];
   siteUrl: string;
 }) {
-  const socialLinks = config.social_links as unknown as Array<{ url: string }>;
-  const personSchema = {
-    "@context": "https://schema.org",
-    "@type": ["Person", "ProfilePage"],
-    "@id": `${siteUrl}/#person`,
+  const socialLinks = asSocialLinks(config);
+  const personSchema = personJsonLd({
+    siteUrl,
     name: config.name,
-    url: siteUrl,
     jobTitle: config.title,
     description: config.description,
     email: config.email,
-    // Include the canonical site URL alongside external profiles (e.g. GitHub, LinkedIn) so
-    // Google's Knowledge Graph can tie the entity back to the homepage, not just third parties.
-    sameAs: [...new Set([...socialLinks.map((l) => l.url), siteUrl])],
-    knowsAbout: [
-      "React",
-      "Next.js",
-      "TypeScript",
-      "Node.js",
-      "AWS",
-      "React Native",
-      "System Design",
-      "Tailwind CSS",
-      "GraphQL",
-      "Docker",
-      "CI/CD",
-    ],
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: config.location.split(",")[0]?.trim(),
-      addressCountry: "PK",
-    },
-  };
-
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
+    location: config.location,
+    socialLinks,
+    knowsAbout: knowsAboutFromSkills(skills),
+  });
+  const profileSchema = profilePageJsonLd(siteUrl);
+  const websiteSchema = websiteJsonLd({
+    siteUrl,
     name: config.name,
-    url: siteUrl,
-  };
+    description: config.description,
+  });
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema) }}
       />
       <script
         type="application/ld+json"
@@ -145,12 +139,8 @@ function JsonLd({
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const config = await fetchSiteConfig();
-  const socialLinks = config.social_links as unknown as Array<{
-    platform: string;
-    url: string;
-    label: string;
-  }>;
+  const [config, skills] = await Promise.all([fetchSiteConfig(), fetchSkills()]);
+  const socialLinks = asSocialLinks(config);
 
   return (
     <html
@@ -159,14 +149,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <link
           rel="alternate"
           type="text/plain"
           href="/llms.txt"
           title="LLM site summary"
         />
-        <JsonLd config={config} siteUrl={SITE_URL} />
+        <JsonLd config={config} skills={skills} siteUrl={SITE_URL} />
       </head>
       <body className="bg-background min-h-screen font-sans antialiased">
         <ThemeProvider>

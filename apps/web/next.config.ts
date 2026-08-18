@@ -14,7 +14,6 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
-  skipTrailingSlashRedirect: true,
   // Bundle server deps into traced Lambda artifacts. Turbopack production builds
   // externalize packages into .next/node_modules with hashed names and omit
   // transitive deps on Lambda — use `next build --webpack` (see package.json).

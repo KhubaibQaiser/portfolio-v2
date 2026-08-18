@@ -10,9 +10,13 @@ export const MAIN_NAV_LINKS: NavLink[] = [
   { href: "#recommendations", label: "Recommendations" },
   { href: "#skills", label: "Skills" },
   { href: "#experience", label: "Experience" },
-  { href: "#projects", label: "Projects" },
+  { href: "/projects", label: "Projects" },
   { href: "#contact", label: "Contact" },
 ];
+
+export function isHashNavHref(href: string): boolean {
+  return href.startsWith("#");
+}
 
 export const SKILL_CATEGORIES = {
   frontend: "Frontend & UI",
