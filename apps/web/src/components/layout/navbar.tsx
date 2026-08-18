@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 import { ThemeToggle } from "@portfolio/ui/theme-toggle";
+import { isHashNavHref } from "@portfolio/shared/constants";
 
 function trackNav(href: string, label: string) {
   capturePortfolioEvent(PortfolioEvents.primaryNavClick, { href, label });
@@ -186,22 +187,39 @@ export function Navbar({ name, navLinks }: NavbarProps) {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link, i) => (
-              <Link
-                key={link.href}
-                href={toHomeSectionHref(link.href)}
-                onClick={(e) => handleSectionNavClick(e, link.href, link.label)}
-                className={cn(
-                  "text-muted-foreground relative px-3 py-2 text-sm font-medium",
-                  "hover:text-foreground transition-colors duration-200",
-                )}
-              >
-                <span className="text-accent font-mono text-xs opacity-70">
-                  0{i + 1}.
-                </span>{" "}
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link, i) =>
+              isHashNavHref(link.href) ? (
+                <Link
+                  key={link.href}
+                  href={toHomeSectionHref(link.href)}
+                  onClick={(e) => handleSectionNavClick(e, link.href, link.label)}
+                  className={cn(
+                    "text-muted-foreground relative px-3 py-2 text-sm font-medium",
+                    "hover:text-foreground transition-colors duration-200",
+                  )}
+                >
+                  <span className="text-accent font-mono text-xs opacity-70">
+                    0{i + 1}.
+                  </span>{" "}
+                  {link.label}
+                </Link>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => trackNav(link.href, link.label)}
+                  className={cn(
+                    "text-muted-foreground relative px-3 py-2 text-sm font-medium",
+                    "hover:text-foreground transition-colors duration-200",
+                  )}
+                >
+                  <span className="text-accent font-mono text-xs opacity-70">
+                    0{i + 1}.
+                  </span>{" "}
+                  {link.label}
+                </Link>
+              ),
+            )}
             <Link
               href="/resume"
               onClick={() => trackNav("/resume", "Resume")}
@@ -250,24 +268,42 @@ export function Navbar({ name, navLinks }: NavbarProps) {
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="glass fixed inset-x-0 top-16 bottom-0 z-40 flex flex-col items-center justify-start gap-8 overflow-y-auto overscroll-contain px-6 py-8 backdrop-blur-xl md:hidden"
           >
-            {navLinks.map((link, i) => (
-              <MotionLink
-                key={link.href}
-                href={toHomeSectionHref(link.href)}
-                onClick={(e) =>
-                  handleSectionNavClick(e, link.href, link.label, () =>
-                    setMobileOpen(false),
-                  )
-                }
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.3 }}
-                className={cn("text-foreground text-lg font-medium", FOCUS_RING)}
-              >
-                <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
-                {link.label}
-              </MotionLink>
-            ))}
+            {navLinks.map((link, i) =>
+              isHashNavHref(link.href) ? (
+                <MotionLink
+                  key={link.href}
+                  href={toHomeSectionHref(link.href)}
+                  onClick={(e) =>
+                    handleSectionNavClick(e, link.href, link.label, () =>
+                      setMobileOpen(false),
+                    )
+                  }
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  className={cn("text-foreground text-lg font-medium", FOCUS_RING)}
+                >
+                  <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
+                  {link.label}
+                </MotionLink>
+              ) : (
+                <MotionLink
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => {
+                    trackNav(link.href, link.label);
+                    setMobileOpen(false);
+                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  className={cn("text-foreground text-lg font-medium", FOCUS_RING)}
+                >
+                  <span className="text-accent font-mono text-sm">0{i + 1}.</span>{" "}
+                  {link.label}
+                </MotionLink>
+              ),
+            )}
             <MotionLink
               href="/resume"
               initial={{ opacity: 0, y: 20 }}

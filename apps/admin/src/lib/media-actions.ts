@@ -6,6 +6,18 @@ import type { ActionResult } from "@/lib/actions";
 
 const repo = getContentRepository();
 
+export async function updateMediaAlt(id: string, altText: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    await repo.updateMedia(id, { alt_text: altText.trim() || null });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
 export async function deleteMediaAsset(id: string): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };

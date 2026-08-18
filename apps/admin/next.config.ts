@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaRemotePatterns(),
   },
+  headers: async () => [
+    {
+      source: "/:path*",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+    },
+  ],
   // CloudFront → Lambda function URL sets x-forwarded-host to the function URL
   // while Origin stays on the CloudFront domain; without this, every Server
   // Action POST is rejected as an invalid forwarded request.

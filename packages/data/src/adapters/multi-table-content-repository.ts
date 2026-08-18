@@ -657,6 +657,11 @@ export function createMultiTableContentRepository(
       await putItem(tables.media, row);
       return toMedia(row);
     },
+    async updateMedia(id: string, values: { alt_text: string | null }) {
+      const current = await getItem(tables.media, { id });
+      if (!current) throw new Error(`Media not found: ${id}`);
+      await putItem(tables.media, { ...current, id, alt_text: values.alt_text });
+    },
     async deleteMediaRow(id: string) {
       await deleteItem(tables.media, { id });
     },

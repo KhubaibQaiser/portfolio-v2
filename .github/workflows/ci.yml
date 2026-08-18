@@ -165,6 +165,8 @@ jobs:
           -c posthogProjectToken=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
           -c posthogHost=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
           -c posthogEnvironment=${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
+          -c googleSiteVerification=${{ vars.GOOGLE_SITE_VERIFICATION }}
+          -c bingSiteVerification=${{ vars.BING_SITE_VERIFICATION }}
           -c githubRepo=${{ github.repository }}
 
       - name: Smoke test image optimizer

@@ -314,7 +314,7 @@ Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cr
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint → typecheck → test → integration → build → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys).
 
-Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`), plus PostHog (below).
+Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`), `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION`, plus PostHog (below).
 
 **PostHog (deploy):** bake client analytics and source maps into the OpenNext build; inject token/host on the web Lambda for server events. Set these GitHub **variables**: `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_POSTHOG_UI_HOST`, `NEXT_PUBLIC_POSTHOG_ENVIRONMENT`, `POSTHOG_PROJECT_ID`, `POSTHOG_APP_HOST`. Set GitHub **secret** `POSTHOG_API_KEY` (personal API key) for source-map upload at build time. CDK receives `-c posthogProjectToken` / `posthogHost` / `posthogEnvironment` for Lambda runtime.
 
@@ -329,6 +329,7 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 | Variable                                                   | Purpose                                        |
 | ---------------------------------------------------------- | ---------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                     | Canonical URL                                  |
+| `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION`      | Optional GSC / Bing HTML-tag tokens            |
 | `GROQ_API_KEY_SECRET_ARN`                                  | Groq key (Secrets Manager ARN)                 |
 | `RESEND_API_KEY` / `RESEND_API_KEY_SECRET_ARN`             | Contact form email (local key or prod ARN)     |
 | `TURNSTILE_SECRET_KEY` / `TURNSTILE_SECRET_KEY_SECRET_ARN` | Turnstile server verification                  |

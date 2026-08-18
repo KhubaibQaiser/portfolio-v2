@@ -68,6 +68,16 @@ export type InfraConfig = {
    * Pass via `-c posthogEnvironment=production`.
    */
   posthogEnvironment?: string;
+  /**
+   * Google Search Console HTML-tag verification token (public meta content).
+   * Pass via `-c googleSiteVerification=…`.
+   */
+  googleSiteVerification?: string;
+  /**
+   * Bing Webmaster Tools `msvalidate.01` token (public meta content).
+   * Pass via `-c bingSiteVerification=…`.
+   */
+  bingSiteVerification?: string;
   /** Monthly cost budget (USD) that triggers SNS alerts at 80%/100%. */
   monthlyBudgetUsd: number;
   /**
@@ -142,6 +152,8 @@ export function resolveConfig(app: App): InfraConfig {
     posthogProjectToken: ctx("posthogProjectToken"),
     posthogHost: ctx("posthogHost"),
     posthogEnvironment: ctx("posthogEnvironment"),
+    googleSiteVerification: ctx("googleSiteVerification"),
+    bingSiteVerification: ctx("bingSiteVerification"),
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),

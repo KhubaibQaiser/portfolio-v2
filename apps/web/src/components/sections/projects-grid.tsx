@@ -108,9 +108,9 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
                   </div>
                 </div>
                 <Link href={`/projects/${project.slug}`} className="mt-4 flex-1">
-                  <h3 className="group-hover:text-accent text-lg font-semibold tracking-tight">
+                  <h2 className="group-hover:text-accent text-lg font-semibold tracking-tight">
                     {project.title}
-                  </h3>
+                  </h2>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {project.summary}
                   </p>

@@ -100,7 +100,6 @@ export function AboutSection({
                       src={about.photo_url}
                       alt={`Portrait of ${name}`}
                       fill
-                      priority
                       sizes="(min-width: 768px) 288px, 256px"
                       className="object-cover"
                     />

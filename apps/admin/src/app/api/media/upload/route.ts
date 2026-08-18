@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getContentRepository } from "@portfolio/data";
 import { getMediaStore } from "@portfolio/data/media";
+import { altTextFromFilename } from "@portfolio/shared/alt-text";
 import { mediaInsertSchema } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 
@@ -56,13 +57,18 @@ export async function POST(request: Request) {
   }
 
   const publicUrl = mediaStore.buildPublicObjectUrl(objectKey);
+  const rawAlt = formData.get("alt");
+  const altText =
+    typeof rawAlt === "string" && rawAlt.trim()
+      ? rawAlt.trim().slice(0, 500)
+      : altTextFromFilename(file.name);
 
   const parsed = mediaInsertSchema.safeParse({
     filename: file.name,
     url: publicUrl,
     mime_type: file.type,
     size: bytes.length,
-    alt_text: null,
+    alt_text: altText,
   });
 
   if (!parsed.success) {

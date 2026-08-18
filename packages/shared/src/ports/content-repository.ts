@@ -135,6 +135,7 @@ export type ContentRepository = {
   getMedia(): Promise<Media[]>;
   getMediaById(id: string): Promise<Media>;
   insertMedia(values: MediaInsert): Promise<Media>;
+  updateMedia(id: string, values: { alt_text: string | null }): Promise<void>;
   deleteMediaRow(id: string): Promise<void>;
 
   // Resume generations (AI history)

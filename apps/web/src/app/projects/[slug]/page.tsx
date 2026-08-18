@@ -1,12 +1,16 @@
 import type { Metadata, ResolvingMetadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
 import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
+import { PageBreadcrumbs } from "@/components/layout/page-breadcrumbs";
+import { RelatedProjects } from "@/components/projects/related-projects";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
+import { breadcrumbListJsonLd, creativeWorkJsonLd } from "@/lib/json-ld";
+import { splitPlainTextParagraphs } from "@/lib/plain-text";
+import { pickRelatedProjects } from "@/lib/related-projects";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 import type { Project } from "@portfolio/shared/schemas";
 
@@ -29,42 +33,26 @@ export async function generateMetadata(
     title: project.title,
     description: project.summary,
     path: `/projects/${slug}`,
-    image: project.cover_url
-      ? { url: project.cover_url, width: 1200, height: 630, alt: project.title }
-      : undefined,
   });
 }
 
 function ProjectJsonLd({ project, slug }: { project: Project; slug: string }) {
-  const projectUrl = `${SITE_URL}/projects/${slug}`;
-
-  const creativeWorkSchema = {
-    "@context": "https://schema.org",
-    "@type": "CreativeWork",
-    "@id": `${projectUrl}#creativework`,
+  const creativeWorkSchema = creativeWorkJsonLd({
+    siteUrl: SITE_URL,
+    slug,
     name: project.title,
     description: project.summary,
-    url: projectUrl,
     image: project.cover_url ?? undefined,
-    keywords: project.tech_tags.join(", "),
-    author: { "@id": `${SITE_URL}/#person` },
-    creator: { "@id": `${SITE_URL}/#person` },
-  };
+    keywords: project.tech_tags,
+    datePublished: project.created_at,
+    dateModified: project.updated_at,
+  });
 
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Projects",
-        item: `${SITE_URL}/projects`,
-      },
-      { "@type": "ListItem", position: 3, name: project.title, item: projectUrl },
-    ],
-  };
+  const breadcrumbSchema = breadcrumbListJsonLd(SITE_URL, [
+    { name: "Home", path: "/" },
+    { name: "Projects", path: "/projects" },
+    { name: project.title, path: `/projects/${slug}` },
+  ]);
 
   return (
     <>
@@ -92,28 +80,21 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
+  const related = pickRelatedProjects(project, await fetchAllProjects());
+  const overviewParagraphs = splitPlainTextParagraphs(project.description);
+
   return (
     <div className="py-32">
       <ProjectJsonLd project={project} slug={slug} />
       <SlugViewTracker slug={slug} />
       <div className="mx-auto max-w-3xl px-(--container-padding)">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Home
-          </Link>
-          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-          <Link
-            href="/projects"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Projects
-          </Link>
-          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-          <span className="text-foreground font-medium">{project.title}</span>
-        </nav>
+        <PageBreadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Projects", href: "/projects" },
+            { label: project.title },
+          ]}
+        />
 
         <h1 className="text-h1 mt-6 font-bold tracking-tight">{project.title}</h1>
         <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
@@ -188,9 +169,11 @@ export default async function ProjectDetailPage({
           <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">
             Overview
           </h2>
-          <p className="text-muted-foreground mt-3 leading-relaxed">
-            {project.description}
-          </p>
+          <div className="text-muted-foreground mt-3 space-y-4 leading-relaxed">
+            {overviewParagraphs.map((paragraph) => (
+              <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+            ))}
+          </div>
         </section>
 
         <section className="mt-10">
@@ -208,6 +191,8 @@ export default async function ProjectDetailPage({
             ))}
           </div>
         </section>
+
+        <RelatedProjects projects={related} />
       </div>
     </div>
   );
