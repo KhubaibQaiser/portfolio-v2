@@ -28,6 +28,7 @@ export default defineConfig({
             "packages/ui/**/*.{test,spec}.ts",
             "packages/deploy/**/*.{test,spec}.ts",
             "packages/infra/**/*.{test,spec}.ts",
+            "packages/agent-mcp/**/*.{test,spec}.ts",
             "apps/*/src/lib/**/*.{test,spec}.{ts,tsx}",
           ],
           exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/.turbo/**"],
