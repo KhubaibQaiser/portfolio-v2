@@ -1,0 +1,26 @@
+{
+  "id": "unknown-skill",
+  "description": "Rejects skills that are not in the CMS canonical skill map",
+  "guidelines": "classic",
+  "expect": "fail",
+  "expectViolationIncludes": "unknown skill",
+  "modelOutput": {
+    "summary": "Senior engineer building reliable React and TypeScript products with clear customer and platform impact.",
+    "titleOverride": null,
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": ["React"],
+    "experiences": [
+      {
+        "experienceId": "experience-uuid",
+        "bullets": [
+          {
+            "experienceId": "experience-uuid",
+            "sourceBulletIndex": 0,
+            "text": "Built reliable **React** products for customers."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "Invented.js"] }]
+  }
+}
