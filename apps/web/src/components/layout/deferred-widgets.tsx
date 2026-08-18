@@ -4,10 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { DeferredWidgetsErrorBoundary } from "@/components/layout/deferred-widgets-error-boundary";
 
-async function importWithRetry<T>(
-  loader: () => Promise<T>,
-  retries = 3,
-): Promise<T> {
+async function importWithRetry<T>(loader: () => Promise<T>, retries = 3): Promise<T> {
   let last: unknown;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {

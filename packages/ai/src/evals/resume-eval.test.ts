@@ -42,7 +42,11 @@ describe("resume-ai eval suite (offline — see specs/resume-ai.md)", () => {
       const facts = buildCandidateFacts(c.factsInput ?? sharedFacts);
       const guidelines = GUIDELINES[c.guidelines]();
       const run = () => {
-        const { resume } = enforceResumeGenerationPolicy(c.modelOutput, facts, guidelines);
+        const { resume } = enforceResumeGenerationPolicy(
+          c.modelOutput,
+          facts,
+          guidelines,
+        );
         const fab = validateFabrication(resume, facts.idMap);
         if (!fab.ok) throw new ResumePolicyError(fab.offending);
       };
@@ -57,7 +61,9 @@ describe("resume-ai eval suite (offline — see specs/resume-ai.md)", () => {
         if (error instanceof Error && error.message.startsWith("expected ")) throw error;
         if (c.expectViolationIncludes) {
           const msg =
-            error instanceof ResumePolicyError ? error.violations.join(", ") : String(error);
+            error instanceof ResumePolicyError
+              ? error.violations.join(", ")
+              : String(error);
           expect(msg).toContain(c.expectViolationIncludes);
         } else {
           expect(error).toBeInstanceOf(ResumePolicyError);
