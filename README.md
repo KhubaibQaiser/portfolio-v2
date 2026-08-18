@@ -106,11 +106,15 @@ portfolio-v2/
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, ports, constants
 │   ├── data/                # DynamoDB adapter + fixtures + seed
-│   ├── ai/                  # Model factory, prompts, guardrails, telemetry
+│   ├── ai/                  # Model factory, prompts, guardrails, telemetry, evals
 │   ├── ui/                  # Design system + Storybook
 │   ├── infra/               # AWS CDK app — all stacks and constructs
+│   ├── agent-mcp/           # Read-only MCP server (ADRs + AI contracts)
 │   └── eslint-config/       # Shared ESLint
-├── .github/workflows/       # CI pipeline: lint → typecheck → test → build → deploy
+├── specs/                   # Acceptance specs (Resume AI contract)
+├── .cursor/rules/           # Scoped agent rules
+├── AGENTS.md                # Agent operating manual
+├── .github/workflows/       # CI: lint, tests, evals, e2e, Lighthouse, deploy
 ├── docker-compose.dev.yml   # DynamoDB Local
 ├── turbo.json
 └── pnpm-workspace.yaml
@@ -177,15 +181,17 @@ With `DATA_BACKEND=fixture` (the default) you can run the UI immediately.
 
 ### Commands
 
-| Command                         | Description                   |
-| ------------------------------- | ----------------------------- |
-| `pnpm dev`                      | All apps                      |
-| `pnpm dev:web`                  | Web — http://localhost:3000   |
-| `pnpm dev:admin`                | Admin — http://localhost:3001 |
-| `pnpm build`                    | Production build              |
-| `pnpm lint` / `pnpm typecheck`  | ESLint / `tsc --noEmit`       |
-| `pnpm test`                     | Vitest unit tests             |
-| `pnpm ddb:up` / `pnpm ddb:down` | DynamoDB Local                |
+| Command                         | Description                                   |
+| ------------------------------- | --------------------------------------------- |
+| `pnpm dev`                      | All apps                                      |
+| `pnpm dev:web`                  | Web — http://localhost:3000                   |
+| `pnpm dev:admin`                | Admin — http://localhost:3001                 |
+| `pnpm build`                    | Production build                              |
+| `pnpm lint` / `pnpm typecheck`  | ESLint / `tsc --noEmit`                       |
+| `pnpm test`                     | Vitest unit tests                             |
+| `pnpm eval:resume`              | Offline Resume AI eval fixtures (no API keys) |
+| `pnpm test:e2e`                 | Playwright (public site, fixture mode)        |
+| `pnpm ddb:up` / `pnpm ddb:down` | DynamoDB Local                                |
 
 ---
 
@@ -314,11 +320,22 @@ Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cr
 
 ## CI/CD
 
-GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint → typecheck → test → integration → build → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys).
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint (including Prettier) → typecheck → unit tests → DynamoDB Local integration → **Gitleaks** → **offline Resume AI evals** → **Playwright e2e** in parallel, then build → Lighthouse (desktop + mobile) → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys) and waits on Lighthouse, e2e, evals, and the secret scan.
 
 Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`), `GOOGLE_DNS_SITE_VERIFICATION` (Search Console Domain TXT: `google-site-verification=…`), plus PostHog (below).
 
 **PostHog (deploy):** bake client analytics and source maps into the OpenNext build; inject token/host on the web Lambda for server events. Set these GitHub **variables**: `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_POSTHOG_UI_HOST`, `NEXT_PUBLIC_POSTHOG_ENVIRONMENT`, `POSTHOG_PROJECT_ID`, `POSTHOG_APP_HOST`. Set GitHub **secret** `POSTHOG_API_KEY` (personal API key) for source-map upload at build time. CDK receives `-c posthogProjectToken` / `posthogHost` / `posthogEnvironment` for Lambda runtime.
+
+---
+
+## Agent harness
+
+This repo is operated with a committed agent interface, not just used with AI tools locally:
+
+- [`AGENTS.md`](AGENTS.md) / [`.github/copilot-instructions.md`](.github/copilot-instructions.md) — invariants coding agents must respect (admin authorization, Resume AI fabrication guardrails, IaC ADRs).
+- [`.cursor/rules/`](.cursor/rules/) — scoped rules per area (`ai-product`, `admin-auth`, `infra`).
+- [`packages/agent-mcp`](packages/agent-mcp) — a minimal MCP server exposing curated, read-only repo context (ADRs, AI module contracts) so agents don't guess schema shapes. Cursor loads it via [`.cursor/mcp.json`](.cursor/mcp.json); run with `pnpm --filter @portfolio/agent-mcp start`.
+- [`specs/resume-ai.md`](specs/resume-ai.md) + [`packages/ai/src/evals/`](packages/ai/src/evals/) — Resume AI acceptance criteria and an offline eval suite on every PR (`pnpm eval:resume`), independent of live model calls.
 
 ---
 
