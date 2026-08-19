@@ -1,0 +1,10 @@
+---
+description: AWS CDK and cross-stack wiring
+globs: packages/infra/**
+---
+
+- Follow `docs/adr/0001-cross-stack-references.md`: no CloudFormation exports for Data/Auth resources. DynamoDB uses the `${tablePrefix}-*` ARN pattern; media bucket and secrets use the SSM registry.
+- Follow `docs/adr/0002-cost-optimization.md`: keep the single symptom-based `AppErrors` alarm. Do not add per-table DynamoDB alarms.
+- Runtime secrets stay in Secrets Manager; CDK creates empty shells and publishes complete ARNs to SSM. Never put plaintext keys in templates or Lambda env.
+- GitHub Actions deploy uses OIDC (`OidcStack`). Do not add long-lived AWS access keys to CI.
+- `bin/portfolio.ts` may `addDependency` for deploy ordering. That is not a CFN export.

@@ -31,7 +31,11 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
-.cursor/
+# Keep committed agent rules + MCP config; ignore local Cursor state.
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/mcp.json
 
 # OS
 .DS_Store

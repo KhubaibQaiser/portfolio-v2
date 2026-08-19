@@ -1,0 +1,11 @@
+---
+description: Resume AI, chat, and @portfolio/ai changes
+globs: packages/ai/**,apps/admin/src/lib/resume-ai/**,apps/web/src/app/api/chat/**,apps/admin/src/app/api/resume/**
+---
+
+- Structured output via Zod `.strict()` schemas only (`packages/ai/src/schemas`).
+- Untrusted JD text goes through `stripPromptInjection` then `wrapUntrusted`.
+- Never skip `enforceResumeGenerationPolicy` or `validateFabrication` before returning model output to the UI.
+- New model IDs need pricing in `packages/ai/src/telemetry.ts` or the daily cost cap undercounts.
+- Prompt or policy changes must keep `enforceResumeGenerationPolicy` and `validateFabrication` as the merge gate. When `packages/ai/src/evals/` exists, add a fixture case there too.
+- Do not call live LLM APIs from unit tests. Mock `generateObject` / `streamText`.
