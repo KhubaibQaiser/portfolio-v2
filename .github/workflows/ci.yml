@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-latest
     # Optional manual approval gate: add required reviewers to this environment.
     environment: production
-    timeout-minutes: 30
+    timeout-minutes: 45
     # OIDC: GitHub mints a short-lived token that assumes the AWS deploy role.
     permissions:
       id-token: write
@@ -207,11 +207,34 @@ jobs:
           POSTHOG_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
         run: pnpm build:open-next
 
+      # Dns/Cert (us-east-1) deploy first and in isolation. A cert SAN change
+      # forces CloudFormation to replace the physical ACM certificate, and its
+      # cleanup phase can hang for hours if any CloudFront distribution
+      # (Web/Admin/Storybook/CandidateMcp) still references the superseded
+      # cert — see the "Portfolio-Cert stuck cleanup" incident. Failing fast
+      # here, before spending time on the app stacks, makes that visible
+      # immediately instead of surfacing as an opaque "stack cannot be
+      # updated" error deep inside `--all`. Only the two context keys these
+      # stacks actually read are passed.
+      - name: CDK deploy (edge — Dns then Cert, us-east-1)
+        if: vars.DOMAIN_ENABLED == 'true'
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy Portfolio-Dns Portfolio-Cert
+          --require-approval never
+          -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
+
+      # concurrency 1 (not the previous 4): reduces parallel CloudFormation
+      # API calls/throttling risk across this stack set. Not a fix for the
+      # Cert deadlock above (that was a stuck cert replacement, not a
+      # same-run ordering race — CDK already serializes dependent stacks) but
+      # cheap insurance while this app has more stacks/Lambdas than before.
       - name: CDK deploy
         working-directory: packages/infra
         run: >
           pnpm exec cdk deploy --all
-          --require-approval never --concurrency 4
+          --require-approval never --concurrency 1
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
           -c adminUrls=${{ vars.ADMIN_URLS }}
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
