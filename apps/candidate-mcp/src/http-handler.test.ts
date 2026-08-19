@@ -59,11 +59,10 @@ function setUp(configOverrides: Partial<Config> = {}) {
 const SERVER_HOST = new URL(config.serverUrl).host;
 
 /**
- * `Request` objects built in-memory (unlike real HTTP requests received by
- * Node/Lambda) never carry a `Host` header, so DNS-rebinding protection in
- * `createHttpHandler` would reject every test request. Real traffic gets its
- * `Host` header from the transport (see `lambda.ts`'s `toWebRequest`); tests
- * fill it in here.
+ * Tests stamp Host because in-memory `Request` objects have none. Production
+ * Function URL events arrive with the Lambda URL hostname (CloudFront
+ * `ALL_VIEWER_EXCEPT_HOST_HEADER`); `toWebRequest` rewrites that to the
+ * public custom-domain Host before this handler runs.
  */
 function withHost(request: Request): Request {
   request.headers.set("host", SERVER_HOST);
@@ -99,6 +98,16 @@ describe("createHttpHandler", () => {
     const challenge = response.headers.get("www-authenticate");
     expect(challenge).toContain("Bearer");
     expect(challenge).toContain("resource_metadata");
+  });
+
+  it("rejects a Function URL Host that is not the public hostname", async () => {
+    const { handler } = setUp();
+    const request = initializeRequest();
+    request.headers.set("host", "abc123.lambda-url.eu-west-1.on.aws");
+
+    const response = await handler(request);
+
+    expect(response.status).toBe(403);
   });
 
   it("rejects a request with an invalid bearer token", async () => {
