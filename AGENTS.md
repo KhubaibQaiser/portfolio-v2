@@ -20,8 +20,8 @@ below as the source of truth, not guesses from training data.
    Implementation: `apps/admin/src/lib/auth-guard.ts`.
 2. **Resume AI output must pass `enforceResumeGenerationPolicy` and
    `validateFabrication`.** Never surface unvalidated model JSON to the UI.
-   Code: `packages/ai/src/policy/` and `packages/ai/src/guardrails/`.
-   When `specs/resume-ai.md` exists, treat it as the acceptance contract.
+   Spec: `specs/resume-ai.md`. Code: `packages/ai/src/policy/` and
+   `packages/ai/src/guardrails/`.
 3. **No secrets in source.** Use Secrets Manager ARNs. Do not log tokens,
    session cookies, or full PII.
 4. **Apps depend on ports, not AWS SDKs.** Put new persistence behind
@@ -35,9 +35,9 @@ below as the source of truth, not guesses from training data.
 
 1. Read the relevant ADR in `docs/adr/` and the Zod schema in
    `packages/shared` or `packages/ai/src/schemas`.
-2. For Resume AI, read the Zod schemas and policy first. When
-   `specs/resume-ai.md` and `packages/ai/src/evals/` exist, update those
-   before changing prompts or policy.
+2. For Resume AI, update `specs/resume-ai.md` and add an offline eval case
+   under `packages/ai/src/evals/cases/` before changing prompts or policy
+   (when that directory exists).
 3. Implement the smallest change. Do not add packages unless the task is a
    new bounded concern.
 4. Run:
