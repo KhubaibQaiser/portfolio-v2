@@ -10,10 +10,7 @@ import type { APIGatewayProxyEventV2 } from "aws-lambda";
  * because that Host is not the public hostname. Always stamp the public
  * Host CloudFront already validated via the custom-domain cert/alias.
  */
-export function toWebRequest(
-  event: APIGatewayProxyEventV2,
-  publicHost: string,
-): Request {
+export function toWebRequest(event: APIGatewayProxyEventV2, publicHost: string): Request {
   const query = event.rawQueryString ? `?${event.rawQueryString}` : "";
   const url = `https://${publicHost}${event.rawPath}${query}`;
 
