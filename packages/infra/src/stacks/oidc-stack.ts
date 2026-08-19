@@ -11,6 +11,8 @@ export type OidcStackProps = cdk.StackProps & {
 
 const GITHUB_OIDC_URL = "https://token.actions.githubusercontent.com";
 const GITHUB_OIDC_AUD = "sts.amazonaws.com";
+/** CloudFront ACM certs for this app always live in us-east-1 (see CertStack). */
+const EDGE_REGION = "us-east-1";
 
 /**
  * GitHub Actions OIDC deploy role. CI authenticates with GitHub's OIDC token
@@ -93,6 +95,30 @@ export class OidcStack extends cdk.Stack {
           `arn:aws:cloudformation:${this.region}:${this.account}:stack/${config.appName}-Web/*`,
           `arn:aws:cloudformation:${this.region}:${this.account}:stack/${config.appName}-CandidateMcp/*`,
         ],
+      }),
+    );
+
+    // Cert recovery (CERT_RECOVERY_MODE): read Portfolio-Cert's CertificateArn
+    // output (us-east-1) and read/write the CDK cross-region SSM exports that
+    // Web/Admin/Storybook CloudFront distributions resolve at deploy time.
+    const certRecoveryConsumerStacks = ["Web", "Admin", "Storybook"] as const;
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CertRecoveryReadCertStack",
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          `arn:aws:cloudformation:${EDGE_REGION}:${this.account}:stack/${config.appName}-Cert/*`,
+        ],
+      }),
+    );
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CertRecoverySyncCrossRegionExports",
+        actions: ["ssm:GetParameter", "ssm:GetParametersByPath", "ssm:PutParameter"],
+        resources: certRecoveryConsumerStacks.map(
+          (suffix) =>
+            `arn:aws:ssm:${this.region}:${this.account}:parameter/cdk/exports/${config.appName}-${suffix}/*`,
+        ),
       }),
     );
 
