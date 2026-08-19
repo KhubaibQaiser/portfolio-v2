@@ -59,15 +59,14 @@ function jsonResponse(body: ChatApiErrorBody, status: number) {
 const buildSystemPrompt = cache(
   async () => {
     const repo = getContentRepository();
-    const [hero, about, experience, projects, skills, config] =
-      await Promise.all([
-        repo.getHero(),
-        repo.getAbout(),
-        repo.getExperience(),
-        repo.getProjects(),
-        repo.getSkills(),
-        repo.getSiteConfig(),
-      ]);
+    const [hero, about, experience, projects, skills, config] = await Promise.all([
+      repo.getHero(),
+      repo.getAbout(),
+      repo.getExperience(),
+      repo.getProjects(),
+      repo.getSkills(),
+      repo.getSiteConfig(),
+    ]);
 
     const companiesFromExperience = uniqueCompanyCount(experience);
 
@@ -171,11 +170,7 @@ function createStream(
       if (!shouldStoreChatResponse(text)) return;
 
       try {
-        await getChatResponseCache().set(
-          cacheWrite.key,
-          text,
-          chatResponseCacheTtlSec(),
-        );
+        await getChatResponseCache().set(cacheWrite.key, text, chatResponseCacheTtlSec());
       } catch (error) {
         // Fail-open: a cache write miss must never break the user response.
         logger.warn("chat response cache write failed", {
@@ -239,13 +234,10 @@ export async function POST(req: Request) {
     const primary = modelFor("fast");
 
     let cacheKey: string | undefined;
-    const cacheable =
-      isChatResponseCacheEnabled() && isFirstTurnChat(sanitizedMessages);
+    const cacheable = isChatResponseCacheEnabled() && isFirstTurnChat(sanitizedMessages);
 
     if (cacheable) {
-      const lastUser = [...sanitizedMessages]
-        .reverse()
-        .find((m) => m.role === "user");
+      const lastUser = [...sanitizedMessages].reverse().find((m) => m.role === "user");
       const promptText = lastUser ? extractUserText(lastUser) : "";
       const normalized = normalizeChatPrompt(promptText);
 

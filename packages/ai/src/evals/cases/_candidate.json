@@ -1,0 +1,32 @@
+{
+  "siteConfig": {
+    "name": "Test User",
+    "title": "Senior Engineer",
+    "email": "test@example.com",
+    "location": "Remote",
+    "social_links": []
+  },
+  "resume": {
+    "default_summary": "Senior engineer building reliable product platforms with React and TypeScript.",
+    "education": [],
+    "certifications": []
+  },
+  "experiences": [
+    {
+      "id": "experience-uuid",
+      "company": "Source Company",
+      "role": "Senior Engineer",
+      "location": "Remote",
+      "location_type": "remote",
+      "contract_type": "full_time",
+      "start_date": "Jan 2024",
+      "end_date": null,
+      "description": "Built React products.\nImproved platform reliability for 40 customers.",
+      "tech_tags": ["React", "TypeScript"]
+    }
+  ],
+  "skills": [
+    { "category": "frontend", "name": "React" },
+    { "category": "frontend", "name": "TypeScript" }
+  ]
+}

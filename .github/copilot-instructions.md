@@ -21,4 +21,4 @@ This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, and packages
 - Relax Lighthouse thresholds to unblock CI.
 - Add packages for one-off helpers.
 
-Verify with `pnpm lint && pnpm typecheck && pnpm test`.
+Verify with `pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume`.

@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
+      - run: pnpm format:check
       - run: pnpm lint
 
   typecheck:
@@ -65,6 +66,41 @@ jobs:
       - name: Stop DynamoDB Local
         if: always()
         run: docker compose -f docker-compose.dev.yml down
+
+  # Personal-account repos do not need GITLEAKS_LICENSE. If this repo is
+  # later moved to a GitHub Organization, add that secret or the job fails.
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  evals:
+    name: Resume AI evals (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm eval:resume
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
 
   # Builds Next apps only (Storybook is built at deploy via build-storybook).
   # Uploads the web .next output so Lighthouse can reuse it without rebuilding.
@@ -117,7 +153,7 @@ jobs:
 
   deploy:
     name: Deploy to AWS
-    needs: lighthouse
+    needs: [lighthouse, e2e, evals, secrets]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Optional manual approval gate: add required reviewers to this environment.

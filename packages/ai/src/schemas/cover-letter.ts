@@ -12,7 +12,9 @@ export const coverLetterSchema = z.object({
     .array(z.string().min(20).max(900))
     .min(1)
     .max(5)
-    .describe("1-2 short paragraphs preferred. Each 20-900 chars. No AI cliches, no triples."),
+    .describe(
+      "1-2 short paragraphs preferred. Each 20-900 chars. No AI cliches, no triples.",
+    ),
   closing: z.string().min(10).max(300).describe("Closing paragraph inviting next steps."),
   signOff: z
     .string()

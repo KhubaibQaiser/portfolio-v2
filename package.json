@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "vitest run",
+    "eval:resume": "vitest run packages/ai/src/evals",
     "test:watch": "vitest",
     "test:integration": "DYNAMODB_LOCAL_ENDPOINT=http://localhost:8000 vitest run",
     "test:e2e": "playwright test --config apps/web/playwright.config.ts",
