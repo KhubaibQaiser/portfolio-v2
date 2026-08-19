@@ -7,11 +7,16 @@ below as the source of truth, not guesses from training data.
 
 - `apps/web` — public Next.js site (chat, resume PDF, contact).
 - `apps/admin` — CMS. Better Auth + Google. DynamoDB has no row-level security.
+- `apps/candidate-mcp` — network-facing, Cognito-OAuth-authenticated MCP
+  server for external automation. See ADR 0003 before changing auth, IAM, or
+  adding tools.
 - `packages/shared` — Zod schemas and ports (`ContentRepository`, `MediaStore`, …).
 - `packages/data` — DynamoDB / fixture adapters.
 - `packages/ai` — model factory, prompts, schemas, guardrails, resume policy.
 - `packages/infra` — AWS CDK. See `docs/adr/` before changing stacks.
-- `packages/agent-mcp` — read-only MCP tools that return ADRs and AI contracts.
+- `packages/agent-mcp` — local, unauthenticated, read-only MCP tools that
+  return ADRs and AI contracts (dev-only; not the same trust boundary as
+  `apps/candidate-mcp`).
 
 ## Invariants (already enforced — do not weaken)
 
@@ -30,6 +35,10 @@ below as the source of truth, not guesses from training data.
    Use ARN patterns or the SSM registry.
 6. **Observability stays symptom-based** (ADR 0002). Do not reintroduce
    per-table CloudWatch alarms.
+7. **`apps/candidate-mcp` tools must stay read-only and pass through
+   `deepSanitize`.** Any write-capable tool (job matches, applications,
+   "apply" actions) needs its own ADR and a human-review gate before
+   implementation. See ADR 0003 and `apps/candidate-mcp/src/sanitize.ts`.
 
 ## How to change things
 
@@ -45,8 +54,10 @@ below as the source of truth, not guesses from training data.
 pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume
 ```
 
-Use `pnpm --filter @portfolio/agent-mcp start` only when exercising the MCP
-server locally.
+Use `pnpm --filter @portfolio/agent-mcp start` only when exercising the local
+dev MCP server. Use `pnpm --filter @portfolio/candidate-mcp dev` for the
+network-facing one; its CI gate is the `mcp-security` job (auth, sanitize,
+rate-limit tests plus `candidate-mcp-stack.test.ts`'s CDK assertions).
 
 ## Do not
 
@@ -58,3 +69,6 @@ server locally.
 - Invent employers, metrics, or skills in Resume AI prompts or eval fixtures
   that the policy is meant to reject — fixtures that should fail must be
   marked `expect: "fail"`.
+- Widen `apps/candidate-mcp`'s DynamoDB IAM grant
+  (`grantCandidateMcpDataAccess`) beyond the five content tables, or add a
+  tool that fetches a caller-supplied URL (SSRF surface) — see ADR 0003.
