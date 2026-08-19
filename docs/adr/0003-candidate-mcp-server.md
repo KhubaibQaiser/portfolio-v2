@@ -87,18 +87,20 @@ Cognito issuer and the required scope.
 Cognito-issued tokens are a disjoint system from the admin app's Better Auth
 sessions. The MCP server never accepts, forwards, or conflates the two.
 
-### 2. Isolation from the production site: CloudFront OAC + reserved Lambda concurrency, not a separate AWS account
+### 2. Isolation from the production site: CloudFront OAC, not a separate AWS account
 
 The candidate-mcp Lambda shares the AWS account and DynamoDB tables with
 `apps/web`/`apps/admin` (simplest, consistent with the rest of the
 architecture, and this data is already effectively public). Blast radius is
-bounded by two independent, cheap controls instead of full account
-isolation:
+bounded by cheap controls instead of full account isolation:
 
-- **`reservedConcurrentExecutions`** on the candidate-mcp Lambda (a small
-  fixed cap). This both reserves that headroom for the function and hard-caps
-  it, so a flood against this endpoint can neither starve nor be starved by
-  the concurrency `apps/web`/`apps/admin` need.
+- **No `reservedConcurrentExecutions`.** AWS Lambda requires at least 10
+  unreserved concurrent executions after any reservation. This personal
+  account's ConcurrentExecutions quota is 10, so reserving even 5 fails
+  create with `UnreservedConcurrentExecution below its minimum value of [10]`.
+  Revisit a small reserved cap after a quota increase. Until then, cost and
+  flood risk stay bounded by CloudFront OAC, Cognito, the 10s timeout, and
+  the account-wide unreserved pool shared with web/admin.
 - **CloudFront Origin Access Control (OAC)** in front of the Lambda Function
   URL: the Function URL's `authType` is `AWS_IAM`, and CDK's
   `FunctionUrlOrigin.withOriginAccessControl()` grants exactly the

@@ -92,13 +92,6 @@ export type InfraConfig = {
    * only if the default collides with another AWS account's domain.
    */
   mcpCognitoDomainPrefix: string;
-  /**
-   * Reserved concurrency for the candidate-mcp Lambda: caps simultaneous
-   * executions so a runaway/abusive caller cannot exhaust the account's
-   * unreserved concurrency pool or drive up cost. Pass via
-   * `-c mcpReservedConcurrency=…`.
-   */
-  mcpReservedConcurrency: number;
 };
 
 const DEFAULTS = {
@@ -167,6 +160,5 @@ export function resolveConfig(app: App): InfraConfig {
     githubOidcProviderArn: ctx("githubOidcProviderArn"),
     mcpCognitoDomainPrefix:
       ctx("mcpCognitoDomainPrefix") ?? `${domainName.replace(/\./g, "-")}-candidate-mcp`,
-    mcpReservedConcurrency: Number(ctx("mcpReservedConcurrency") ?? 5),
   };
 }
