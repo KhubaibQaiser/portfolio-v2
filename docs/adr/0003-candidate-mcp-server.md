@@ -41,9 +41,10 @@ Building a bespoke OAuth authorization server would be over-engineering for
 a single-tenant project. **Amazon Cognito already provides this as a managed
 service**:
 
-- A dedicated User Pool on the **Lite** feature plan (no advanced-security
-  features needed; M2M billing is separate from MAU billing regardless of
-  plan).
+- A dedicated User Pool on the **Lite** feature plan (`FeaturePlan.LITE`;
+  no human ever signs in to this pool, so the MAU-priced Essentials/Plus
+  tiers buy nothing here — M2M token-request billing is separate from the
+  feature-plan tier regardless).
 - A **Resource Server** identified by `https://mcp.khubaibqaiser.com` with
   one custom scope, `profile.read`.
 - One **App Client per named consumer** (e.g. `n8n-workflow`,
@@ -107,13 +108,26 @@ isolation:
   `mcp.khubaibqaiser.com`. This is a network-layer control independent of
   the Cognito JWT check (an application-layer identity control) — two
   separate failure domains have to both be bypassed, not one.
-- **Read-only IAM.** The Lambda's role grants only
-  `dynamodb:{GetItem,BatchGetItem,Query,Scan,DescribeTable}` on the
-  `${tablePrefix}-*` ARN pattern (a new `grantMcpDataAccess`, mirroring
-  `grantWebDataAccess` but without any S3 grant — profile responses only
-  ever include URLs, never object bytes) and `secretsmanager:GetSecretValue`
-  scoped to nothing (Cognito needs no application-managed secret; the
-  client secret lives in Cognito itself).
+- **Read-only, table-scoped IAM.** `grantCandidateMcpDataAccess` (in
+  `packages/infra/src/naming.ts`) grants
+  `dynamodb:{GetItem,BatchGetItem,Query,Scan,DescribeTable}` on exactly the
+  five tables the two tools read — `content`, `experience`, `project`,
+  `skill`, `testimonial` (plus their GSIs) — and nothing else: no S3 grant
+  (profile responses only ever include URLs, never object bytes) and no
+  access to `resume-generation`, `media`, or `chat-cache`. This is tighter
+  than `grantWebDataAccess`'s `${tablePrefix}-*` wildcard, which is
+  appropriate given this Lambda is reachable by processes we don't control.
+  The one write permission it does have is a single `dynamodb:UpdateItem`
+  on the `rate-limit` table, for its own per-`client_id` counters.
+- **The Cognito app-client secret lives in Secrets Manager, not just
+  Cognito.** Cognito already holds the source of truth, but whoever
+  configures the n8n credential (or this repo's own post-deploy smoke
+  test) needs to read it once without Cognito console access. CDK writes
+  it into a dedicated, CDK-owned secret (`secretObjectValue` built from
+  `UserPoolClient.userPoolClientSecret` — a CloudFormation `Fn::GetAtt`,
+  never a plaintext string in the template) rather than a `CfnOutput`,
+  which would otherwise leak it into CloudFormation console history and CI
+  logs. `CandidateMcpStack`'s own test suite asserts this shape.
 
 ### 3. Standing invariants for future phases
 
@@ -136,6 +150,33 @@ phase will want exactly the tool shape these rules pre-empt:
   `validateFabrication` — unvalidated model or agent output must never
   reach a real side effect (submitting an application, sending an email)
   without review.
+
+### 4. Testing: real CDK synth + fixture-backed unit tests in CI, not a third-party MCP scanner
+
+`packages/infra/src/stacks/candidate-mcp-stack.test.ts` uses
+`aws-cdk-lib/assertions` against a real synth of this stack (including real
+esbuild bundling of `apps/candidate-mcp/src/lambda.ts`), asserting the
+invariants above as code: client-credentials-only Cognito, the secret
+landing in Secrets Manager via `Fn::GetAtt` and never in a `CfnOutput`, the
+Function URL's `AWS_IAM` auth type, and the exact five-table IAM scope.
+Combined with `apps/candidate-mcp`'s own auth/sanitize/rate-limit/HTTP-layer
+tests, this all runs in a dedicated `mcp-security` CI job (see
+`.github/workflows/ci.yml`) gating deploy, entirely offline.
+
+We deliberately did **not** wire `mcp-scan` (Invariant Labs) or a similar
+scanner into CI: its deep prompt-injection checks call an external
+Guardrails API with this server's tool descriptions on every invocation,
+which is a data-sharing and non-determinism trade-off that shouldn't be
+made silently in a required, unattended CI gate. It remains a recommended
+**manual, pre-release** check (`npx mcp-scan@latest scan` against the
+stdio dev entry point) rather than an automated one.
+
+A post-deploy smoke test (`pnpm smoke-test:candidate-mcp`, run in the
+deploy job once `DOMAIN_ENABLED`) exercises the real deployed endpoint:
+confirms an unauthenticated request gets a real `401`, then runs an actual
+client-credentials grant against Cognito and a real authenticated
+`initialize` call — the same failure mode a `cdk synth`-only check cannot
+catch (e.g. a misconfigured resource-server identifier or OAC permission).
 
 ## Approaches considered
 

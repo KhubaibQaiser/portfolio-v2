@@ -54,6 +54,11 @@ export class CandidateMcpStack extends cdk.Stack {
     const userPool = new cognito.UserPool(this, "AgentPool", {
       userPoolName: `${config.appName}-candidate-mcp-agents`,
       selfSignUpEnabled: false,
+      // No human users ever sign in to this pool (M2M-only), so the paid
+      // Essentials/Plus feature tiers (MAU-priced) buy nothing here — Lite
+      // is the cost-correct choice (ADR 0002). M2M token-request billing is
+      // separate from the feature-plan tier regardless.
+      featurePlan: cognito.FeaturePlan.LITE,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 

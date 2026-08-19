@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist .turbo"
+    "clean": "rm -rf dist .turbo",
+    "mcp-scan": "npx --yes mcp-scan@latest scan mcp-scan.config.json"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^2.33.1",
