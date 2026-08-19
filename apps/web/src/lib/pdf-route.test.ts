@@ -32,9 +32,19 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/resume-pdf-rate-limit", () => ({
   checkResumePdfRateLimit: vi.fn(),
 }));
+vi.mock("next/server", () => ({ after: vi.fn() }));
+
+const getObject = vi.fn(
+  async () => null as { body: Uint8Array; metadata?: Record<string, string> } | null,
+);
+const uploadObject = vi.fn(async () => {});
+vi.mock("@portfolio/data/media", () => ({
+  getMediaStore: vi.fn(async () => ({ getObject, uploadObject })),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getObject.mockResolvedValue(null);
 });
 
 describe("public PDF route", () => {
@@ -65,7 +75,42 @@ describe("public PDF route", () => {
     expect(response.status).toBe(200);
     expect(renderResumePdfBuffer).toHaveBeenCalledWith(resumeData, layout, {
       mode: "canonical",
+      deadlineAt: expect.any(Number),
     });
     expect(response.headers.get("cache-control")).toContain("s-maxage=10");
+  });
+
+  it("serves the cached PDF without rendering when the content hash matches", async () => {
+    vi.mocked(checkResumePdfRateLimit).mockResolvedValue({ ok: true });
+    const { hashCanonicalResumeContent } = await import("@/lib/resume-pdf-cache");
+    const contentHash = hashCanonicalResumeContent(resumeData as never, layout as never);
+    getObject.mockResolvedValue({
+      body: new Uint8Array([1, 2, 3]),
+      metadata: { "content-hash": contentHash },
+    });
+
+    const response = await GET(new Request("https://example.com/api/pdf"));
+
+    expect(response.status).toBe(200);
+    expect(renderResumePdfBuffer).not.toHaveBeenCalled();
+    expect(uploadObject).not.toHaveBeenCalled();
+    expect(response.headers.get("cache-control")).toContain("s-maxage=10");
+  });
+
+  it("falls back to rendering when the cached hash is stale", async () => {
+    vi.mocked(checkResumePdfRateLimit).mockResolvedValue({ ok: true });
+    vi.mocked(renderResumePdfBuffer).mockResolvedValue({
+      buffer: Buffer.from("%PDF-fresh"),
+      fitReport: null,
+    });
+    getObject.mockResolvedValue({
+      body: new Uint8Array([9, 9]),
+      metadata: { "content-hash": "stale-hash" },
+    });
+
+    const response = await GET(new Request("https://example.com/api/pdf"));
+
+    expect(response.status).toBe(200);
+    expect(renderResumePdfBuffer).toHaveBeenCalled();
   });
 });

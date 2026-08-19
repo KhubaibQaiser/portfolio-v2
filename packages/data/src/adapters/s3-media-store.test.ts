@@ -1,4 +1,10 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  NoSuchKey,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { describe, expect, it, vi } from "vitest";
 import { createS3MediaStore } from "./s3-media-store";
 
@@ -56,6 +62,44 @@ describe("createS3MediaStore", () => {
       Key: "media/x.png",
       ContentType: "image/png",
     });
+  });
+
+  it("uploads bytes with optional metadata", async () => {
+    const { store, send } = makeStore();
+    await store.uploadObject(new Uint8Array([1, 2, 3]), "media/x.png", "image/png", {
+      contentHash: "abc123",
+    });
+    const command = send.mock.calls.at(0)?.[0];
+    if (!(command instanceof PutObjectCommand))
+      throw new Error("expected PutObjectCommand");
+    expect(command.input.Metadata).toEqual({ contentHash: "abc123" });
+  });
+
+  it("reads an object's bytes, content type, and metadata", async () => {
+    const send = vi.fn(async (_command: unknown) => ({
+      Body: { transformToByteArray: async () => new Uint8Array([9, 9]) },
+      ContentType: "application/pdf",
+      Metadata: { contentHash: "abc123" },
+    }));
+    const { store } = makeStore(send);
+    const result = await store.getObject("media/x.pdf");
+    expect(result).toEqual({
+      body: new Uint8Array([9, 9]),
+      contentType: "application/pdf",
+      metadata: { contentHash: "abc123" },
+    });
+    const command = send.mock.calls.at(0)?.[0];
+    if (!(command instanceof GetObjectCommand))
+      throw new Error("expected GetObjectCommand");
+    expect(command.input).toMatchObject({ Bucket: "media-bucket", Key: "media/x.pdf" });
+  });
+
+  it("returns null when the object does not exist", async () => {
+    const send = vi.fn(async () => {
+      throw new NoSuchKey({ message: "not found", $metadata: {} });
+    });
+    const { store } = makeStore(send);
+    await expect(store.getObject("media/missing.pdf")).resolves.toBeNull();
   });
 
   it("deletes objects by key", async () => {

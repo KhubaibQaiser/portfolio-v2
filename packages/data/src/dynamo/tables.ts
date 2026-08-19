@@ -22,6 +22,8 @@ export const TABLE_SUFFIXES = {
   rateLimit: "rate-limit",
   /** Chat response cache entries, keyed by `pk` with a `ttl` sweep. */
   chatCache: "chat-cache",
+  /** Async PDF render-job status (admin download flow), keyed by `id` with a `ttl` sweep. */
+  renderJob: "render-job",
 } as const;
 
 export type TableKey = keyof typeof TABLE_SUFFIXES;
@@ -130,5 +132,6 @@ export function buildCreateTableInputs(
       ],
     },
     simpleTable(names.chatCache, "pk"),
+    simpleTable(names.renderJob, "id"),
   ];
 }

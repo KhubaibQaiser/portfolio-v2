@@ -84,6 +84,11 @@ export async function POST(request: Request) {
     );
   }
   if (!usageGuard.ok) {
+    logger.warn("ats scoring denied by cost cap", {
+      userId: auth.id,
+      spentUsd: usageGuard.spentUsd,
+      capUsd: usageGuard.capUsd,
+    });
     return NextResponse.json(
       {
         error: `Daily cost cap reached ($${usageGuard.spentUsd.toFixed(2)} / $${usageGuard.capUsd.toFixed(2)}).`,
@@ -99,11 +104,12 @@ export async function POST(request: Request) {
     const guard = usageGuard;
     const operation =
       usageState.actualUsd === undefined
-        ? guard.reservation.release(userId, guard.reservedUsd)
-        : guard.reservation.settle(userId, guard.reservedUsd, usageState.actualUsd);
+        ? guard.reservation.release(userId, guard.reservationId)
+        : guard.reservation.settle(userId, guard.reservationId, usageState.actualUsd);
     await operation.catch((error) =>
       logger.warn("ats usage reservation cleanup failed", {
         userId,
+        reservationId: guard.reservationId,
         reservedUsd: guard.reservedUsd,
         actualUsd: usageState.actualUsd,
         error: error instanceof Error ? error : new Error(String(error)),

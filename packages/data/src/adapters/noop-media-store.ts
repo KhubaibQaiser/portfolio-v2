@@ -31,6 +31,10 @@ export function createNoopMediaStore(): MediaStore {
       throw new Error(NOT_CONFIGURED);
     },
 
+    async getObject() {
+      return null;
+    },
+
     async deleteObject() {
       throw new Error(NOT_CONFIGURED);
     },

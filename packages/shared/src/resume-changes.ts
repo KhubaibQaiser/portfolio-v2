@@ -1,5 +1,5 @@
 import type { ResumeData } from "./resume-data";
-import { stableExperienceIndex } from "./resume-data";
+import { resolveExperienceIndex } from "./resume-data";
 
 export type TailoredResumeDiffInput = {
   summary: string;
@@ -43,7 +43,10 @@ export function describeAppliedResumeChanges(
       tailoredIds.some((id, i) => id !== originalOrder[i]));
 
   if (orderChanged && tailored.experiences[0]) {
-    const firstIndex = stableExperienceIndex(tailored.experiences[0].experienceId);
+    const firstIndex = resolveExperienceIndex(
+      tailored.experiences[0].experienceId,
+      base.experience,
+    );
     const firstCompany =
       firstIndex !== null ? base.experience[firstIndex]?.company : undefined;
     if (firstCompany) {
@@ -61,7 +64,7 @@ export function describeAppliedResumeChanges(
   let rewritten = 0;
   let bolded = 0;
   for (const exp of tailored.experiences) {
-    const index = stableExperienceIndex(exp.experienceId);
+    const index = resolveExperienceIndex(exp.experienceId, base.experience);
     const source = index !== null ? base.experience[index] : undefined;
     for (const bullet of exp.bullets) {
       if (/\*\*[^*]+\*\*/.test(bullet.text)) bolded += 1;

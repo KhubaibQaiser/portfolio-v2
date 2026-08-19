@@ -87,4 +87,33 @@ describe("describeAppliedResumeChanges", () => {
     });
     expect(changes).toEqual([]);
   });
+
+  it("resolves experiences by immutable sourceId, not the legacy e1/e2 index", () => {
+    const baseWithSourceIds: ResumeData = {
+      ...base,
+      experience: base.experience.map((exp, i) => ({
+        ...exp,
+        sourceId: `uuid-${i + 1}`,
+      })),
+    };
+
+    const changes = describeAppliedResumeChanges(baseWithSourceIds, {
+      summary: "Original summary.",
+      experiences: [
+        {
+          experienceId: "uuid-1",
+          bullets: [{ text: "Built the platform.", sourceBulletIndex: 0 }],
+        },
+        {
+          experienceId: "uuid-2",
+          bullets: [{ text: "Shipped features.", sourceBulletIndex: 0 }],
+        },
+      ],
+      skills: [{ category: "Frontend", items: ["React"] }],
+    });
+
+    // Regression: resolving by the real UUID sourceId must find the source
+    // bullet, so unchanged text is not misreported as "rewritten".
+    expect(changes.some((c) => c.includes("Rewrote"))).toBe(false);
+  });
 });

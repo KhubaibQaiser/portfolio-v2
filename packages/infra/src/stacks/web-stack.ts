@@ -1,5 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as route53 from "aws-cdk-lib/aws-route53";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -8,12 +12,23 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import { appErrorMetric, grantWebDataAccess, ssmPaths } from "../naming";
+import {
+  appErrorMetric,
+  grantCanonicalResumePdfCacheWrite,
+  grantWebDataAccess,
+  ssmPaths,
+} from "../naming";
 
 export type WebStackProps = cdk.StackProps & {
   config: InfraConfig;
   /** Absolute path to apps/web/.open-next. */
   openNextDir: string;
+  /** Absolute path to apps/web's canonical-PDF rebuild Lambda entry (TS). */
+  rebuildCanonicalPdfEntry: string;
+  /** Absolute path to the repo's pnpm-lock.yaml, for esbuild bundling cache-busting. */
+  depsLockFilePath: string;
+  /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
+  resumeFontsDir: string;
   /** Dns/Cert stack constructs, only present when `config.domainEnabled`. */
   hostedZone?: route53.IHostedZone;
   certificate?: acm.ICertificate;
@@ -101,6 +116,9 @@ export class WebStack extends cdk.Stack {
       },
       grantServer: (fn) => {
         grantWebDataAccess(this, fn, config, mediaBucketName);
+        // Needed for /api/pdf's cache write-through (the S3 read-first path
+        // above already covers reads via grantWebDataAccess).
+        grantCanonicalResumePdfCacheWrite(fn, mediaBucketName);
         groqSecret.grantRead(fn);
         resendSecret.grantRead(fn);
         turnstileSecret.grantRead(fn);
@@ -115,6 +133,71 @@ export class WebStack extends cdk.Stack {
     const errorMetric = appErrorMetric(config);
     new logs.MetricFilter(this, "AppErrorMetric", {
       logGroup: site.serverLogGroup,
+      metricNamespace: errorMetric.namespace,
+      metricName: errorMetric.metricName,
+      filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+      metricValue: "1",
+      defaultValue: 0,
+    });
+
+    // --- Canonical resume PDF: scheduled rebuild, off any request path ---
+    // Pure insurance to keep /api/pdf's S3 cache warm (see resume-pdf-cache.ts
+    // and the route itself, which already write-throughs on every cache miss
+    // and never depends on this Lambda for correctness). A generous timeout is
+    // safe here precisely because it's off the CloudFront/Lambda-timeout path.
+    const rebuildFn = new nodeLambda.NodejsFunction(this, "RebuildCanonicalPdfFn", {
+      entry: props.rebuildCanonicalPdfEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 1536,
+      timeout: cdk.Duration.seconds(120),
+      bundling: {
+        // Bundle the AWS SDK too instead of relying on the runtime-provided
+        // version, per AWS's own guidance, so this Lambda's SDK version
+        // always matches what the rest of the monorepo was built and tested
+        // against.
+        externalModules: [],
+        // @react-pdf/renderer needs the actual .ttf files on disk at
+        // runtime (esbuild only bundles the JS import graph, not binary
+        // assets). registerResumePdfFonts() falls back to
+        // `${cwd}/public/fonts/*`, which is `/var/task/public/fonts/*` for
+        // a Lambda — so copy them there after bundling.
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (_inputDir: string, outputDir: string) => [
+            `mkdir -p "${outputDir}/public/fonts"`,
+            `cp "${props.resumeFontsDir}"/*.ttf "${outputDir}/public/fonts/"`,
+          ],
+        },
+      },
+      logGroup: new logs.LogGroup(this, "RebuildCanonicalPdfFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+      environment: {
+        DATA_BACKEND: "dynamo",
+        DYNAMO_TABLE_PREFIX: config.tablePrefix,
+        S3_MEDIA_BUCKET: mediaBucketName,
+        MEDIA_PUBLIC_BASE_URL: mediaPublicBaseUrl,
+        POWERTOOLS_SERVICE_NAME: "portfolio-web-rebuild-canonical-pdf",
+        POWERTOOLS_LOG_LEVEL: "WARN",
+        ...(config.domainEnabled
+          ? { NEXT_PUBLIC_SITE_URL: `https://${config.domainName}` }
+          : {}),
+      },
+    });
+    grantWebDataAccess(this, rebuildFn, config, mediaBucketName);
+    grantCanonicalResumePdfCacheWrite(rebuildFn, mediaBucketName);
+
+    new events.Rule(this, "RebuildCanonicalPdfSchedule", {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5)),
+      targets: [new targets.LambdaFunction(rebuildFn)],
+    });
+
+    new logs.MetricFilter(this, "RebuildCanonicalPdfErrorMetric", {
+      logGroup: rebuildFn.logGroup,
       metricNamespace: errorMetric.namespace,
       metricName: errorMetric.metricName,
       filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),

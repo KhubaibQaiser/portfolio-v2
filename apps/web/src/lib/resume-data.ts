@@ -4,12 +4,9 @@ import {
   getResumeData as sharedGetResumeData,
   type ResumeData,
 } from "@portfolio/shared/resume-data";
+import { resolveWebsiteHost } from "./resume-pdf-cache";
 
 export type { ResumeData } from "@portfolio/shared/resume-data";
-
-const websiteHost = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com"
-).replace(/^https?:\/\//, "");
 
 /**
  * Cached resume payload used by the public PDF + /resume page.
@@ -17,7 +14,7 @@ const websiteHost = (
  */
 export const getResumeData = cache(
   async (): Promise<ResumeData> =>
-    sharedGetResumeData(getContentRepository(), { websiteHost }),
+    sharedGetResumeData(getContentRepository(), { websiteHost: resolveWebsiteHost() }),
   ["resume-data"],
   { revalidate: 10 },
 );
