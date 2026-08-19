@@ -16,7 +16,6 @@ const baseConfig: InfraConfig = {
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
   mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
-  mcpReservedConcurrency: 5,
 };
 
 function synth(): Template {

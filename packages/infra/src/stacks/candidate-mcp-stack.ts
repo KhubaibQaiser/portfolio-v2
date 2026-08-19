@@ -128,10 +128,11 @@ export class CandidateMcpStack extends cdk.Stack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(10),
       logGroup,
-      // Caps simultaneous executions (cost + abuse control, ADR 0002) — this
-      // server has no production consumers yet, so a small, explicit ceiling
-      // is far cheaper than the account's default unreserved pool.
-      reservedConcurrentExecutions: config.mcpReservedConcurrency,
+      // Do not set reservedConcurrentExecutions. Personal AWS accounts often
+      // have a ConcurrentExecutions quota of 10, and Lambda refuses any
+      // reservation that would leave UnreservedConcurrentExecution below 10.
+      // Cost/abuse is still bounded by CloudFront OAC, Cognito, and the
+      // function timeout (ADR 0003).
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
