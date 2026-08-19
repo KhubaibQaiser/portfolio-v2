@@ -90,6 +90,26 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm eval:resume
 
+  # Named separately from "Unit tests" so the candidate-mcp trust boundary
+  # (see docs/adr/0003) has its own visible, always-green gate: auth
+  # verification (valid/expired/wrong-scope/alg-confusion), output
+  # sanitization, rate limiting, and the CandidateMcpStack CDK assertions
+  # (real synth + esbuild bundling of the Lambda entry, so a broken import
+  # graph fails here too). All fixture/offline — no network calls, no
+  # deployed infra required.
+  mcp-security:
+    name: Candidate-MCP security tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter @portfolio/candidate-mcp typecheck
+      - run: >
+          pnpm exec vitest run
+          apps/candidate-mcp
+          packages/infra/src/stacks/candidate-mcp-stack.test.ts
+
   e2e:
     name: Playwright e2e
     runs-on: ubuntu-latest
@@ -153,7 +173,7 @@ jobs:
 
   deploy:
     name: Deploy to AWS
-    needs: [lighthouse, e2e, evals, secrets]
+    needs: [lighthouse, e2e, evals, secrets, mcp-security]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Optional manual approval gate: add required reviewers to this environment.
@@ -206,3 +226,8 @@ jobs:
 
       - name: Smoke test image optimizer
         run: pnpm smoke-test:images
+
+      # Only deployed once the custom domain is live (see candidate-mcp-stack.ts).
+      - name: Smoke test candidate-mcp
+        if: vars.DOMAIN_ENABLED == 'true'
+        run: pnpm smoke-test:candidate-mcp

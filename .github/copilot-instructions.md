@@ -1,7 +1,7 @@
 # Copilot instructions — portfolio-v2
 
-This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, and packages
-`shared`, `data`, `ai`, `infra`, `ui`, `agent-mcp`.
+This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, `apps/candidate-mcp`,
+and packages `shared`, `data`, `ai`, `infra`, `ui`, `agent-mcp`.
 
 ## Must
 
@@ -13,6 +13,8 @@ This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, and packages
 - Apps depend on ports in `packages/shared`, not AWS SDKs.
 - Infra: ADR 0001 (no CFN exports for data/auth) and ADR 0002 (one AppErrors
   alarm, not per-table alarms).
+- `apps/candidate-mcp` tools stay read-only and sanitized (`deepSanitize`);
+  any write-capable tool needs a new ADR. See ADR 0003.
 
 ## Must not
 
@@ -20,5 +22,7 @@ This is a Turborepo (pnpm) with `apps/web`, `apps/admin`, and packages
 - Call live LLM APIs from unit/eval tests.
 - Relax Lighthouse thresholds to unblock CI.
 - Add packages for one-off helpers.
+- Widen `apps/candidate-mcp`'s DynamoDB IAM grant beyond its five content
+  tables, or add a caller-supplied-URL fetch tool (SSRF surface).
 
 Verify with `pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume`.

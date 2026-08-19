@@ -8,3 +8,4 @@ globs: packages/infra/**
 - Runtime secrets stay in Secrets Manager; CDK creates empty shells and publishes complete ARNs to SSM. Never put plaintext keys in templates or Lambda env.
 - GitHub Actions deploy uses OIDC (`OidcStack`). Do not add long-lived AWS access keys to CI.
 - `bin/portfolio.ts` may `addDependency` for deploy ordering. That is not a CFN export.
+- Follow `docs/adr/0003-candidate-mcp-server.md` for `CandidateMcpStack`: Cognito client-credentials only (no static bearer tokens), the app-client secret goes into Secrets Manager via `secretObjectValue`/`Fn::GetAtt` (never a `CfnOutput`), the Function URL stays `AWS_IAM` behind CloudFront OAC, and `grantCandidateMcpDataAccess` stays scoped to its five content tables — do not widen it to the `${tablePrefix}-*` wildcard used elsewhere.

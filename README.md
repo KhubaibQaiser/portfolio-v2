@@ -1,6 +1,6 @@
 # Portfolio — khubaibqaiser.com
 
-Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**'s portfolio: a **Turborepo** monorepo with a public Next.js site (`apps/web`), a content-editing admin (`apps/admin`), and shared packages — running **serverless on AWS**, defined end-to-end as **infrastructure-as-code with AWS CDK**.
+Source for **[Khubaib Qaiser](https://khubaibqaiser.com)**'s portfolio: a **Turborepo** monorepo with a public Next.js site (`apps/web`), a content-editing admin (`apps/admin`), an OAuth-authenticated MCP server for external automation (`apps/candidate-mcp`), and shared packages — running **serverless on AWS**, defined end-to-end as **infrastructure-as-code with AWS CDK**.
 
 The apps are deployed with **[OpenNext](https://opennext.js.org/)** on **AWS Lambda + CloudFront**, content lives in **DynamoDB** (one table per aggregate), admin auth is **[Better Auth](https://www.better-auth.com/)** (Google sign-in, stateless sessions), media is on **S3**, and the whole platform (DNS, certs, alarms, budgets, CI deploy role) is provisioned by CDK.
 
@@ -80,17 +80,18 @@ The admin app is `force-dynamic` — it always reads fresh content from DynamoDB
 
 Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages/infra/bin/portfolio.ts).
 
-| Stack                 | Region      | Contents                                                                        |
-| --------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `Portfolio-Data`      | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                              |
-| `Portfolio-Web`       | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache           |
-| `Portfolio-Auth`      | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                           |
-| `Portfolio-Admin`     | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                          |
-| `Portfolio-Shared`    | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget |
-| `Portfolio-Storybook` | `eu-west-1` | Static Storybook: private S3 + CloudFront                                       |
-| `Portfolio-Oidc`      | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                   |
-| `Portfolio-Dns`       | `us-east-1` | Route 53 hosted zone                                                            |
-| `Portfolio-Cert`      | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)             |
+| Stack                    | Region      | Contents                                                                                                                                                  |
+| ------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Portfolio-Data`         | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                                                                                                        |
+| `Portfolio-Web`          | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache                                                                                     |
+| `Portfolio-Auth`         | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                                                                                                     |
+| `Portfolio-Admin`        | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                                                                                                    |
+| `Portfolio-Shared`       | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget                                                                           |
+| `Portfolio-Storybook`    | `eu-west-1` | Static Storybook: private S3 + CloudFront                                                                                                                 |
+| `Portfolio-Oidc`         | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                                                                                             |
+| `Portfolio-Dns`          | `us-east-1` | Route 53 hosted zone                                                                                                                                      |
+| `Portfolio-Cert`         | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                                                                                       |
+| `Portfolio-CandidateMcp` | `eu-west-1` | Candidate profile MCP server: Cognito M2M pool, Lambda, CloudFront (requires `domainEnabled=true`; see [ADR 0003](docs/adr/0003-candidate-mcp-server.md)) |
 
 The custom domain is **deferred by default** (`domainEnabled=false`): both apps run on their default `*.cloudfront.net` URLs until you delegate nameservers and redeploy with `-c domainEnabled=true`.
 
@@ -102,7 +103,8 @@ The custom domain is **deferred by default** (`domainEnabled=false`): both apps 
 portfolio-v2/
 ├── apps/
 │   ├── web/                 # Public site — Next.js, route handlers, chat, resume PDF
-│   └── admin/               # CMS — Better Auth, editors, media uploads
+│   ├── admin/               # CMS — Better Auth, editors, media uploads
+│   └── candidate-mcp/       # Candidate profile MCP server (Cognito-authenticated, network-facing)
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, ports, constants
 │   ├── data/                # DynamoDB adapter + fixtures + seed
@@ -320,11 +322,47 @@ Cross-stack wiring uses the **SSM registry** — see [ADR 0001](docs/adr/0001-cr
 
 ## CI/CD
 
-GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint (including Prettier) → typecheck → unit tests → DynamoDB Local integration → **Gitleaks** → **offline Resume AI evals** → **Playwright e2e** in parallel, then build → Lighthouse (desktop + mobile) → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys) and waits on Lighthouse, e2e, evals, and the secret scan.
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint (including Prettier) → typecheck → unit tests → DynamoDB Local integration → **Gitleaks** → **offline Resume AI evals** → **Playwright e2e** → **candidate-mcp security tests** (`mcp-security` job: auth/sanitize/rate-limit unit tests plus `CandidateMcpStack`'s CDK synth assertions, all offline) in parallel, then build → Lighthouse (desktop + mobile) → deploy on push to `main`. Deploy uses **OIDC** (no long-lived AWS keys) and waits on Lighthouse, e2e, evals, the secret scan, and `mcp-security`; once deployed, it also runs a live smoke test against `apps/candidate-mcp` when `DOMAIN_ENABLED` is set.
 
 Repository variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `ALERT_EMAIL`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SITE_URL`, `DOMAIN_ENABLED`, `ADMIN_URLS`, `APP_ORIGIN` (admin origin for Server Actions `allowedOrigins` at build time, e.g. `https://admin.khubaibqaiser.com`), `GOOGLE_DNS_SITE_VERIFICATION` (Search Console Domain TXT: `google-site-verification=…`), plus PostHog (below).
 
 **PostHog (deploy):** bake client analytics and source maps into the OpenNext build; inject token/host on the web Lambda for server events. Set these GitHub **variables**: `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_POSTHOG_UI_HOST`, `NEXT_PUBLIC_POSTHOG_ENVIRONMENT`, `POSTHOG_PROJECT_ID`, `POSTHOG_APP_HOST`. Set GitHub **secret** `POSTHOG_API_KEY` (personal API key) for source-map upload at build time. CDK receives `-c posthogProjectToken` / `posthogHost` / `posthogEnvironment` for Lambda runtime.
+
+---
+
+## Candidate Profile MCP server
+
+[`apps/candidate-mcp`](apps/candidate-mcp) is a second, deliberately separate
+MCP server from `packages/agent-mcp` below: it is **network-reachable**, so
+that external automation (an n8n workflow today, Apify actors in a later
+phase) can pull the same candidate profile data already public on
+`khubaibqaiser.com` — the foundation for the roadmap's job-matching/tailored-
+application pipeline. See [ADR 0003](docs/adr/0003-candidate-mcp-server.md)
+for the full trust-boundary decision; this is a summary.
+
+- **Transport:** MCP Streamable HTTP, served from a Lambda Function URL
+  behind CloudFront on `mcp.<domain>` (only deployed when `domainEnabled=true`
+  — see the stacks table above).
+- **Auth:** OAuth 2.1 client-credentials via a dedicated Cognito user pool
+  (no human sign-in). Each consumer gets its own app client and the single
+  `profile.read` scope; the JWT is verified inside the Lambda with
+  `aws-jwt-verify`. Unauthenticated calls get a spec-compliant `401` plus
+  RFC 9728 discovery metadata.
+- **Tools:** `get_candidate_profile` (full public profile — about, resume,
+  experience, skills, projects, testimonials) and `get_candidate_facts` (the
+  same compact fact sheet the resume-AI pipeline itself uses). Both are
+  read-only, take no arguments, and every free-text field is passed through
+  the prompt-injection scrub before leaving the server.
+- **Isolation:** reserved Lambda concurrency, CloudFront Origin Access
+  Control (the raw Function URL is unreachable directly), and IAM scoped to
+  exactly the five content tables the tools read — not the wildcard grant
+  `apps/web`/`apps/admin` use.
+- **Demo:** [`docs/n8n-candidate-mcp-demo.md`](docs/n8n-candidate-mcp-demo.md)
+  walks through an n8n workflow that authenticates and calls both tools.
+
+Run locally over stdio with `pnpm --filter @portfolio/candidate-mcp dev`; run
+`pnpm --filter @portfolio/candidate-mcp mcp-scan` for a manual, pre-release
+prompt-injection scan (not run in CI — see ADR 0003 §4).
 
 ---
 
@@ -334,7 +372,7 @@ This repo is operated with a committed agent interface, not just used with AI to
 
 - [`AGENTS.md`](AGENTS.md) / [`.github/copilot-instructions.md`](.github/copilot-instructions.md) — invariants coding agents must respect (admin authorization, Resume AI fabrication guardrails, IaC ADRs).
 - [`.cursor/rules/`](.cursor/rules/) — scoped rules per area (`ai-product`, `admin-auth`, `infra`).
-- [`packages/agent-mcp`](packages/agent-mcp) — a minimal MCP server exposing curated, read-only repo context (ADRs, AI module contracts) so agents don't guess schema shapes. Cursor loads it via [`.cursor/mcp.json`](.cursor/mcp.json); run with `pnpm --filter @portfolio/agent-mcp start`.
+- [`packages/agent-mcp`](packages/agent-mcp) — a minimal, **local, unauthenticated** MCP server exposing curated, read-only repo context (ADRs, AI module contracts) so coding agents don't guess schema shapes. Cursor loads it via [`.cursor/mcp.json`](.cursor/mcp.json); run with `pnpm --filter @portfolio/agent-mcp start`. Not to be confused with `apps/candidate-mcp` above, which is network-facing and OAuth-authenticated — different trust boundary, different purpose.
 - [`specs/resume-ai.md`](specs/resume-ai.md) + [`packages/ai/src/evals/`](packages/ai/src/evals/) — Resume AI acceptance criteria and an offline eval suite on every PR (`pnpm eval:resume`), independent of live model calls.
 
 ---

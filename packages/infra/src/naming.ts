@@ -3,6 +3,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import type { Construct } from "constructs";
 import { ssmPaths as deploySsmPaths } from "@portfolio/deploy/ssm-paths";
+import { TABLE_SUFFIXES } from "@portfolio/data/tables";
 import type { InfraConfig } from "./config";
 
 /**
@@ -135,6 +136,57 @@ export function grantAdminDataAccess(
       sid: "MediaListBucket",
       actions: ["s3:ListBucket"],
       resources: [bucketArn],
+    }),
+  );
+}
+
+/** The content tables `get_candidate_profile`/`get_candidate_facts` actually read. */
+const CANDIDATE_MCP_READ_SUFFIXES = [
+  TABLE_SUFFIXES.content,
+  TABLE_SUFFIXES.experience,
+  TABLE_SUFFIXES.project,
+  TABLE_SUFFIXES.skill,
+  TABLE_SUFFIXES.testimonial,
+] as const;
+
+/**
+ * Candidate-mcp permissions: tighter than {@link grantWebDataAccess}'s
+ * `${tablePrefix}-*` wildcard. This Lambda is reachable by external
+ * automation over the network (see ADR 0003), so it gets read-only access to
+ * exactly the five tables its two tools query (plus their GSIs) — not the
+ * resume-generation, media, or chat-cache tables — and a scoped
+ * `UpdateItem` on the rate-limit table for its own per-client counters.
+ */
+export function grantCandidateMcpDataAccess(
+  scope: Construct,
+  fn: lambda.Function,
+  config: InfraConfig,
+): void {
+  const { account, region } = Stack.of(scope);
+  const tableArn = (suffix: string) =>
+    `arn:aws:dynamodb:${region}:${account}:table/${config.tablePrefix}-${suffix}`;
+
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "CandidateProfileContentRead",
+      actions: [
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable",
+      ],
+      resources: CANDIDATE_MCP_READ_SUFFIXES.flatMap((suffix) => [
+        tableArn(suffix),
+        `${tableArn(suffix)}/index/*`,
+      ]),
+    }),
+  );
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "CandidateMcpRateLimitCounter",
+      actions: ["dynamodb:UpdateItem"],
+      resources: [tableArn(TABLE_SUFFIXES.rateLimit)],
     }),
   );
 }
