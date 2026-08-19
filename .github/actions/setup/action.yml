@@ -4,11 +4,11 @@ description: Install pnpm + Node (with store cache) and project dependencies.
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v5
+    - uses: pnpm/action-setup@v6
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7
       with:
-        node-version: 22
+        node-version-file: .nvmrc
         cache: pnpm
 
     - name: Install dependencies
