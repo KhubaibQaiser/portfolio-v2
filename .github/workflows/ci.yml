@@ -243,8 +243,11 @@ jobs:
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
           -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
 
+      # One-off skip: SSM cert exports were synced manually and gha-deploy
+      # cannot read Portfolio-Cert in us-east-1 until Oidc IAM is extended.
+      # Re-enable after Portfolio-gha-deploy has cert-recovery permissions.
       - name: Sync cross-region cert exports (cert recovery)
-        if: vars.CERT_RECOVERY_MODE == 'true' && vars.DOMAIN_ENABLED == 'true'
+        if: false
         run: pnpm sync-cert-cross-region-exports
 
       # concurrency 1 (not the previous 4): reduces parallel CloudFormation
