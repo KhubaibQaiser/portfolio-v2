@@ -70,7 +70,9 @@ describe("createAgentTokenVerifier", () => {
   it("rejects a token issued by a different (wrong-issuer) user pool", async () => {
     const { verifier, privateKey } = setUpVerifier();
     const token = signTestJwt(
-      basePayload({ iss: "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_OtherPool999" }),
+      basePayload({
+        iss: "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_OtherPool999",
+      }),
       privateKey,
       KID,
     );
@@ -87,7 +89,11 @@ describe("createAgentTokenVerifier", () => {
 
   it("rejects a token missing the required profile.read scope", async () => {
     const { verifier, privateKey } = setUpVerifier();
-    const token = signTestJwt(basePayload({ scope: "https://mcp.example.com/other.scope" }), privateKey, KID);
+    const token = signTestJwt(
+      basePayload({ scope: "https://mcp.example.com/other.scope" }),
+      privateKey,
+      KID,
+    );
 
     await expect(verifier.verifyAccessToken(token)).rejects.toBeInstanceOf(OAuthError);
   });
@@ -106,12 +112,16 @@ describe("createAgentTokenVerifier", () => {
   it("rejects a malformed token", async () => {
     const { verifier } = setUpVerifier();
 
-    await expect(verifier.verifyAccessToken("not-a-jwt")).rejects.toBeInstanceOf(OAuthError);
+    await expect(verifier.verifyAccessToken("not-a-jwt")).rejects.toBeInstanceOf(
+      OAuthError,
+    );
   });
 
   it("rejects an unsigned (alg: none) token — algorithm-confusion attempt", async () => {
     const { verifier } = setUpVerifier();
-    const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+    const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString(
+      "base64url",
+    );
     const payload = Buffer.from(JSON.stringify(basePayload())).toString("base64url");
     const token = `${header}.${payload}.`;
 

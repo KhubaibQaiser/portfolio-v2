@@ -73,9 +73,13 @@ const tokenResponse = execFileSync(
   { encoding: "utf8" },
 ).trim();
 
-const { access_token: accessToken } = JSON.parse(tokenResponse) as { access_token?: string };
+const { access_token: accessToken } = JSON.parse(tokenResponse) as {
+  access_token?: string;
+};
 if (!accessToken) {
-  throw new Error(`Token endpoint ${credentials.tokenEndpoint} did not return an access_token.`);
+  throw new Error(
+    `Token endpoint ${credentials.tokenEndpoint} did not return an access_token.`,
+  );
 }
 console.log("Obtained an access token via the client-credentials grant.");
 
@@ -121,7 +125,9 @@ try {
 }
 
 if (mcpMeta !== "200") {
-  throw new Error(`Expected an authenticated \`initialize\` call to return 200, got ${mcpMeta}.`);
+  throw new Error(
+    `Expected an authenticated \`initialize\` call to return 200, got ${mcpMeta}.`,
+  );
 }
 
 console.log("Candidate-mcp smoke test passed.");

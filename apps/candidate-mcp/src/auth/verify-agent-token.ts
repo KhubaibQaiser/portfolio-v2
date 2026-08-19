@@ -1,6 +1,11 @@
 import { CognitoJwtVerifier } from "aws-jwt-verify";
 import type { CognitoJwtVerifierSingleUserPool } from "aws-jwt-verify/cognito-verifier";
-import { OAuthError, OAuthErrorCode, type AuthInfo, type OAuthTokenVerifier } from "@modelcontextprotocol/server";
+import {
+  OAuthError,
+  OAuthErrorCode,
+  type AuthInfo,
+  type OAuthTokenVerifier,
+} from "@modelcontextprotocol/server";
 import type { Config } from "../config";
 import { profileReadScope } from "../config";
 
@@ -11,9 +16,7 @@ import { profileReadScope } from "../config";
  * (no network JWKS fetch), and drive it through the same wrapping logic —
  * see `verify-agent-token.test.ts`.
  */
-export function createCognitoVerifier(
-  config: Config,
-): CognitoJwtVerifierSingleUserPool<{
+export function createCognitoVerifier(config: Config): CognitoJwtVerifierSingleUserPool<{
   userPoolId: string;
   tokenUse: "access";
   clientId: null;
@@ -57,7 +60,8 @@ export function createAgentTokenVerifier(
       try {
         payload = await verifier.verify(token);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Token verification failed";
+        const message =
+          error instanceof Error ? error.message : "Token verification failed";
         throw new OAuthError(OAuthErrorCode.InvalidToken, message);
       }
 

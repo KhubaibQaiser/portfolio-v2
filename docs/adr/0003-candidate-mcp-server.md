@@ -24,8 +24,8 @@ belong in `packages/agent-mcp`.
 ## Decision
 
 Add a new deployable app, **`apps/candidate-mcp`**, deployed via a new CDK
-stack (`Portfolio-CandidateMcp`) in the *same* AWS account and CDK app as the
-rest of the site, reading the *same* DynamoDB tables through the existing
+stack (`Portfolio-CandidateMcp`) in the _same_ AWS account and CDK app as the
+rest of the site, reading the _same_ DynamoDB tables through the existing
 `ContentRepository` port — but isolated and authenticated as follows.
 
 ### 1. Authorization: OAuth 2.1 client-credentials via Amazon Cognito, not static tokens or a custom auth server
@@ -193,7 +193,7 @@ Simpler to build, but a shared-secret model with no standard expiry,
 rotation, or scoping story, and it doesn't follow the MCP spec's explicit
 recommendation for remote servers. Cognito gives short-lived, scoped,
 revocable tokens as a managed service for negligible cost — the "boring,
-managed service" choice here is *more* protocol-correct, not less.
+managed service" choice here is _more_ protocol-correct, not less.
 
 ### C. API Gateway + Cognito authorizer — _rejected (for now)_
 
@@ -207,8 +207,9 @@ as a new architectural element.
 Would fully separate blast radius but adds real operational overhead
 (cross-account IAM, a second deploy pipeline) disproportionate to a
 single-tenant, read-only, already-public dataset. Reserved concurrency + OAC
-+ read-only IAM cover the realistic failure modes (cost runaway, availability
-starvation, data write) at a fraction of the complexity.
+
+- read-only IAM cover the realistic failure modes (cost runaway, availability
+  starvation, data write) at a fraction of the complexity.
 
 ## Consequences
 

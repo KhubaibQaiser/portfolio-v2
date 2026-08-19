@@ -105,8 +105,12 @@ export class CandidateMcpStack extends cdk.Stack {
       secretObjectValue: {
         clientId: cdk.SecretValue.unsafePlainText(n8nClient.userPoolClientId),
         clientSecret: n8nClient.userPoolClientSecret,
-        tokenEndpoint: cdk.SecretValue.unsafePlainText(`${domain.baseUrl()}/oauth2/token`),
-        scope: cdk.SecretValue.unsafePlainText(`${resourceServerIdentifier}/profile.read`),
+        tokenEndpoint: cdk.SecretValue.unsafePlainText(
+          `${domain.baseUrl()}/oauth2/token`,
+        ),
+        scope: cdk.SecretValue.unsafePlainText(
+          `${resourceServerIdentifier}/profile.read`,
+        ),
       },
     });
 
@@ -193,6 +197,8 @@ export class CandidateMcpStack extends cdk.Stack {
     new cdk.CfnOutput(this, "ServerUrl", { value: serverUrl });
     new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
     new cdk.CfnOutput(this, "N8nClientId", { value: n8nClient.userPoolClientId });
-    new cdk.CfnOutput(this, "TokenEndpoint", { value: `${domain.baseUrl()}/oauth2/token` });
+    new cdk.CfnOutput(this, "TokenEndpoint", {
+      value: `${domain.baseUrl()}/oauth2/token`,
+    });
   }
 }

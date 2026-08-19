@@ -25,7 +25,9 @@ export type HttpHandlerDeps = {
  * only) so the same function is unit-testable in-memory and directly usable
  * from the Lambda Function URL adapter (`lambda.ts`).
  */
-export function createHttpHandler(deps: HttpHandlerDeps): (request: Request) => Promise<Response> {
+export function createHttpHandler(
+  deps: HttpHandlerDeps,
+): (request: Request) => Promise<Response> {
   const { config, repo, verifier } = deps;
   const serverUrl = new URL(config.serverUrl);
   const allowedHostnames = [serverUrl.hostname];

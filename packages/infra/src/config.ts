@@ -166,8 +166,7 @@ export function resolveConfig(app: App): InfraConfig {
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),
     mcpCognitoDomainPrefix:
-      ctx("mcpCognitoDomainPrefix") ??
-      `${domainName.replace(/\./g, "-")}-candidate-mcp`,
+      ctx("mcpCognitoDomainPrefix") ?? `${domainName.replace(/\./g, "-")}-candidate-mcp`,
     mcpReservedConcurrency: Number(ctx("mcpReservedConcurrency") ?? 5),
   };
 }

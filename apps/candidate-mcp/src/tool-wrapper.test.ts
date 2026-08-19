@@ -16,9 +16,16 @@ beforeEach(() => {
 describe("withGuardrails", () => {
   it("calls the handler and audits success when under the rate limit", async () => {
     vi.mocked(checkRateLimit).mockResolvedValue({ ok: true });
-    const handler = vi.fn().mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
+    const handler = vi
+      .fn()
+      .mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
 
-    const result = await withGuardrails("get_candidate_profile", authInfo, config, handler)();
+    const result = await withGuardrails(
+      "get_candidate_profile",
+      authInfo,
+      config,
+      handler,
+    )();
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ content: [{ type: "text", text: "ok" }] });
@@ -34,7 +41,12 @@ describe("withGuardrails", () => {
     vi.mocked(checkRateLimit).mockResolvedValue({ ok: false, retryAfterSeconds: 12 });
     const handler = vi.fn();
 
-    const result = await withGuardrails("get_candidate_profile", authInfo, config, handler)();
+    const result = await withGuardrails(
+      "get_candidate_profile",
+      authInfo,
+      config,
+      handler,
+    )();
 
     expect(handler).not.toHaveBeenCalled();
     expect(result.isError).toBe(true);
@@ -57,9 +69,9 @@ describe("withGuardrails", () => {
     vi.mocked(checkRateLimit).mockResolvedValue({ ok: true });
     const handler = vi.fn().mockRejectedValue(new Error("boom"));
 
-    await expect(withGuardrails("get_candidate_profile", authInfo, config, handler)()).rejects.toThrow(
-      "boom",
-    );
+    await expect(
+      withGuardrails("get_candidate_profile", authInfo, config, handler)(),
+    ).rejects.toThrow("boom");
     expect(auditToolCall).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false, reason: "boom" }),
     );

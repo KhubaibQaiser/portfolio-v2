@@ -24,7 +24,13 @@ export function withGuardrails(
 
     const rateLimit = await checkRateLimit(clientId, config);
     if (!rateLimit.ok) {
-      auditToolCall({ tool: toolName, clientId, scopes, ok: false, reason: "rate_limited" });
+      auditToolCall({
+        tool: toolName,
+        clientId,
+        scopes,
+        ok: false,
+        reason: "rate_limited",
+      });
       return {
         content: [
           {

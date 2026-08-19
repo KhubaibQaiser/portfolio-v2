@@ -1,7 +1,10 @@
 import { z } from "zod";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
-import { candidateProfileSchema, type CandidateProfile } from "../schemas/candidate-profile";
+import {
+  candidateProfileSchema,
+  type CandidateProfile,
+} from "../schemas/candidate-profile";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
 import type { Config } from "../config";
@@ -11,16 +14,19 @@ import type { Config } from "../config";
  * `get_candidate_profile` tool's response. Pure data-fetch + shape — no HTTP,
  * no auth — so it is directly unit-testable against a fixture repository.
  */
-export async function fetchCandidateProfile(repo: ContentRepository): Promise<CandidateProfile> {
-  const [site, about, resume, experience, skills, projects, testimonials] = await Promise.all([
-    repo.getSiteConfig(),
-    repo.getAbout(),
-    repo.getResume(),
-    repo.getExperience(),
-    repo.getSkills(),
-    repo.getProjects(),
-    repo.getTestimonials(),
-  ]);
+export async function fetchCandidateProfile(
+  repo: ContentRepository,
+): Promise<CandidateProfile> {
+  const [site, about, resume, experience, skills, projects, testimonials] =
+    await Promise.all([
+      repo.getSiteConfig(),
+      repo.getAbout(),
+      repo.getResume(),
+      repo.getExperience(),
+      repo.getSkills(),
+      repo.getProjects(),
+      repo.getTestimonials(),
+    ]);
 
   const profile: CandidateProfile = {
     site,

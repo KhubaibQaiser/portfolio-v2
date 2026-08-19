@@ -23,7 +23,10 @@ export function buildAuthMetadataOptions(config: Config): AuthMetadataOptions {
       token_endpoint: `${cognitoDomainBase}/oauth2/token`,
       response_types_supported: ["token"],
       grant_types_supported: ["client_credentials"],
-      token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post"],
+      token_endpoint_auth_methods_supported: [
+        "client_secret_basic",
+        "client_secret_post",
+      ],
       scopes_supported: [profileReadScope(config)],
     },
     resourceServerUrl: new URL(config.serverUrl),

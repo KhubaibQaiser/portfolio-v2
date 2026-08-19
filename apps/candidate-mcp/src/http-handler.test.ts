@@ -4,7 +4,10 @@ import { CognitoJwtVerifier } from "aws-jwt-verify";
 import { createFixtureContentRepository } from "@portfolio/data";
 import type { Config } from "./config";
 import { createHttpHandler } from "./http-handler";
-import { createAgentTokenVerifier, createCognitoVerifier } from "./auth/verify-agent-token";
+import {
+  createAgentTokenVerifier,
+  createCognitoVerifier,
+} from "./auth/verify-agent-token";
 import { generateTestKeyPair, signTestJwt, testJwks } from "./auth/test-jwt";
 import { candidateProfileSchema } from "./schemas/candidate-profile";
 
@@ -30,7 +33,9 @@ function setUp(configOverrides: Partial<Config> = {}) {
   const repo = createFixtureContentRepository();
   const handler = createHttpHandler({ config: effectiveConfig, repo, verifier });
 
-  const { issuer } = CognitoJwtVerifier.parseUserPoolId(effectiveConfig.cognitoUserPoolId);
+  const { issuer } = CognitoJwtVerifier.parseUserPoolId(
+    effectiveConfig.cognitoUserPoolId,
+  );
   const now = Math.floor(Date.now() / 1000);
   const validToken = signTestJwt(
     {
@@ -103,8 +108,16 @@ describe("createHttpHandler", () => {
       withHost(
         new Request(config.serverUrl, {
           method: "POST",
-          headers: { "content-type": "application/json", authorization: "Bearer not-a-real-token" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }),
+          headers: {
+            "content-type": "application/json",
+            authorization: "Bearer not-a-real-token",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "initialize",
+            params: {},
+          }),
         }),
       ),
     );
@@ -116,13 +129,20 @@ describe("createHttpHandler", () => {
     const { handler } = setUp();
 
     const response = await handler(
-      withHost(new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp")),
+      withHost(
+        new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
+      ),
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { resource: string; scopes_supported: string[] };
+    const body = (await response.json()) as {
+      resource: string;
+      scopes_supported: string[];
+    };
     expect(body.resource).toBe(config.serverUrl);
-    expect(body.scopes_supported).toContain(`${config.resourceServerIdentifier}/profile.read`);
+    expect(body.scopes_supported).toContain(
+      `${config.resourceServerIdentifier}/profile.read`,
+    );
   });
 
   it("answers 503 for every route when MCP_ENABLED is false (kill switch)", async () => {
@@ -131,7 +151,9 @@ describe("createHttpHandler", () => {
     const [mcpResponse, metadataResponse] = await Promise.all([
       handler(initializeRequest()),
       handler(
-        withHost(new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp")),
+        withHost(
+          new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
+        ),
       ),
     ]);
 

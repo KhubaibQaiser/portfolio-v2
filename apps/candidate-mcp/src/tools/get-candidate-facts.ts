@@ -1,7 +1,10 @@
 import { z } from "zod";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
-import { buildCandidateFacts, type CandidateFacts } from "@portfolio/ai/context/build-candidate-facts";
+import {
+  buildCandidateFacts,
+  type CandidateFacts,
+} from "@portfolio/ai/context/build-candidate-facts";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
 import type { Config } from "../config";
@@ -17,7 +20,9 @@ import type { Config } from "../config";
  * this server can never describe the candidate differently than the AI
  * pipeline that writes their resume.
  */
-export async function fetchCandidateFacts(repo: ContentRepository): Promise<CandidateFacts> {
+export async function fetchCandidateFacts(
+  repo: ContentRepository,
+): Promise<CandidateFacts> {
   const [siteConfig, resume, experiences, skills, about] = await Promise.all([
     repo.getSiteConfig(),
     repo.getResume(),

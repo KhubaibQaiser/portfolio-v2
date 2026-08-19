@@ -8,7 +8,10 @@ import { describe, expect, it } from "vitest";
 import type { InfraConfig } from "../config";
 import { CandidateMcpStack } from "./candidate-mcp-stack";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../..",
+);
 const entry = path.join(repoRoot, "apps/candidate-mcp/src/lambda.ts");
 
 const baseConfig: InfraConfig = {
@@ -74,7 +77,9 @@ describe("CandidateMcpStack", () => {
     // The scope string is built from the resource-server identifier, which
     // is itself a token at synth time — just assert exactly one scope is
     // wired up (the CFN intrinsic shape is an implementation detail).
-    const [client] = Object.values(template.findResources("AWS::Cognito::UserPoolClient"));
+    const [client] = Object.values(
+      template.findResources("AWS::Cognito::UserPoolClient"),
+    );
     expect(client).toBeDefined();
     expect(client?.Properties.AllowedOAuthScopes).toHaveLength(1);
   });
@@ -134,7 +139,8 @@ describe("CandidateMcpStack", () => {
 
     const policies = Object.values(template.findResources("AWS::IAM::Policy"));
     const statements = policies.flatMap(
-      (policy) => policy.Properties.PolicyDocument.Statement as Array<Record<string, unknown>>,
+      (policy) =>
+        policy.Properties.PolicyDocument.Statement as Array<Record<string, unknown>>,
     );
 
     const readStatement = statements.find((s) => s.Sid === "CandidateProfileContentRead");
@@ -160,9 +166,13 @@ describe("CandidateMcpStack", () => {
       expect(readResources).not.toContain(`portfolio-${table}`);
     }
 
-    const rateLimitStatement = statements.find((s) => s.Sid === "CandidateMcpRateLimitCounter");
+    const rateLimitStatement = statements.find(
+      (s) => s.Sid === "CandidateMcpRateLimitCounter",
+    );
     expect(rateLimitStatement).toBeDefined();
     expect(rateLimitStatement?.Action).toBe("dynamodb:UpdateItem");
-    expect(JSON.stringify(rateLimitStatement?.Resource)).toContain("portfolio-rate-limit");
+    expect(JSON.stringify(rateLimitStatement?.Resource)).toContain(
+      "portfolio-rate-limit",
+    );
   });
 });

@@ -131,7 +131,8 @@ if (config.domainEnabled && cert) {
     entry: path.join(repoRoot, "apps/candidate-mcp/src/lambda.ts"),
     hostedZone: dns.hostedZone,
     certificate: cert.certificate,
-    description: "Candidate profile MCP server (Cognito-authenticated Lambda + CloudFront)",
+    description:
+      "Candidate profile MCP server (Cognito-authenticated Lambda + CloudFront)",
   });
   candidateMcp.addDependency(data);
 }

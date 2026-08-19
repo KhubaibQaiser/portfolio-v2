@@ -49,6 +49,8 @@ export function loadConfig(): Config {
 }
 
 /** The single OAuth scope this server understands. */
-export function profileReadScope(config: Pick<Config, "resourceServerIdentifier">): string {
+export function profileReadScope(
+  config: Pick<Config, "resourceServerIdentifier">,
+): string {
   return `${config.resourceServerIdentifier}/profile.read`;
 }

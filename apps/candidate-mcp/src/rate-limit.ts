@@ -3,9 +3,7 @@ import type { Config } from "./config";
 
 const RATE_LIMIT_PREFIX = "candidate-mcp";
 
-export type RateLimitCheck =
-  | { ok: true }
-  | { ok: false; retryAfterSeconds: number };
+export type RateLimitCheck = { ok: true } | { ok: false; retryAfterSeconds: number };
 
 /**
  * Per-`client_id` rate limit, checked once per tool call (not once per HTTP

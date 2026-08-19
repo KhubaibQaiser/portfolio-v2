@@ -63,7 +63,10 @@ export function getStackOutput(
 }
 
 /** Parsed JSON value of a Secrets Manager secret (caller must have credentials). */
-export function getSecretJson<T = Record<string, string>>(secretId: string, region?: string): T {
+export function getSecretJson<T = Record<string, string>>(
+  secretId: string,
+  region?: string,
+): T {
   const args = [
     "secretsmanager",
     "get-secret-value",
