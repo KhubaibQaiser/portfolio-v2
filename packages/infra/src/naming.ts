@@ -97,6 +97,25 @@ export function grantWebDataAccess(
   );
 }
 
+/**
+ * Grants `s3:PutObject` scoped to the canonical resume PDF cache key prefix
+ * only — least privilege, since the public web app otherwise never writes to
+ * the media bucket. Used by the web server function's `/api/pdf` write-through
+ * and by the scheduled rebuild Lambda (WebStack).
+ */
+export function grantCanonicalResumePdfCacheWrite(
+  fn: lambda.Function,
+  mediaBucketName: string,
+): void {
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "CanonicalResumePdfCacheWrite",
+      actions: ["s3:PutObject"],
+      resources: [`arn:aws:s3:::${mediaBucketName}/system/*`],
+    }),
+  );
+}
+
 /** Admin CMS permissions: full content/media and AI history management. */
 export function grantAdminDataAccess(
   scope: Construct,

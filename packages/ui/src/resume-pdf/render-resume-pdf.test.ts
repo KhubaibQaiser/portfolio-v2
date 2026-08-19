@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { extractText, getDocumentProxy } from "unpdf";
 import { createFixtureContentRepository } from "../../../data/src/adapters/fixture-content-repository";
 import { modernBlueReferenceResume } from "../../../data/src/fixtures/modern-blue-reference";
@@ -14,7 +14,7 @@ import {
   projectModernBlueResume,
   removeLeastRelevantBullet,
 } from "./fit-modern-blue-resume";
-import { renderResumePdfBuffer } from "./render-resume-pdf";
+import { ResumeFitDeadlineError, renderResumePdfBuffer } from "./render-resume-pdf";
 
 function layoutFromForm(id: string, form: ResumeLayoutFormData): ResumeLayout {
   return {
@@ -160,7 +160,17 @@ describe("Modern Blue PDF rendering", () => {
       remoteWorkLine: null,
       referencesLine: null,
     };
-    const layout = layoutFromForm("modern-blue-overflow", modernBlueLayoutForm());
+    // maxExperienceItems is widened for this fixture so the scenario exercises
+    // the iterative per-role-minimum overflow fallback in isolation from the
+    // (separately tested) maxExperienceItems search-space cap below.
+    const form = modernBlueLayoutForm();
+    const layout = layoutFromForm("modern-blue-overflow", {
+      ...form,
+      guidelines: {
+        ...form.guidelines,
+        validation: { ...form.guidelines.validation, maxExperienceItems: 20 },
+      },
+    });
     const result = await renderResumePdfBuffer(data, layout);
 
     expect(result.fitReport?.pageCount).toBe(1);
@@ -168,6 +178,93 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.fitReport?.fallbackSteps).toContain("removed-oldest-role");
     expect(result.fitReport?.roleDropReason).not.toBeNull();
   }, 60_000);
+
+  it("bounds the fit-search to maxExperienceItems regardless of role count", async () => {
+    const data = {
+      ...modernBlueReferenceResume,
+      experience: Array.from({ length: 20 }, (_, index) => ({
+        ...modernBlueReferenceResume.experience[0]!,
+        company: `Company ${index + 1}`,
+        startDate: `Jan ${2026 - index}`,
+        endDate: `Dec ${2026 - index}`,
+        period: `${2026 - index}`,
+        bullets: ["Shipped a feature."],
+      })),
+    };
+    const layout = layoutFromForm("modern-blue-cap", modernBlueLayoutForm());
+    const result = await renderResumePdfBuffer(data, layout);
+
+    expect(result.fitReport?.pageCount).toBe(1);
+    expect(result.fitReport?.retainedRoles).toBeLessThanOrEqual(
+      layout.guidelines.validation.maxExperienceItems,
+    );
+    // Recency-sorted: the most recent role (index 0, "Jan 2026") must survive
+    // the cap even though 20 roles were supplied.
+    expect(result.fitReport && result.fitReport.acceptedBulletCounts.length > 0).toBe(
+      true,
+    );
+  }, 30_000);
+
+  it("throws ResumeFitDeadlineError when the deadline has already passed", async () => {
+    const layout = layoutFromForm("modern-blue-deadline-past", modernBlueLayoutForm());
+    await expect(
+      renderResumePdfBuffer(modernBlueReferenceResume, layout, {
+        deadlineAt: Date.now() - 1_000,
+      }),
+    ).rejects.toBeInstanceOf(ResumeFitDeadlineError);
+  });
+
+  it("falls back to a degraded result instead of throwing once the deadline is exceeded mid-search", async () => {
+    const layout = layoutFromForm("modern-blue-deadline-mid", modernBlueLayoutForm());
+    const realNow = Date.now;
+    let calls = 0;
+    // Deterministic instead of timing-based: the entry guard and the first
+    // in-loop check see real time (deadline not yet exceeded, so the search
+    // actually starts); every check after that sees far-future time, forcing
+    // the terminal fallback exactly once real work has begun.
+    const nowSpy = vi
+      .spyOn(Date, "now")
+      .mockImplementation(() => (calls++ < 2 ? realNow() : realNow() + 10 * 60_000));
+
+    try {
+      const result = await renderResumePdfBuffer(modernBlueReferenceResume, layout, {
+        deadlineAt: realNow() + 60_000,
+      });
+
+      expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
+      expect(result.fitReport?.pageCount).toBeGreaterThanOrEqual(1);
+      expect(result.fitReport?.fallbackSteps).toContain("degraded-terminal-fallback");
+    } finally {
+      nowSpy.mockRestore();
+    }
+  }, 30_000);
+
+  it("never throws even when education has no reduction path left before this fix", async () => {
+    const longBullet =
+      "Delivered a production platform spanning architecture, accessibility, observability, testing, cloud infrastructure, stakeholder collaboration, performance improvements, and measurable customer outcomes across multiple international product teams and business units.";
+    const data = {
+      ...modernBlueReferenceResume,
+      summary: modernBlueReferenceResume.summary.repeat(3),
+      experience: Array.from({ length: 8 }, (_, index) => ({
+        ...modernBlueReferenceResume.experience[0]!,
+        company: `Company ${index + 1}`,
+        bullets: [longBullet, longBullet],
+      })),
+      education: Array.from({ length: 10 }, (_, index) => ({
+        institution: `University ${index + 1}`,
+        degree: "B.Sc. Computer Science",
+        year: `${2000 + index}`,
+      })),
+    };
+    const layout = layoutFromForm(
+      "modern-blue-education-overflow",
+      modernBlueLayoutForm(),
+    );
+    const result = await renderResumePdfBuffer(data, layout);
+
+    expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(result.fitReport?.pageCount).toBeGreaterThanOrEqual(1);
+  }, 30_000);
 
   it("records tailored rendering mode explicitly", async () => {
     const layout = layoutFromForm("modern-blue-tailored", modernBlueLayoutForm());

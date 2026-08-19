@@ -4,7 +4,7 @@ export type {
   SkillUpsert,
   ResumeGenerationListOptions,
 } from "./content-repository";
-export type { MediaStore } from "./media-store";
+export type { MediaStore, StoredMediaObject } from "./media-store";
 export type {
   RateLimiter,
   RateLimitResult,
@@ -15,3 +15,11 @@ export type {
 export type { ChatResponseCache, ChatResponseCacheEntry } from "./chat-response-cache";
 export type { UsageReservation, UsageReservationResult } from "./usage-reservation";
 export type { AuthProvider, AdminIdentity } from "./auth-provider";
+export type {
+  RenderJobStore,
+  RenderJob,
+  RenderJobInsert,
+  RenderJobKind,
+  RenderJobStatus,
+} from "./render-job-store";
+export type { RenderJobQueue, RenderJobQueueMessage } from "./render-job-queue";

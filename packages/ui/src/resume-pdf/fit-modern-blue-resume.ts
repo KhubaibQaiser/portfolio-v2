@@ -30,6 +30,13 @@ export type FitReport = {
   droppedSections: string[];
   clampedSummary: boolean;
   clampedBullets: number;
+  /**
+   * True when the fit-search could not converge on the layout's
+   * `maxPageCount` (deadline exceeded or every fallback reduction
+   * exhausted) and the returned PDF exceeds it. The render always succeeds
+   * in this case — this flag is the caller's signal to surface a warning.
+   */
+  degraded: boolean;
 };
 
 export type ModernBlueProjection = {
@@ -56,6 +63,7 @@ export function createFitReport(mode: ResumePdfMode = "canonical"): FitReport {
     droppedSections: [],
     clampedSummary: false,
     clampedBullets: 0,
+    degraded: false,
   };
 }
 
@@ -79,7 +87,11 @@ export function projectModernBlueResume(
     guidelines.validation.maxBulletsPerRole,
     guidelines.formatting.layout.maxBulletsPerJob,
   );
-  const sortedExperience = sortDatedExperiencesByRecency(source.experience);
+  const maxExperienceItems = guidelines.validation.maxExperienceItems;
+  const sortedExperience = sortDatedExperiencesByRecency(source.experience).slice(
+    0,
+    maxExperienceItems > 0 ? maxExperienceItems : undefined,
+  );
   const allocatedExperience = allocateRecencyBulletBudgets(sortedExperience, maxBullets);
   const projectedBulletBudgets = allocatedExperience.budgets;
   const experience = allocatedExperience.experiences.map((item, index) => ({
@@ -292,6 +304,16 @@ export function removeLowestPriorityOptionalSection(
       hasContent: projection.data.languages.length > 0,
       remove: () => {
         projection.data.languages = [];
+      },
+    },
+    {
+      // Last-resort fallback (education is never touched before this point):
+      // without it, a candidate with many education entries has no reduction
+      // path at all and the fit-search can never converge on one page.
+      key: "education",
+      hasContent: projection.data.education.length > 1,
+      remove: () => {
+        projection.data.education = projection.data.education.slice(0, -1);
       },
     },
   ];

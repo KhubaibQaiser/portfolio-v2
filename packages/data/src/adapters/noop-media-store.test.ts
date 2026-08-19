@@ -19,6 +19,11 @@ describe("createNoopMediaStore", () => {
     expect(store.publicUrlToObjectKey("https://cdn.example.com/x")).toBeNull();
   });
 
+  it("reads back as null since nothing is ever stored", async () => {
+    const store = createNoopMediaStore();
+    await expect(store.getObject("media/x.png")).resolves.toBeNull();
+  });
+
   it("throws loudly on writes instead of silently succeeding", async () => {
     const store = createNoopMediaStore();
     await expect(

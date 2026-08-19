@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => ({
   estimateGenerationReservationUsd: vi.fn(() => 0.25),
   ensureAiApiKeys: vi.fn(),
   generateValidatedContent: vi.fn(),
-  renderResumePdfBuffer: vi.fn(),
   loadCandidateFacts: vi.fn(),
   insertResumeGeneration: vi.fn(),
   getResumeLayouts: vi.fn(),
@@ -37,15 +36,10 @@ vi.mock("@portfolio/data", () => ({
   }),
 }));
 vi.mock("@portfolio/shared/resume-data", () => ({
-  applyTailoredResume: (value: unknown) => value,
   getResumeData: mocks.getResumeData,
-  getValidatedHighlightedSkills: () => [],
 }));
 vi.mock("@portfolio/shared/resume-changes", () => ({
   describeAppliedResumeChanges: () => [],
-}));
-vi.mock("@portfolio/ui/resume-pdf", () => ({
-  renderResumePdfBuffer: mocks.renderResumePdfBuffer,
 }));
 vi.mock("@portfolio/shared/schemas", () => ({
   pickDefaultResumeLayout: (layouts: unknown[]) => layouts[0],
@@ -172,10 +166,6 @@ describe("POST /api/resume/generate", () => {
     mocks.loadCandidateFacts.mockResolvedValue({ factSheet: "React engineering facts" });
     mocks.getResumeData.mockResolvedValue({ experience: [], skills: [] });
     mocks.generateValidatedContent.mockResolvedValue(structuredClone(generated));
-    mocks.renderResumePdfBuffer.mockResolvedValue({
-      buffer: Buffer.from("pdf"),
-      fitReport: { pageCount: 1 },
-    });
     mocks.insertResumeGeneration.mockResolvedValue({ id: "generation-id" });
   });
 
@@ -207,8 +197,8 @@ describe("POST /api/resume/generate", () => {
     expect(payload).not.toHaveProperty("language");
     expect(mocks.estimateGenerationReservationUsd).toHaveBeenCalledWith("quality");
     expect(mocks.ensureAiApiKeys).toHaveBeenCalledWith("quality");
-    expect(mocks.renderResumePdfBuffer).toHaveBeenCalledOnce();
     expect(mocks.insertResumeGeneration).toHaveBeenCalledOnce();
+    expect(body.metadata.fitReport).toBeNull();
   });
 
   it("rejects unknown generation options such as tone", async () => {
@@ -293,7 +283,7 @@ describe("POST /api/resume/generate", () => {
     );
   });
 
-  it("skips the initial fit render when generation consumed its headroom", async () => {
+  it("does not render a PDF as part of generation (fit is validated at export time)", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-16T07:00:00Z"));
     mocks.generateValidatedContent.mockImplementation(async () => {
@@ -305,9 +295,6 @@ describe("POST /api/resume/generate", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(mocks.renderResumePdfBuffer).not.toHaveBeenCalled();
-    expect(body.metadata.warnings).toEqual([
-      expect.stringContaining("Skipped the initial page-fit check"),
-    ]);
+    expect(body.metadata.fitReport).toBeNull();
   });
 });

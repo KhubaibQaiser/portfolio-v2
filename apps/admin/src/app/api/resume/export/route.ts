@@ -1,27 +1,28 @@
-import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  CoverLetterDocument,
-  renderResumePdfBuffer,
-  type CoverLetterMeta,
-} from "@portfolio/ui/resume-pdf";
-import { resumeExportRequestSchema, coverLetterSchema } from "@portfolio/ai/schemas";
+import { coverLetterSchema, resumeExportRequestSchema } from "@portfolio/ai/schemas";
 import { sanitizeLlmObject } from "@portfolio/ai/guardrails/output-sanitize";
 import { enforceResumeGenerationPolicy } from "@portfolio/ai/policy/resume-generation-policy";
+import { getResumeData } from "@portfolio/shared/resume-data";
 import {
-  applyTailoredResume,
-  getResumeData,
-  getValidatedHighlightedSkills,
-} from "@portfolio/shared/resume-data";
-import { getContentRepository } from "@portfolio/data";
+  getContentRepository,
+  getRenderJobQueue,
+  getRenderJobStore,
+} from "@portfolio/data";
+import type { RenderJobKind } from "@portfolio/shared/ports";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
+import { toError } from "@/lib/to-error";
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
 import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
+import { processRenderJob, safeFileName } from "@/lib/resume-ai/process-render-job";
+import type {
+  CoverLetterRenderJobPayload,
+  ResumeRenderJobPayload,
+} from "@/lib/resume-ai/render-job-payload";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 const bodySchema = z.discriminatedUnion("kind", [
   resumeExportRequestSchema.extend({
@@ -42,18 +43,20 @@ const bodySchema = z.discriminatedUnion("kind", [
     .strict(),
 ]);
 
-function safeFileName(parts: (string | undefined)[]): string {
-  return parts
-    .filter((p): p is string => Boolean(p && p.trim().length > 0))
-    .map((p) => p.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, ""))
-    .filter(Boolean)
-    .join("-");
-}
-
 function numericClaims(value: string): string[] {
   return value.match(/[$€£]?\d[\d,.]*(?:%|x|k|m|b)?/gi) ?? [];
 }
 
+/**
+ * Enqueues an async PDF render job instead of rendering inline (see
+ * docs/adr — the resume-generation re-architecture plan). All the request
+ * validation that used to gate a synchronous render (freshness hashes,
+ * policy enforcement, fact checks) still happens here, fast and
+ * synchronously; only the actual (potentially slow) render moves to a
+ * worker off any CloudFront/Lambda-timeout path. Poll status at
+ * `/api/resume/export/status` and fetch bytes at
+ * `/api/resume/export/download` once ready.
+ */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) {
@@ -96,6 +99,10 @@ export async function POST(request: Request) {
     userId: auth.id,
     kind: body.kind,
   });
+
+  let kind: RenderJobKind;
+  let payload: ResumeRenderJobPayload | CoverLetterRenderJobPayload;
+  let filename: string;
 
   try {
     if (body.kind === "resume") {
@@ -169,132 +176,94 @@ export async function POST(request: Request) {
         facts,
         layout.guidelines,
       ).resume;
-      const data = applyTailoredResume(base, tailored, {
-        maxRoles: layout.guidelines.validation.maxExperienceItems,
-        maxBullets: Math.min(
-          layout.guidelines.validation.maxBulletsPerRole,
-          layout.guidelines.formatting.layout.maxBulletsPerJob,
-        ),
-      });
-      const highlightedSkills = getValidatedHighlightedSkills(
-        base,
-        tailored.highlightedSkills,
-      );
-      const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
-        mode: "tailored",
-        highlightedSkills: layout.guidelines.contentEmphasis.skillsStrategy
-          .highlightRequired
-          ? highlightedSkills
-          : [],
-      });
-      const filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
-      logger.info("resume pdf export fitted", {
-        userId: auth.id,
-        layoutId: layout.id,
-        fitReport,
-      });
-      return new Response(new Uint8Array(buffer), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${filename}"`,
-          "Cache-Control": "no-store",
-          ...(fitReport ? { "X-Resume-Fit-Report": JSON.stringify(fitReport) } : {}),
-        },
-      });
-    }
-
-    const letter = coverLetterSchema.strict().parse(sanitizeLlmObject(body.coverLetter));
-    if (!generation.source_snapshot || !generation.layout_id) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "STALE_SOURCE",
-            message:
-              "This legacy cover letter has no verified source snapshot. Regenerate it before exporting.",
-            fields: {},
-          },
-        },
-        { status: 409 },
-      );
-    }
-    const coverLayout = await repo.getResumeLayoutById(generation.layout_id);
-    if (!coverLayout) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "STALE_LAYOUT",
-            message: "The generation layout no longer exists.",
-            fields: {},
-          },
-        },
-        { status: 409 },
-      );
-    }
-    const coverFacts = await loadCandidateFactsUncached();
-    const coverSnapshot = createGenerationSnapshot(
-      coverFacts,
-      coverLayout.guidelines,
-      coverLayout.version,
-    );
-    if (coverSnapshot.sourceHash !== generation.source_snapshot.sourceHash) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "STALE_SOURCE",
-            message:
-              "Candidate source data changed after generation. Regenerate before exporting.",
-            fields: {},
-          },
-        },
-        { status: 409 },
-      );
-    }
-    const sourceNumbers = new Set(
-      numericClaims(coverFacts.factSheet).map((claim) => claim.toLocaleLowerCase()),
-    );
-    const unsupportedNumbers = numericClaims(
-      [letter.greeting, ...letter.body, letter.closing, letter.signOff].join(" "),
-    ).filter((claim) => !sourceNumbers.has(claim.toLocaleLowerCase()));
-    if (unsupportedNumbers.length > 0) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "FACT_VALIDATION_FAILED",
-            message: "The edited cover letter contains unsupported numeric claims.",
-            fields: {
-              coverLetter: [
-                `Remove or verify: ${[...new Set(unsupportedNumbers)].join(", ")}`,
-              ],
+      kind = "resume";
+      payload = { layoutId: body.layoutId, tailoredResume: tailored };
+      filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
+    } else {
+      const letter = coverLetterSchema
+        .strict()
+        .parse(sanitizeLlmObject(body.coverLetter));
+      if (!generation.source_snapshot || !generation.layout_id) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_SOURCE",
+              message:
+                "This legacy cover letter has no verified source snapshot. Regenerate it before exporting.",
+              fields: {},
             },
           },
-        },
-        { status: 422 },
+          { status: 409 },
+        );
+      }
+      const coverLayout = await repo.getResumeLayoutById(generation.layout_id);
+      if (!coverLayout) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_LAYOUT",
+              message: "The generation layout no longer exists.",
+              fields: {},
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const coverFacts = await loadCandidateFactsUncached();
+      const coverSnapshot = createGenerationSnapshot(
+        coverFacts,
+        coverLayout.guidelines,
+        coverLayout.version,
       );
+      if (coverSnapshot.sourceHash !== generation.source_snapshot.sourceHash) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "STALE_SOURCE",
+              message:
+                "Candidate source data changed after generation. Regenerate before exporting.",
+              fields: {},
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const sourceNumbers = new Set(
+        numericClaims(coverFacts.factSheet).map((claim) => claim.toLocaleLowerCase()),
+      );
+      const unsupportedNumbers = numericClaims(
+        [letter.greeting, ...letter.body, letter.closing, letter.signOff].join(" "),
+      ).filter((claim) => !sourceNumbers.has(claim.toLocaleLowerCase()));
+      if (unsupportedNumbers.length > 0) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "FACT_VALIDATION_FAILED",
+              message: "The edited cover letter contains unsupported numeric claims.",
+              fields: {
+                coverLetter: [
+                  `Remove or verify: ${[...new Set(unsupportedNumbers)].join(", ")}`,
+                ],
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      kind = "cover_letter";
+      payload = {
+        letter,
+        meta: { company: body.meta?.company, role: body.meta?.role },
+      };
+      filename =
+        safeFileName([base.name, body.meta?.company, body.meta?.role, "Cover_Letter"]) +
+        ".pdf";
     }
-    const meta: CoverLetterMeta = {
-      company: body.meta?.company,
-      role: body.meta?.role,
-    };
-    const buffer = await renderToBuffer(
-      <CoverLetterDocument contact={base} letter={letter} meta={meta} />,
-    );
-    const filename =
-      safeFileName([base.name, body.meta?.company, body.meta?.role, "Cover_Letter"]) +
-      ".pdf";
-    return new Response(new Uint8Array(buffer), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "no-store",
-      },
-    });
   } catch (err) {
-    logger.error("resume pdf export failed", {
+    logger.error("resume pdf export validation failed", {
       userId: auth.id,
       kind: body.kind,
-      error: err instanceof Error ? err : new Error(String(err)),
+      error: toError(err),
     });
     return NextResponse.json(
       {
@@ -307,4 +276,30 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
+
+  const job = await getRenderJobStore().create({
+    jobId: crypto.randomUUID(),
+    createdBy: auth.id,
+    generationId: body.generationId,
+    kind,
+    payload,
+    filename,
+  });
+
+  const queue = getRenderJobQueue();
+  if (queue) {
+    await queue.enqueue({ jobId: job.jobId });
+  } else {
+    // Fixture/local dev: no worker Lambda consumes a real queue, so process
+    // inline instead. Off the response path (not awaited) to mirror the
+    // production enqueue-then-poll shape as closely as possible.
+    void processRenderJob(job.jobId).catch((error: unknown) => {
+      logger.error("inline render-job processing failed", {
+        jobId: job.jobId,
+        error: toError(error),
+      });
+    });
+  }
+
+  return NextResponse.json({ jobId: job.jobId, filename }, { status: 202 });
 }

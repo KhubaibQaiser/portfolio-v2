@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { tailoredResumeSchema, type TailoredResume } from "@portfolio/ai/schemas";
 import type { FitReport } from "@portfolio/ui/resume-pdf";
 import { cn } from "@/lib/utils";
+import { requestRenderedPdf } from "./request-rendered-pdf";
 
 type Props = {
   resume: TailoredResume | null;
@@ -18,24 +19,6 @@ type Props = {
 };
 
 const PREVIEW_DEBOUNCE_MS = 600;
-
-function parseFitReport(value: string | null): FitReport | null {
-  if (!value) return null;
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "pageCount" in parsed &&
-      "density" in parsed
-    ) {
-      return parsed as FitReport;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
 
 function describeFit(report: FitReport): string {
   const removed = report.droppedRoles + report.droppedBullets + report.droppedSkills;
@@ -90,32 +73,17 @@ export function ResumePdfPreview({ resume, layoutId, revision, context, stale }:
 
       void (async () => {
         try {
-          const res = await fetch("/api/resume/export", {
-            method: "POST",
-            signal: controller.signal,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const { blob, fitReport: nextFitReport } = await requestRenderedPdf(
+            {
               kind: "resume",
               generationId: context.generationId,
               resume: validatedResume.data,
               layoutId,
               sourceHash: context.sourceHash,
               guidelineHash: context.guidelineHash,
-            }),
-          });
-          if (!res.ok) {
-            const json = await res.json().catch(() => ({}));
-            throw new Error(
-              typeof json.error === "object" &&
-                json.error !== null &&
-                "message" in json.error &&
-                typeof json.error.message === "string"
-                ? json.error.message
-                : "PDF preview failed",
-            );
-          }
-          const nextFitReport = parseFitReport(res.headers.get("X-Resume-Fit-Report"));
-          const blob = await res.blob();
+            },
+            controller.signal,
+          );
           const nextUrl = URL.createObjectURL(blob);
           if (cancelled || requestVersion !== requestVersionRef.current) {
             URL.revokeObjectURL(nextUrl);

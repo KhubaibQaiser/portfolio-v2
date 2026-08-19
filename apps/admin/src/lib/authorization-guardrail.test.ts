@@ -36,9 +36,33 @@ describe("admin authorization guardrail", () => {
     expect(files).toEqual([
       "src/app/api/media/upload/route.ts",
       "src/app/api/resume/ats/route.ts",
-      "src/app/api/resume/export/route.tsx",
+      "src/app/api/resume/export/route.ts",
       "src/app/api/resume/extract-pdf/route.ts",
       "src/app/api/resume/generate/route.ts",
+    ]);
+    expectGuarded(files);
+  });
+
+  // Regression guard: the mutating-only check above would silently miss a
+  // brand-new GET-only route (e.g. a status/read endpoint) that forgets
+  // requireAdmin() entirely, since admin data is not public even to read.
+  it("guards every non-auth API route regardless of HTTP method", () => {
+    const anyHandler = /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\b/;
+    const files = sourceFiles("src/app/api/**/route.{ts,tsx}").filter((file) => {
+      if (PUBLIC_AUTH_ROUTES.has(file)) return false;
+      return anyHandler.test(readFileSync(resolve(ADMIN_ROOT, file), "utf8"));
+    });
+
+    expect(files).toEqual([
+      "src/app/api/media/upload/route.ts",
+      "src/app/api/resume/ats/route.ts",
+      "src/app/api/resume/export/download/route.ts",
+      "src/app/api/resume/export/route.ts",
+      "src/app/api/resume/export/status/route.ts",
+      "src/app/api/resume/extract-pdf/route.ts",
+      "src/app/api/resume/generate/route.ts",
+      "src/app/api/resume/history/[id]/route.ts",
+      "src/app/api/resume/history/route.ts",
     ]);
     expectGuarded(files);
   });

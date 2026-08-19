@@ -8,13 +8,8 @@ import {
   wrapUntrusted,
 } from "@portfolio/ai/guardrails/prompt-injection";
 import { getContentRepository } from "@portfolio/data";
-import {
-  applyTailoredResume,
-  getResumeData,
-  getValidatedHighlightedSkills,
-} from "@portfolio/shared/resume-data";
+import { getResumeData } from "@portfolio/shared/resume-data";
 import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
-import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
 import {
   pickDefaultResumeLayout,
   type VariantGuidelines,
@@ -39,7 +34,6 @@ export const maxDuration = 60;
 
 const GENERATION_DEADLINE_MS = 52_000;
 const MODEL_PHASE_BUDGET_MS = 40_000;
-const MIN_FIT_CHECK_BUDGET_MS = 15_000;
 
 const bodySchema = z
   .object({
@@ -81,12 +75,13 @@ async function releaseUsageReservation(
 ): Promise<void> {
   const operation =
     actualUsd === undefined
-      ? usageGuard.reservation.release(userId, usageGuard.reservedUsd)
-      : usageGuard.reservation.settle(userId, usageGuard.reservedUsd, actualUsd);
+      ? usageGuard.reservation.release(userId, usageGuard.reservationId)
+      : usageGuard.reservation.settle(userId, usageGuard.reservationId, actualUsd);
 
   await operation.catch((error) =>
     logger.warn("resume AI usage reservation cleanup failed", {
       userId,
+      reservationId: usageGuard.reservationId,
       reservedUsd: usageGuard.reservedUsd,
       actualUsd,
       error: error instanceof Error ? error : new Error(String(error)),
@@ -152,6 +147,11 @@ export async function POST(request: Request) {
     );
   }
   if (!reservation.ok) {
+    logger.warn("resume AI generation denied by cost cap", {
+      userId: auth.id,
+      spentUsd: reservation.spentUsd,
+      capUsd: reservation.capUsd,
+    });
     return NextResponse.json(
       {
         error: {
@@ -275,46 +275,19 @@ export async function POST(request: Request) {
     });
     incurredUsageUsd = generated.usage.costUsd ?? 0;
 
+    // PDF fitting is intentionally not checked here. It duplicates the
+    // preview/export render (`/api/resume/export`), which now uses a
+    // deadline-bounded, never-throwing fit-search (see
+    // packages/ui/src/resume-pdf/render-resume-pdf.tsx) — rendering twice
+    // per generation only doubled latency and timeout risk without adding
+    // real validation.
     let appliedChanges: string[] = [];
-    let fitReport: Record<string, unknown> | undefined;
     if (generated.resume) {
       const base = await baseResumePromise;
       if (!base) {
         throw new Error("Base resume was not loaded for a resume generation.");
       }
       appliedChanges = describeAppliedResumeChanges(base, generated.resume, body.role);
-      const pdfData = applyTailoredResume(base, generated.resume, {
-        maxRoles: guidelines.validation.maxExperienceItems,
-        maxBullets: Math.min(
-          guidelines.validation.maxBulletsPerRole,
-          guidelines.formatting.layout.maxBulletsPerJob,
-        ),
-      });
-      const remainingMs = requestDeadlineAt - Date.now();
-      if (remainingMs >= MIN_FIT_CHECK_BUDGET_MS) {
-        const rendered = await renderResumePdfBuffer(pdfData, layout, {
-          mode: "tailored",
-          highlightedSkills: getValidatedHighlightedSkills(
-            base,
-            generated.resume.highlightedSkills,
-          ),
-        });
-        if (
-          rendered.fitReport &&
-          rendered.fitReport.pageCount > guidelines.validation.maxPageCount
-        ) {
-          throw new ValidatedGenerationError(
-            "INVALID_MODEL_OUTPUT",
-            "The generated resume could not fit the selected layout.",
-            true,
-          );
-        }
-        fitReport = rendered.fitReport ? { ...rendered.fitReport } : undefined;
-      } else {
-        generated.warnings.push(
-          "Skipped the initial page-fit check to stay within the generation time budget. PDF export will validate the final fit.",
-        );
-      }
     }
 
     if (requestDeadline.aborted) {
@@ -341,7 +314,7 @@ export async function POST(request: Request) {
       resume: generated.resume as Record<string, unknown> | null,
       cover_letter: generated.coverLetter as Record<string, unknown> | null,
       ats: null,
-      usage: { ...generated.usage, ...(fitReport ? { fitReport } : {}) },
+      usage: generated.usage,
       resume_pdf_url: null,
       cover_letter_pdf_url: null,
       layout_id: layoutId,
@@ -366,7 +339,8 @@ export async function POST(request: Request) {
       metadata: {
         attempts: generated.attempts,
         warnings: generated.warnings,
-        fitReport: fitReport ?? null,
+        // Fit is validated at preview/export time now, not duplicated here.
+        fitReport: null,
       },
     });
 

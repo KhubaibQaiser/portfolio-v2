@@ -7,15 +7,26 @@ import { Font } from "@react-pdf/renderer";
 let registrationState: "pending" | "success" | "fallback" = "pending";
 let family = "Helvetica";
 
+function moduleDirCandidate(fileName: string): string | null {
+  // `import.meta.url` is empty when a bundler (esbuild's CJS output format,
+  // used by the standalone Lambda bundlers in packages/infra) can't provide
+  // it — fall through to the cwd-relative candidates below instead of
+  // throwing, since this is only ever a "does the file exist" probe.
+  try {
+    return join(dirname(fileURLToPath(import.meta.url)), "fonts", fileName);
+  } catch {
+    return null;
+  }
+}
+
 function fontCandidates(fileName: string): string[] {
-  const fromModule = join(dirname(fileURLToPath(import.meta.url)), "fonts", fileName);
   const cwd = process.cwd();
   return [
-    fromModule,
+    moduleDirCandidate(fileName),
     join(cwd, "public/fonts", fileName),
     join(cwd, "apps/web/public/fonts", fileName),
     join(cwd, "apps/admin/public/fonts", fileName),
-  ];
+  ].filter((candidate): candidate is string => candidate !== null);
 }
 
 function resolveFont(fileName: string): string | null {

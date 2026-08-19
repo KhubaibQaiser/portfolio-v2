@@ -27,6 +27,7 @@ import { PolishChecklist } from "./polish-checklist";
 import { LayoutPicker } from "./layout-picker";
 import { AppliedChangesList } from "./applied-changes-list";
 import { ResumePdfPreview } from "./resume-pdf-preview";
+import { requestRenderedPdf, type RenderJobRequestBody } from "./request-rendered-pdf";
 import { GenButton } from "./gen-button";
 import { CopyButton } from "./copy-button";
 import { GenerationWarnings } from "./generation-warnings";
@@ -268,9 +269,9 @@ export function GeneratorClient({
     setError(null);
 
     try {
-      const body =
+      const body: RenderJobRequestBody | null =
         kind === "resume"
-          ? resumeContext
+          ? resumeContext && generation.resume
             ? {
                 kind,
                 generationId: resumeContext.generationId,
@@ -280,45 +281,26 @@ export function GeneratorClient({
                 guidelineHash: resumeContext.guidelineHash,
               }
             : null
-          : {
-              kind,
-              generationId: coverLetterContext?.generationId,
-              coverLetter: generation.coverLetter,
-              meta: {
-                company: options.company || undefined,
-                role: options.role || undefined,
-              },
-            };
-      if (!body || !body.generationId) {
+          : coverLetterContext && generation.coverLetter
+            ? {
+                kind,
+                generationId: coverLetterContext.generationId,
+                coverLetter: generation.coverLetter,
+                meta: {
+                  company: options.company || undefined,
+                  role: options.role || undefined,
+                },
+              }
+            : null;
+      if (!body) {
         throw new Error("Regenerate this legacy result before exporting.");
       }
 
-      const res = await fetch("/api/resume/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const json: unknown = await res.json().catch(() => null);
-        const message =
-          typeof json === "object" &&
-          json !== null &&
-          "error" in json &&
-          typeof json.error === "object" &&
-          json.error !== null &&
-          "message" in json.error &&
-          typeof json.error.message === "string"
-            ? json.error.message
-            : "Download failed";
-        setError(message);
-        return;
-      }
-
-      const blob = await res.blob();
+      const { blob, filename } = await requestRenderedPdf(body);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = kind === "resume" ? "resume.pdf" : "cover-letter.pdf";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (downloadError) {
