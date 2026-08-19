@@ -36,14 +36,13 @@ below as the source of truth, not guesses from training data.
 1. Read the relevant ADR in `docs/adr/` and the Zod schema in
    `packages/shared` or `packages/ai/src/schemas`.
 2. For Resume AI, update `specs/resume-ai.md` and add an offline eval case
-   under `packages/ai/src/evals/cases/` before changing prompts or policy
-   (when that directory exists).
+   under `packages/ai/src/evals/cases/` before changing prompts or policy.
 3. Implement the smallest change. Do not add packages unless the task is a
    new bounded concern.
 4. Run:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test
+pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume
 ```
 
 Use `pnpm --filter @portfolio/agent-mcp start` only when exercising the MCP

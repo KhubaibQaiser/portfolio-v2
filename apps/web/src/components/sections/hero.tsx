@@ -38,9 +38,7 @@ export function HeroSection({ hero, name, companies }: HeroSectionProps) {
 
       <div className="max-w-container relative z-10 mx-auto w-full min-w-0 px-(--container-padding) py-16 text-center sm:py-24 md:py-32">
         {/* Visible in SSR HTML immediately — LCP must not wait on Framer Motion */}
-        <p className="text-accent font-mono text-sm md:text-base">
-          {hero.greeting}
-        </p>
+        <p className="text-accent font-mono text-sm md:text-base">{hero.greeting}</p>
 
         <h1 className="text-display mt-5 leading-[1.1] font-bold tracking-tight text-balance">
           {name}
