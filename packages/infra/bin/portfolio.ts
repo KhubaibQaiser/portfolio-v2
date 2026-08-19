@@ -12,6 +12,7 @@ import { AuthStack } from "../src/stacks/auth-stack";
 import { SharedStack } from "../src/stacks/shared-stack";
 import { StorybookStack } from "../src/stacks/storybook-stack";
 import { OidcStack } from "../src/stacks/oidc-stack";
+import { CandidateMcpStack } from "../src/stacks/candidate-mcp-stack";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -133,6 +134,24 @@ const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {
   ...domainProps,
   description: "Storybook design-system showcase (static S3 + CloudFront)",
 });
+
+// Candidate-mcp needs a stable hostname for its Cognito resource-server
+// identifier and Host-header allowlist (see docs/adr/0003), so — unlike
+// Web/Admin/Storybook — it only deploys once the custom domain is live.
+let candidateMcp: CandidateMcpStack | undefined;
+if (config.domainEnabled && cert) {
+  candidateMcp = new CandidateMcpStack(app, `${config.appName}-CandidateMcp`, {
+    env: primaryEnv,
+    config,
+    crossRegionReferences: true,
+    entry: path.join(repoRoot, "apps/candidate-mcp/src/lambda.ts"),
+    hostedZone: dns.hostedZone,
+    certificate: cert.certificate,
+    description:
+      "Candidate profile MCP server (Cognito-authenticated Lambda + CloudFront)",
+  });
+  candidateMcp.addDependency(data);
+}
 
 // CI deploy role. Opt-in: only when the GitHub repo is configured.
 if (config.githubRepo) {

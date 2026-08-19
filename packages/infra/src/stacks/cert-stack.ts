@@ -13,12 +13,13 @@ export type CertStackProps = cdk.StackProps & {
 /**
  * The CloudFront TLS certificate. Must live in us-east-1 regardless of where
  * the app runs, because CloudFront only reads ACM certs from that region.
- * Covers the apex plus the `www`, `admin`, and `storybook` subdomains and is
- * DNS-validated against the hosted zone (requires registrar delegation to be
- * complete).
+ * Covers the apex plus the `www`, `admin`, `storybook`, and `mcp` subdomains
+ * and is DNS-validated against the hosted zone (requires registrar
+ * delegation to be complete).
  *
- * `certificate` is passed directly (as a construct) to the Web/Admin/Storybook
- * stacks in eu-west-1 — see docs/adr/0001-cross-stack-references.md. Requires
+ * `certificate` is passed directly (as a construct) to the
+ * Web/Admin/Storybook/CandidateMcp stacks in eu-west-1 — see
+ * docs/adr/0001-cross-stack-references.md. Requires
  * `crossRegionReferences: true` on this stack and every consumer.
  */
 export class CertStack extends cdk.Stack {
@@ -35,6 +36,7 @@ export class CertStack extends cdk.Stack {
         `www.${domainName}`,
         `admin.${domainName}`,
         `storybook.${domainName}`,
+        `mcp.${domainName}`,
       ],
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });

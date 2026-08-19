@@ -14,6 +14,12 @@ describe("portfolio-context MCP readers", () => {
     expect(text).toContain("AppErrors");
   });
 
+  it("returns ADR 0003 with the candidate-mcp Cognito decision", () => {
+    const text = readAdr("0003");
+    expect(text).toContain("Candidate Profile MCP server");
+    expect(text).toContain("Cognito");
+  });
+
   it("returns the resume schema and shared prompt rules", () => {
     const text = readAiContract("resume");
     expect(text).toContain("tailoredResumeSchema");

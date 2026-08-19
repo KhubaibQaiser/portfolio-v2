@@ -91,6 +91,20 @@ export class OidcStack extends cdk.Stack {
         actions: ["cloudformation:DescribeStacks"],
         resources: [
           `arn:aws:cloudformation:${this.region}:${this.account}:stack/${config.appName}-Web/*`,
+          `arn:aws:cloudformation:${this.region}:${this.account}:stack/${config.appName}-CandidateMcp/*`,
+        ],
+      }),
+    );
+
+    // Read-only access for the post-deploy candidate-mcp smoke test: the
+    // n8n workflow's Cognito client-credentials, scoped to that one secret
+    // (not the AI-key/auth secrets DataStack/AuthStack own).
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadCandidateMcpSmokeTestSecret",
+        actions: ["secretsmanager:GetSecretValue"],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/${config.appName.toLowerCase()}/candidate-mcp/n8n-workflow-client-*`,
         ],
       }),
     );
