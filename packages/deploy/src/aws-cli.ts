@@ -62,6 +62,36 @@ export function getStackOutput(
   }
 }
 
+/** Parsed JSON value of a Secrets Manager secret (caller must have credentials). */
+export function getSecretJson<T = Record<string, string>>(secretId: string, region?: string): T {
+  const args = [
+    "secretsmanager",
+    "get-secret-value",
+    "--secret-id",
+    secretId,
+    "--query",
+    "SecretString",
+    "--output",
+    "text",
+  ];
+  if (region) {
+    args.push("--region", region);
+  }
+
+  try {
+    const value = execFileSync("aws", args, { encoding: "utf8" }).trim();
+    if (!value) {
+      throw new Error(`Secret ${secretId} returned an empty value`);
+    }
+    return JSON.parse(value) as T;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to read secret ${secretId}. Ensure AWS credentials are configured and the stack has been deployed.\n${message}`,
+    );
+  }
+}
+
 /** First object key under `prefix` in the bucket, or undefined when empty. */
 export function listFirstS3Key(
   bucket: string,
