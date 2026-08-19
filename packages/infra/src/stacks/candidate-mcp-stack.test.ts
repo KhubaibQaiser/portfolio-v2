@@ -25,7 +25,6 @@ const baseConfig: InfraConfig = {
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
   mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
-  mcpReservedConcurrency: 5,
 };
 
 /**
@@ -115,11 +114,11 @@ describe("CandidateMcpStack", () => {
     });
   });
 
-  it("caps reserved concurrency from config (cost/abuse control)", () => {
-    const template = synth({ mcpReservedConcurrency: 3 });
+  it("does not reserve Lambda concurrency (personal-account UnreservedConcurrentExecution floor)", () => {
+    const template = synth();
 
     template.hasResourceProperties("AWS::Lambda::Function", {
-      ReservedConcurrentExecutions: 3,
+      ReservedConcurrentExecutions: Match.absent(),
     });
   });
 
