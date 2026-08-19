@@ -243,6 +243,10 @@ jobs:
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
           -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
 
+      - name: Sync cross-region cert exports (cert recovery)
+        if: vars.CERT_RECOVERY_MODE == 'true' && vars.DOMAIN_ENABLED == 'true'
+        run: pnpm sync-cert-cross-region-exports
+
       # concurrency 1 (not the previous 4): reduces parallel CloudFormation
       # API calls/throttling risk across this stack set. Not a fix for the
       # Cert deadlock above (that was a stuck cert replacement, not a
@@ -288,7 +292,8 @@ jobs:
       - name: Smoke test image optimizer
         run: pnpm smoke-test:images
 
-      # Only deployed once the custom domain is live (see candidate-mcp-stack.ts).
+      # CandidateMcp is not deployed during cert recovery (Cert stack is busy;
+      # full `--all` creates it once cleanup finishes).
       - name: Smoke test candidate-mcp
-        if: vars.DOMAIN_ENABLED == 'true'
+        if: vars.DOMAIN_ENABLED == 'true' && vars.CERT_RECOVERY_MODE != 'true'
         run: pnpm smoke-test:candidate-mcp
