@@ -1,6 +1,9 @@
+import { randomUUID } from "node:crypto";
 import type { UsageReservation, UsageReservationResult } from "@portfolio/shared/ports";
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
+/** Mirrors HOLD_TTL_SEC in the Dynamo adapter for fixture/local parity. */
+const HOLD_TTL_MS = 5 * 60 * 1000;
 
 function roundUsd(value: number): number {
   return Math.max(0, Math.round(value * 1_000_000) / 1_000_000);
@@ -10,16 +13,35 @@ function windowKey(now: number): number {
   return Math.floor(now / WINDOW_MS) * WINDOW_MS;
 }
 
-/** In-memory reservation adapter for fixture/local development and tests. */
-export function createMemoryUsageReservation(): UsageReservation {
-  const spend = new Map<string, number>();
+type Hold = { userId: string; windowKey: number; amountUsd: number; expiresAtMs: number };
 
-  function current(userId: string): number {
-    return spend.get(`${userId}#${windowKey(Date.now())}`) ?? 0;
+/**
+ * In-memory reservation adapter for fixture/local development and tests.
+ * Mirrors the Dynamo adapter's short-TTL hold semantics so a killed process
+ * (or a test asserting on that behavior) sees the same self-healing
+ * guarantees the production adapter provides.
+ */
+export function createMemoryUsageReservation(): UsageReservation {
+  const settled = new Map<string, number>();
+  const holds = new Map<string, Hold>();
+
+  function settledKey(userId: string): string {
+    return `${userId}#${windowKey(Date.now())}`;
   }
 
-  function set(userId: string, value: number): void {
-    spend.set(`${userId}#${windowKey(Date.now())}`, roundUsd(value));
+  function liveHeldUsd(userId: string, nowMs: number): number {
+    let total = 0;
+    const currentWindow = windowKey(nowMs);
+    for (const hold of holds.values()) {
+      if (
+        hold.userId === userId &&
+        hold.windowKey === currentWindow &&
+        hold.expiresAtMs > nowMs
+      ) {
+        total += hold.amountUsd;
+      }
+    }
+    return total;
   }
 
   return {
@@ -28,25 +50,40 @@ export function createMemoryUsageReservation(): UsageReservation {
       estimatedUsd: number,
       capUsd: number,
     ): Promise<UsageReservationResult> {
-      const next = roundUsd(current(userId) + estimatedUsd);
-      if (next > roundUsd(capUsd)) {
+      const nowMs = Date.now();
+      const roundedEstimate = roundUsd(estimatedUsd);
+      const roundedCap = roundUsd(capUsd);
+      const settledUsd = settled.get(settledKey(userId)) ?? 0;
+      const heldUsd = liveHeldUsd(userId, nowMs);
+      const projectedUsd = roundUsd(settledUsd + heldUsd + roundedEstimate);
+
+      if (projectedUsd > roundedCap) {
         return {
           ok: false,
-          spentUsd: next,
-          capUsd: roundUsd(capUsd),
+          spentUsd: roundUsd(settledUsd + heldUsd),
+          capUsd: roundedCap,
           reason: "cost-cap",
         };
       }
-      set(userId, next);
-      return { ok: true, spentUsd: next, capUsd: roundUsd(capUsd) };
+
+      const reservationId = randomUUID();
+      holds.set(reservationId, {
+        userId,
+        windowKey: windowKey(nowMs),
+        amountUsd: roundedEstimate,
+        expiresAtMs: nowMs + HOLD_TTL_MS,
+      });
+      return { ok: true, spentUsd: projectedUsd, capUsd: roundedCap, reservationId };
     },
 
-    async settle(userId: string, reservedUsd: number, actualUsd: number) {
-      set(userId, current(userId) - roundUsd(reservedUsd) + roundUsd(actualUsd));
+    async settle(userId: string, reservationId: string, actualUsd: number) {
+      holds.delete(reservationId);
+      const key = settledKey(userId);
+      settled.set(key, roundUsd((settled.get(key) ?? 0) + actualUsd));
     },
 
-    async release(userId: string, reservedUsd: number) {
-      set(userId, current(userId) - roundUsd(reservedUsd));
+    async release(_userId: string, reservationId: string) {
+      holds.delete(reservationId);
     },
   };
 }

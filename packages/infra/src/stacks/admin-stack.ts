@@ -1,8 +1,12 @@
 import * as cdk from "aws-cdk-lib";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
+import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as route53 from "aws-cdk-lib/aws-route53";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
@@ -14,6 +18,14 @@ export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
   /** Absolute path to apps/admin/.open-next. */
   openNextDir: string;
+  /** Absolute path to apps/admin's render-job worker Lambda entry (TS). */
+  renderJobWorkerEntry: string;
+  /** Absolute path to apps/admin's render-job DLQ handler Lambda entry (TS). */
+  renderJobDlqHandlerEntry: string;
+  /** Absolute path to the repo's pnpm-lock.yaml, for esbuild bundling cache-busting. */
+  depsLockFilePath: string;
+  /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
+  resumeFontsDir: string;
   /** Dns/Cert stack constructs, only present when `config.domainEnabled`. */
   hostedZone?: route53.IHostedZone;
   certificate?: acm.ICertificate;
@@ -70,6 +82,100 @@ export class AdminStack extends cdk.Stack {
       ssmGet(paths.betterAuthSecretArn),
     );
 
+    // --- Async admin PDF render jobs: SQS + DLQ + worker Lambda ---
+    // POST /api/resume/generate and /api/resume/export enqueue here instead
+    // of rendering inline, so a Modern Blue fit-search (or any render) runs
+    // on a worker with its own long timeout, off the CloudFront/Lambda
+    // request path entirely. See docs/adr and the resume-generation
+    // re-architecture plan.
+    const renderJobDlq = new sqs.Queue(this, "RenderJobDlq", {
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const renderJobQueue = new sqs.Queue(this, "RenderJobQueue", {
+      // >= worker Lambda timeout (below) so SQS never redelivers a message
+      // that's still being actively processed.
+      visibilityTimeout: cdk.Duration.seconds(360),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: { queue: renderJobDlq, maxReceiveCount: 3 },
+    });
+
+    const renderJobBundling: nodeLambda.BundlingOptions = {
+      // Bundle the AWS SDK too instead of relying on the runtime-provided
+      // version, per AWS's own guidance, so this Lambda's SDK version always
+      // matches what the rest of the monorepo was built and tested against.
+      externalModules: [],
+      // @react-pdf/renderer needs the actual .ttf files on disk at runtime
+      // (esbuild only bundles the JS import graph, not binary assets) —
+      // registerResumePdfFonts() falls back to `${cwd}/public/fonts/*`,
+      // which is `/var/task/public/fonts/*` for a Lambda.
+      commandHooks: {
+        beforeBundling: () => [],
+        beforeInstall: () => [],
+        afterBundling: (_inputDir: string, outputDir: string) => [
+          `mkdir -p "${outputDir}/public/fonts"`,
+          `cp "${props.resumeFontsDir}"/*.ttf "${outputDir}/public/fonts/"`,
+        ],
+      },
+    };
+
+    const renderJobWorkerFn = new nodeLambda.NodejsFunction(this, "RenderJobWorkerFn", {
+      entry: props.renderJobWorkerEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 3008,
+      timeout: cdk.Duration.seconds(300),
+      bundling: renderJobBundling,
+      logGroup: new logs.LogGroup(this, "RenderJobWorkerFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+      environment: {
+        DATA_BACKEND: "dynamo",
+        DYNAMO_TABLE_PREFIX: config.tablePrefix,
+        S3_MEDIA_BUCKET: mediaBucketName,
+        MEDIA_PUBLIC_BASE_URL: mediaPublicBaseUrl,
+        POWERTOOLS_SERVICE_NAME: "portfolio-admin-render-job-worker",
+        POWERTOOLS_LOG_LEVEL: "WARN",
+      },
+    });
+    grantAdminDataAccess(this, renderJobWorkerFn, config, mediaBucketName);
+    renderJobWorkerFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(renderJobQueue, {
+        batchSize: 5,
+        reportBatchItemFailures: true,
+      }),
+    );
+
+    const renderJobDlqHandlerFn = new nodeLambda.NodejsFunction(
+      this,
+      "RenderJobDlqHandlerFn",
+      {
+        entry: props.renderJobDlqHandlerEntry,
+        depsLockFilePath: props.depsLockFilePath,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        architecture: lambda.Architecture.ARM_64,
+        memorySize: 256,
+        timeout: cdk.Duration.seconds(30),
+        bundling: { externalModules: [] },
+        logGroup: new logs.LogGroup(this, "RenderJobDlqHandlerFnLogs", {
+          retention: logs.RetentionDays.TWO_WEEKS,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        }),
+        environment: {
+          DATA_BACKEND: "dynamo",
+          DYNAMO_TABLE_PREFIX: config.tablePrefix,
+          POWERTOOLS_SERVICE_NAME: "portfolio-admin-render-job-dlq-handler",
+          POWERTOOLS_LOG_LEVEL: "WARN",
+        },
+      },
+    );
+    grantAdminDataAccess(this, renderJobDlqHandlerFn, config, mediaBucketName);
+    renderJobDlqHandlerFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(renderJobDlq, { batchSize: 1 }),
+    );
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -95,6 +201,7 @@ export class AdminStack extends cdk.Stack {
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
+        RENDER_JOB_QUEUE_URL: renderJobQueue.queueUrl,
       },
       grantServer: (fn) => {
         grantAdminDataAccess(this, fn, config, mediaBucketName);
@@ -102,6 +209,7 @@ export class AdminStack extends cdk.Stack {
         anthropicSecret.grantRead(fn);
         googleOAuthSecret.grantRead(fn);
         betterAuthSecret.grantRead(fn);
+        renderJobQueue.grantSendMessages(fn);
       },
     });
 
@@ -109,14 +217,26 @@ export class AdminStack extends cdk.Stack {
       aliasToCloudFront(this, props.hostedZone, site.distribution, "AdminAlias", "admin");
     }
 
+    // Every ERROR-level log line — from the server function or either render-
+    // job Lambda — feeds the same single symptom-based alarm (ADR 0002), so a
+    // stuck/degraded/DLQ'd render job surfaces without a new per-resource
+    // alarm. render-job-worker logs ERROR on both processing failures and
+    // degraded (2-page) output; the DLQ handler logs ERROR when a job
+    // permanently fails after exhausting SQS redelivery.
     const errorMetric = appErrorMetric(config);
-    new logs.MetricFilter(this, "AppErrorMetric", {
-      logGroup: site.serverLogGroup,
-      metricNamespace: errorMetric.namespace,
-      metricName: errorMetric.metricName,
-      filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
-      metricValue: "1",
-      defaultValue: 0,
-    });
+    for (const [id, logGroup] of [
+      ["AppErrorMetric", site.serverLogGroup],
+      ["RenderJobWorkerErrorMetric", renderJobWorkerFn.logGroup],
+      ["RenderJobDlqHandlerErrorMetric", renderJobDlqHandlerFn.logGroup],
+    ] as const) {
+      new logs.MetricFilter(this, id, {
+        logGroup,
+        metricNamespace: errorMetric.namespace,
+        metricName: errorMetric.metricName,
+        filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+        metricValue: "1",
+        defaultValue: 0,
+      });
+    }
   }
 }

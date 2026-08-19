@@ -1,8 +1,11 @@
+import { SQSClient } from "@aws-sdk/client-sqs";
 import type {
   ChatResponseCache,
   ContentRepository,
   CostCap,
   RateLimiter,
+  RenderJobQueue,
+  RenderJobStore,
   UsageReservation,
 } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
@@ -13,6 +16,9 @@ import { createDynamoUsageReservation } from "./adapters/dynamo-usage-reservatio
 import { createMemoryUsageReservation } from "./adapters/memory-usage-reservation";
 import { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
 import { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
+import { createDynamoRenderJobStore } from "./adapters/dynamo-render-job-store";
+import { createMemoryRenderJobStore } from "./adapters/memory-render-job-store";
+import { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { buildTableNames } from "./dynamo/tables";
@@ -25,6 +31,9 @@ export { createDynamoUsageReservation } from "./adapters/dynamo-usage-reservatio
 export { createMemoryUsageReservation } from "./adapters/memory-usage-reservation";
 export { createDynamoChatResponseCache } from "./adapters/dynamo-chat-response-cache";
 export { createMemoryChatResponseCache } from "./adapters/memory-chat-response-cache";
+export { createDynamoRenderJobStore } from "./adapters/dynamo-render-job-store";
+export { createMemoryRenderJobStore } from "./adapters/memory-render-job-store";
+export { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
 export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
 export {
@@ -98,6 +107,43 @@ export function getChatResponseCache(): ChatResponseCache {
 /** Returns the cost cap bound to the active content repository. */
 export function getCostCap(): CostCap {
   return createContentCostCap(getContentRepository());
+}
+
+let cachedRenderJobStore: RenderJobStore | undefined;
+
+/**
+ * Returns the render-job store: DynamoDB in production, in-memory for
+ * fixture/local so the admin async-download flow works the same way in dev.
+ */
+export function getRenderJobStore(): RenderJobStore {
+  if (!cachedRenderJobStore) {
+    cachedRenderJobStore =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoRenderJobStore(createDynamoClient(), buildTableNames().renderJob)
+        : createMemoryRenderJobStore();
+  }
+  return cachedRenderJobStore;
+}
+
+let cachedRenderJobQueue: RenderJobQueue | null | undefined;
+
+/**
+ * Returns the render-job queue when `RENDER_JOB_QUEUE_URL` is configured
+ * (deployed environments), or `null` when it isn't (fixture/local dev, where
+ * there's no worker Lambda to consume it — callers fall back to processing
+ * jobs inline in that case).
+ */
+export function getRenderJobQueue(): RenderJobQueue | null {
+  if (cachedRenderJobQueue === undefined) {
+    const queueUrl = process.env.RENDER_JOB_QUEUE_URL;
+    cachedRenderJobQueue = queueUrl
+      ? createSqsRenderJobQueue({
+          client: new SQSClient({ region: process.env.AWS_REGION ?? "eu-west-1" }),
+          queueUrl,
+        })
+      : null;
+  }
+  return cachedRenderJobQueue;
 }
 
 let cachedUsageReservation: UsageReservation | undefined;

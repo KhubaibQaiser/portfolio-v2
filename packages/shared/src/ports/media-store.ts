@@ -1,3 +1,10 @@
+export type StoredMediaObject = {
+  body: Uint8Array;
+  contentType?: string;
+  /** Arbitrary metadata stored alongside the object (e.g. a content hash). */
+  metadata?: Record<string, string>;
+};
+
 /**
  * Backend-agnostic object storage for media assets. Implemented by S3 in
  * production and by a local disk/no-op adapter in dev. Key derivation and URL
@@ -23,7 +30,15 @@ export type MediaStore = {
   isAllowedImageMime(type: string): boolean;
 
   /** Uploads bytes server-side (used when proxying through the app). */
-  uploadObject(body: Uint8Array, objectKey: string, contentType: string): Promise<void>;
+  uploadObject(
+    body: Uint8Array,
+    objectKey: string,
+    contentType: string,
+    metadata?: Record<string, string>,
+  ): Promise<void>;
+
+  /** Reads an object by key. Returns null when it doesn't exist. */
+  getObject(objectKey: string): Promise<StoredMediaObject | null>;
 
   /** Deletes an object by key. */
   deleteObject(objectKey: string): Promise<void>;

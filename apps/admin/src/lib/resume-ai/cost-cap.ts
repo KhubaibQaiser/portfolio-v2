@@ -5,6 +5,7 @@ export type CostCapResult = UsageReservationResult;
 
 export type UsageReservationGuard = {
   reservation: UsageReservation;
+  reservationId: string;
   reservedUsd: number;
 };
 
@@ -41,5 +42,10 @@ export async function reserveAiUsage(
   const reservation = getUsageReservation();
   const result = await reservation.reserve(userId, estimatedUsd, parseDailyCapUsd());
   if (!result.ok) return result;
-  return { ok: true, reservation, reservedUsd: estimatedUsd };
+  return {
+    ok: true,
+    reservation,
+    reservationId: result.reservationId,
+    reservedUsd: estimatedUsd,
+  };
 }
