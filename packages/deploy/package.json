@@ -12,7 +12,6 @@
     "build-open-next": "tsx src/build-open-next.ts",
     "smoke-test-images": "tsx src/smoke-test-image-optimizer.ts",
     "smoke-test-candidate-mcp": "tsx src/smoke-test-candidate-mcp.ts",
-    "sync-cert-cross-region-exports": "tsx src/sync-cert-cross-region-exports.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },
