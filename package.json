@@ -22,7 +22,6 @@
     "build:open-next": "pnpm --filter @portfolio/deploy build-open-next",
     "smoke-test:images": "pnpm --filter @portfolio/deploy smoke-test-images",
     "smoke-test:candidate-mcp": "pnpm --filter @portfolio/deploy smoke-test-candidate-mcp",
-    "sync-cert-cross-region-exports": "pnpm --filter @portfolio/deploy sync-cert-cross-region-exports",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "packageManager": "pnpm@10.33.0",
