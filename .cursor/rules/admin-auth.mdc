@@ -1,0 +1,9 @@
+---
+description: Admin mutation authorization
+globs: apps/admin/src/lib/*actions.ts,apps/admin/src/app/api/**/route.ts,apps/admin/src/lib/auth-guard.ts
+---
+
+- DynamoDB has no row-level security. Every mutating server action and non-auth API route must call `requireAdmin()` from `apps/admin/src/lib/auth-guard.ts`.
+- Middleware only checks for a session cookie and is UX/navigation protection, not authorization.
+- The Better Auth catch-all (`src/app/api/auth/[...all]/route.ts`) is the only public mutating route.
+- `apps/admin/src/lib/authorization-guardrail.test.ts` must fail if a new mutating file omits `requireAdmin()`. Update that inventory when adding a route — do not weaken the assertion.
