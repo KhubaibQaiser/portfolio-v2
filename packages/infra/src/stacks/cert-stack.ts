@@ -40,6 +40,12 @@ export class CertStack extends cdk.Stack {
       ],
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
+    // SAN changes replace the physical cert. Retain the superseded ACM cert
+    // during cleanup so a deploy cannot deadlock while CloudFront distributions
+    // (eu-west-1) still reference the old ARN — they pick up the new cert on
+    // their own stack update, after which the retained cert can be deleted
+    // manually from ACM if desired.
+    this.certificate.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
     new cdk.CfnOutput(this, "CertificateArn", {
       value: this.certificate.certificateArn,

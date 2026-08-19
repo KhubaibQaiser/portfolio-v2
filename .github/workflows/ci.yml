@@ -174,11 +174,13 @@ jobs:
   deploy:
     name: Deploy to AWS
     needs: [lighthouse, e2e, evals, secrets, mcp-security]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     # Optional manual approval gate: add required reviewers to this environment.
     environment: production
-    timeout-minutes: 30
+    timeout-minutes: 45
     # OIDC: GitHub mints a short-lived token that assumes the AWS deploy role.
     permissions:
       id-token: write
@@ -207,11 +209,70 @@ jobs:
           POSTHOG_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
         run: pnpm build:open-next
 
+      # CERT_RECOVERY_MODE=true: Portfolio-Cert is stuck in
+      # UPDATE_COMPLETE_CLEANUP_IN_PROGRESS while Web/Admin/Storybook
+      # CloudFront distributions still reference the superseded ACM cert.
+      # Skip Cert entirely and redeploy only the consumer stacks with
+      # --exclusively so CDK does not try to update Cert as a dependency.
+      # Set CERT_RECOVERY_MODE=false and redeploy once Cert reaches
+      # UPDATE_COMPLETE.
+      - name: CDK deploy (edge — Dns only, cert recovery)
+        if: vars.DOMAIN_ENABLED == 'true' && vars.CERT_RECOVERY_MODE == 'true'
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy Portfolio-Dns
+          --require-approval never
+          -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
+
+      # Dns/Cert (us-east-1) deploy first and in isolation. A cert SAN change
+      # forces CloudFormation to replace the physical ACM certificate, and its
+      # cleanup phase can hang for hours if any CloudFront distribution
+      # (Web/Admin/Storybook/CandidateMcp) still references the superseded
+      # cert — see the "Portfolio-Cert stuck cleanup" incident. Failing fast
+      # here, before spending time on the app stacks, makes that visible
+      # immediately instead of surfacing as an opaque "stack cannot be
+      # updated" error deep inside `--all`. Only the two context keys these
+      # stacks actually read are passed.
+      - name: CDK deploy (edge — Dns then Cert, us-east-1)
+        if: vars.DOMAIN_ENABLED == 'true' && vars.CERT_RECOVERY_MODE != 'true'
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy Portfolio-Dns Portfolio-Cert
+          --require-approval never
+          -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
+
+      # concurrency 1 (not the previous 4): reduces parallel CloudFormation
+      # API calls/throttling risk across this stack set. Not a fix for the
+      # Cert deadlock above (that was a stuck cert replacement, not a
+      # same-run ordering race — CDK already serializes dependent stacks) but
+      # cheap insurance while this app has more stacks/Lambdas than before.
+      - name: CDK deploy (cert recovery — CloudFront cutover only)
+        if: vars.CERT_RECOVERY_MODE == 'true'
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy Portfolio-Web Portfolio-Admin Portfolio-Storybook
+          --exclusively
+          --require-approval never --concurrency 1
+          -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c adminUrls=${{ vars.ADMIN_URLS }}
+          -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
+          -c alertEmail=${{ vars.ALERT_EMAIL }}
+          -c contactEmail=${{ vars.CONTACT_EMAIL }}
+          -c contactFromEmail=${{ vars.CONTACT_FROM_EMAIL }}
+          -c posthogProjectToken=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+          -c posthogHost=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+          -c posthogEnvironment=${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
+          -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
+          -c githubRepo=${{ github.repository }}
+
       - name: CDK deploy
+        if: vars.CERT_RECOVERY_MODE != 'true'
         working-directory: packages/infra
         run: >
           pnpm exec cdk deploy --all
-          --require-approval never --concurrency 4
+          --require-approval never --concurrency 1
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
           -c adminUrls=${{ vars.ADMIN_URLS }}
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
