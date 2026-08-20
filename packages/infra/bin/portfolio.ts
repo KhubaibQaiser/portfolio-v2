@@ -101,6 +101,14 @@ const admin = new AdminStack(app, `${config.appName}-Admin`, {
     repoRoot,
     "apps/admin/src/lambda/render-job-dlq-handler/index.ts",
   ),
+  generationJobWorkerEntry: path.join(
+    repoRoot,
+    "apps/admin/src/lambda/generation-job-worker/index.ts",
+  ),
+  generationJobDlqHandlerEntry: path.join(
+    repoRoot,
+    "apps/admin/src/lambda/generation-job-dlq-handler/index.ts",
+  ),
   depsLockFilePath: path.join(repoRoot, "pnpm-lock.yaml"),
   resumeFontsDir: path.join(repoRoot, "packages/ui/src/resume-pdf/fonts"),
   ...domainProps,

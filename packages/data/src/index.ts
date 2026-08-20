@@ -3,6 +3,8 @@ import type {
   ChatResponseCache,
   ContentRepository,
   CostCap,
+  GenerationJobQueue,
+  GenerationJobStore,
   RateLimiter,
   RenderJobQueue,
   RenderJobStore,
@@ -19,6 +21,9 @@ import { createMemoryChatResponseCache } from "./adapters/memory-chat-response-c
 import { createDynamoRenderJobStore } from "./adapters/dynamo-render-job-store";
 import { createMemoryRenderJobStore } from "./adapters/memory-render-job-store";
 import { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
+import { createDynamoGenerationJobStore } from "./adapters/dynamo-generation-job-store";
+import { createMemoryGenerationJobStore } from "./adapters/memory-generation-job-store";
+import { createSqsGenerationJobQueue } from "./adapters/sqs-generation-job-queue";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { buildTableNames } from "./dynamo/tables";
@@ -34,6 +39,9 @@ export { createMemoryChatResponseCache } from "./adapters/memory-chat-response-c
 export { createDynamoRenderJobStore } from "./adapters/dynamo-render-job-store";
 export { createMemoryRenderJobStore } from "./adapters/memory-render-job-store";
 export { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
+export { createDynamoGenerationJobStore } from "./adapters/dynamo-generation-job-store";
+export { createMemoryGenerationJobStore } from "./adapters/memory-generation-job-store";
+export { createSqsGenerationJobQueue } from "./adapters/sqs-generation-job-queue";
 export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
 export {
@@ -144,6 +152,46 @@ export function getRenderJobQueue(): RenderJobQueue | null {
       : null;
   }
   return cachedRenderJobQueue;
+}
+
+let cachedGenerationJobStore: GenerationJobStore | undefined;
+
+/**
+ * Returns the generation-job store: DynamoDB in production, in-memory for
+ * fixture/local so the admin async-generate flow works the same way in dev.
+ */
+export function getGenerationJobStore(): GenerationJobStore {
+  if (!cachedGenerationJobStore) {
+    cachedGenerationJobStore =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoGenerationJobStore(
+            createDynamoClient(),
+            buildTableNames().generationJob,
+          )
+        : createMemoryGenerationJobStore();
+  }
+  return cachedGenerationJobStore;
+}
+
+let cachedGenerationJobQueue: GenerationJobQueue | null | undefined;
+
+/**
+ * Returns the generation-job queue when `GENERATION_JOB_QUEUE_URL` is
+ * configured (deployed environments), or `null` when it isn't (fixture/local
+ * dev, where there's no worker Lambda to consume it — callers fall back to
+ * processing jobs inline in that case).
+ */
+export function getGenerationJobQueue(): GenerationJobQueue | null {
+  if (cachedGenerationJobQueue === undefined) {
+    const queueUrl = process.env.GENERATION_JOB_QUEUE_URL;
+    cachedGenerationJobQueue = queueUrl
+      ? createSqsGenerationJobQueue({
+          client: new SQSClient({ region: process.env.AWS_REGION ?? "eu-west-1" }),
+          queueUrl,
+        })
+      : null;
+  }
+  return cachedGenerationJobQueue;
 }
 
 let cachedUsageReservation: UsageReservation | undefined;
