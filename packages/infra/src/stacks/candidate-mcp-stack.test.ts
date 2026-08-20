@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import { Match, Template } from "aws-cdk-lib/assertions";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import { describe, expect, it } from "vitest";
 import type { InfraConfig } from "../config";
@@ -183,11 +184,12 @@ describe("CandidateMcpStack", () => {
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: Match.objectLike({
         DefaultCacheBehavior: Match.objectLike({
-          // Managed-CachingDisabled
-          CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
-          // Managed-AllViewerExceptHostHeader (forwards Authorization when
-          // caching is disabled; Host remains the Function URL hostname)
-          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+          CachePolicyId: cloudfront.CachePolicy.CACHING_DISABLED.cachePolicyId,
+          // Forwards Authorization when caching is disabled; Host remains the
+          // Function URL hostname (restamped in toWebRequest).
+          OriginRequestPolicyId:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER
+              .originRequestPolicyId,
           FunctionAssociations: Match.arrayWith([
             Match.objectLike({ EventType: "viewer-response" }),
           ]),
