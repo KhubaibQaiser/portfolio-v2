@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import { Match, Template } from "aws-cdk-lib/assertions";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import { describe, expect, it } from "vitest";
 import type { InfraConfig } from "../config";
@@ -172,43 +173,23 @@ describe("CandidateMcpStack", () => {
     template.resourceCountIs("AWS::Route53::RecordSet", 1);
   });
 
-  it("forwards Authorization via a zero-TTL cache policy and restores WWW-Authenticate on the way out", () => {
+  it("uses managed no-cache + AllViewerExceptHostHeader so Authorization reaches the origin", () => {
     const template = synth();
 
-    template.hasResourceProperties("AWS::CloudFront::CachePolicy", {
-      CachePolicyConfig: Match.objectLike({
-        DefaultTTL: 0,
-        MaxTTL: 0,
-        MinTTL: 0,
-        ParametersInCacheKeyAndForwardedToOrigin: Match.objectLike({
-          HeadersConfig: Match.objectLike({
-            HeaderBehavior: "whitelist",
-            Headers: ["Authorization"],
-          }),
-        }),
-      }),
-    });
-
-    template.hasResourceProperties("AWS::CloudFront::OriginRequestPolicy", {
-      OriginRequestPolicyConfig: Match.objectLike({
-        CookiesConfig: { CookieBehavior: "none" },
-        HeadersConfig: Match.objectLike({
-          HeaderBehavior: "whitelist",
-          Headers: Match.arrayEquals([
-            "Accept",
-            "Content-Type",
-            "Last-Event-ID",
-            "MCP-Protocol-Version",
-            "MCP-Session-Id",
-            "Origin",
-          ]),
-        }),
-      }),
-    });
+    // Custom zero-TTL + Authorization HeaderBehavior is rejected by CloudFront
+    // at deploy time. Managed policies are the supported combination.
+    template.resourceCountIs("AWS::CloudFront::CachePolicy", 0);
+    template.resourceCountIs("AWS::CloudFront::OriginRequestPolicy", 0);
 
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: Match.objectLike({
         DefaultCacheBehavior: Match.objectLike({
+          CachePolicyId: cloudfront.CachePolicy.CACHING_DISABLED.cachePolicyId,
+          // Forwards Authorization when caching is disabled; Host remains the
+          // Function URL hostname (restamped in toWebRequest).
+          OriginRequestPolicyId:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER
+              .originRequestPolicyId,
           FunctionAssociations: Match.arrayWith([
             Match.objectLike({ EventType: "viewer-response" }),
           ]),
