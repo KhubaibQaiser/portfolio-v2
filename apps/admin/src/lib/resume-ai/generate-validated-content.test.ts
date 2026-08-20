@@ -305,4 +305,81 @@ describe("generateValidatedContent", () => {
       generateValidatedContent({ ...baseOptions, kind: "both" }),
     ).rejects.toBeInstanceOf(ValidatedGenerationError);
   });
+
+  it("runs resume then cover letter sequentially and splits the shared deadline", async () => {
+    const order: string[] = [];
+    const validCoverLetter = {
+      greeting: "Dear Hiring Manager,",
+      body: [
+        "I am a senior engineer building reliable React products for customers and teams.",
+      ],
+      closing: "I would welcome a conversation about this role soon.",
+      signOff: "Best regards,\nTest User",
+    };
+    mocks.generateObject.mockImplementation(
+      async (args: { maxOutputTokens?: number }) => {
+        if (args.maxOutputTokens === 2500) {
+          order.push("resume");
+          return generated(validResume);
+        }
+        order.push("cover");
+        return generated(validCoverLetter);
+      },
+    );
+
+    const result = await generateValidatedContent({
+      ...baseOptions,
+      kind: "both",
+      deadlineAt: Date.now() + 40_000,
+    });
+
+    expect(order).toEqual(["resume", "cover"]);
+    expect(result.resume).toEqual(validResume);
+    expect(result.coverLetter).toEqual(validCoverLetter);
+    expect(mocks.generateObject).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails fast on validation when remaining budget is below the retry threshold", async () => {
+    mocks.generateObject.mockResolvedValue(
+      generated({
+        ...validResume,
+        experiences: [
+          {
+            ...validResume.experiences[0],
+            experienceId: "unknown-id",
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      generateValidatedContent({
+        ...baseOptions,
+        deadlineAt: Date.now() + 14_000,
+      }),
+    ).rejects.toMatchObject({
+      code: "FACT_VALIDATION_FAILED",
+    });
+    expect(mocks.generateObject).toHaveBeenCalledTimes(1);
+  });
+
+  it("records remainingMsAtFailure on attempt diagnostics", async () => {
+    mocks.generateObject.mockRejectedValue({
+      name: "AI_APICallError",
+      statusCode: 401,
+      code: "invalid_api_key",
+      message: "Unauthorized",
+    });
+
+    const error = await generateValidatedContent(baseOptions).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(ValidatedGenerationError);
+    expect(
+      (error as ValidatedGenerationError).diagnostics.every(
+        (diagnostic) => typeof diagnostic.remainingMsAtFailure === "number",
+      ),
+    ).toBe(true);
+  });
 });
