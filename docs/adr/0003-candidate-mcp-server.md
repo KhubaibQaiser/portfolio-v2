@@ -110,7 +110,7 @@ bounded by cheap controls instead of full account isolation:
   also need an `x-amz-content-sha256` hash that MCP clients must not be
   taught. **Web/admin keep OAC** — they authenticate with cookies, not
   `Authorization`. Candidate-mcp therefore uses Function URL `AuthType:
-  NONE` plus a CloudFront **origin custom header** `x-origin-verify`
+NONE` plus a CloudFront **origin custom header** `x-origin-verify`
   (CloudFront overwrites any viewer copy). Viewer `Authorization` is
   forwarded with managed **CachingDisabled** +
   **AllViewerExceptHostHeader** — the AWS-supported combination when
