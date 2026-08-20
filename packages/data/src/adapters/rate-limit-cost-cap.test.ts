@@ -163,7 +163,7 @@ describe("createMemoryUsageReservation", () => {
         reason: "cost-cap",
       });
 
-      vi.advanceTimersByTime(6 * 60 * 1000);
+      vi.advanceTimersByTime(11 * 60 * 1000);
 
       expect(await reservation.reserve("user-1", 0.5, 1)).toMatchObject({
         ok: true,

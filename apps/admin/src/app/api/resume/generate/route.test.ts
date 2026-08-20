@@ -5,41 +5,26 @@ const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   reserveAiUsage: vi.fn(),
   estimateGenerationReservationUsd: vi.fn(() => 0.25),
-  ensureAiApiKeys: vi.fn(),
-  generateValidatedContent: vi.fn(),
-  loadCandidateFacts: vi.fn(),
-  insertResumeGeneration: vi.fn(),
   getResumeLayouts: vi.fn(),
-  getResumeData: vi.fn(),
+  createJob: vi.fn(),
+  enqueue: vi.fn(),
+  getGenerationJobQueue: vi.fn(),
+  processGenerationJob: vi.fn(),
   loggerWarn: vi.fn(),
 }));
 
-vi.mock("@portfolio/ai", () => ({
-  ensureAiApiKeys: mocks.ensureAiApiKeys,
-}));
-vi.mock("@portfolio/ai/schemas", () => ({
-  resumeGenerationSuccessSchema: {
-    parse: (value: unknown) => value,
-  },
-}));
 vi.mock("@portfolio/ai/context/trim-job-description", () => ({
   trimJobDescription: (value: string) => value,
 }));
 vi.mock("@portfolio/ai/guardrails/prompt-injection", () => ({
   stripPromptInjection: (value: string) => value,
-  wrapUntrusted: (value: string) => value,
 }));
 vi.mock("@portfolio/data", () => ({
   getContentRepository: () => ({
     getResumeLayouts: mocks.getResumeLayouts,
-    insertResumeGeneration: mocks.insertResumeGeneration,
   }),
-}));
-vi.mock("@portfolio/shared/resume-data", () => ({
-  getResumeData: mocks.getResumeData,
-}));
-vi.mock("@portfolio/shared/resume-changes", () => ({
-  describeAppliedResumeChanges: () => [],
+  getGenerationJobStore: () => ({ create: mocks.createJob }),
+  getGenerationJobQueue: mocks.getGenerationJobQueue,
 }));
 vi.mock("@portfolio/shared/schemas", () => ({
   pickDefaultResumeLayout: (layouts: unknown[]) => layouts[0],
@@ -54,28 +39,6 @@ vi.mock("@/lib/logger", () => ({
     error: vi.fn(),
   },
 }));
-vi.mock("@/lib/resume-ai/generate-validated-content", () => ({
-  generateValidatedContent: mocks.generateValidatedContent,
-  ValidatedGenerationError: class ValidatedGenerationError extends Error {
-    constructor(
-      readonly code: string,
-      message: string,
-      readonly retryable: boolean,
-      readonly diagnostics: Array<Record<string, unknown>> = [],
-    ) {
-      super(message);
-    }
-  },
-}));
-vi.mock("@/lib/resume-ai/generation-snapshot", () => ({
-  createGenerationSnapshot: () => ({
-    sourceHash: "source-hash",
-    guidelineHash: "guideline-hash",
-  }),
-}));
-vi.mock("@/lib/resume-ai/load-candidate-facts", () => ({
-  loadCandidateFactsUncached: mocks.loadCandidateFacts,
-}));
 vi.mock("@/lib/resume-ai/rate-limit", () => ({
   checkResumeAiRateLimit: mocks.checkRateLimit,
 }));
@@ -83,57 +46,17 @@ vi.mock("@/lib/resume-ai/cost-cap", () => ({
   reserveAiUsage: mocks.reserveAiUsage,
   estimateGenerationReservationUsd: mocks.estimateGenerationReservationUsd,
 }));
+vi.mock("@/lib/resume-ai/process-generation-job", () => ({
+  processGenerationJob: mocks.processGenerationJob,
+}));
 
-import {
-  ValidatedGenerationError,
-  type GenerationFailureDiagnostic,
-} from "@/lib/resume-ai/generate-validated-content";
 import { POST } from "./route";
-
-const resume = {
-  summary: "Senior engineer building reliable products for customers.",
-  titleOverride: null,
-  keywords: ["React"],
-  highlightedSkills: ["React"],
-  experiences: [],
-  skills: [],
-};
-
-const guidelines = {
-  validation: {
-    maxExperienceItems: 5,
-    maxBulletsPerRole: 4,
-    maxPageCount: 1,
-  },
-  formatting: {
-    layout: {
-      maxBulletsPerJob: 4,
-    },
-  },
-};
 
 const layout = {
   id: "modern-blue",
   version: 4,
   component_key: "modern-blue",
-  guidelines,
-};
-
-const generated = {
-  resume,
-  coverLetter: null,
-  attempts: [
-    {
-      model: "claude-haiku-4-5",
-      reason: "initial",
-      finishReason: "stop",
-      latencyMs: 1,
-    },
-  ],
-  warnings: [],
-  usage: { costUsd: 0.01 },
-  model: "claude-haiku-4-5",
-  fallbackUsed: false,
+  guidelines: {},
 };
 
 function request(body: Record<string, unknown> = {}): Request {
@@ -159,53 +82,70 @@ describe("POST /api/resume/generate", () => {
         settle: vi.fn().mockResolvedValue(undefined),
         release: vi.fn().mockResolvedValue(undefined),
       },
+      reservationId: "res-1",
       reservedUsd: 0.25,
     });
-    mocks.ensureAiApiKeys.mockResolvedValue(undefined);
     mocks.getResumeLayouts.mockResolvedValue([layout]);
-    mocks.loadCandidateFacts.mockResolvedValue({ factSheet: "React engineering facts" });
-    mocks.getResumeData.mockResolvedValue({ experience: [], skills: [] });
-    mocks.generateValidatedContent.mockResolvedValue(structuredClone(generated));
-    mocks.insertResumeGeneration.mockResolvedValue({ id: "generation-id" });
+    mocks.createJob.mockResolvedValue({ jobId: "job-1" });
+    mocks.enqueue.mockResolvedValue(undefined);
+    mocks.getGenerationJobQueue.mockReturnValue({ enqueue: mocks.enqueue });
+    mocks.processGenerationJob.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
-  it("returns a persisted validated generation", async () => {
+  it("enqueues a generation job and returns 202", async () => {
     const response = await POST(request());
     const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body.generationId).toBe("generation-id");
-    expect(mocks.generateValidatedContent).toHaveBeenCalledWith(
+    expect(response.status).toBe(202);
+    expect(body).toEqual({ jobId: "job-1", status: "queued" });
+    expect(mocks.createJob).toHaveBeenCalledWith(
       expect.objectContaining({
-        modelMode: "quality",
-        deadlineAt: expect.any(Number),
-        signal: expect.any(AbortSignal),
+        createdBy: "admin-id",
+        reservationId: "res-1",
+        payload: expect.objectContaining({
+          kind: "resume",
+          layoutId: layout.id,
+          model: "quality",
+        }),
       }),
     );
-    const payload = mocks.generateValidatedContent.mock.calls[0]?.[0] as Record<
-      string,
-      unknown
-    >;
-    expect(payload).not.toHaveProperty("tone");
-    expect(payload).not.toHaveProperty("length");
-    expect(payload).not.toHaveProperty("language");
+    expect(mocks.enqueue).toHaveBeenCalledWith({ jobId: "job-1" });
+    expect(mocks.processGenerationJob).not.toHaveBeenCalled();
     expect(mocks.estimateGenerationReservationUsd).toHaveBeenCalledWith("quality");
-    expect(mocks.ensureAiApiKeys).toHaveBeenCalledWith("quality");
-    expect(mocks.insertResumeGeneration).toHaveBeenCalledOnce();
-    expect(body.metadata.fitReport).toBeNull();
+  });
+
+  it("forwards body.model to the reservation and job payload", async () => {
+    const response = await POST(request({ model: "fast" }));
+
+    expect(response.status).toBe(202);
+    expect(mocks.estimateGenerationReservationUsd).toHaveBeenCalledWith("fast");
+    expect(mocks.createJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ model: "fast" }),
+      }),
+    );
+  });
+
+  it("processes the job inline when no queue is configured", async () => {
+    mocks.getGenerationJobQueue.mockReturnValue(null);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(202);
+    expect(mocks.enqueue).not.toHaveBeenCalled();
+    expect(mocks.processGenerationJob).toHaveBeenCalledWith("job-1");
   });
 
   it("rejects unknown generation options such as tone", async () => {
     const response = await POST(request({ tone: "formal" }));
 
     expect(response.status).toBe(400);
-    expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
+    expect(mocks.createJob).not.toHaveBeenCalled();
   });
 
   it("rejects a rate-limited request before calling a provider", async () => {
@@ -220,7 +160,7 @@ describe("POST /api/resume/generate", () => {
 
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("60");
-    expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
+    expect(mocks.createJob).not.toHaveBeenCalled();
   });
 
   it("rejects a request when the daily cost cap is exhausted", async () => {
@@ -234,67 +174,13 @@ describe("POST /api/resume/generate", () => {
     const response = await POST(request());
 
     expect(response.status).toBe(402);
-    expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
+    expect(mocks.createJob).not.toHaveBeenCalled();
   });
 
   it("rejects a missing selected layout", async () => {
-    mocks.getResumeLayouts.mockResolvedValue([layout]);
-
     const response = await POST(request({ layoutId: "removed-layout" }));
 
     expect(response.status).toBe(400);
-    expect(mocks.generateValidatedContent).not.toHaveBeenCalled();
-  });
-
-  it("logs sanitized attempt diagnostics for a rejected generation", async () => {
-    const diagnostics: GenerationFailureDiagnostic[] = [
-      {
-        artifact: "resume",
-        model: "openai/gpt-oss-120b",
-        provider: "groq",
-        attempt: 1,
-        retry: 0,
-        category: "authentication",
-        statusCode: 401,
-        errorName: "AI_APICallError",
-        providerErrorCode: "invalid_api_key",
-        latencyMs: 20,
-      },
-    ];
-    mocks.generateValidatedContent.mockRejectedValue(
-      new ValidatedGenerationError(
-        "PROVIDER_UNAVAILABLE",
-        "All configured AI providers are temporarily unavailable.",
-        true,
-        diagnostics,
-      ),
-    );
-
-    const response = await POST(request());
-
-    expect(response.status).toBe(422);
-    expect(mocks.loggerWarn).toHaveBeenCalledWith(
-      "validated resume generation rejected",
-      expect.objectContaining({
-        code: "PROVIDER_UNAVAILABLE",
-        retryable: true,
-        attemptDiagnostics: diagnostics,
-      }),
-    );
-  });
-
-  it("does not render a PDF as part of generation (fit is validated at export time)", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-16T07:00:00Z"));
-    mocks.generateValidatedContent.mockImplementation(async () => {
-      vi.setSystemTime(new Date("2026-08-16T07:00:40Z"));
-      return structuredClone(generated);
-    });
-
-    const response = await POST(request());
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.metadata.fitReport).toBeNull();
+    expect(mocks.createJob).not.toHaveBeenCalled();
   });
 });

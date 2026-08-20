@@ -12,11 +12,11 @@ const WINDOW_SEC = 24 * 60 * 60;
 const SETTLED_TTL_SEC = 3 * WINDOW_SEC;
 /**
  * How long an unresolved hold counts toward the cap before it self-expires.
- * Comfortably above the slowest resume-generation request's own deadline
- * (see GENERATION_DEADLINE_MS in the generate route) so a healthy request
- * never has its own hold vanish out from under it.
+ * Comfortably above the slowest resume-generation worker budget
+ * (WORKER_GENERATION_DEADLINE_MS in process-generation-job.ts) so a healthy
+ * request never has its own hold vanish out from under it.
  */
-const HOLD_TTL_SEC = 5 * 60;
+const HOLD_TTL_SEC = 10 * 60;
 
 function windowStart(nowSec: number): number {
   return Math.floor(nowSec / WINDOW_SEC) * WINDOW_SEC;

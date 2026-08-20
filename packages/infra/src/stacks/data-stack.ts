@@ -138,6 +138,15 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // Ephemeral async AI generation-job status (admin generate flow), TTL sweep.
+    new dynamodb.Table(this, "GenerationJobTable", {
+      tableName: `${prefix}-${TABLE_SUFFIXES.generationJob}`,
+      partitionKey: { name: "id", type: STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: "ttl",
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // Auto-named (no fixed bucketName) so it can be replaced/migrated cleanly;
     // S3 names are global + immutable, so a deterministic name is the worst case
     // for migration. Consumers discover the name from the SSM registry below.

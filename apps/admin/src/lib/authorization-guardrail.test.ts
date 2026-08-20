@@ -61,6 +61,7 @@ describe("admin authorization guardrail", () => {
       "src/app/api/resume/export/status/route.ts",
       "src/app/api/resume/extract-pdf/route.ts",
       "src/app/api/resume/generate/route.ts",
+      "src/app/api/resume/generate/status/route.ts",
       "src/app/api/resume/history/[id]/route.ts",
       "src/app/api/resume/history/route.ts",
     ]);

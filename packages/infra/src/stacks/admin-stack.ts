@@ -22,6 +22,10 @@ export type AdminStackProps = cdk.StackProps & {
   renderJobWorkerEntry: string;
   /** Absolute path to apps/admin's render-job DLQ handler Lambda entry (TS). */
   renderJobDlqHandlerEntry: string;
+  /** Absolute path to apps/admin's generation-job worker Lambda entry (TS). */
+  generationJobWorkerEntry: string;
+  /** Absolute path to apps/admin's generation-job DLQ handler Lambda entry (TS). */
+  generationJobDlqHandlerEntry: string;
   /** Absolute path to the repo's pnpm-lock.yaml, for esbuild bundling cache-busting. */
   depsLockFilePath: string;
   /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
@@ -83,11 +87,9 @@ export class AdminStack extends cdk.Stack {
     );
 
     // --- Async admin PDF render jobs: SQS + DLQ + worker Lambda ---
-    // POST /api/resume/generate and /api/resume/export enqueue here instead
-    // of rendering inline, so a Modern Blue fit-search (or any render) runs
-    // on a worker with its own long timeout, off the CloudFront/Lambda
-    // request path entirely. See docs/adr and the resume-generation
-    // re-architecture plan.
+    // POST /api/resume/export enqueues here so a Modern Blue fit-search
+    // (or any render) runs on a worker with its own long timeout, off the
+    // CloudFront/Lambda request path entirely.
     const renderJobDlq = new sqs.Queue(this, "RenderJobDlq", {
       retentionPeriod: cdk.Duration.days(14),
       encryption: sqs.QueueEncryption.SQS_MANAGED,
@@ -176,6 +178,82 @@ export class AdminStack extends cdk.Stack {
       new lambdaEventSources.SqsEventSource(renderJobDlq, { batchSize: 1 }),
     );
 
+    // --- Async admin AI generation jobs: SQS + DLQ + worker Lambda ---
+    // POST /api/resume/generate enqueues here so LLM work runs off the
+    // CloudFront 60s origin-read ceiling.
+    const generationJobDlq = new sqs.Queue(this, "GenerationJobDlq", {
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const generationJobQueue = new sqs.Queue(this, "GenerationJobQueue", {
+      visibilityTimeout: cdk.Duration.seconds(360),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: { queue: generationJobDlq, maxReceiveCount: 3 },
+    });
+
+    const generationJobWorkerFn = new nodeLambda.NodejsFunction(
+      this,
+      "GenerationJobWorkerFn",
+      {
+        entry: props.generationJobWorkerEntry,
+        depsLockFilePath: props.depsLockFilePath,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        architecture: lambda.Architecture.ARM_64,
+        memorySize: 1536,
+        timeout: cdk.Duration.seconds(300),
+        bundling: { externalModules: [] },
+        logGroup: new logs.LogGroup(this, "GenerationJobWorkerFnLogs", {
+          retention: logs.RetentionDays.TWO_WEEKS,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        }),
+        environment: {
+          DATA_BACKEND: "dynamo",
+          DYNAMO_TABLE_PREFIX: config.tablePrefix,
+          GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
+          ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
+          POWERTOOLS_SERVICE_NAME: "portfolio-admin-generation-job-worker",
+          POWERTOOLS_LOG_LEVEL: "WARN",
+        },
+      },
+    );
+    grantAdminDataAccess(this, generationJobWorkerFn, config, mediaBucketName);
+    groqSecret.grantRead(generationJobWorkerFn);
+    anthropicSecret.grantRead(generationJobWorkerFn);
+    generationJobWorkerFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(generationJobQueue, {
+        batchSize: 1,
+        reportBatchItemFailures: true,
+      }),
+    );
+
+    const generationJobDlqHandlerFn = new nodeLambda.NodejsFunction(
+      this,
+      "GenerationJobDlqHandlerFn",
+      {
+        entry: props.generationJobDlqHandlerEntry,
+        depsLockFilePath: props.depsLockFilePath,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        architecture: lambda.Architecture.ARM_64,
+        memorySize: 256,
+        timeout: cdk.Duration.seconds(30),
+        bundling: { externalModules: [] },
+        logGroup: new logs.LogGroup(this, "GenerationJobDlqHandlerFnLogs", {
+          retention: logs.RetentionDays.TWO_WEEKS,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        }),
+        environment: {
+          DATA_BACKEND: "dynamo",
+          DYNAMO_TABLE_PREFIX: config.tablePrefix,
+          POWERTOOLS_SERVICE_NAME: "portfolio-admin-generation-job-dlq-handler",
+          POWERTOOLS_LOG_LEVEL: "WARN",
+        },
+      },
+    );
+    grantAdminDataAccess(this, generationJobDlqHandlerFn, config, mediaBucketName);
+    generationJobDlqHandlerFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(generationJobDlq, { batchSize: 1 }),
+    );
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -202,6 +280,7 @@ export class AdminStack extends cdk.Stack {
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
         RENDER_JOB_QUEUE_URL: renderJobQueue.queueUrl,
+        GENERATION_JOB_QUEUE_URL: generationJobQueue.queueUrl,
       },
       grantServer: (fn) => {
         grantAdminDataAccess(this, fn, config, mediaBucketName);
@@ -210,6 +289,7 @@ export class AdminStack extends cdk.Stack {
         googleOAuthSecret.grantRead(fn);
         betterAuthSecret.grantRead(fn);
         renderJobQueue.grantSendMessages(fn);
+        generationJobQueue.grantSendMessages(fn);
       },
     });
 
@@ -217,17 +297,16 @@ export class AdminStack extends cdk.Stack {
       aliasToCloudFront(this, props.hostedZone, site.distribution, "AdminAlias", "admin");
     }
 
-    // Every ERROR-level log line — from the server function or either render-
-    // job Lambda — feeds the same single symptom-based alarm (ADR 0002), so a
-    // stuck/degraded/DLQ'd render job surfaces without a new per-resource
-    // alarm. render-job-worker logs ERROR on both processing failures and
-    // degraded (2-page) output; the DLQ handler logs ERROR when a job
-    // permanently fails after exhausting SQS redelivery.
+    // Every ERROR-level log line — from the server function or the render-
+    // job / generation-job Lambdas — feeds the same single symptom-based
+    // alarm (ADR 0002).
     const errorMetric = appErrorMetric(config);
     for (const [id, logGroup] of [
       ["AppErrorMetric", site.serverLogGroup],
       ["RenderJobWorkerErrorMetric", renderJobWorkerFn.logGroup],
       ["RenderJobDlqHandlerErrorMetric", renderJobDlqHandlerFn.logGroup],
+      ["GenerationJobWorkerErrorMetric", generationJobWorkerFn.logGroup],
+      ["GenerationJobDlqHandlerErrorMetric", generationJobDlqHandlerFn.logGroup],
     ] as const) {
       new logs.MetricFilter(this, id, {
         logGroup,

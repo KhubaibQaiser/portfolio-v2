@@ -3,7 +3,7 @@ import type { UsageReservation, UsageReservationResult } from "@portfolio/shared
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 /** Mirrors HOLD_TTL_SEC in the Dynamo adapter for fixture/local parity. */
-const HOLD_TTL_MS = 5 * 60 * 1000;
+const HOLD_TTL_MS = 10 * 60 * 1000;
 
 function roundUsd(value: number): number {
   return Math.max(0, Math.round(value * 1_000_000) / 1_000_000);

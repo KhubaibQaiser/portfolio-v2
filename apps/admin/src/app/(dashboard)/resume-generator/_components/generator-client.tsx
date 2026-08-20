@@ -5,7 +5,6 @@ import { Download, RefreshCw, Square } from "lucide-react";
 import {
   atsScoreSchema,
   coverLetterSchema,
-  resumeGenerationSuccessSchema,
   storedTailoredResumeSchema,
   tailoredResumeSchema,
   type TailoredResume,
@@ -28,6 +27,7 @@ import { LayoutPicker } from "./layout-picker";
 import { AppliedChangesList } from "./applied-changes-list";
 import { ResumePdfPreview } from "./resume-pdf-preview";
 import { requestRenderedPdf, type RenderJobRequestBody } from "./request-rendered-pdf";
+import { requestGeneration } from "./request-generation";
 import { GenButton } from "./gen-button";
 import { CopyButton } from "./copy-button";
 import { GenerationWarnings } from "./generation-warnings";
@@ -131,11 +131,8 @@ export function GeneratorClient({
     abortRef.current = controller;
 
     try {
-      const res = await fetch("/api/resume/generate", {
-        method: "POST",
-        signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const parsed = await requestGeneration(
+        {
           kind,
           jobDescription: jd,
           jdSource,
@@ -145,48 +142,30 @@ export function GeneratorClient({
           mustTryToInclude: opts?.mustTryToInclude,
           regenerateFromId: regenerateFromId ?? undefined,
           layoutId: layoutId || undefined,
-        }),
-      });
-
-      const json: unknown = await res.json().catch(() => null);
-      if (!res.ok) {
-        const message =
-          typeof json === "object" &&
-          json !== null &&
-          "error" in json &&
-          typeof json.error === "object" &&
-          json.error !== null &&
-          "message" in json.error &&
-          typeof json.error.message === "string"
-            ? json.error.message
-            : "Generation failed. Please retry.";
-        throw new Error(message);
-      }
-      const parsed = resumeGenerationSuccessSchema.safeParse(json);
-      if (!parsed.success) {
-        throw new Error("The server returned an incomplete generation. Please retry.");
-      }
+        },
+        controller.signal,
+      );
       const context: ArtifactContext = {
-        generationId: parsed.data.generationId,
-        layoutId: parsed.data.layout.id,
-        sourceHash: parsed.data.layout.sourceHash,
-        guidelineHash: parsed.data.layout.guidelineHash,
+        generationId: parsed.generationId,
+        layoutId: parsed.layout.id,
+        sourceHash: parsed.layout.sourceHash,
+        guidelineHash: parsed.layout.guidelineHash,
         jobDescription: jd,
       };
       setGeneration((current) => ({
-        resume: parsed.data.resume ?? current.resume,
-        coverLetter: parsed.data.coverLetter ?? current.coverLetter,
-        ats: parsed.data.resume ? null : current.ats,
+        resume: parsed.resume ?? current.resume,
+        coverLetter: parsed.coverLetter ?? current.coverLetter,
+        ats: parsed.resume ? null : current.ats,
       }));
-      setGenerationWarnings(parsed.data.metadata.warnings);
-      setActiveHistoryId(parsed.data.generationId);
-      if (parsed.data.resume) {
+      setGenerationWarnings(parsed.metadata.warnings);
+      setActiveHistoryId(parsed.generationId);
+      if (parsed.resume) {
         setResumeContext(context);
         setResumeDirty(false);
-        setAppliedChanges(parsed.data.appliedChanges);
+        setAppliedChanges(parsed.appliedChanges);
         setPreviewRevision((n) => n + 1);
       }
-      if (parsed.data.coverLetter) setCoverLetterContext(context);
+      if (parsed.coverLetter) setCoverLetterContext(context);
       await refreshHistory();
     } catch (err) {
       if ((err as Error).name === "AbortError") return;

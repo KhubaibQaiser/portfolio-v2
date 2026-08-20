@@ -1,39 +1,27 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ensureAiApiKeys } from "@portfolio/ai";
-import { resumeGenerationSuccessSchema } from "@portfolio/ai/schemas";
 import { trimJobDescription } from "@portfolio/ai/context/trim-job-description";
+import { stripPromptInjection } from "@portfolio/ai/guardrails/prompt-injection";
 import {
-  stripPromptInjection,
-  wrapUntrusted,
-} from "@portfolio/ai/guardrails/prompt-injection";
-import { getContentRepository } from "@portfolio/data";
-import { getResumeData } from "@portfolio/shared/resume-data";
-import { describeAppliedResumeChanges } from "@portfolio/shared/resume-changes";
-import {
-  pickDefaultResumeLayout,
-  type VariantGuidelines,
-} from "@portfolio/shared/schemas";
+  getContentRepository,
+  getGenerationJobQueue,
+  getGenerationJobStore,
+} from "@portfolio/data";
+import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
-import {
-  generateValidatedContent,
-  ValidatedGenerationError,
-} from "@/lib/resume-ai/generate-validated-content";
-import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
-import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
+import { toError } from "@/lib/to-error";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import {
   estimateGenerationReservationUsd,
   reserveAiUsage,
   type UsageReservationGuard,
 } from "@/lib/resume-ai/cost-cap";
+import { processGenerationJob } from "@/lib/resume-ai/process-generation-job";
+import type { GenerationJobPayload } from "@/lib/resume-ai/generation-job-payload";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
-
-const GENERATION_DEADLINE_MS = 52_000;
-const MODEL_PHASE_BUDGET_MS = 40_000;
+export const maxDuration = 30;
 
 const bodySchema = z
   .object({
@@ -71,24 +59,24 @@ function generationError(
 async function releaseUsageReservation(
   userId: string,
   usageGuard: UsageReservationGuard,
-  actualUsd?: number,
 ): Promise<void> {
-  const operation =
-    actualUsd === undefined
-      ? usageGuard.reservation.release(userId, usageGuard.reservationId)
-      : usageGuard.reservation.settle(userId, usageGuard.reservationId, actualUsd);
-
-  await operation.catch((error) =>
+  await usageGuard.reservation.release(userId, usageGuard.reservationId).catch((error) =>
     logger.warn("resume AI usage reservation cleanup failed", {
       userId,
       reservationId: usageGuard.reservationId,
       reservedUsd: usageGuard.reservedUsd,
-      actualUsd,
       error: error instanceof Error ? error : new Error(String(error)),
     }),
   );
 }
 
+/**
+ * Enqueues an async AI generation job instead of calling the model inline.
+ * Validation that used to gate a synchronous generate (rate limit, cost cap,
+ * JD sanitization, layout existence) still happens here; only the LLM work
+ * moves to a worker off the CloudFront/Lambda-timeout path. Poll status at
+ * `/api/resume/generate/status`.
+ */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) {
@@ -137,7 +125,7 @@ export async function POST(request: Request) {
   try {
     reservation = await reserveAiUsage(
       auth.id,
-      estimateGenerationReservationUsd("quality"),
+      estimateGenerationReservationUsd(body.model),
     );
   } catch {
     return generationError(
@@ -164,21 +152,6 @@ export async function POST(request: Request) {
     );
   }
   const usageGuard: UsageReservationGuard = reservation;
-
-  try {
-    await ensureAiApiKeys("quality");
-  } catch (error) {
-    await releaseUsageReservation(auth.id, usageGuard);
-    logger.error("resume AI provider configuration unavailable", {
-      userId: auth.id,
-      error: error instanceof Error ? error : new Error(String(error)),
-    });
-    return generationError(
-      "PROVIDER_UNAVAILABLE",
-      "Resume AI is not configured for the selected model.",
-      503,
-    );
-  }
 
   const jdText = trimJobDescription(stripPromptInjection(body.jobDescription)).trim();
   if (jdText.length < 20) {
@@ -224,161 +197,63 @@ export async function POST(request: Request) {
     );
   }
 
-  const layoutId = layout.id;
-  const layoutVersion = layout.version;
-  const guidelines: VariantGuidelines = layout.guidelines;
-  const generationStartedAt = Date.now();
-  const requestDeadlineAt = generationStartedAt + GENERATION_DEADLINE_MS;
-  const requestDeadline = AbortSignal.any([
-    request.signal,
-    AbortSignal.timeout(GENERATION_DEADLINE_MS),
-  ]);
-  let incurredUsageUsd: number | undefined;
+  const payload: GenerationJobPayload = {
+    kind: body.kind,
+    jdText,
+    jdSource: body.jdSource,
+    layoutId: layout.id,
+    layoutVersion: layout.version,
+    model: body.model,
+    ...(body.company ? { company: body.company } : {}),
+    ...(body.role ? { role: body.role } : {}),
+    ...(body.hiringManager ? { hiringManager: body.hiringManager } : {}),
+    ...(body.mustTryToInclude ? { mustTryToInclude: body.mustTryToInclude } : {}),
+  };
 
   try {
-    const facts = await loadCandidateFactsUncached();
-    const snapshot = createGenerationSnapshot(facts, guidelines, layoutVersion);
-    const canonicalFactText = facts.factSheet.toLocaleLowerCase();
-    const safeMustTryToInclude = body.mustTryToInclude?.filter((keyword) =>
-      canonicalFactText.includes(keyword.trim().toLocaleLowerCase()),
-    );
-    const baseResumePromise =
-      body.kind === "resume" || body.kind === "both"
-        ? getResumeData(repo).catch(() => null)
-        : Promise.resolve(null);
+    const job = await getGenerationJobStore().create({
+      jobId: crypto.randomUUID(),
+      createdBy: auth.id,
+      payload,
+      reservationId: usageGuard.reservationId,
+    });
 
-    logger.info("validated resume generation requested", {
+    const queue = getGenerationJobQueue();
+    if (queue) {
+      await queue.enqueue({ jobId: job.jobId });
+    } else {
+      void processGenerationJob(job.jobId).catch((error: unknown) => {
+        logger.error("inline generation-job processing failed", {
+          jobId: job.jobId,
+          error: toError(error),
+        });
+      });
+    }
+
+    logger.info("validated resume generation enqueued", {
       userId: auth.id,
+      jobId: job.jobId,
       kind: body.kind,
-      modelMode: "quality",
-      layoutId,
-      layoutVersion,
+      modelMode: body.model,
+      layoutId: layout.id,
+      layoutVersion: layout.version,
       jdSource: body.jdSource,
       jdLength: jdText.length,
     });
 
-    const generated = await generateValidatedContent({
-      kind: body.kind,
-      modelMode: "quality",
-      wrappedJobDescription: wrapUntrusted(jdText),
-      facts,
-      guidelines,
-      signal: requestDeadline,
-      deadlineAt: Math.min(
-        generationStartedAt + MODEL_PHASE_BUDGET_MS,
-        requestDeadlineAt,
-      ),
-      company: body.company,
-      role: body.role,
-      hiringManager: body.hiringManager,
-      mustTryToInclude: safeMustTryToInclude,
-    });
-    incurredUsageUsd = generated.usage.costUsd ?? 0;
-
-    // PDF fitting is intentionally not checked here. It duplicates the
-    // preview/export render (`/api/resume/export`), which now uses a
-    // deadline-bounded, never-throwing fit-search (see
-    // packages/ui/src/resume-pdf/render-resume-pdf.tsx) — rendering twice
-    // per generation only doubled latency and timeout risk without adding
-    // real validation.
-    let appliedChanges: string[] = [];
-    if (generated.resume) {
-      const base = await baseResumePromise;
-      if (!base) {
-        throw new Error("Base resume was not loaded for a resume generation.");
-      }
-      appliedChanges = describeAppliedResumeChanges(base, generated.resume, body.role);
-    }
-
-    if (requestDeadline.aborted) {
-      throw new ValidatedGenerationError(
-        "GENERATION_TIMEOUT",
-        "Generation was cancelled before it could be saved.",
-        true,
-      );
-    }
-
-    const persisted = await repo.insertResumeGeneration({
-      created_by: auth.id,
-      company: body.company ?? null,
-      role: body.role ?? null,
-      hiring_manager: body.hiringManager ?? null,
-      language: "en",
-      tone: null,
-      length: null,
-      jd_text: jdText,
-      jd_source: body.jdSource,
-      jd_pdf_url: null,
-      model: generated.model,
-      fallback_used: generated.fallbackUsed,
-      resume: generated.resume as Record<string, unknown> | null,
-      cover_letter: generated.coverLetter as Record<string, unknown> | null,
-      ats: null,
-      usage: generated.usage,
-      resume_pdf_url: null,
-      cover_letter_pdf_url: null,
-      layout_id: layoutId,
-      applied_changes: appliedChanges,
-      generation_version: 2,
-      source_snapshot: snapshot,
-      archived_at: null,
-      deleted_at: null,
-    });
-
-    const response = resumeGenerationSuccessSchema.parse({
-      generationId: persisted.id,
-      resume: generated.resume,
-      coverLetter: generated.coverLetter,
-      appliedChanges,
-      layout: {
-        id: layoutId,
-        version: layoutVersion,
-        sourceHash: snapshot.sourceHash,
-        guidelineHash: snapshot.guidelineHash,
-      },
-      metadata: {
-        attempts: generated.attempts,
-        warnings: generated.warnings,
-        // Fit is validated at preview/export time now, not duplicated here.
-        fitReport: null,
-      },
-    });
-
-    await releaseUsageReservation(auth.id, usageGuard, incurredUsageUsd);
-
-    logger.info("validated resume generation persisted", {
-      userId: auth.id,
-      generationId: persisted.id,
-      model: generated.model,
-      attempts: generated.attempts.length,
-      attemptReasons: generated.attempts.map((attempt) => attempt.reason),
-      fallbackUsed: generated.fallbackUsed,
-      costUsd: generated.usage.costUsd,
-    });
-
-    return NextResponse.json(response, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return NextResponse.json(
+      { jobId: job.jobId, status: "queued" as const },
+      { status: 202, headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
-    await releaseUsageReservation(auth.id, usageGuard, incurredUsageUsd);
-
-    if (error instanceof ValidatedGenerationError) {
-      logger.warn("validated resume generation rejected", {
-        userId: auth.id,
-        code: error.code,
-        retryable: error.retryable,
-        attemptDiagnostics: error.diagnostics,
-      });
-      return generationError(error.code, error.message, 422, error.retryable);
-    }
-
-    logger.error("validated resume generation failed", {
+    await releaseUsageReservation(auth.id, usageGuard);
+    logger.error("validated resume generation enqueue failed", {
       userId: auth.id,
-      error: error instanceof Error ? error : new Error(String(error)),
+      error: toError(error),
     });
     return generationError(
       "PERSISTENCE_FAILED",
-      "The validated generation could not be saved. Nothing was returned.",
+      "The generation job could not be started. Nothing was returned.",
       500,
     );
   }

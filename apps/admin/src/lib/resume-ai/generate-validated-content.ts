@@ -41,6 +41,10 @@ const MAX_RESUME_ATTEMPTS = 3;
 const MAX_COVER_LETTER_ATTEMPTS = 2;
 const MAX_ATTEMPT_MS = 30_000;
 const MIN_ATTEMPT_BUDGET_MS = 8_000;
+/** Reserve for Dynamo persist + JSON serialize after the last model call. */
+const ESTIMATED_PERSIST_MS = 4_000;
+/** Don't start a validation retry that will almost certainly time out. */
+const VALIDATION_RETRY_MIN_MS = 15_000;
 const RESUME_OUTPUT_TOKENS = 2500;
 const COVER_LETTER_OUTPUT_TOKENS = 1200;
 
@@ -96,6 +100,7 @@ export type GenerationFailureDiagnostic = {
   errorName: string;
   providerErrorCode?: string;
   latencyMs: number;
+  remainingMsAtFailure: number;
 };
 
 export class ValidatedGenerationError extends Error {
@@ -310,12 +315,19 @@ function validateCoverLetterFacts(
   }
 }
 
-function orderedModels(): ResolvedModel[] {
-  const models = [modelFor("quality"), ...fallbackChainFor("quality")];
+function orderedModels(mode: Exclude<ModelMode, "cheap">): ResolvedModel[] {
+  const models = [modelFor(mode), ...fallbackChainFor(mode)];
   return models.filter(
     (model, index) =>
       models.findIndex((candidate) => candidate.modelId === model.modelId) === index,
   );
+}
+
+function splitArtifactDeadline(sharedDeadlineAt: number): number {
+  const remainingMs = sharedDeadlineAt - Date.now();
+  const half = Math.floor(remainingMs / 2);
+  const budgetMs = Math.max(MIN_ATTEMPT_BUDGET_MS, half);
+  return Math.min(sharedDeadlineAt, Date.now() + budgetMs);
 }
 
 function sumUsage(
@@ -372,7 +384,10 @@ async function runValidatedAttempts<T>(
       retry += 1
     ) {
       const remainingMs = budget.deadlineAt - Date.now();
-      if (budget.signal.aborted || remainingMs < MIN_ATTEMPT_BUDGET_MS) {
+      if (
+        budget.signal.aborted ||
+        remainingMs < MIN_ATTEMPT_BUDGET_MS + ESTIMATED_PERSIST_MS
+      ) {
         throw new ValidatedGenerationError(
           "GENERATION_TIMEOUT",
           `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation ran out of time. Try again.`,
@@ -433,6 +448,7 @@ async function runValidatedAttempts<T>(
           errorName: errorNameFromError(error),
           providerErrorCode: providerErrorCodeFromError(error),
           latencyMs,
+          remainingMsAtFailure: budget.deadlineAt - Date.now(),
         });
         const failedUsage = usageFromError(error);
         if (failedUsage) {
@@ -456,6 +472,17 @@ async function runValidatedAttempts<T>(
           throw new ValidatedGenerationError(
             "GENERATION_TIMEOUT",
             `${budget.artifact === "resume" ? "Resume" : "Cover-letter"} generation timed out or was cancelled.`,
+            true,
+            diagnostics,
+          );
+        }
+        if (
+          error instanceof ResumePolicyError &&
+          budget.deadlineAt - Date.now() < VALIDATION_RETRY_MIN_MS
+        ) {
+          throw new ValidatedGenerationError(
+            "FACT_VALIDATION_FAILED",
+            `The generated ${budget.artifact} could not be verified against your source profile.`,
             true,
             diagnostics,
           );
@@ -620,7 +647,7 @@ async function generateCoverLetter(
 export async function generateValidatedContent(
   options: ValidatedGenerationOptions,
 ): Promise<ValidatedGenerationResult> {
-  const models = orderedModels();
+  const models = orderedModels(options.modelMode);
   const attempts: ResumeGenerationAttempt[] = [];
   const usages: ResumeGenerationUsage[] = [];
   let resume: TailoredResume | null = null;
@@ -629,24 +656,22 @@ export async function generateValidatedContent(
   let chosenModel = models[0]!.modelId;
 
   if (options.kind === "both") {
-    const siblingAbort = new AbortController();
-    const parallelOptions = {
-      ...options,
-      signal: AbortSignal.any([options.signal, siblingAbort.signal]),
-    };
-    try {
-      const [resumeResult, coverLetterResult] = await Promise.all([
-        generateResume(parallelOptions, models, attempts, usages),
-        generateCoverLetter(parallelOptions, models, attempts, usages),
-      ]);
-      resume = resumeResult.resume;
-      coverLetter = coverLetterResult.coverLetter;
-      warnings = resumeResult.warnings;
-      chosenModel = resumeResult.model;
-    } catch (error) {
-      siblingAbort.abort();
-      throw error;
-    }
+    const resumeResult = await generateResume(
+      { ...options, deadlineAt: splitArtifactDeadline(options.deadlineAt) },
+      models,
+      attempts,
+      usages,
+    );
+    resume = resumeResult.resume;
+    warnings = resumeResult.warnings;
+    chosenModel = resumeResult.model;
+    const coverLetterResult = await generateCoverLetter(
+      options,
+      models,
+      attempts,
+      usages,
+    );
+    coverLetter = coverLetterResult.coverLetter;
   } else if (options.kind === "resume") {
     const result = await generateResume(options, models, attempts, usages);
     resume = result.resume;

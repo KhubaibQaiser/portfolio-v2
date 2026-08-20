@@ -24,6 +24,8 @@ export const TABLE_SUFFIXES = {
   chatCache: "chat-cache",
   /** Async PDF render-job status (admin download flow), keyed by `id` with a `ttl` sweep. */
   renderJob: "render-job",
+  /** Async AI generation-job status (admin generate flow), keyed by `id` with a `ttl` sweep. */
+  generationJob: "generation-job",
 } as const;
 
 export type TableKey = keyof typeof TABLE_SUFFIXES;
@@ -133,5 +135,6 @@ export function buildCreateTableInputs(
     },
     simpleTable(names.chatCache, "pk"),
     simpleTable(names.renderJob, "id"),
+    simpleTable(names.generationJob, "id"),
   ];
 }
