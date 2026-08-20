@@ -12,9 +12,14 @@ import { toWebRequest } from "./function-url-to-web-request";
 /**
  * Lambda Function URL entry: loads config once per execution environment and
  * adapts events to the web-standard handler. Origin Host rewriting lives in
- * `function-url-to-web-request.ts` (CloudFront strips the custom-domain Host).
+ * `function-url-to-web-request.ts` (CloudFront replaces Host with the Function
+ * URL hostname).
  */
 const config = loadConfig();
+if (!config.originVerifySecret) {
+  throw new Error("Missing required environment variable: ORIGIN_VERIFY_SECRET");
+}
+
 const handler = createHttpHandler({
   config,
   repo: getContentRepository(),

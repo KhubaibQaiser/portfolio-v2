@@ -86,17 +86,22 @@ describe("CandidateMcpStack", () => {
   it("writes the app client's secret into Secrets Manager, never a CfnOutput", () => {
     const template = synth();
 
-    template.resourceCountIs("AWS::SecretsManager::Secret", 1);
+    template.resourceCountIs("AWS::SecretsManager::Secret", 2);
 
-    // The secret value must be a CloudFormation dynamic reference resolved
+    // The n8n client secret must be a CloudFormation dynamic reference resolved
     // via a `Fn::GetAtt` onto the UserPoolClient's `ClientSecret` attribute
     // (CDK provisions a custom resource to fetch it), never a plaintext
     // string baked into the template — otherwise the actual client secret
     // would be sitting in source-controllable, human-readable CFN output,
     // which is exactly what "no secrets in source" forbids.
-    const [secret] = Object.values(template.findResources("AWS::SecretsManager::Secret"));
-    expect(secret).toBeDefined();
-    const serialized = JSON.stringify(secret?.Properties.SecretString);
+    const secrets = Object.values(template.findResources("AWS::SecretsManager::Secret"));
+    const n8nSecret = secrets.find((secret) =>
+      JSON.stringify(secret.Properties.SecretString ?? "").includes(
+        "UserPoolClient.ClientSecret",
+      ),
+    );
+    expect(n8nSecret).toBeDefined();
+    const serialized = JSON.stringify(n8nSecret?.Properties.SecretString);
     expect(serialized).toContain("Fn::Join");
     expect(serialized).toContain("UserPoolClient.ClientSecret");
 
@@ -106,12 +111,46 @@ describe("CandidateMcpStack", () => {
     }
   });
 
-  it("locks the Lambda Function URL to AWS_IAM (CloudFront-OAC-only reachability)", () => {
+  it("does not put the origin-verify secret in a CfnOutput or as a plaintext origin header", () => {
+    const template = synth();
+
+    const outputs = template.toJSON().Outputs ?? {};
+    for (const output of Object.values(outputs) as Array<{ Value?: unknown }>) {
+      expect(JSON.stringify(output.Value ?? "")).not.toMatch(/origin-verify/i);
+    }
+
+    const [distribution] = Object.values(
+      template.findResources("AWS::CloudFront::Distribution"),
+    );
+    const origins = distribution?.Properties.DistributionConfig.Origins as Array<{
+      OriginCustomHeaders?: Array<{ HeaderName: string; HeaderValue: unknown }>;
+    }>;
+    const verifyHeader = origins
+      ?.flatMap((origin) => origin.OriginCustomHeaders ?? [])
+      .find((header) => header.HeaderName === "x-origin-verify");
+    expect(verifyHeader).toBeDefined();
+    const headerValue = JSON.stringify(verifyHeader?.HeaderValue ?? "");
+    expect(headerValue).toMatch(/resolve:secretsmanager|Fn::|Ref/);
+    expect(headerValue).not.toMatch(/^"[A-Za-z0-9]{48}"$/);
+
+    const serverFn = Object.values(template.findResources("AWS::Lambda::Function")).find(
+      (resource) => resource.Properties.Environment?.Variables?.ORIGIN_VERIFY_SECRET,
+    );
+    expect(serverFn).toBeDefined();
+    const envValue = JSON.stringify(
+      serverFn?.Properties.Environment.Variables.ORIGIN_VERIFY_SECRET,
+    );
+    expect(envValue).toMatch(/resolve:secretsmanager|Fn::|Ref/);
+    expect(envValue).not.toMatch(/^"[A-Za-z0-9]{48}"$/);
+  });
+
+  it("leaves the Function URL public to CloudFront and locks it with origin-verify, not OAC SigV4", () => {
     const template = synth();
 
     template.hasResourceProperties("AWS::Lambda::Url", {
-      AuthType: "AWS_IAM",
+      AuthType: "NONE",
     });
+    template.resourceCountIs("AWS::CloudFront::OriginAccessControl", 0);
   });
 
   it("does not reserve Lambda concurrency (personal-account UnreservedConcurrentExecution floor)", () => {
@@ -131,6 +170,51 @@ describe("CandidateMcpStack", () => {
       }),
     });
     template.resourceCountIs("AWS::Route53::RecordSet", 1);
+  });
+
+  it("forwards Authorization via a zero-TTL cache policy and restores WWW-Authenticate on the way out", () => {
+    const template = synth();
+
+    template.hasResourceProperties("AWS::CloudFront::CachePolicy", {
+      CachePolicyConfig: Match.objectLike({
+        DefaultTTL: 0,
+        MaxTTL: 0,
+        MinTTL: 0,
+        ParametersInCacheKeyAndForwardedToOrigin: Match.objectLike({
+          HeadersConfig: Match.objectLike({
+            HeaderBehavior: "whitelist",
+            Headers: ["Authorization"],
+          }),
+        }),
+      }),
+    });
+
+    template.hasResourceProperties("AWS::CloudFront::OriginRequestPolicy", {
+      OriginRequestPolicyConfig: Match.objectLike({
+        CookiesConfig: { CookieBehavior: "none" },
+        HeadersConfig: Match.objectLike({
+          HeaderBehavior: "whitelist",
+          Headers: Match.arrayEquals([
+            "Accept",
+            "Content-Type",
+            "Last-Event-ID",
+            "MCP-Protocol-Version",
+            "MCP-Session-Id",
+            "Origin",
+          ]),
+        }),
+      }),
+    });
+
+    template.hasResourceProperties("AWS::CloudFront::Distribution", {
+      DistributionConfig: Match.objectLike({
+        DefaultCacheBehavior: Match.objectLike({
+          FunctionAssociations: Match.arrayWith([
+            Match.objectLike({ EventType: "viewer-response" }),
+          ]),
+        }),
+      }),
+    });
   });
 
   it("grants DynamoDB access scoped to exactly the five content tables read by its tools, not the whole table set", () => {

@@ -353,10 +353,12 @@ for the full trust-boundary decision; this is a summary.
   same compact fact sheet the resume-AI pipeline itself uses). Both are
   read-only, take no arguments, and every free-text field is passed through
   the prompt-injection scrub before leaving the server.
-- **Isolation:** reserved Lambda concurrency, CloudFront Origin Access
-  Control (the raw Function URL is unreachable directly), and IAM scoped to
-  exactly the five content tables the tools read — not the wildcard grant
-  `apps/web`/`apps/admin` use.
+- **Isolation:** CloudFront origin-verify (the raw Function URL is
+  unusable without the shared header), Cognito client-credentials, and IAM
+  scoped to exactly the five content tables the tools read — not the
+  wildcard grant `apps/web`/`apps/admin` use. Function URL OAC is not used
+  here because it collides with MCP `Authorization: Bearer` (web/admin keep
+  OAC; they authenticate with cookies).
 - **Demo:** [`docs/n8n-candidate-mcp-demo.md`](docs/n8n-candidate-mcp-demo.md)
   walks through an n8n workflow that authenticates and calls both tools.
 
