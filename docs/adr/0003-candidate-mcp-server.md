@@ -109,8 +109,8 @@ bounded by cheap controls instead of full account isolation:
   in place and the Function URL rejects it as a bad signature. POST bodies
   also need an `x-amz-content-sha256` hash that MCP clients must not be
   taught. **Web/admin keep OAC** — they authenticate with cookies, not
-  `Authorization`. Candidate-mcp therefore uses   Function URL `AuthType:
-  NONE` plus a CloudFront **origin custom header** `x-origin-verify`
+  `Authorization`. Candidate-mcp therefore uses Function URL `AuthType:
+NONE` plus a CloudFront **origin custom header** `x-origin-verify`
   (CloudFront overwrites any viewer copy). `Authorization` is forwarded
   with a zero-TTL cache policy (CloudFront forbids it on origin-request
   allowlists). The header value is a
@@ -227,8 +227,9 @@ as a new architectural element.
 Would fully separate blast radius but adds real operational overhead
 (cross-account IAM, a second deploy pipeline) disproportionate to a
 single-tenant, read-only, already-public dataset. Origin-verify + Cognito
-+ read-only IAM cover the realistic failure modes (cost runaway,
-availability starvation, data write) at a fraction of the complexity.
+
+- read-only IAM cover the realistic failure modes (cost runaway,
+  availability starvation, data write) at a fraction of the complexity.
 
 ### E. CloudFront OAC on the MCP Function URL — _rejected_
 

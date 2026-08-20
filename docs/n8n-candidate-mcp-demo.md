@@ -123,9 +123,9 @@ read path an eventual Phase 2 pipeline would build on.
 
 ## Troubleshooting
 
-| Symptom                                     | Cause                                                                                                                                                                                            |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `401` with a `WWW-Authenticate` header      | Missing/expired bearer token — re-run the token node (tokens expire after 1 hour).                                                                                                               |
-| `403 {"error":"forbidden"}`                 | Request did not present CloudFront's origin-verify header (direct Function URL, or a proxy that stripped headers). Call `https://mcp.khubaibqaiser.com/mcp`, not the `*.lambda-url.*` origin.     |
-| `503 {"error":"service_unavailable"}`       | The Lambda's `MCP_ENABLED` kill switch was flipped to `"false"` directly on the function (see `loadConfig` in `apps/candidate-mcp/src/config.ts`) — redeploy or update the env var to re-enable. |
-| `429`                                       | Per-`client_id` rate limit exceeded (`MCP_RATE_LIMIT_MAX`, default 30/min) — wait for the window to roll over.                                                                                   |
+| Symptom                                | Cause                                                                                                                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `401` with a `WWW-Authenticate` header | Missing/expired bearer token — re-run the token node (tokens expire after 1 hour).                                                                                                               |
+| `403 {"error":"forbidden"}`            | Request did not present CloudFront's origin-verify header (direct Function URL, or a proxy that stripped headers). Call `https://mcp.khubaibqaiser.com/mcp`, not the `*.lambda-url.*` origin.    |
+| `503 {"error":"service_unavailable"}`  | The Lambda's `MCP_ENABLED` kill switch was flipped to `"false"` directly on the function (see `loadConfig` in `apps/candidate-mcp/src/config.ts`) — redeploy or update the env var to re-enable. |
+| `429`                                  | Per-`client_id` rate limit exceeded (`MCP_RATE_LIMIT_MAX`, default 30/min) — wait for the window to roll over.                                                                                   |
