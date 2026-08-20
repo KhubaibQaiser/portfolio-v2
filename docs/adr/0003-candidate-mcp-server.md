@@ -111,17 +111,22 @@ bounded by cheap controls instead of full account isolation:
   taught. **Web/admin keep OAC** — they authenticate with cookies, not
   `Authorization`. Candidate-mcp therefore uses Function URL `AuthType:
 NONE` plus a CloudFront **origin custom header** `x-origin-verify`
-  (CloudFront overwrites any viewer copy). `Authorization` is forwarded
-  with a zero-TTL cache policy (CloudFront forbids it on origin-request
-  allowlists). The header value is a
-  CDK-generated Secrets Manager secret, distinct from the n8n Cognito
-  client secret. CloudFormation injects it into the origin header and the
-  Lambda environment via a dynamic reference (not a plaintext string in
-  source, templates-as-committed, or CfnOutputs). The handler fail-closes
-  with a uniform `403` when it is missing or wrong. Direct
-  `*.lambda-url.*.on.aws` callers never have the secret.
-  This is a network-layer control independent of the Cognito JWT check
-  (application-layer identity) — two separate failure domains.
+  (CloudFront overwrites any viewer copy). Viewer `Authorization` is
+  forwarded with managed **CachingDisabled** +
+  **AllViewerExceptHostHeader** — the AWS-supported combination when
+  caching is fully off. A custom CachePolicy that whitelists
+  `Authorization` with all TTLs = 0 is rejected by CloudFront
+  (`HeaderBehavior is invalid for policy with caching disabled`); a
+  custom OriginRequestPolicy cannot whitelist `Authorization` alone.
+  Do not paper over that with `maxTtl: 1` (auth-keyed cache window).
+  The origin-verify value is a CDK-generated Secrets Manager secret,
+  distinct from the n8n Cognito client secret. CloudFormation injects it
+  into the origin header and the Lambda environment via a dynamic
+  reference (not a plaintext string in source, templates-as-committed, or
+  CfnOutputs). The handler fail-closes with a uniform `403` when it is
+  missing or wrong. Direct `*.lambda-url.*.on.aws` callers never have the
+  secret. This is a network-layer control independent of the Cognito JWT
+  check (application-layer identity) — two separate failure domains.
 - **`WWW-Authenticate` restored at the edge.** Lambda Function URLs remap
   `WWW-Authenticate` to `x-amzn-remapped-www-authenticate`. A CloudFront
   Function on viewer-response copies it back so unauthenticated clients

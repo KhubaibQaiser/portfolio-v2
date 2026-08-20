@@ -191,39 +191,19 @@ export class CandidateMcpStack extends cdk.Stack {
       },
     });
 
-    const cachePolicy = new cloudfront.CachePolicy(this, "CachePolicy", {
-      cachePolicyName: `${config.appName}-candidate-mcp`,
-      comment:
-        "Do not cache MCP; Authorization must be forwarded (not allowed on origin-request policies)",
-      defaultTtl: cdk.Duration.seconds(0),
-      minTtl: cdk.Duration.seconds(0),
-      maxTtl: cdk.Duration.seconds(0),
-      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
-      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
-      headerBehavior: cloudfront.CacheHeaderBehavior.allowList("Authorization"),
-      enableAcceptEncodingGzip: false,
-      enableAcceptEncodingBrotli: false,
-    });
-
-    const originRequestPolicy = new cloudfront.OriginRequestPolicy(
-      this,
-      "OriginRequest",
-      {
-        originRequestPolicyName: `${config.appName}-candidate-mcp-origin`,
-        comment: "Forward MCP Streamable HTTP headers CloudFront would otherwise drop",
-        cookieBehavior: cloudfront.OriginRequestCookieBehavior.none(),
-        queryStringBehavior: cloudfront.OriginRequestQueryStringBehavior.all(),
-        headerBehavior: cloudfront.OriginRequestHeaderBehavior.allowList(
-          "Accept",
-          "Content-Type",
-          "Last-Event-ID",
-          "MCP-Protocol-Version",
-          "MCP-Session-Id",
-          "Origin",
-        ),
-      },
-    );
-
+    // Bearer forwarding under real no-cache (AWS constraint):
+    // - Custom CachePolicy cannot combine HeaderBehavior(Authorization) with
+    //   all TTLs = 0 ("HeaderBehavior is invalid for policy with caching
+    //   disabled").
+    // - Custom OriginRequestPolicy cannot whitelist Authorization alone
+    //   (CDK/CloudFront reject it; Authorization belongs in the cache key
+    //   when caching is on).
+    // - When caching is fully off, AWS's documented path is managed
+    //   CACHING_DISABLED + ALL_VIEWER_EXCEPT_HOST_HEADER, which forwards
+    //   Authorization without putting it in a cache key. Host stays the
+    //   Function URL hostname; `toWebRequest` restamps the public Host.
+    // Do not "fix" with maxTtl: 1 — that reintroduces an auth-keyed cache
+    // window MCP must not have.
     const restoreWwwAuthenticateFn = new cloudfront.Function(
       this,
       "RestoreWwwAuthenticateFn",
@@ -239,8 +219,8 @@ export class CandidateMcpStack extends cdk.Stack {
         origin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-        cachePolicy,
-        originRequestPolicy,
+        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         functionAssociations: [
           {
             function: restoreWwwAuthenticateFn,
