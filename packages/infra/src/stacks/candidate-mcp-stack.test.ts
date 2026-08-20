@@ -172,43 +172,22 @@ describe("CandidateMcpStack", () => {
     template.resourceCountIs("AWS::Route53::RecordSet", 1);
   });
 
-  it("forwards Authorization via a zero-TTL cache policy and restores WWW-Authenticate on the way out", () => {
+  it("uses managed no-cache + AllViewerExceptHostHeader so Authorization reaches the origin", () => {
     const template = synth();
 
-    template.hasResourceProperties("AWS::CloudFront::CachePolicy", {
-      CachePolicyConfig: Match.objectLike({
-        DefaultTTL: 0,
-        MaxTTL: 0,
-        MinTTL: 0,
-        ParametersInCacheKeyAndForwardedToOrigin: Match.objectLike({
-          HeadersConfig: Match.objectLike({
-            HeaderBehavior: "whitelist",
-            Headers: ["Authorization"],
-          }),
-        }),
-      }),
-    });
-
-    template.hasResourceProperties("AWS::CloudFront::OriginRequestPolicy", {
-      OriginRequestPolicyConfig: Match.objectLike({
-        CookiesConfig: { CookieBehavior: "none" },
-        HeadersConfig: Match.objectLike({
-          HeaderBehavior: "whitelist",
-          Headers: Match.arrayEquals([
-            "Accept",
-            "Content-Type",
-            "Last-Event-ID",
-            "MCP-Protocol-Version",
-            "MCP-Session-Id",
-            "Origin",
-          ]),
-        }),
-      }),
-    });
+    // Custom zero-TTL + Authorization HeaderBehavior is rejected by CloudFront
+    // at deploy time. Managed policies are the supported combination.
+    template.resourceCountIs("AWS::CloudFront::CachePolicy", 0);
+    template.resourceCountIs("AWS::CloudFront::OriginRequestPolicy", 0);
 
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: Match.objectLike({
         DefaultCacheBehavior: Match.objectLike({
+          // Managed-CachingDisabled
+          CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+          // Managed-AllViewerExceptHostHeader (forwards Authorization when
+          // caching is disabled; Host remains the Function URL hostname)
+          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac",
           FunctionAssociations: Match.arrayWith([
             Match.objectLike({ EventType: "viewer-response" }),
           ]),
