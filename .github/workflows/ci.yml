@@ -109,6 +109,7 @@ jobs:
           pnpm exec vitest run
           apps/candidate-mcp
           packages/infra/src/stacks/candidate-mcp-stack.test.ts
+          packages/infra/src/cloudfront/restore-www-authenticate.test.ts
 
   e2e:
     name: Playwright e2e

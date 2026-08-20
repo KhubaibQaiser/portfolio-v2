@@ -14,6 +14,7 @@ const config: Config = {
   enabled: true,
   rateLimitMax: 30,
   rateLimitWindowSec: 60,
+  originVerifySecret: null,
 };
 
 const REQUIRED_SCOPE = "https://mcp.example.com/profile.read";
