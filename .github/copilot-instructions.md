@@ -11,8 +11,9 @@ and packages `shared`, `data`, `ai`, `infra`, `ui`, `agent-mcp`.
   `validateFabrication`. Spec: `specs/resume-ai.md`.
 - Untrusted job-description text: `stripPromptInjection` then `wrapUntrusted`.
 - Apps depend on ports in `packages/shared`, not AWS SDKs.
-- Infra: ADR 0001 (no CFN exports for data/auth) and ADR 0002 (one AppErrors
-  alarm, not per-table alarms).
+- Infra: ADR 0001 (no CFN exports for data/auth), ADR 0002 (one AppErrors
+  alarm, not per-table alarms), and ADR 0003 (candidate-mcp: Cognito
+  client-credentials + CloudFront origin-verify, not Function URL OAC).
 - `apps/candidate-mcp` tools stay read-only and sanitized (`deepSanitize`);
   any write-capable tool needs a new ADR. See ADR 0003.
 

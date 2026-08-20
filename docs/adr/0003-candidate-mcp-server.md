@@ -1,7 +1,8 @@
 # ADR 0003 — Candidate Profile MCP server: a new network trust boundary
 
 - **Status:** Accepted
-- **Date:** 2026-08-19
+- **Date:** 2026-08-19 (network layer amended 2026-08-20: origin-verify
+  replaces Function URL OAC so MCP Bearer can pass through)
 - **Deciders:** Khubaib (with AI pairing)
 
 ## Context
@@ -87,7 +88,7 @@ Cognito issuer and the required scope.
 Cognito-issued tokens are a disjoint system from the admin app's Better Auth
 sessions. The MCP server never accepts, forwards, or conflates the two.
 
-### 2. Isolation from the production site: CloudFront OAC, not a separate AWS account
+### 2. Isolation from the production site: CloudFront origin-verify, not OAC and not a separate AWS account
 
 The candidate-mcp Lambda shares the AWS account and DynamoDB tables with
 `apps/web`/`apps/admin` (simplest, consistent with the rest of the
@@ -99,17 +100,32 @@ bounded by cheap controls instead of full account isolation:
   account's ConcurrentExecutions quota is 10, so reserving even 5 fails
   create with `UnreservedConcurrentExecution below its minimum value of [10]`.
   Revisit a small reserved cap after a quota increase. Until then, cost and
-  flood risk stay bounded by CloudFront OAC, Cognito, the 10s timeout, and
-  the account-wide unreserved pool shared with web/admin.
-- **CloudFront Origin Access Control (OAC)** in front of the Lambda Function
-  URL: the Function URL's `authType` is `AWS_IAM`, and CDK's
-  `FunctionUrlOrigin.withOriginAccessControl()` grants exactly the
-  `cloudfront.amazonaws.com` principal, scoped to this distribution's ARN,
-  `lambda:InvokeFunctionUrl`. The raw `*.lambda-url.*.on.aws` address becomes
-  uninvokable directly — all traffic must go through
-  `mcp.khubaibqaiser.com`. This is a network-layer control independent of
-  the Cognito JWT check (an application-layer identity control) — two
-  separate failure domains have to both be bypassed, not one.
+  flood risk stay bounded by CloudFront origin-verify, Cognito, the 10s
+  timeout, and the account-wide unreserved pool shared with web/admin.
+- **CloudFront origin-verify, not Function URL OAC.** Remote MCP requires
+  `Authorization: Bearer` to reach the app unchanged (OAuth 2.1 / RFC 9728).
+  CloudFront OAC on a Lambda Function URL uses that same header for SigV4:
+  `SigningBehavior: always` overwrites the JWT; `no-override` leaves Bearer
+  in place and the Function URL rejects it as a bad signature. POST bodies
+  also need an `x-amz-content-sha256` hash that MCP clients must not be
+  taught. **Web/admin keep OAC** — they authenticate with cookies, not
+  `Authorization`. Candidate-mcp therefore uses Function URL `AuthType:
+NONE` plus a CloudFront **origin custom header** `x-origin-verify`
+  (CloudFront overwrites any viewer copy). `Authorization` is forwarded
+  with a zero-TTL cache policy (CloudFront forbids it on origin-request
+  allowlists). The header value is a
+  CDK-generated Secrets Manager secret, distinct from the n8n Cognito
+  client secret. CloudFormation injects it into the origin header and the
+  Lambda environment via a dynamic reference (not a plaintext string in
+  source, templates-as-committed, or CfnOutputs). The handler fail-closes
+  with a uniform `403` when it is missing or wrong. Direct
+  `*.lambda-url.*.on.aws` callers never have the secret.
+  This is a network-layer control independent of the Cognito JWT check
+  (application-layer identity) — two separate failure domains.
+- **`WWW-Authenticate` restored at the edge.** Lambda Function URLs remap
+  `WWW-Authenticate` to `x-amzn-remapped-www-authenticate`. A CloudFront
+  Function on viewer-response copies it back so unauthenticated clients
+  can follow RFC 9728 discovery.
 - **Read-only, table-scoped IAM.** `grantCandidateMcpDataAccess` (in
   `packages/infra/src/naming.ts`) grants
   `dynamodb:{GetItem,BatchGetItem,Query,Scan,DescribeTable}` on exactly the
@@ -160,7 +176,9 @@ phase will want exactly the tool shape these rules pre-empt:
 esbuild bundling of `apps/candidate-mcp/src/lambda.ts`), asserting the
 invariants above as code: client-credentials-only Cognito, the secret
 landing in Secrets Manager via `Fn::GetAtt` and never in a `CfnOutput`, the
-Function URL's `AWS_IAM` auth type, and the exact five-table IAM scope.
+Function URL's `NONE` auth type (OAuth Bearer must not collide with OAC
+SigV4), origin-verify on the CloudFront origin, and the exact five-table
+IAM scope.
 Combined with `apps/candidate-mcp`'s own auth/sanitize/rate-limit/HTTP-layer
 tests, this all runs in a dedicated `mcp-security` CI job (see
 `.github/workflows/ci.yml`) gating deploy, entirely offline.
@@ -178,7 +196,7 @@ deploy job once `DOMAIN_ENABLED`) exercises the real deployed endpoint:
 confirms an unauthenticated request gets a real `401`, then runs an actual
 client-credentials grant against Cognito and a real authenticated
 `initialize` call — the same failure mode a `cdk synth`-only check cannot
-catch (e.g. a misconfigured resource-server identifier or OAC permission).
+catch (e.g. a misconfigured resource-server identifier or origin-verify).
 
 ## Approaches considered
 
@@ -208,10 +226,16 @@ as a new architectural element.
 
 Would fully separate blast radius but adds real operational overhead
 (cross-account IAM, a second deploy pipeline) disproportionate to a
-single-tenant, read-only, already-public dataset. Reserved concurrency + OAC
+single-tenant, read-only, already-public dataset. Origin-verify + Cognito
 
-- read-only IAM cover the realistic failure modes (cost runaway, availability
-  starvation, data write) at a fraction of the complexity.
+- read-only IAM cover the realistic failure modes (cost runaway,
+  availability starvation, data write) at a fraction of the complexity.
+
+### E. CloudFront OAC on the MCP Function URL — _rejected_
+
+Correct for `NextjsSite` (cookie auth). Incompatible with MCP: OAC SigV4
+and OAuth both need `Authorization`, and unsigned POST bodies fail with
+`InvalidSignatureException` before the app can return a spec `401`.
 
 ## Consequences
 

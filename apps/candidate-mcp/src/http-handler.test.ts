@@ -10,6 +10,7 @@ import {
 } from "./auth/verify-agent-token";
 import { generateTestKeyPair, signTestJwt, testJwks } from "./auth/test-jwt";
 import { candidateProfileSchema } from "./schemas/candidate-profile";
+import { ORIGIN_VERIFY_HEADER } from "./origin-verify";
 
 const config: Config = {
   serverUrl: "https://mcp.example.com/mcp",
@@ -20,6 +21,7 @@ const config: Config = {
   enabled: true,
   rateLimitMax: 30,
   rateLimitWindowSec: 60,
+  originVerifySecret: "test-origin-verify-secret",
 };
 
 const KID = "test-key-1";
@@ -59,13 +61,14 @@ function setUp(configOverrides: Partial<Config> = {}) {
 const SERVER_HOST = new URL(config.serverUrl).host;
 
 /**
- * Tests stamp Host because in-memory `Request` objects have none. Production
- * Function URL events arrive with the Lambda URL hostname (CloudFront
- * `ALL_VIEWER_EXCEPT_HOST_HEADER`); `toWebRequest` rewrites that to the
- * public custom-domain Host before this handler runs.
+ * Tests stamp Host because in-memory `Request` objects have none, and stamp
+ * origin-verify because production CloudFront injects that header before the
+ * Function URL. `toWebRequest` rewrites the Function URL Host to the public
+ * custom-domain Host before this handler runs.
  */
-function withHost(request: Request): Request {
+function withHost(request: Request, originSecret = config.originVerifySecret): Request {
   request.headers.set("host", SERVER_HOST);
+  if (originSecret) request.headers.set(ORIGIN_VERIFY_HEADER, originSecret);
   return request;
 }
 
@@ -104,6 +107,16 @@ describe("createHttpHandler", () => {
     const { handler } = setUp();
     const request = initializeRequest();
     request.headers.set("host", "abc123.lambda-url.eu-west-1.on.aws");
+
+    const response = await handler(request);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects a request that did not come through CloudFront (missing origin-verify)", async () => {
+    const { handler } = setUp();
+    const request = initializeRequest();
+    request.headers.delete(ORIGIN_VERIFY_HEADER);
 
     const response = await handler(request);
 

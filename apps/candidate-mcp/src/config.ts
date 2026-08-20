@@ -25,6 +25,11 @@ export type Config = {
   rateLimitMax: number;
   /** Rate-limit window, in seconds. */
   rateLimitWindowSec: number;
+  /**
+   * Shared secret CloudFront injects as `x-origin-verify`. Required on the
+   * Lambda HTTP path (fail-closed). Stdio never uses this handler.
+   */
+  originVerifySecret: string | null;
 };
 
 function requireEnv(name: string): string {
@@ -45,6 +50,10 @@ export function loadConfig(): Config {
     enabled: process.env.MCP_ENABLED !== "false",
     rateLimitMax: Number(process.env.MCP_RATE_LIMIT_MAX ?? 30),
     rateLimitWindowSec: Number(process.env.MCP_RATE_LIMIT_WINDOW_SEC ?? 60),
+    // Lambda: CloudFormation dynamic reference into ORIGIN_VERIFY_SECRET.
+    // Stdio / unit tests: unset (stdio never uses this handler; tests inject
+    // the field on Config directly).
+    originVerifySecret: process.env.ORIGIN_VERIFY_SECRET ?? null,
   };
 }
 

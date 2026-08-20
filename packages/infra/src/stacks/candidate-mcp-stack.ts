@@ -3,16 +3,19 @@ import type * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as cognito from "aws-cdk-lib/aws-cognito";
-import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as route53 from "aws-cdk-lib/aws-route53";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
+import { restoreWwwAuthenticateFunctionCode } from "../cloudfront/restore-www-authenticate";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
 import { appErrorMetric, grantCandidateMcpDataAccess } from "../naming";
+
+/** Must match `ORIGIN_VERIFY_HEADER` in apps/candidate-mcp/src/origin-verify.ts. */
+const ORIGIN_VERIFY_HEADER = "x-origin-verify";
 
 export type CandidateMcpStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -131,8 +134,8 @@ export class CandidateMcpStack extends cdk.Stack {
       // Do not set reservedConcurrentExecutions. Personal AWS accounts often
       // have a ConcurrentExecutions quota of 10, and Lambda refuses any
       // reservation that would leave UnreservedConcurrentExecution below 10.
-      // Cost/abuse is still bounded by CloudFront OAC, Cognito, and the
-      // function timeout (ADR 0003).
+      // Cost/abuse is still bounded by CloudFront origin-verify, Cognito, and
+      // the function timeout (ADR 0003).
       environment: {
         DATA_BACKEND: "dynamo",
         DYNAMO_TABLE_PREFIX: config.tablePrefix,
@@ -147,6 +150,25 @@ export class CandidateMcpStack extends cdk.Stack {
     });
     grantCandidateMcpDataAccess(this, serverFunction, config);
 
+    // Network-layer shared secret: CloudFront injects this header (overwriting
+    // any viewer copy). Distinct from the n8n Cognito client secret — this one
+    // answers "did the request come through our distribution?", not "which
+    // automation client is this?". The value is a CloudFormation dynamic
+    // reference into both the origin header and Lambda env — never git or a
+    // CfnOutput.
+    const originVerify = new secretsmanager.Secret(this, "OriginVerifySecret", {
+      secretName: `/${config.appName.toLowerCase()}/candidate-mcp/origin-verify`,
+      description:
+        "CloudFront origin-verify header for the candidate-mcp Function URL (not an OAuth client secret)",
+      generateSecretString: {
+        passwordLength: 48,
+        excludePunctuation: true,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    const originVerifyValue = originVerify.secretValue.unsafeUnwrap();
+    serverFunction.addEnvironment("ORIGIN_VERIFY_SECRET", originVerifyValue);
+
     const errorMetric = appErrorMetric(config);
     new logs.MetricFilter(this, "AppErrorMetric", {
       logGroup,
@@ -157,40 +179,79 @@ export class CandidateMcpStack extends cdk.Stack {
       defaultValue: 0,
     });
 
-    // --- Network: Function URL behind CloudFront, IAM/SigV4-gated so the
-    // Function URL itself is unreachable except via this distribution's OAC
-    // (defense in depth: this is *in addition to*, not instead of, the
-    // application-level OAuth bearer check every MCP request also goes
-    // through — see `http-handler.ts`). ---
+    // --- Network: Function URL behind CloudFront. OAC/SigV4 cannot be used
+    // here — it consumes `Authorization`, which MCP needs for Bearer tokens
+    // (ADR 0003). Origin-verify is the network lock; Cognito JWT is identity.
     const functionUrl = serverFunction.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.AWS_IAM,
+      authType: lambda.FunctionUrlAuthType.NONE,
     });
-    const origin = origins.FunctionUrlOrigin.withOriginAccessControl(functionUrl);
+    const origin = new origins.FunctionUrlOrigin(functionUrl, {
+      customHeaders: {
+        [ORIGIN_VERIFY_HEADER]: originVerifyValue,
+      },
+    });
+
+    const cachePolicy = new cloudfront.CachePolicy(this, "CachePolicy", {
+      cachePolicyName: `${config.appName}-candidate-mcp`,
+      comment:
+        "Do not cache MCP; Authorization must be forwarded (not allowed on origin-request policies)",
+      defaultTtl: cdk.Duration.seconds(0),
+      minTtl: cdk.Duration.seconds(0),
+      maxTtl: cdk.Duration.seconds(0),
+      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
+      headerBehavior: cloudfront.CacheHeaderBehavior.allowList("Authorization"),
+      enableAcceptEncodingGzip: false,
+      enableAcceptEncodingBrotli: false,
+    });
+
+    const originRequestPolicy = new cloudfront.OriginRequestPolicy(
+      this,
+      "OriginRequest",
+      {
+        originRequestPolicyName: `${config.appName}-candidate-mcp-origin`,
+        comment: "Forward MCP Streamable HTTP headers CloudFront would otherwise drop",
+        cookieBehavior: cloudfront.OriginRequestCookieBehavior.none(),
+        queryStringBehavior: cloudfront.OriginRequestQueryStringBehavior.all(),
+        headerBehavior: cloudfront.OriginRequestHeaderBehavior.allowList(
+          "Accept",
+          "Content-Type",
+          "Last-Event-ID",
+          "MCP-Protocol-Version",
+          "MCP-Session-Id",
+          "Origin",
+        ),
+      },
+    );
+
+    const restoreWwwAuthenticateFn = new cloudfront.Function(
+      this,
+      "RestoreWwwAuthenticateFn",
+      {
+        comment: "Restore WWW-Authenticate remapped by Lambda Function URLs",
+        runtime: cloudfront.FunctionRuntime.JS_2_0,
+        code: cloudfront.FunctionCode.fromInline(restoreWwwAuthenticateFunctionCode()),
+      },
+    );
 
     const distribution = new cloudfront.Distribution(this, "Distribution", {
       defaultBehavior: {
         origin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        cachePolicy,
+        originRequestPolicy,
+        functionAssociations: [
+          {
+            function: restoreWwwAuthenticateFn,
+            eventType: cloudfront.FunctionEventType.VIEWER_RESPONSE,
+          },
+        ],
       },
       domainNames: [mcpHostname],
       certificate,
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
-    });
-
-    serverFunction.addPermission("AllowCloudFrontInvokeUrl", {
-      principal: new iam.ServicePrincipal("cloudfront.amazonaws.com"),
-      action: "lambda:InvokeFunctionUrl",
-      sourceArn: distribution.distributionArn,
-    });
-    serverFunction.addPermission("AllowCloudFrontInvoke", {
-      principal: new iam.ServicePrincipal("cloudfront.amazonaws.com"),
-      action: "lambda:InvokeFunction",
-      sourceArn: distribution.distributionArn,
-      invokedViaFunctionUrl: true,
     });
 
     aliasToCloudFront(this, hostedZone, distribution, "McpAlias", "mcp");

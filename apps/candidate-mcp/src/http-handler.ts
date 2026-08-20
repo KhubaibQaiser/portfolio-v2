@@ -9,6 +9,7 @@ import {
 } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
 import { buildAuthMetadataOptions } from "./oauth-metadata";
+import { originVerifyResponse } from "./origin-verify";
 import { profileReadScope, type Config } from "./config";
 import { createCandidateMcpServer } from "./server";
 
@@ -20,10 +21,11 @@ export type HttpHandlerDeps = {
 
 /**
  * Assembles this server's web-standard `fetch(request) => Response` handler:
- * kill switch → Host/Origin validation → RFC 9728/8414 discovery routes →
- * Bearer-token gate → MCP dispatch. Framework-free (`Request`/`Response`
- * only) so the same function is unit-testable in-memory and directly usable
- * from the Lambda Function URL adapter (`lambda.ts`).
+ * origin-verify → kill switch → Host/Origin validation → RFC 9728/8414
+ * discovery → Bearer-token gate → MCP dispatch. Framework-free
+ * (`Request`/`Response` only) so the same function is unit-testable
+ * in-memory and directly usable from the Lambda Function URL adapter
+ * (`lambda.ts`).
  */
 export function createHttpHandler(
   deps: HttpHandlerDeps,
@@ -45,6 +47,9 @@ export function createHttpHandler(
   );
 
   return async function fetch(request: Request): Promise<Response> {
+    const originRejected = originVerifyResponse(request, config.originVerifySecret);
+    if (originRejected) return originRejected;
+
     if (!config.enabled) {
       return Response.json({ error: "service_unavailable" }, { status: 503 });
     }
