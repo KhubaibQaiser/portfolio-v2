@@ -14,8 +14,8 @@ export class GenerationJobError extends Error {
   }
 }
 
-const POLL_INTERVAL_MS = 1000;
-const MAX_POLL_MS = 120_000;
+const POLL_INTERVAL_MS = 30 * 1000; // 30 seconds
+const MAX_POLL_MS = 2 * 60 * 1000; // 2 minutes
 
 async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
   const json: unknown = await res.json().catch(() => null);
