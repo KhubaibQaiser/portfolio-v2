@@ -173,7 +173,7 @@ export function modernBlueGuidelines(): VariantGuidelines {
         headingFont: "DM Serif Display",
         bodyFont: "DM Sans",
         headingSizes: { name: 21, title: 7.5, section: 6, job: 7.875 },
-        bodySizes: { contact: 6.75, meta: 6.75, body: 7.125, tags: 6.375 },
+        bodySizes: { contact: 6, meta: 6.75, body: 7.125, tags: 6.375 },
       },
       spacing: {
         pageMargins: "10mm top, 8mm bottom, 11mm horizontal",
