@@ -204,6 +204,37 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.fitReport?.roleDropReason).not.toBeNull();
   }, 60_000);
 
+  it("skips fit-search drops when fit is guidelines-only", async () => {
+    const longBullet =
+      "Delivered a production platform spanning architecture, accessibility, observability, testing, cloud infrastructure, stakeholder collaboration, performance improvements, and measurable customer outcomes across multiple international product teams.";
+    const data = {
+      ...modernBlueReferenceResume,
+      summary: modernBlueReferenceResume.summary.repeat(2).slice(0, 550),
+      experience: Array.from({ length: 12 }, (_, index) => ({
+        ...modernBlueReferenceResume.experience[0]!,
+        company: `Company ${index + 1}`,
+        role: `Senior Platform Engineering Role ${index + 1}`,
+        startDate: `Jan ${2026 - index}`,
+        endDate: `Dec ${2026 - index}`,
+        period: `${2026 - index}`,
+        bullets: [longBullet, longBullet, longBullet],
+      })),
+    };
+    const layout = layoutFromForm("modern-blue-guidelines-only", modernBlueLayoutForm());
+    const maxRoles = layout.guidelines.validation.maxExperienceItems;
+    const result = await renderResumePdfBuffer(data, layout, {
+      mode: "canonical",
+      fit: "guidelines-only",
+    });
+
+    expect(result.fitReport?.mode).toBe("canonical");
+    expect(result.fitReport?.density).toBe("reference");
+    expect(result.fitReport?.renderAttempts).toBe(1);
+    expect(result.fitReport?.fallbackSteps).toEqual([]);
+    expect(result.fitReport?.retainedRoles).toBe(maxRoles);
+    expect(result.fitReport?.droppedRoles).toBe(0);
+  }, 30_000);
+
   it("bounds the fit-search to maxExperienceItems regardless of role count", async () => {
     const data = {
       ...modernBlueReferenceResume,

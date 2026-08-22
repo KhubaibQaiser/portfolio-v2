@@ -1,8 +1,8 @@
 import { createLogger } from "@portfolio/observability";
 import { getContentRepository } from "@portfolio/data";
 import { getMediaStore } from "@portfolio/data/media";
-import { getResumeData } from "@portfolio/shared/resume-data";
-import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
+import { getResumeData, projectCanonicalResume } from "@portfolio/shared/resume-data";
+import { classicGuidelines, pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
 import {
   CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY,
@@ -26,11 +26,12 @@ const RENDER_DEADLINE_MS = 90_000;
  */
 export async function handler(): Promise<void> {
   const repo = getContentRepository();
-  const [data, layouts] = await Promise.all([
+  const [raw, layouts] = await Promise.all([
     getResumeData(repo, { websiteHost: resolveWebsiteHost() }),
     repo.getResumeLayouts().catch(() => []),
   ]);
   const layout = pickDefaultResumeLayout(layouts);
+  const data = projectCanonicalResume(raw, layout?.guidelines ?? classicGuidelines());
   const contentHash = hashCanonicalResumeContent(data, layout);
 
   const mediaStore = await getMediaStore();
@@ -51,6 +52,7 @@ export async function handler(): Promise<void> {
 
   const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
     mode: "canonical",
+    fit: "guidelines-only",
     deadlineAt: Date.now() + RENDER_DEADLINE_MS,
   });
 
