@@ -106,6 +106,110 @@ TAILORING RULES:
 RETURN:
 Modified ResumeData JSON object with same structure as input, tailored for the job description.`;
 
+const ATS_RESUME_PROMPT = `You are tailoring a resume for the ATS Resume layout (single-column, strict ATS text rules).
+
+CONTENT RULES (violations are rejected):
+1. Return tailoredResumeSchema JSON only — never LaTeX or markdown outside bullet text fields.
+2. Never invent employers, skills, metrics, or experience not in the candidate fact sheet.
+3. Include ALL experience roles from the fact sheet — never drop a role to save space.
+4. Regenerate the professional summary for this job (max 450 characters, 2 sentences, terminal punctuation).
+5. Rewrite bullets using the XYZ formula: outcome first, proof second, method third. Leadership framing: scope of ownership as subject ("Set technical direction for...", "Owned...", "Led... as lead architect").
+6. No markdown bold (**keyword**) in bullets or summary.
+7. Dehyphenate compound modifiers in prose (companywide, cross platform, real time, event driven). Allowed hyphens only: Quaid-i-Azam, Content-to-Commerce, and ONE JD-required hyphenated skill phrase in skills if needed (e.g. Test-Driven Development).
+8. No em dashes, en dashes, or smart quotes in any text field.
+9. titleOverride must be null or exactly "Senior Software Engineer" or "Senior Fullstack Engineer" — never mirror the JD title.
+10. Include honest AI tooling disclosure in skills and at least one bullet when truthful (Claude, Cursor, architecture-first workflow).
+11. Personal projects section: default omit; include only for AI-engineer track JDs when justified.
+12. Vary leading bullet verbs — no verb 3+ times across the full resume.
+13. Every bullet ends with a period.
+
+TARGET JOB DESCRIPTION:
+{jobDescription}
+
+CANDIDATE FACT SHEET:
+{resumeData}
+
+RETURN:
+tailoredResumeSchema JSON tailored for this job description.`;
+
+export function atsResumeGuidelines(): VariantGuidelines {
+  return {
+    formatting: {
+      colorPalette: {
+        textcolor: "#1A1A1A",
+        mutedcolor: "#333333",
+        metacolor: "#2B2B2B",
+        rulecolor: "#1A1A1A",
+        bg: "#ffffff",
+      },
+      typography: {
+        headingFont: "Carlito",
+        bodyFont: "Carlito",
+        headingSizes: { name: 19, title: 11.2, section: 10.3, job: 9.8 },
+        bodySizes: { contact: 8.6, body: 9.1, meta: 8.6, skills: 8.9 },
+      },
+      spacing: {
+        pageMargins: "0.5in top/bottom, 0.55in left/right",
+        sectionGap: 3.2,
+        jobGap: 1.4,
+        bulletIndent: 15,
+      },
+      layout: {
+        pageSize: "A4",
+        columnLayout: "single",
+        leftColumnWidth: 0,
+        rightColumnWidth: 0,
+        maxBulletsPerJob: 6,
+        includeTagHighlighting: false,
+      },
+    },
+    contentEmphasis: {
+      sectionPriority: {
+        experience: 10,
+        skills: 8,
+        education: 5,
+        projects: 4,
+      },
+      experienceStrategy: {
+        highlightKeywords: false,
+        reorderByRelevance: true,
+        filterOutIrrelevant: false,
+        maxBulletLines: 2,
+      },
+      skillsStrategy: {
+        matchJobDescription: true,
+        highlightRequired: false,
+        filterByJobLevel: false,
+        includeOnlyMatches: false,
+      },
+      summaryStrategy: {
+        regenerateForJob: true,
+        preserveGeneralBranding: true,
+        maxSummaryLines: 4,
+      },
+    },
+    aiTailoringPromptTemplate: ATS_RESUME_PROMPT,
+    aiTailoringRules: SHARED_AI_RULES,
+    validation: {
+      minExperienceItems: 1,
+      maxExperienceItems: 20,
+      maxBulletsPerRole: 6,
+      requireEducation: true,
+      requireSummary: true,
+      maxPageCount: 1,
+      allowOverflow: "error",
+    },
+    sections: {
+      ...SHARED_SECTIONS,
+      projects: false,
+      references: false,
+      certifications: false,
+    },
+    notes:
+      "ATS Resume: XeLaTeX Carlito single-column A4. Admin JD tailoring only. Never drop roles; trim bullets oldest-first when overflowing.",
+  };
+}
+
 export function classicGuidelines(): VariantGuidelines {
   return {
     formatting: {
@@ -274,6 +378,20 @@ export function modernBlueLayoutForm(): ResumeLayoutFormData {
     is_default: false,
     notes: "Pixel-oriented Modern Blue variant.",
     guidelines: modernBlueGuidelines(),
+  };
+}
+
+export function atsResumeLayoutForm(): ResumeLayoutFormData {
+  return {
+    name: "ATS Resume",
+    description:
+      "Single-column A4 ATS resume (Carlito/XeLaTeX). Job-tailored exports via admin Resume AI.",
+    version: 1,
+    component_key: "ats-resume",
+    preview_image_url: null,
+    is_default: false,
+    notes: "Admin JD tailoring layout. Renders via XeLaTeX, not public download default.",
+    guidelines: atsResumeGuidelines(),
   };
 }
 

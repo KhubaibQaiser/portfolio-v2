@@ -1,0 +1,82 @@
+{
+  "id": "ats-role-drop",
+  "description": "Rejects ATS resume output that drops experience roles from the fact sheet",
+  "guidelines": "ats-resume",
+  "expect": "fail",
+  "expectViolationIncludes": "at least 3 experience roles are required",
+  "factsInput": {
+    "siteConfig": {
+      "name": "Test User",
+      "title": "Senior Engineer",
+      "email": "test@example.com",
+      "location": "Remote",
+      "social_links": []
+    },
+    "resume": {
+      "default_summary": "Senior engineer building reliable product platforms.",
+      "education": [],
+      "certifications": []
+    },
+    "experiences": [
+      {
+        "id": "experience-a",
+        "company": "Company A",
+        "role": "Senior Engineer",
+        "location": "Remote",
+        "location_type": "remote",
+        "contract_type": "full_time",
+        "start_date": "Jan 2024",
+        "end_date": null,
+        "description": "Built React products.",
+        "tech_tags": ["React"]
+      },
+      {
+        "id": "experience-b",
+        "company": "Company B",
+        "role": "Engineer",
+        "location": "Remote",
+        "location_type": "remote",
+        "contract_type": "full_time",
+        "start_date": "Jan 2022",
+        "end_date": "Dec 2023",
+        "description": "Shipped TypeScript services.",
+        "tech_tags": ["TypeScript"]
+      },
+      {
+        "id": "experience-c",
+        "company": "Company C",
+        "role": "Engineer",
+        "location": "Remote",
+        "location_type": "remote",
+        "contract_type": "full_time",
+        "start_date": "Jan 2020",
+        "end_date": "Dec 2021",
+        "description": "Maintained platform reliability.",
+        "tech_tags": ["Node.js"]
+      }
+    ],
+    "skills": [
+      { "category": "frontend", "name": "React" },
+      { "category": "frontend", "name": "TypeScript" }
+    ]
+  },
+  "modelOutput": {
+    "summary": "Senior engineer building reliable React and TypeScript products with clear customer impact.",
+    "titleOverride": "Senior Fullstack Engineer",
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": [],
+    "experiences": [
+      {
+        "experienceId": "experience-a",
+        "bullets": [
+          {
+            "experienceId": "experience-a",
+            "sourceBulletIndex": 0,
+            "text": "Built reliable React products for customers."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "TypeScript"] }]
+  }
+}

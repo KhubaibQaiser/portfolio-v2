@@ -1,0 +1,16 @@
+# Monorepo Docker build context — keep image lean
+node_modules
+**/node_modules
+.git
+.next
+**/.next
+.turbo
+**/.turbo
+dist
+**/dist
+coverage
+**/coverage
+*.log
+.env
+.env.*
+!.env.example

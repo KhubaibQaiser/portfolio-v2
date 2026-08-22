@@ -1,19 +1,19 @@
-import { renderToBuffer } from "@react-pdf/renderer";
-import { getContentRepository, getRenderJobStore } from "@portfolio/data";
-import type { RenderJob } from "@portfolio/shared/ports";
+import { getResumePdfRenderer } from "@portfolio/shared/ports";
 import { applyTailoredResume, getResumeData } from "@portfolio/shared/resume-data";
-import { CoverLetterDocument, renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
+import type { RenderJob } from "@portfolio/shared/ports";
+import { getContentRepository, getRenderJobStore } from "@portfolio/data";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { CoverLetterDocument } from "@portfolio/ui/resume-pdf";
 import { logger } from "../logger";
 import { toError } from "../to-error";
 import {
   coverLetterRenderJobPayloadSchema,
   resumeRenderJobPayloadSchema,
 } from "./render-job-payload";
+import { registerResumeRenderers } from "./register-resume-renderers";
 
-// The worker runs off any CloudFront/HTTP request path (SQS-triggered), so it
-// can afford a much larger budget than the old inline synchronous render —
-// this is what actually removes the timeout risk for pathological content,
-// on top of the bounded+total fit algorithm itself never throwing.
+registerResumeRenderers();
+
 const WORKER_RENDER_DEADLINE_MS = 4 * 60_000;
 
 export function safeFileName(parts: (string | undefined)[]): string {
@@ -37,24 +37,34 @@ async function renderJobToPdf(
     ]);
     if (!layout) throw new Error(`Layout ${payload.layoutId} no longer exists`);
 
+    const maxRoles =
+      layout.component_key === "ats-resume"
+        ? base.experience.length
+        : layout.guidelines.validation.maxExperienceItems;
+
     const data = applyTailoredResume(base, payload.tailoredResume, {
-      maxRoles: layout.guidelines.validation.maxExperienceItems,
+      maxRoles,
       maxBullets: Math.min(
         layout.guidelines.validation.maxBulletsPerRole,
         layout.guidelines.formatting.layout.maxBulletsPerJob,
       ),
     });
+
     const highlightedSkills = layout.guidelines.contentEmphasis.skillsStrategy
       .highlightRequired
       ? payload.tailoredResume.highlightedSkills
       : [];
 
-    const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
+    const renderer = getResumePdfRenderer(layout.component_key);
+    const { buffer, fitReport } = await renderer.render({
+      data,
+      layout,
       mode: "tailored",
       highlightedSkills,
       deadlineAt: Date.now() + WORKER_RENDER_DEADLINE_MS,
     });
-    return { buffer, fitReport: fitReport as unknown as Record<string, unknown> | null };
+
+    return { buffer: Buffer.from(buffer), fitReport };
   }
 
   const payload = coverLetterRenderJobPayloadSchema.parse(job.payload);
@@ -90,10 +100,6 @@ export async function processRenderJob(jobId: string): Promise<void> {
     const objectKey = `render-jobs/${jobId}.pdf`;
     await mediaStore.uploadObject(new Uint8Array(buffer), objectKey, "application/pdf");
     await renderJobStore.markReady(jobId, objectKey, fitReport);
-    // Degraded (2-page) output is a correctness signal worth alarming on —
-    // matches the canonical rebuild Lambda's convention (apps/web) so both
-    // feed the same shared AppErrors metric (ADR 0002: symptom-based
-    // observability, no new per-resource alarms).
     if (fitReport && "degraded" in fitReport && fitReport.degraded) {
       logger.error("render job completed degraded (did not fit one page)", {
         jobId,

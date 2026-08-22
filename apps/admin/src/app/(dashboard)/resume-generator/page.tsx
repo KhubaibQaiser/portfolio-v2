@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getContentRepository } from "@portfolio/data";
 import { getResumeData } from "@portfolio/shared/resume-data";
-import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
+import { pickAdminResumeGeneratorDefaultLayout } from "@/lib/resume-ai/pick-admin-default-layout";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { GeneratorClient } from "./_components/generator-client";
@@ -61,7 +61,7 @@ export default async function ResumeGeneratorPage() {
     layoutId: r.layout_id,
   }));
 
-  const defaultLayoutId = pickDefaultResumeLayout(layouts)?.id ?? "";
+  const defaultLayoutId = pickAdminResumeGeneratorDefaultLayout(layouts)?.id ?? "";
 
   return (
     <>

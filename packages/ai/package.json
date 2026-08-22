@@ -27,6 +27,7 @@
     "./guardrails/fabrication-check": "./src/guardrails/fabrication-check.ts",
     "./guardrails/ats-refine": "./src/guardrails/ats-refine.ts",
     "./policy/resume-generation-policy": "./src/policy/resume-generation-policy.ts",
+    "./policy/ats-resume-content-rules": "./src/policy/ats-resume-content-rules.ts",
     "./load-api-keys": "./src/load-api-keys.ts"
   },
   "scripts": {

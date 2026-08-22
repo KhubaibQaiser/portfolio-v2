@@ -18,7 +18,37 @@ export type ResumePromptOptions = {
   retryReason?: string;
 };
 
+function isAtsResumeGuidelines(guidelines?: VariantGuidelines): boolean {
+  return (
+    guidelines?.formatting.layout.columnLayout === "single" &&
+    guidelines?.validation.maxPageCount === 1 &&
+    guidelines?.contentEmphasis.experienceStrategy.filterOutIrrelevant === false
+  );
+}
+
+function atsOutputShape(facts: CandidateFacts, guidelines: VariantGuidelines): string {
+  const roleCount = facts.experienceTimeline.length;
+  const maxBullets = Math.min(
+    guidelines.validation.maxBulletsPerRole,
+    guidelines.formatting.layout.maxBulletsPerJob,
+  );
+  return `OUTPUT SHAPE (ATS Resume layout):
+- Return JSON matching the provided schema exactly.
+- Include ALL ${roleCount} experience roles from the fact sheet. Never drop a role.
+- summary: 2 sentences, max 450 characters, terminal punctuation. No markdown bold.
+- titleOverride: null or exactly "Senior Software Engineer" or "Senior Fullstack Engineer".
+- experiences: all roles, newest-first. Max ${maxBullets} bullets per role (trim oldest roles first if needed).
+- bullets: XYZ formula, leadership-as-subject, max ~22 words, end with a period. No **bold**.
+- skills: reorder for JD; max 8 categories, 8 items per category. One allowed hyphenated JD keyword in skills if needed.
+- highlightedSkills: use [] for ATS layout (no skill highlighting).
+- keywords: max 25 atomic ATS terms from fact sheet only.
+- Return every schema key.`;
+}
+
 function outputShape(facts: CandidateFacts, guidelines?: VariantGuidelines): string {
+  if (guidelines && isAtsResumeGuidelines(guidelines)) {
+    return atsOutputShape(facts, guidelines);
+  }
   const maxRoles = guidelines?.validation.maxExperienceItems ?? 5;
   const maxBullets = guidelines
     ? Math.min(

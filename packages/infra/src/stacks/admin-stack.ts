@@ -18,8 +18,6 @@ export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
   /** Absolute path to apps/admin/.open-next. */
   openNextDir: string;
-  /** Absolute path to apps/admin's render-job worker Lambda entry (TS). */
-  renderJobWorkerEntry: string;
   /** Absolute path to apps/admin's render-job DLQ handler Lambda entry (TS). */
   renderJobDlqHandlerEntry: string;
   /** Absolute path to apps/admin's generation-job worker Lambda entry (TS). */
@@ -30,6 +28,8 @@ export type AdminStackProps = cdk.StackProps & {
   depsLockFilePath: string;
   /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
   resumeFontsDir: string;
+  /** Absolute path to monorepo root (Docker build context for render worker image). */
+  repoRoot: string;
   /** Dns/Cert stack constructs, only present when `config.domainEnabled`. */
   hostedZone?: route53.IHostedZone;
   certificate?: acm.ICertificate;
@@ -102,33 +102,14 @@ export class AdminStack extends cdk.Stack {
       deadLetterQueue: { queue: renderJobDlq, maxReceiveCount: 3 },
     });
 
-    const renderJobBundling: nodeLambda.BundlingOptions = {
-      // Bundle the AWS SDK too instead of relying on the runtime-provided
-      // version, per AWS's own guidance, so this Lambda's SDK version always
-      // matches what the rest of the monorepo was built and tested against.
-      externalModules: [],
-      // @react-pdf/renderer needs the actual .ttf files on disk at runtime
-      // (esbuild only bundles the JS import graph, not binary assets) —
-      // registerResumePdfFonts() falls back to `${cwd}/public/fonts/*`,
-      // which is `/var/task/public/fonts/*` for a Lambda.
-      commandHooks: {
-        beforeBundling: () => [],
-        beforeInstall: () => [],
-        afterBundling: (_inputDir: string, outputDir: string) => [
-          `mkdir -p "${outputDir}/public/fonts"`,
-          `cp "${props.resumeFontsDir}"/*.ttf "${outputDir}/public/fonts/"`,
-        ],
-      },
-    };
-
-    const renderJobWorkerFn = new nodeLambda.NodejsFunction(this, "RenderJobWorkerFn", {
-      entry: props.renderJobWorkerEntry,
-      depsLockFilePath: props.depsLockFilePath,
-      runtime: lambda.Runtime.NODEJS_22_X,
+    const renderJobWorkerFn = new lambda.DockerImageFunction(this, "RenderJobWorkerFn", {
+      code: lambda.DockerImageCode.fromImageAsset(props.repoRoot, {
+        file: "packages/infra/docker/render-job-worker/Dockerfile",
+        exclude: ["node_modules", ".git", "**/.next", "**/.turbo", "**/dist"],
+      }),
       architecture: lambda.Architecture.ARM_64,
       memorySize: 3008,
       timeout: cdk.Duration.seconds(300),
-      bundling: renderJobBundling,
       logGroup: new logs.LogGroup(this, "RenderJobWorkerFnLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,
         removalPolicy: cdk.RemovalPolicy.DESTROY,

@@ -63,6 +63,7 @@ export {
   resumeLayoutComponentKeyEnum,
   CLASSIC_LAYOUT_ID,
   MODERN_BLUE_LAYOUT_ID,
+  ATS_RESUME_LAYOUT_ID,
   pickDefaultResumeLayout,
   type ResumeLayoutFormData,
   type ResumeLayout,
@@ -72,8 +73,10 @@ export {
 export {
   classicGuidelines,
   modernBlueGuidelines,
+  atsResumeGuidelines,
   classicLayoutForm,
   modernBlueLayoutForm,
+  atsResumeLayoutForm,
   cloneLayoutForm,
   normalizeResumeLayoutGuidelines,
 } from "./resume-layout-defaults";

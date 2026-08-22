@@ -93,10 +93,6 @@ const admin = new AdminStack(app, `${config.appName}-Admin`, {
   config,
   crossRegionReferences: true,
   openNextDir: path.join(repoRoot, "apps/admin/.open-next"),
-  renderJobWorkerEntry: path.join(
-    repoRoot,
-    "apps/admin/src/lambda/render-job-worker/index.ts",
-  ),
   renderJobDlqHandlerEntry: path.join(
     repoRoot,
     "apps/admin/src/lambda/render-job-dlq-handler/index.ts",
@@ -111,6 +107,7 @@ const admin = new AdminStack(app, `${config.appName}-Admin`, {
   ),
   depsLockFilePath: path.join(repoRoot, "pnpm-lock.yaml"),
   resumeFontsDir: path.join(repoRoot, "packages/ui/src/resume-pdf/fonts"),
+  repoRoot,
   ...domainProps,
   description: "Admin dashboard (OpenNext on Lambda + CloudFront)",
 });

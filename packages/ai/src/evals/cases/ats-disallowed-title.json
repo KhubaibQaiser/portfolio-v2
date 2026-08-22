@@ -1,0 +1,26 @@
+{
+  "id": "ats-disallowed-title",
+  "description": "Rejects ATS resume titleOverride that mirrors a JD title",
+  "guidelines": "ats-resume",
+  "expect": "fail",
+  "expectViolationIncludes": "titleOverride must be one of",
+  "modelOutput": {
+    "summary": "Senior engineer building reliable React and TypeScript products with clear customer impact.",
+    "titleOverride": "Staff Platform Engineer",
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": [],
+    "experiences": [
+      {
+        "experienceId": "experience-uuid",
+        "bullets": [
+          {
+            "experienceId": "experience-uuid",
+            "sourceBulletIndex": 0,
+            "text": "Built reliable React products for customers."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "TypeScript"] }]
+  }
+}

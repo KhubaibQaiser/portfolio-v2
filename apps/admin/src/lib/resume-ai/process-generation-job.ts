@@ -115,6 +115,7 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       wrappedJobDescription: wrapUntrusted(payload.jdText),
       facts,
       guidelines: layout.guidelines,
+      layoutComponentKey: layout.component_key,
       signal: requestDeadline,
       deadlineAt: generationStartedAt + WORKER_GENERATION_DEADLINE_MS - PERSIST_BUFFER_MS,
       company: payload.company,

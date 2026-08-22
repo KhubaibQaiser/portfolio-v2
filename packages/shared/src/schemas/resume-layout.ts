@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const resumeLayoutComponentKeyEnum = z.enum(["classic", "modern-blue"]);
+export const resumeLayoutComponentKeyEnum = z.enum([
+  "classic",
+  "modern-blue",
+  "ats-resume",
+]);
 export type ResumeLayoutComponentKey = z.infer<typeof resumeLayoutComponentKeyEnum>;
 
 export const resumeLayoutPageSizeEnum = z.enum(["A4", "LETTER"]);
@@ -134,6 +138,7 @@ export type ResumeLayout = z.infer<typeof resumeLayoutRowSchema>;
 
 export const CLASSIC_LAYOUT_ID = "layout-classic";
 export const MODERN_BLUE_LAYOUT_ID = "layout-modern-blue";
+export const ATS_RESUME_LAYOUT_ID = "layout-ats-resume";
 
 export function pickDefaultResumeLayout(layouts: ResumeLayout[]): ResumeLayout | null {
   if (layouts.length === 0) return null;
