@@ -6,6 +6,7 @@ import {
 import type { ContentRepository } from "./ports/content-repository";
 import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
 import { filterProjectsForResume } from "./schemas/project";
+import type { VariantGuidelines } from "./schemas/resume-layout";
 
 /** The read slice of {@link ContentRepository} the resume loader needs. */
 export type ResumeContentSource = Pick<
@@ -251,6 +252,38 @@ export function getValidatedHighlightedSkills(
     if (canonical) highlighted.add(canonical);
   }
   return [...highlighted];
+}
+
+/**
+ * Apply layout guideline caps to CMS resume data for a non-AI render.
+ * Caps roles, recency-weighted bullets, and skill items per category.
+ * Does not mutate the input.
+ */
+export function projectCanonicalResume(
+  data: ResumeData,
+  guidelines: VariantGuidelines,
+  options: { maxSkillItemsPerCategory?: number } = {},
+): ResumeData {
+  const maxRoles = guidelines.validation.maxExperienceItems;
+  const maxBullets = Math.min(
+    guidelines.validation.maxBulletsPerRole,
+    guidelines.formatting.layout.maxBulletsPerJob,
+  );
+  const maxSkillItems = options.maxSkillItemsPerCategory ?? DEFAULT_MAX_SKILL_ITEMS;
+  const sortedExperience = sortDatedExperiencesByRecency(data.experience).slice(
+    0,
+    maxRoles > 0 ? maxRoles : undefined,
+  );
+  const experience = allocateRecencyBulletBudgets(
+    sortedExperience,
+    maxBullets,
+  ).experiences;
+  const skills = data.skills.map((group) => ({
+    ...group,
+    items: group.items.slice(0, maxSkillItems),
+  }));
+
+  return { ...data, experience, skills };
 }
 
 /**

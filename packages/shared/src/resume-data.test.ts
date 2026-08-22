@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { filterExperienceForResume } from "./schemas/experience";
 import { filterProjectsForResume } from "./schemas/project";
+import { classicGuidelines } from "./schemas/resume-layout-defaults";
 import {
   applyTailoredResume,
   formatExpLocation,
   getResumeData,
   getValidatedHighlightedSkills,
+  projectCanonicalResume,
   stableExperienceIndex,
   type ResumeContentSource,
   type ResumeData,
@@ -387,6 +389,64 @@ describe("applyTailoredResume", () => {
       "Beta Co",
     ]);
     expect(result.experience.map((item) => item.bullets.length)).toEqual([5, 4]);
+  });
+});
+
+describe("projectCanonicalResume", () => {
+  it("caps roles, recency-weighted bullets, and skills without mutating input", () => {
+    const source: ResumeData = {
+      ...base,
+      experience: [
+        {
+          ...base.experience[0]!,
+          bullets: ["A1", "A2", "A3", "A4", "A5", "A6"],
+        },
+        {
+          ...base.experience[1]!,
+          bullets: ["B1", "B2", "B3", "B4", "B5"],
+        },
+        {
+          ...base.experience[2]!,
+          bullets: ["C1", "C2", "C3"],
+        },
+      ],
+      skills: [
+        {
+          category: "Frontend",
+          items: Array.from({ length: 14 }, (_, index) => `Skill ${index + 1}`),
+        },
+      ],
+    };
+    const guidelines = classicGuidelines();
+    guidelines.validation.maxExperienceItems = 2;
+    guidelines.validation.maxBulletsPerRole = 5;
+    guidelines.formatting.layout.maxBulletsPerJob = 5;
+
+    const result = projectCanonicalResume(source, guidelines);
+
+    expect(result.experience.map((item) => item.company)).toEqual([
+      "Alpha Co",
+      "Beta Co",
+    ]);
+    expect(result.experience.map((item) => item.bullets.length)).toEqual([5, 4]);
+    expect(result.skills[0]!.items).toHaveLength(10);
+    expect(source.experience).toHaveLength(3);
+    expect(source.experience[0]!.bullets).toHaveLength(6);
+    expect(source.skills[0]!.items).toHaveLength(14);
+  });
+
+  it("uses the tighter of maxBulletsPerRole and maxBulletsPerJob", () => {
+    const source: ResumeData = {
+      ...base,
+      experience: [{ ...base.experience[0]!, bullets: ["1", "2", "3", "4", "5"] }],
+    };
+    const guidelines = classicGuidelines();
+    guidelines.validation.maxBulletsPerRole = 5;
+    guidelines.formatting.layout.maxBulletsPerJob = 2;
+
+    const result = projectCanonicalResume(source, guidelines);
+
+    expect(result.experience[0]!.bullets).toEqual(["1", "2"]);
   });
 });
 

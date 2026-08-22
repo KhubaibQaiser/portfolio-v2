@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
 import { GET } from "@/app/api/pdf/route";
@@ -12,8 +13,12 @@ const layout = { id: "modern-blue" };
 vi.mock("@portfolio/ui/resume-pdf", () => ({
   renderResumePdfBuffer: vi.fn(),
 }));
+vi.mock("@portfolio/shared/resume-data", () => ({
+  projectCanonicalResume: vi.fn((data: unknown) => data),
+}));
 vi.mock("@portfolio/shared/schemas", () => ({
   pickDefaultResumeLayout: vi.fn((layouts: unknown[]) => layouts[0] ?? null),
+  classicGuidelines: vi.fn(() => ({})),
 }));
 vi.mock("@portfolio/data", () => ({
   getContentRepository: vi.fn(() => ({
@@ -75,6 +80,7 @@ describe("public PDF route", () => {
     expect(response.status).toBe(200);
     expect(renderResumePdfBuffer).toHaveBeenCalledWith(resumeData, layout, {
       mode: "canonical",
+      fit: "guidelines-only",
       deadlineAt: expect.any(Number),
     });
     expect(response.headers.get("cache-control")).toContain("s-maxage=10");
@@ -112,5 +118,13 @@ describe("public PDF route", () => {
 
     expect(response.status).toBe(200);
     expect(renderResumePdfBuffer).toHaveBeenCalled();
+  });
+
+  it("does not import @portfolio/ai", async () => {
+    const source = await readFile(
+      new URL("../app/api/pdf/route.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toMatch(/from\s+["']@portfolio\/ai/);
   });
 });

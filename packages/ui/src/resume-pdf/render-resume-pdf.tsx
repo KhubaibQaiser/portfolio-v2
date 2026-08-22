@@ -91,6 +91,7 @@ export async function renderResumePdfBuffer(
   options: ResumePdfRenderOptions = {},
 ): Promise<RenderedResumePdf> {
   const mode = options.mode ?? "canonical";
+  const fit = options.fit ?? "one-page";
   if (layout?.component_key !== "modern-blue") {
     return {
       buffer: await renderToBuffer(
@@ -98,6 +99,26 @@ export async function renderResumePdfBuffer(
       ),
       fitReport: null,
     };
+  }
+
+  if (fit === "guidelines-only") {
+    const projection = projectModernBlueResume(data, layout.guidelines, { mode });
+    const buffer = await renderToBuffer(
+      renderResumeDocument(projection.data, layout, {
+        ...options,
+        mode,
+        density: "reference",
+      }),
+    );
+    const pageCount = await getPageCount(buffer);
+    projection.report.mode = mode;
+    projection.report.density = "reference";
+    projection.report.pageCount = pageCount;
+    projection.report.renderAttempts = 1;
+    projection.report.fallbackSteps = [];
+    projection.report.degraded = pageCount > layout.guidelines.validation.maxPageCount;
+    syncModernBlueFitReport(projection, projection.data);
+    return { buffer, fitReport: projection.report };
   }
 
   const { deadlineAt } = options;

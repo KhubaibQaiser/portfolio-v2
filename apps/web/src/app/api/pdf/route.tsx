@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
-import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
+import { projectCanonicalResume } from "@portfolio/shared/resume-data";
+import { classicGuidelines, pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { getContentRepository } from "@portfolio/data";
 import { getMediaStore } from "@portfolio/data/media";
 import { getResumeData } from "@/lib/resume-data";
@@ -47,11 +48,12 @@ export async function GET(request: Request) {
     }
 
     const repo = getContentRepository();
-    const [data, layouts] = await Promise.all([
+    const [raw, layouts] = await Promise.all([
       getResumeData(),
       repo.getResumeLayouts().catch(() => []),
     ]);
     const layout = pickDefaultResumeLayout(layouts);
+    const data = projectCanonicalResume(raw, layout?.guidelines ?? classicGuidelines());
     const filename = `${slug(data.name)}-${slug(data.title)}-Resume.pdf`;
     const contentHash = hashCanonicalResumeContent(data, layout);
 
@@ -77,8 +79,10 @@ export async function GET(request: Request) {
       });
     }
 
+    // CMS data + layout guideline caps only — no model calls on this path.
     const { buffer, fitReport } = await renderResumePdfBuffer(data, layout, {
       mode: "canonical",
+      fit: "guidelines-only",
       deadlineAt: Date.now() + RENDER_DEADLINE_MS,
     });
     const bytes = new Uint8Array(buffer);

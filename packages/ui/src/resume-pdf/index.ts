@@ -11,6 +11,7 @@ export {
 export type { FitReport } from "./fit-modern-blue-resume";
 export type {
   ResumeDocumentRenderOptions,
+  ResumePdfFit,
   ResumePdfMode,
   ResumePdfRenderOptions,
 } from "./resume-render-options";
