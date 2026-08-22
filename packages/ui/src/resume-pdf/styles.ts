@@ -58,14 +58,15 @@ export const baseStyles = {
     fontSize: 9.5,
     color: COLORS.secondary,
   },
+  // No fontSize here: it must inherit from the enclosing headerContact View
+  // (react-pdf cascades fontSize down the tree), so a layout's contact size
+  // guideline stays in effect for links/separators without duplicating it.
   headerLink: {
     color: COLORS.accent,
     textDecoration: "none",
-    fontSize: 9.5,
   },
   headerSep: {
     color: COLORS.subtle,
-    fontSize: 9.5,
   },
 
   section: { marginTop: 13 },
