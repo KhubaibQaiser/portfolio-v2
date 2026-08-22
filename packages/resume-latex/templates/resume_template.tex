@@ -87,20 +87,22 @@
 
 % --- Section heading (uppercase, bold, bottom border) ---
 % CSS: font-size 10.3pt, weight 700, uppercase, letter-spacing 0.5px,
-%      border-bottom 1px solid #1a1a1a, padding-bottom 2px,
+%      border-bottom 0.85pt solid rulecolor, padding-bottom ~2px,
 %      margin-top 10px (0 for first heading), margin-bottom 5px
+% TeX note: negative vspace after heading positions the rule under the line
+% box; -4pt overlaps glyphs on Carlito — use -3.85pt with 10.8pt leading.
 \newcommand{\sectionheading}[1]{%
     \par\vspace{3.2pt}
-    {\headingfont\fontsize{10.3pt}{12pt}\selectfont\bfseries\MakeUppercase{#1}}\par
-    \vspace{-4pt}
+    {\headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}}\par
+    \vspace{-3.85pt}
     {\color{rulecolor}\hrule height 0.85pt}
     \vspace{1.7pt}
 }
 % First section heading on the page must have NO top margin — use this variant
 % immediately after \resumehrule for the first section only:
 \newcommand{\sectionheadingfirst}[1]{%
-    {\headingfont\fontsize{10.3pt}{12pt}\selectfont\bfseries\MakeUppercase{#1}}\par
-    \vspace{-4pt}
+    {\headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}}\par
+    \vspace{-3.85pt}
     {\color{rulecolor}\hrule height 0.85pt}
     \vspace{5pt}
 }
