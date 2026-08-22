@@ -80,31 +80,35 @@
 % --- Horizontal rule under header ---
 % CSS: 1.3px solid #1a1a1a, margin 7px 0 9px
 \newcommand{\resumehrule}{%
-    \par\vspace{3pt}
+    \par\vspace{2.5pt}
     {\color{rulecolor}\hrule height 1.1pt}
-    \vspace{4pt}
+    \vspace{3pt}
 }
 
 % --- Section heading (uppercase, bold, bottom border) ---
 % CSS: font-size 10.3pt, weight 700, uppercase, letter-spacing 0.5px,
 %      border-bottom 0.85pt solid rulecolor, padding-bottom ~2px,
 %      margin-top 10px (0 for first heading), margin-bottom 5px
-% TeX note: negative vspace after heading positions the rule under the line
-% box; -4pt overlaps glyphs on Carlito — use -3.9pt with 10.8pt leading.
 \newcommand{\sectionheading}[1]{%
-    \par\vspace{3.2pt}
-    {\headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}}\par
-    \vspace{-3.9pt}
-    {\color{rulecolor}\hrule height 0.85pt}
-    \vspace{1.7pt}
+    \par\vspace{3.2pt}%
+    \noindent
+    \vbox{%
+        \headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}%
+        \par\nobreak\vskip 1.5pt\nobreak
+        \color{rulecolor}\hrule height 0.85pt width \linewidth
+    }%
+    \vspace{0.8pt}%
 }
 % First section heading on the page must have NO top margin — use this variant
 % immediately after \resumehrule for the first section only:
 \newcommand{\sectionheadingfirst}[1]{%
-    {\headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}}\par
-    \vspace{-3.9pt}
-    {\color{rulecolor}\hrule height 0.85pt}
-    \vspace{5pt}
+    \noindent
+    \vbox{%
+        \headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}%
+        \par\nobreak\vskip 1.5pt\nobreak
+        \color{rulecolor}\hrule height 0.85pt width \linewidth
+    }%
+    \vspace{2pt}%
 }
 
 % --- Summary paragraph ---
@@ -119,23 +123,23 @@
 % --- Skills line (category label + comma list) ---
 % CSS: font-size 9.2pt, line-height 1.5, margin-bottom 3px; label is bold
 \newcommand{\skillsline}[2]{%
-    \par\vspace{1.2pt}
+    \par\vspace{0.9pt}
     {\fontsize{8.9pt}{10.9pt}\selectfont\color{textcolor}\textbf{#1:} #2}
 }
 
 % --- Role block wrapper (adds margin-bottom 8px after each role) ---
-\newenvironment{roleblock}{\par\vspace{1.4pt}}{}
+\newenvironment{roleblock}{\par\vspace{0.9pt}}{}
 
 % --- Role title line ---
 % CSS: font-size 10pt, weight 700, margin-bottom 1px
 \newcommand{\roletitle}[1]{%
-    {\fontsize{9.8pt}{10.8pt}\selectfont\bfseries\color{textcolor} #1}\par\vspace{0.4pt}
+    {\fontsize{9.8pt}{10.8pt}\selectfont\bfseries\color{textcolor} #1}\par\vspace{0.3pt}
 }
 
 % --- Role meta line (Company | Location | Dates) ---
 % CSS: font-size 8.8pt, italic, color #2b2b2b, margin-bottom 3px
 \newcommand{\rolemeta}[1]{%
-    {\fontsize{8.6pt}{9.3pt}\selectfont\itshape\color{metacolor} #1}\par\vspace{0.6pt}
+    {\fontsize{8.6pt}{9.3pt}\selectfont\itshape\color{metacolor} #1}\par\vspace{0.45pt}
 }
 
 % --- Bullet list (XYZ-formula achievement bullets) ---
@@ -145,7 +149,7 @@
     label=\textbullet,
     leftmargin=15pt,
     labelsep=6pt,
-    itemsep=0.6pt,
+    itemsep=0.45pt,
     topsep=0pt,
     parsep=0pt,
     partopsep=0pt,
@@ -155,13 +159,13 @@
 % --- Education / Languages line entries ---
 % CSS: edu-line 9.4pt margin-bottom 1px; edu-school 8.7pt italic muted
 \newcommand{\eduline}[1]{%
-    {\fontsize{9.4pt}{12pt}\selectfont\color{textcolor} #1}\par\vspace{1pt}
+    {\fontsize{9.4pt}{12pt}\selectfont\color{textcolor} #1}\par\vspace{0.6pt}
 }
 \newcommand{\eduschool}[1]{%
     {\fontsize{8.7pt}{11pt}\selectfont\itshape\color{mutedcolor} #1}\par
 }
 \newcommand{\langline}[1]{%
-    {\fontsize{9.3pt}{12pt}\selectfont\color{textcolor} #1}\par\vspace{1pt}
+    {\fontsize{9.3pt}{12pt}\selectfont\color{textcolor} #1}\par
 }
 
 % ============================================================================
@@ -226,7 +230,6 @@ distributed agile team experience across US, EU, and APAC time zones.%
 \item Owned the AWS serverless backend architecture (CDK, Lambda, API Gateway) on Infrastructure as Code, powering AI generated content across five embed types.
 \item Directed Embeds, Shopsense's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5\% CTR.
 \item Designed and launched Shopsense's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.
-\item Elevated the team's engineering standard by establishing unit and smoke testing paired with structured code review, mentoring engineers, and pioneering adoption of AI coding tools (Claude, Cursor) within an architecture first workflow.
 \end{resumebullets}
 \end{roleblock}
 
@@ -243,7 +246,6 @@ distributed agile team experience across US, EU, and APAC time zones.%
 \rolemeta{GudangAda \textbar\ Jakarta, Indonesia (Remote) \textbar\ 09/2020 - 01/2023}
 \begin{resumebullets}
 \item Spearheaded GudangAda's first companywide design system, designing a private npm package adopted by 40 engineers across 4 product teams, then drove architecture and CI/CD automation for a new PWA powered seller web app.
-\item Rebuilt the multilingual company profile app with Next.js, Contentful CMS, and i18n, lifting Core Web Vitals by 70\%.
 \end{resumebullets}
 \end{roleblock}
 

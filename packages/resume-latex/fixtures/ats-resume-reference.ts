@@ -39,7 +39,6 @@ export const atsResumeReferenceData: ResumeData = {
         "Owned the AWS serverless backend architecture (CDK, Lambda, API Gateway) on Infrastructure as Code, powering AI generated content across five embed types.",
         "Directed Embeds, Shopsense's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5% CTR.",
         "Designed and launched Shopsense's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.",
-        "Elevated the team's engineering standard by establishing unit and smoke testing paired with structured code review, mentoring engineers, and pioneering adoption of AI coding tools (Claude, Cursor) within an architecture first workflow.",
       ],
       tech: "",
     },
@@ -66,7 +65,6 @@ export const atsResumeReferenceData: ResumeData = {
       contractType: "Full-time",
       bullets: [
         "Spearheaded GudangAda's first companywide design system, designing a private npm package adopted by 40 engineers across 4 product teams, then drove architecture and CI/CD automation for a new PWA powered seller web app.",
-        "Rebuilt the multilingual company profile app with Next.js, Contentful CMS, and i18n, lifting Core Web Vitals by 70%.",
       ],
       tech: "",
     },
