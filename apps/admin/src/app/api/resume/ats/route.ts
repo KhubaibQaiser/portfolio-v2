@@ -170,6 +170,7 @@ export async function POST(request: Request) {
     sanitizeLlmObject(body.resume),
     facts,
     layout.guidelines,
+    { layoutComponentKey: layout.component_key },
   ).resume;
 
   const wrappedJd = wrapUntrusted(

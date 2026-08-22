@@ -21,6 +21,7 @@
     "@portfolio/ai": "workspace:*",
     "@portfolio/data": "workspace:*",
     "@portfolio/observability": "workspace:*",
+    "@portfolio/resume-latex": "workspace:*",
     "@portfolio/shared": "workspace:*",
     "@portfolio/ui": "workspace:*",
     "@react-pdf/renderer": "^4.4.1",

@@ -11,8 +11,10 @@ import type {
   Testimonial,
 } from "@portfolio/shared/types";
 import {
+  ATS_RESUME_LAYOUT_ID,
   CLASSIC_LAYOUT_ID,
   MODERN_BLUE_LAYOUT_ID,
+  atsResumeLayoutForm,
   classicLayoutForm,
   modernBlueLayoutForm,
 } from "@portfolio/shared/schemas";
@@ -114,6 +116,13 @@ export const resumeLayoutFixtures: ResumeLayout[] = [
   {
     id: MODERN_BLUE_LAYOUT_ID,
     ...modernBlueLayoutForm(),
+    created_at: TS,
+    updated_at: TS,
+    revision: 1,
+  },
+  {
+    id: ATS_RESUME_LAYOUT_ID,
+    ...atsResumeLayoutForm(),
     created_at: TS,
     updated_at: TS,
     revision: 1,

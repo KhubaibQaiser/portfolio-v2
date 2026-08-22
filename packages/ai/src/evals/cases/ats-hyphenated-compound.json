@@ -1,0 +1,26 @@
+{
+  "id": "ats-hyphenated-compound",
+  "description": "Rejects hyphenated compounds outside the ATS allowlist in bullet prose",
+  "guidelines": "ats-resume",
+  "expect": "fail",
+  "expectViolationIncludes": "hyphenated compounds in text",
+  "modelOutput": {
+    "summary": "Senior engineer building event driven React platforms with clear customer impact.",
+    "titleOverride": "Senior Fullstack Engineer",
+    "keywords": ["React", "TypeScript"],
+    "highlightedSkills": [],
+    "experiences": [
+      {
+        "experienceId": "experience-uuid",
+        "bullets": [
+          {
+            "experienceId": "experience-uuid",
+            "sourceBulletIndex": 0,
+            "text": "Built cross-platform React products for customers."
+          }
+        ]
+      }
+    ],
+    "skills": [{ "category": "Frontend & UI", "items": ["React", "TypeScript"] }]
+  }
+}

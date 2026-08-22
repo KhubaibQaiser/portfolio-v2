@@ -35,6 +35,8 @@ yarn-error.log*
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/skills/
+!.cursor/skills/**
 !.cursor/mcp.json
 
 # OS
