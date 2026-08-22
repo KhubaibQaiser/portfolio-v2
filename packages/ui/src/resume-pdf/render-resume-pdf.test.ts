@@ -6,6 +6,7 @@ import { getResumeData } from "../../../shared/src/resume-data";
 import {
   classicLayoutForm,
   modernBlueLayoutForm,
+  pickDefaultResumeLayout,
   type ResumeLayout,
   type ResumeLayoutFormData,
 } from "../../../shared/src/schemas";
@@ -30,6 +31,30 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
     const extracted = await extractText(document, { mergePages: true });
     return Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text;
+  } finally {
+    await document.destroy();
+  }
+}
+
+/**
+ * Real rendered font size (in PDF points) of the first text run containing
+ * `needle`, read from pdf.js's glyph transform matrix. Unlike scanning raw
+ * PDF content streams (fragile: `TJ` kerning arrays split literals across
+ * multiple show-text operators), this reflects what actually got drawn.
+ */
+async function renderedFontSize(buffer: Buffer, needle: string): Promise<number> {
+  const document = await getDocumentProxy(new Uint8Array(buffer));
+  try {
+    for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
+      const page = await document.getPage(pageNumber);
+      const { items } = await page.getTextContent();
+      const match = items.find(
+        (item): item is typeof item & { str: string; transform: number[] } =>
+          "str" in item && item.str.includes(needle),
+      );
+      if (match) return Math.hypot(match.transform[2]!, match.transform[3]!);
+    }
+    throw new Error(`No rendered text run contains "${needle}"`);
   } finally {
     await document.destroy();
   }
@@ -292,5 +317,48 @@ describe("Modern Blue PDF rendering", () => {
     expect(text.indexOf("Frontend & UI:")).toBeLessThan(
       text.indexOf("Bachelor's Computer Science"),
     );
+  }, 30_000);
+
+  it("renders the Classic header contact row at the guideline's contact size", async () => {
+    const classic = layoutFromForm("classic-contact-size", classicLayoutForm());
+    const expected = classic.guidelines.formatting.typography.bodySizes.contact;
+    const result = await renderResumePdfBuffer(modernBlueReferenceResume, classic);
+
+    const locationSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
+    const emailSize = await renderedFontSize(result.buffer, "khubaib.dev@gmail.com");
+
+    expect(locationSize).toBeCloseTo(expected, 1);
+    expect(emailSize).toBeCloseTo(expected, 1);
+  }, 30_000);
+
+  it("renders the default /api/pdf layout (fixture repo, no cache) at the reduced contact size", async () => {
+    // Mirrors apps/web's /api/pdf route: fixture ContentRepository, the
+    // default resume layout (Classic, is_default: true), and no cache layer
+    // in front of the render — isolates whether the guideline change reaches
+    // the actual public PDF-download path, independent of DB/S3 staleness.
+    const repo = createFixtureContentRepository();
+    const [data, layouts] = await Promise.all([
+      getResumeData(repo),
+      repo.getResumeLayouts(),
+    ]);
+    const layout = pickDefaultResumeLayout(layouts);
+    expect(layout?.component_key).toBe("classic");
+
+    const result = await renderResumePdfBuffer(data, layout);
+    const locationSize = await renderedFontSize(result.buffer, data.location);
+
+    expect(locationSize).toBeCloseTo(8.5, 1);
+  }, 30_000);
+
+  it("renders the Modern Blue header contact row at the guideline's contact size", async () => {
+    const modern = layoutFromForm("modern-blue-contact-size", modernBlueLayoutForm());
+    const expected = modern.guidelines.formatting.typography.bodySizes.contact;
+    const result = await renderResumePdfBuffer(modernBlueReferenceResume, modern);
+
+    const locationSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
+    const emailSize = await renderedFontSize(result.buffer, "khubaib.dev@gmail.com");
+
+    expect(locationSize).toBeCloseTo(expected, 1);
+    expect(emailSize).toBeCloseTo(expected, 1);
   }, 30_000);
 });
