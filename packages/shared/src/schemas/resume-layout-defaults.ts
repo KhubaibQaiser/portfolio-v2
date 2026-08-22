@@ -123,7 +123,7 @@ export function classicGuidelines(): VariantGuidelines {
         headingFont: "Helvetica-Bold",
         bodyFont: "Helvetica",
         headingSizes: { name: 23, title: 11, section: 10.5, job: 10.5 },
-        bodySizes: { contact: 9.5, body: 9.5, meta: 9 },
+        bodySizes: { contact: 8.5, body: 9.5, meta: 9 },
       },
       spacing: {
         pageMargins: "28pt top, 32pt bottom, 32pt horizontal",

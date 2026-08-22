@@ -45,6 +45,11 @@ export function hashCanonicalResumeContent(
         data,
         layoutId: layout?.id ?? null,
         layoutVersion: layout?.version ?? null,
+        // Layout guidelines (typography, spacing, colors, ...) can change
+        // without a version bump — e.g. an admin edit to an existing row.
+        // Hashing them directly (not just the version) means the cache is
+        // never stale relative to what actually renders.
+        layoutGuidelines: layout?.guidelines ?? null,
       }),
     )
     .digest("hex");

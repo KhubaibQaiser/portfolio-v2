@@ -128,6 +128,7 @@ export function ResumeDocument({
   );
 
   const pageSize = guidelines?.formatting.layout.pageSize ?? "LETTER";
+  const contactFontSize = guidelines?.formatting.typography.bodySizes.contact ?? 9.5;
 
   const [firstExp, ...restExp] = data.experience;
   const [firstProject, ...restProjects] = data.projects;
@@ -156,7 +157,7 @@ export function ResumeDocument({
           <Text style={s.headerName}>{data.name}</Text>
           <Text style={s.headerTitle}>{data.title}</Text>
 
-          <View style={s.headerContact}>
+          <View style={[s.headerContact, { fontSize: contactFontSize }]}>
             <Text>{data.location}</Text>
             {data.phone ? (
               <>
