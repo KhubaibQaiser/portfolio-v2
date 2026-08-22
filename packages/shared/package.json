@@ -19,7 +19,8 @@
     "./recommendation-dates": "./src/recommendation-dates.ts",
     "./experience-stats": "./src/experience-stats.ts",
     "./resume-data": "./src/resume-data.ts",
-    "./resume-changes": "./src/resume-changes.ts"
+    "./resume-changes": "./src/resume-changes.ts",
+    "./resume-pdf-renderer": "./src/ports/resume-pdf-renderer.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

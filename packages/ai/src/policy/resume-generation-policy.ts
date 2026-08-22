@@ -4,9 +4,11 @@ import {
 } from "@portfolio/shared/experience-bullet-budget";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
 import type { VariantGuidelines } from "@portfolio/shared/schemas";
+import type { ResumeLayoutComponentKey } from "@portfolio/shared/schemas/resume-layout";
 
 import type { CandidateFacts } from "../context/build-candidate-facts";
 import { tailoredResumeSchema, type TailoredResume } from "../schemas/tailored-resume";
+import { isAtsResumeLayout, lintAtsResumeContent } from "./ats-resume-content-rules";
 
 export type ResumeGenerationPolicy = {
   requireSummary: boolean;
@@ -91,12 +93,25 @@ export function enforceResumeGenerationPolicy(
   candidate: unknown,
   facts: CandidateFacts,
   guidelines: VariantGuidelines,
+  options?: { layoutComponentKey?: ResumeLayoutComponentKey },
 ): { resume: TailoredResume; warnings: string[] } {
   const resume = tailoredResumeSchema.parse(candidate);
   const policy = buildResumeGenerationPolicy(guidelines);
+  const isAts = isAtsResumeLayout(options?.layoutComponentKey);
   const violations: string[] = [];
   const warnings: string[] = [];
   const canonicalFactText = facts.factSheet.toLocaleLowerCase();
+
+  const minRoles = isAts ? facts.experienceTimeline.length : policy.minRoles;
+  const maxRoles = isAts
+    ? Math.max(policy.maxRoles, facts.experienceTimeline.length)
+    : policy.maxRoles;
+
+  if (isAts) {
+    const bulletTexts = resume.experiences.flatMap((exp) => exp.bullets.map((b) => b.text));
+    const atsLint = lintAtsResumeContent(resume.summary, bulletTexts, resume.titleOverride);
+    violations.push(...atsLint.violations);
+  }
 
   if (policy.requireSummary && !resume.summary.trim()) {
     violations.push("summary is required");
@@ -167,15 +182,16 @@ export function enforceResumeGenerationPolicy(
     return [{ ...experience, ...dates }];
   });
 
-  const chronological = sortDatedExperiencesByRecency(selected).slice(0, policy.maxRoles);
-  if (selected.length > policy.maxRoles) {
-    warnings.push(`Limited experience to ${policy.maxRoles} roles for this layout.`);
+  const chronological = sortDatedExperiencesByRecency(selected);
+  const limited = isAts ? chronological : chronological.slice(0, maxRoles);
+  if (!isAts && selected.length > maxRoles) {
+    warnings.push(`Limited experience to ${maxRoles} roles for this layout.`);
   }
-  if (chronological.length < policy.minRoles) {
-    violations.push(`at least ${policy.minRoles} experience roles are required`);
+  if (limited.length < minRoles) {
+    violations.push(`at least ${minRoles} experience roles are required`);
   }
 
-  const experiences = chronological.map((experience, index) => {
+  const experiences = limited.map((experience, index) => {
     const budget = bulletBudgetForRole({
       index,
       maxBullets: policy.maxBulletsPerRole,

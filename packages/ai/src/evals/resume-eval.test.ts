@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { classicGuidelines, modernBlueGuidelines } from "@portfolio/shared/schemas";
+import { classicGuidelines, modernBlueGuidelines, atsResumeGuidelines } from "@portfolio/shared/schemas";
+import type { ResumeLayoutComponentKey } from "@portfolio/shared/schemas/resume-layout";
 import type { BuildCandidateFactsInput } from "../context/build-candidate-facts";
 import { buildCandidateFacts } from "../context/build-candidate-facts";
 import {
@@ -14,6 +15,7 @@ const CASES_DIR = path.join(import.meta.dirname, "cases");
 const GUIDELINES = {
   classic: classicGuidelines,
   "modern-blue": modernBlueGuidelines,
+  "ats-resume": atsResumeGuidelines,
 } as const;
 
 type EvalCase = {
@@ -41,11 +43,14 @@ describe("resume-ai eval suite (offline — see specs/resume-ai.md)", () => {
     it(`${c.id}: ${c.description}`, () => {
       const facts = buildCandidateFacts(c.factsInput ?? sharedFacts);
       const guidelines = GUIDELINES[c.guidelines]();
+      const layoutComponentKey: ResumeLayoutComponentKey | undefined =
+        c.guidelines === "ats-resume" ? "ats-resume" : undefined;
       const run = () => {
         const { resume } = enforceResumeGenerationPolicy(
           c.modelOutput,
           facts,
           guidelines,
+          { layoutComponentKey },
         );
         const fab = validateFabrication(resume, facts.idMap);
         if (!fab.ok) throw new ResumePolicyError(fab.offending);

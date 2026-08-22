@@ -16,3 +16,4 @@ export type {
   ResumePdfRenderOptions,
 } from "./resume-render-options";
 export { registerResumePdfFonts } from "./register-fonts";
+export { reactPdfResumeRenderer } from "./react-pdf-resume-renderer";
