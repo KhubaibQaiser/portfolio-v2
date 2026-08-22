@@ -12,8 +12,7 @@ export function trimAtsResumeForPage(
     bullets: [...exp.bullets],
   }));
 
-  const totalBullets = () =>
-    experience.reduce((sum, exp) => sum + exp.bullets.length, 0);
+  const totalBullets = () => experience.reduce((sum, exp) => sum + exp.bullets.length, 0);
 
   // Rough page budget — trim oldest roles' bullets until within budget
   const maxTotalBullets = maxBulletsPerRole * experience.length + 4;

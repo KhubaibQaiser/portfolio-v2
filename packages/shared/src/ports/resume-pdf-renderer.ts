@@ -29,7 +29,9 @@ export function registerResumePdfRenderer(renderer: ResumePdfRenderer): void {
   renderers.push(renderer);
 }
 
-export function getResumePdfRenderer(componentKey: ResumeLayoutComponentKey): ResumePdfRenderer {
+export function getResumePdfRenderer(
+  componentKey: ResumeLayoutComponentKey,
+): ResumePdfRenderer {
   const renderer = renderers.find((r) => r.supports(componentKey));
   if (!renderer) {
     throw new Error(`No ResumePdfRenderer registered for component_key: ${componentKey}`);

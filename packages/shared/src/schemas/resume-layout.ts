@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const resumeLayoutComponentKeyEnum = z.enum(["classic", "modern-blue", "ats-resume"]);
+export const resumeLayoutComponentKeyEnum = z.enum([
+  "classic",
+  "modern-blue",
+  "ats-resume",
+]);
 export type ResumeLayoutComponentKey = z.infer<typeof resumeLayoutComponentKeyEnum>;
 
 export const resumeLayoutPageSizeEnum = z.enum(["A4", "LETTER"]);

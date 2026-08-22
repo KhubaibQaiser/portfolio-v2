@@ -108,7 +108,11 @@ describe("processRenderJob", () => {
       markFailed: vi.fn().mockResolvedValue(undefined),
     };
     mocks.getRenderJobStore.mockReturnValue(store);
-    mocks.getResumeData.mockResolvedValue({ name: "Jane Doe", skills: [], experience: [] });
+    mocks.getResumeData.mockResolvedValue({
+      name: "Jane Doe",
+      skills: [],
+      experience: [],
+    });
     mocks.getResumeLayoutById.mockResolvedValue(layout);
     mocks.rendererRender.mockResolvedValue({
       buffer: Buffer.from("pdf-bytes"),
@@ -152,6 +156,8 @@ describe("processRenderJob", () => {
 
 describe("safeFileName", () => {
   it("joins sanitized parts", () => {
-    expect(safeFileName(["Jane Doe", "Engineer", "Resume"])).toBe("Jane-Doe-Engineer-Resume");
+    expect(safeFileName(["Jane Doe", "Engineer", "Resume"])).toBe(
+      "Jane-Doe-Engineer-Resume",
+    );
   });
 });

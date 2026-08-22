@@ -23,15 +23,15 @@ export async function compileXeLatex(texSource: string): Promise<XeLatexResult> 
     await writeFile(texPath, texSource, "utf8");
 
     const runXeLatex = async () => {
-      await execFileAsync("xelatex", [
-        "-interaction=nonstopmode",
-        "-halt-on-error",
-        "resume.tex",
-      ], {
-        cwd: workDir,
-        timeout: XELATEX_TIMEOUT_MS,
-        env: { ...process.env, OPENTYPE_AAT_LAYOUT: "0" },
-      });
+      await execFileAsync(
+        "xelatex",
+        ["-interaction=nonstopmode", "-halt-on-error", "resume.tex"],
+        {
+          cwd: workDir,
+          timeout: XELATEX_TIMEOUT_MS,
+          env: { ...process.env, OPENTYPE_AAT_LAYOUT: "0" },
+        },
+      );
     };
 
     await runXeLatex();

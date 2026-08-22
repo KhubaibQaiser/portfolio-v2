@@ -6,12 +6,12 @@ truth lives in vendored TeX and the golden PDF — not in
 
 ## Assets
 
-| Path | Role |
-|------|------|
-| `packages/resume-latex/templates/resume_template.tex` | Locked preamble + reference body |
-| `packages/resume-latex/fixtures/Khubaib_Qaiser_LaTeX_Template_Reference.pdf` | Golden visual output |
-| `packages/resume-latex/fixtures/Khubaib_Qaiser_LaTeX_Template_Reference-page.png` | Raster @ 150 DPI for pixel diff |
-| `packages/resume-latex/fixtures/ats-resume-reference.ts` | `ResumeData` mirroring golden content |
+| Path                                                                              | Role                                  |
+| --------------------------------------------------------------------------------- | ------------------------------------- |
+| `packages/resume-latex/templates/resume_template.tex`                             | Locked preamble + reference body      |
+| `packages/resume-latex/fixtures/Khubaib_Qaiser_LaTeX_Template_Reference.pdf`      | Golden visual output                  |
+| `packages/resume-latex/fixtures/Khubaib_Qaiser_LaTeX_Template_Reference-page.png` | Raster @ 150 DPI for pixel diff       |
+| `packages/resume-latex/fixtures/ats-resume-reference.ts`                          | `ResumeData` mirroring golden content |
 
 ## Pipeline (admin only)
 

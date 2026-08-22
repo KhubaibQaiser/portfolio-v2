@@ -37,7 +37,10 @@ function writeMinimalOpenNext(openNextDir: string): void {
   mkdirSync(imageFnDir, { recursive: true });
 
   writeFileSync(path.join(assetsDir, "BUILD_ID"), "test-build-id");
-  writeFileSync(path.join(serverFnDir, "index.js"), "exports.handler = async () => ({ statusCode: 200 });");
+  writeFileSync(
+    path.join(serverFnDir, "index.js"),
+    "exports.handler = async () => ({ statusCode: 200 });",
+  );
   writeFileSync(
     path.join(imageFnDir, "index.js"),
     "exports.handler = async () => ({ statusCode: 200 });",
@@ -45,7 +48,10 @@ function writeMinimalOpenNext(openNextDir: string): void {
 }
 
 function synth(): Template {
-  const openNextDir = path.join(repoRoot, "packages/infra/fixtures/minimal-open-next-admin");
+  const openNextDir = path.join(
+    repoRoot,
+    "packages/infra/fixtures/minimal-open-next-admin",
+  );
   writeMinimalOpenNext(openNextDir);
 
   const app = new cdk.App();

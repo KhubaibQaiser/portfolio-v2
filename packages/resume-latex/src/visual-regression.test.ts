@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
-import { assembleResumeDocumentFromData, readVendoredReferenceDocument } from "./assemble-document";
+import {
+  assembleResumeDocumentFromData,
+  readVendoredReferenceDocument,
+} from "./assemble-document";
 import { compileXeLatex, cleanupXeLatexWorkDir } from "./xelatex-runner";
 import { atsResumeReferenceData } from "../fixtures/ats-resume-reference";
 
@@ -16,10 +19,17 @@ const fixturesDir = (() => {
     join(cwd, "packages/resume-latex/fixtures"),
     join(cwd, "fixtures"),
   ];
-  return candidates.find((dir) => existsSync(join(dir, "Khubaib_Qaiser_LaTeX_Template_Reference.pdf"))) ?? candidates[0]!;
+  return (
+    candidates.find((dir) =>
+      existsSync(join(dir, "Khubaib_Qaiser_LaTeX_Template_Reference.pdf")),
+    ) ?? candidates[0]!
+  );
 })();
 const goldenPdfPath = join(fixturesDir, "Khubaib_Qaiser_LaTeX_Template_Reference.pdf");
-const goldenPngPath = join(fixturesDir, "Khubaib_Qaiser_LaTeX_Template_Reference-page.png");
+const goldenPngPath = join(
+  fixturesDir,
+  "Khubaib_Qaiser_LaTeX_Template_Reference-page.png",
+);
 const RASTER_DPI = 150;
 
 function hasTool(command: string): boolean {
@@ -65,15 +75,21 @@ const canRunVisual =
   hasTool("xelatex") && hasTool("pdftoppm") && existsSync(goldenPdfPath);
 
 describe("ats-resume visual regression", () => {
-  it.skipIf(!canRunVisual)("vendored template matches golden PDF at fixed DPI", async () => {
-    const tex = readVendoredReferenceDocument();
-    const { workDir } = await compileXeLatex(tex);
-    const vendoredPdfPath = join(workDir, "resume.pdf");
-    const vendoredPngPath = rasterizePdfPage(vendoredPdfPath, join(workDir, "vendored-page"));
-    const diffPixels = pixelDiffCount(goldenPngPath, vendoredPngPath);
-    expect(diffPixels).toBe(0);
-    await cleanupXeLatexWorkDir(workDir);
-  });
+  it.skipIf(!canRunVisual)(
+    "vendored template matches golden PDF at fixed DPI",
+    async () => {
+      const tex = readVendoredReferenceDocument();
+      const { workDir } = await compileXeLatex(tex);
+      const vendoredPdfPath = join(workDir, "resume.pdf");
+      const vendoredPngPath = rasterizePdfPage(
+        vendoredPdfPath,
+        join(workDir, "vendored-page"),
+      );
+      const diffPixels = pixelDiffCount(goldenPngPath, vendoredPngPath);
+      expect(diffPixels).toBe(0);
+      await cleanupXeLatexWorkDir(workDir);
+    },
+  );
 
   it.skipIf(!canRunVisual)("vendored template compiles", async () => {
     const tex = readVendoredReferenceDocument();

@@ -108,8 +108,14 @@ export function enforceResumeGenerationPolicy(
     : policy.maxRoles;
 
   if (isAts) {
-    const bulletTexts = resume.experiences.flatMap((exp) => exp.bullets.map((b) => b.text));
-    const atsLint = lintAtsResumeContent(resume.summary, bulletTexts, resume.titleOverride);
+    const bulletTexts = resume.experiences.flatMap((exp) =>
+      exp.bullets.map((b) => b.text),
+    );
+    const atsLint = lintAtsResumeContent(
+      resume.summary,
+      bulletTexts,
+      resume.titleOverride,
+    );
     violations.push(...atsLint.violations);
   }
 

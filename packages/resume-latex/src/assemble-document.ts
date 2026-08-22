@@ -40,7 +40,9 @@ export function assembleResumeDocument(body: string): string {
   const beginIdx = full.indexOf(beginMarker);
   const endIdx = full.indexOf(endMarker);
   if (beginIdx < 0 || endIdx < 0) {
-    throw new Error("resume_template.tex must contain \\begin{document} and \\end{document}");
+    throw new Error(
+      "resume_template.tex must contain \\begin{document} and \\end{document}",
+    );
   }
   const preamble = full.slice(0, beginIdx);
   return `${preamble}${beginMarker}\n\\pagestyle{empty}\n\n${body}\n\n${endMarker}\n`;

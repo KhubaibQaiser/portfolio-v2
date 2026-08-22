@@ -107,10 +107,7 @@ function buildProjectsSection(data: ResumeData): string {
       "\\end{roleblock}",
     ].join("\n");
   });
-  return [
-    `\\sectionheading{${SECTION_PROJECTS}}`,
-    blocks.join("\n\n"),
-  ].join("\n");
+  return [`\\sectionheading{${SECTION_PROJECTS}}`, blocks.join("\n\n")].join("\n");
 }
 
 /** Build LaTeX document body (between \\begin{document} and \\end{document}). */

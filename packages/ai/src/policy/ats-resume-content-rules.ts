@@ -1,6 +1,9 @@
 import type { ResumeLayoutComponentKey } from "@portfolio/shared/schemas";
 
-export const ATS_RESUME_ALLOWED_HYPHENS = ["quaid-i-azam", "content-to-commerce"] as const;
+export const ATS_RESUME_ALLOWED_HYPHENS = [
+  "quaid-i-azam",
+  "content-to-commerce",
+] as const;
 
 export const ATS_RESUME_ALLOWED_TITLES = [
   "Senior Software Engineer",

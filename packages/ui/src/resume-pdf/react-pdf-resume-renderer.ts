@@ -14,16 +14,12 @@ export const reactPdfResumeRenderer: ResumePdfRenderer = {
   },
 
   async render(input: ResumePdfRenderInput): Promise<ResumePdfRenderResult> {
-    const { buffer, fitReport } = await renderResumePdfBuffer(
-      input.data,
-      input.layout,
-      {
-        mode: input.mode,
-        highlightedSkills: input.highlightedSkills,
-        deadlineAt: input.deadlineAt,
-        fit: input.mode === "canonical" ? "guidelines-only" : "one-page",
-      },
-    );
+    const { buffer, fitReport } = await renderResumePdfBuffer(input.data, input.layout, {
+      mode: input.mode,
+      highlightedSkills: input.highlightedSkills,
+      deadlineAt: input.deadlineAt,
+      fit: input.mode === "canonical" ? "guidelines-only" : "one-page",
+    });
 
     return {
       buffer,

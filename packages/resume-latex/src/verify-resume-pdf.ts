@@ -87,10 +87,7 @@ export async function verifyResumePdf(
   const textMonthDates = findTextMonthDates(text);
 
   if (requireOnePage && pageCount !== 1) {
-    throw new ResumeVerifyError(
-      `Resume must be exactly 1 page (got ${pageCount}).`,
-      1,
-    );
+    throw new ResumeVerifyError(`Resume must be exactly 1 page (got ${pageCount}).`, 1);
   }
 
   if (bannedUnicodeMatches.length > 0) {
