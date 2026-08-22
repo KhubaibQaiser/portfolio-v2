@@ -15,6 +15,7 @@ import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
 import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
+import { buildResumeExportFilename } from "@/lib/resume-ai/export-filename";
 import { processRenderJob, safeFileName } from "@/lib/resume-ai/process-render-job";
 import type {
   CoverLetterRenderJobPayload,
@@ -175,10 +176,16 @@ export async function POST(request: Request) {
         sanitizeLlmObject(body.resume),
         facts,
         layout.guidelines,
+        { layoutComponentKey: layout.component_key },
       ).resume;
       kind = "resume";
       payload = { layoutId: body.layoutId, tailoredResume: tailored };
-      filename = safeFileName([base.name, base.title, "Resume"]) + ".pdf";
+      filename = buildResumeExportFilename(
+        base.name,
+        layout,
+        generation.company ?? undefined,
+        base.title,
+      );
     } else {
       const letter = coverLetterSchema
         .strict()

@@ -34,6 +34,7 @@ import {
   type TailoredResume,
 } from "@portfolio/ai/schemas";
 import type { ResumeGenerationUsage, VariantGuidelines } from "@portfolio/shared/schemas";
+import type { ResumeLayoutComponentKey } from "@portfolio/shared/schemas/resume-layout";
 
 const AI_TONE_THRESHOLD = 35;
 const MAX_CORRECTIVE_ATTEMPTS_PER_MODEL = 2;
@@ -56,6 +57,7 @@ export type ValidatedGenerationOptions = {
   wrappedJobDescription: string;
   facts: CandidateFacts;
   guidelines: VariantGuidelines;
+  layoutComponentKey?: ResumeLayoutComponentKey;
   signal: AbortSignal;
   deadlineAt: number;
   company?: string;
@@ -565,6 +567,7 @@ async function generateResume(
         sanitizeLlmObject(generated.object),
         options.facts,
         options.guidelines,
+        { layoutComponentKey: options.layoutComponentKey },
       );
       const fabrication = validateFabrication(normalized.resume, options.facts.idMap);
       if (!fabrication.ok) {

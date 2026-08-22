@@ -24,6 +24,17 @@ export type {
 } from "./render-job-store";
 export type { RenderJobQueue, RenderJobQueueMessage } from "./render-job-queue";
 export type {
+  ResumePdfRenderer,
+  ResumePdfRenderInput,
+  ResumePdfRenderResult,
+  ResumePdfRenderMode,
+} from "./resume-pdf-renderer";
+export {
+  registerResumePdfRenderer,
+  getResumePdfRenderer,
+  clearResumePdfRenderersForTests,
+} from "./resume-pdf-renderer";
+export type {
   GenerationJobStore,
   GenerationJob,
   GenerationJobInsert,

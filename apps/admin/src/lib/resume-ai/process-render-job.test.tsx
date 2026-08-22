@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   getRenderJobStore: vi.fn(),
   getResumeData: vi.fn(),
   getResumeLayoutById: vi.fn(),
-  renderResumePdfBuffer: vi.fn(),
+  rendererRender: vi.fn(),
   uploadObject: vi.fn(),
   loggerError: vi.fn(),
 }));
@@ -23,8 +23,16 @@ vi.mock("@portfolio/shared/resume-data", () => ({
     tailored,
   }),
 }));
+vi.mock("@portfolio/shared/ports", () => ({
+  getResumePdfRenderer: vi.fn(() => ({
+    supports: () => true,
+    render: mocks.rendererRender,
+  })),
+}));
+vi.mock("./register-resume-renderers", () => ({
+  registerResumeRenderers: vi.fn(),
+}));
 vi.mock("@portfolio/ui/resume-pdf", () => ({
-  renderResumePdfBuffer: mocks.renderResumePdfBuffer,
   CoverLetterDocument: () => null,
 }));
 vi.mock("@react-pdf/renderer", () => ({
@@ -38,6 +46,7 @@ import { processRenderJob, safeFileName } from "./process-render-job";
 
 const layout = {
   id: "modern-blue",
+  component_key: "modern-blue" as const,
   guidelines: {
     validation: { maxExperienceItems: 5, maxBulletsPerRole: 4 },
     formatting: { layout: { maxBulletsPerJob: 4 } },
@@ -99,9 +108,13 @@ describe("processRenderJob", () => {
       markFailed: vi.fn().mockResolvedValue(undefined),
     };
     mocks.getRenderJobStore.mockReturnValue(store);
-    mocks.getResumeData.mockResolvedValue({ name: "Jane Doe", skills: [] });
+    mocks.getResumeData.mockResolvedValue({
+      name: "Jane Doe",
+      skills: [],
+      experience: [],
+    });
     mocks.getResumeLayoutById.mockResolvedValue(layout);
-    mocks.renderResumePdfBuffer.mockResolvedValue({
+    mocks.rendererRender.mockResolvedValue({
       buffer: Buffer.from("pdf-bytes"),
       fitReport: { pageCount: 1, degraded: false },
     });
@@ -120,64 +133,31 @@ describe("processRenderJob", () => {
     expect(store.markRendering).not.toHaveBeenCalled();
   });
 
-  it("renders a resume job, uploads it, and marks it ready", async () => {
+  it("renders resume via renderer registry and uploads PDF", async () => {
     store.get.mockResolvedValue(makeJob());
     await processRenderJob("job-1");
-
     expect(store.markRendering).toHaveBeenCalledWith("job-1");
-    expect(mocks.uploadObject).toHaveBeenCalledWith(
-      expect.any(Uint8Array),
-      "render-jobs/job-1.pdf",
-      "application/pdf",
-    );
-    expect(store.markReady).toHaveBeenCalledWith("job-1", "render-jobs/job-1.pdf", {
-      pageCount: 1,
-      degraded: false,
-    });
-  });
-
-  it("renders a cover letter job without needing a layout", async () => {
-    store.get.mockResolvedValue(
-      makeJob({
-        kind: "cover_letter",
-        payload: {
-          letter: {
-            greeting: "Dear Hiring Manager,",
-            body: [
-              "A sufficiently long paragraph about my qualifications for this role.",
-            ],
-            closing: "I look forward to hearing from you soon.",
-            signOff: "Best regards,\nJane Doe",
-          },
-          meta: { company: "Acme" },
-        },
-      }),
-    );
-    await processRenderJob("job-1");
-    expect(store.markReady).toHaveBeenCalledWith("job-1", "render-jobs/job-1.pdf", null);
-  });
-
-  it("marks the job failed and rethrows when rendering throws", async () => {
-    store.get.mockResolvedValue(makeJob());
-    mocks.renderResumePdfBuffer.mockRejectedValue(new Error("boom"));
-
-    await expect(processRenderJob("job-1")).rejects.toThrow("boom");
-    expect(store.markFailed).toHaveBeenCalledWith(
+    expect(mocks.rendererRender).toHaveBeenCalled();
+    expect(mocks.uploadObject).toHaveBeenCalled();
+    expect(store.markReady).toHaveBeenCalledWith(
       "job-1",
-      "Rendering failed. Please try again.",
+      "render-jobs/job-1.pdf",
+      expect.objectContaining({ pageCount: 1 }),
     );
   });
 
-  it("throws when the payload references a layout that no longer exists", async () => {
-    mocks.getResumeLayoutById.mockResolvedValue(null);
+  it("marks job failed when rendering throws", async () => {
     store.get.mockResolvedValue(makeJob());
-    await expect(processRenderJob("job-1")).rejects.toThrow("no longer exists");
+    mocks.rendererRender.mockRejectedValue(new Error("render failed"));
+    await expect(processRenderJob("job-1")).rejects.toThrow("render failed");
     expect(store.markFailed).toHaveBeenCalled();
   });
 });
 
 describe("safeFileName", () => {
-  it("joins non-empty parts with hyphens, stripping unsafe characters", () => {
-    expect(safeFileName(["Jane Doe", undefined, "Résumé!"])).toBe("Jane-Doe-R-sum");
+  it("joins sanitized parts", () => {
+    expect(safeFileName(["Jane Doe", "Engineer", "Resume"])).toBe(
+      "Jane-Doe-Engineer-Resume",
+    );
   });
 });

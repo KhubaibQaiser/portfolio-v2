@@ -1,0 +1,293 @@
+% ============================================================================
+% KHUBAIB QAISER — MASTER RESUME TEMPLATE (LaTeX)
+% Single-column, ATS-optimized layout. Compile with: xelatex resume_template.tex
+% Font: Carlito (metric-compatible clone of Calibri) via fontspec.
+% This file is a STRUCTURAL/TYPOGRAPHIC MASTER. Per-job variants change only
+% the CONTENT marked in the "EDIT PER APPLICATION" sections below — never the
+% typography, spacing, margins, or structural commands defined in the preamble.
+% ============================================================================
+
+\documentclass[10pt]{article}
+
+% ---------- PAGE GEOMETRY (fixed — never change per job) -------------------
+\usepackage[a4paper, top=0.5in, bottom=0.5in, left=0.55in, right=0.55in]{geometry}
+
+% ---------- FONT: Carlito (Calibri-metric-compatible) ----------------------
+\usepackage{fontspec}
+\setmainfont{Carlito}[Mapping=] % Mapping= (empty) disables fontspec's default
+    % "tex-text" substitution, which otherwise silently converts straight
+    % apostrophes/quotes to curly Unicode glyphs and "--"/"---" to en/em
+    % dashes. This resume style bans smart quotes and en/em dashes outright
+    % (ATS parsing risk) -- this line is what keeps the PDF text layer literal.
+\renewcommand{\familydefault}{\rmdefault} % Carlito used as sole family (sans-serif design, no serif mixed in)
+
+% ---------- COLORS (fixed hex values — match CSS exactly) ------------------
+\usepackage{xcolor}
+\definecolor{textcolor}{HTML}{1A1A1A}   % primary body text
+\definecolor{mutedcolor}{HTML}{333333}  % contact line, education sub-line
+\definecolor{metacolor}{HTML}{2B2B2B}   % role meta line (company/dates)
+\definecolor{rulecolor}{HTML}{1A1A1A}   % horizontal rules, section underline
+
+% ---------- LINKS: visible plain-text URLs, clickable, no ATS-risk styling -
+\usepackage[hidelinks]{hyperref} % hidelinks = no colored box/border on links
+\hypersetup{
+    pdftitle={Khubaib Qaiser - Resume},
+    pdfauthor={Khubaib Qaiser},
+    colorlinks=true,
+    linkcolor=textcolor,
+    urlcolor=textcolor,
+    citecolor=textcolor
+}
+
+% ---------- SPACING / LIST CONTROL ------------------------------------------
+\usepackage{enumitem}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt} % ALL vertical spacing is controlled explicitly via
+    % \vspace calls in the custom commands below. Do NOT load the `parskip`
+    % package -- it sets a nonzero default \parskip that silently stacks on
+    % top of every explicit \vspace call here and is what causes 1-page
+    % content to overflow to 2 pages. This line must stay 0pt.
+
+% ---------- LETTER-SPACING for uppercase section headings ------------------
+% fontspec + Carlito supports OpenType LetterSpace feature for CSS-like tracking.
+\newfontfamily\headingfont{Carlito}[LetterSpace=3.0] % approximates 0.5px CSS tracking
+
+% (Font ligature/mapping behavior fully controlled via the Mapping= feature
+%  set on \setmainfont above -- no further ligature suppression needed.)
+
+% ---------- CUSTOM COMMANDS (typography primitives) -------------------------
+
+% --- Name (header, largest element) ---
+% CSS: font-size 20pt, weight 700, letter-spacing 0.3px
+\newcommand{\resumename}[1]{%
+    {\fontsize{19pt}{20.5pt}\selectfont\bfseries #1}
+}
+
+% --- Title / role headline under name ---
+% CSS: font-size 11.2pt, weight 600
+\newcommand{\resumetitle}[1]{%
+    \par\vspace{1pt}
+    {\fontsize{11.2pt}{13pt}\selectfont\bfseries #1}
+}
+
+% --- Contact line ---
+% CSS: font-size 8.6pt, color #333333, links same near-black, no underline
+\newcommand{\resumecontact}[1]{%
+    \par\vspace{2.5pt}
+    {\fontsize{8.6pt}{11.5pt}\selectfont\color{mutedcolor} #1}
+}
+
+% --- Horizontal rule under header ---
+% CSS: 1.3px solid #1a1a1a, margin 7px 0 9px
+\newcommand{\resumehrule}{%
+    \par\vspace{2.5pt}
+    {\color{rulecolor}\hrule height 1.1pt}
+    \vspace{3pt}
+}
+
+% --- Section heading (uppercase, bold, bottom border) ---
+% CSS: font-size 10.3pt, weight 700, uppercase, letter-spacing 0.5px,
+%      border-bottom 0.85pt solid rulecolor, padding-bottom ~2px,
+%      margin-top 10px (0 for first heading), margin-bottom 5px
+\newcommand{\sectionheading}[1]{%
+    \par\vspace{3.2pt}%
+    \noindent
+    \vbox{%
+        \headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}%
+        \par\nobreak\vskip 1.5pt\nobreak
+        \color{rulecolor}\hrule height 0.85pt width \linewidth
+    }%
+    \vspace{0.8pt}%
+}
+% First section heading on the page must have NO top margin — use this variant
+% immediately after \resumehrule for the first section only:
+\newcommand{\sectionheadingfirst}[1]{%
+    \noindent
+    \vbox{%
+        \headingfont\fontsize{10.3pt}{10.8pt}\selectfont\bfseries\MakeUppercase{#1}%
+        \par\nobreak\vskip 1.5pt\nobreak
+        \color{rulecolor}\hrule height 0.85pt width \linewidth
+    }%
+    \vspace{2pt}%
+}
+
+% --- Summary paragraph ---
+% CSS: font-size 9.5pt, line-height 1.34, text-align justify
+% NOTE: line-height is fully encoded in the \fontsize{9.5pt}{12.7pt} leading
+% argument (12.7/9.5 ≈ 1.34) -- do not wrap this in a `setspace` \spacing
+% environment, which would multiply the leading a second time.
+\newcommand{\resumesummary}[1]{%
+    {\fontsize{9.1pt}{10.7pt}\selectfont\color{textcolor} #1\par}
+}
+
+% --- Skills line (category label + comma list) ---
+% CSS: font-size 9.2pt, line-height 1.5, margin-bottom 3px; label is bold
+\newcommand{\skillsline}[2]{%
+    \par\vspace{0.9pt}
+    {\fontsize{8.9pt}{10.9pt}\selectfont\color{textcolor}\textbf{#1:} #2}
+}
+
+% --- Role block wrapper (adds margin-bottom 8px after each role) ---
+\newenvironment{roleblock}{\par\vspace{0.9pt}}{}
+
+% --- Role title line ---
+% CSS: font-size 10pt, weight 700, margin-bottom 1px
+\newcommand{\roletitle}[1]{%
+    {\fontsize{9.8pt}{10.8pt}\selectfont\bfseries\color{textcolor} #1}\par\vspace{0.3pt}
+}
+
+% --- Role meta line (Company | Location | Dates) ---
+% CSS: font-size 8.8pt, italic, color #2b2b2b, margin-bottom 3px
+\newcommand{\rolemeta}[1]{%
+    {\fontsize{8.6pt}{9.3pt}\selectfont\itshape\color{metacolor} #1}\par\vspace{0.45pt}
+}
+
+% --- Bullet list (XYZ-formula achievement bullets) ---
+% CSS: ul margin-left 15px; li font-size 9.3pt, margin-bottom 2.5px, line-height 1.32
+\newlist{resumebullets}{itemize}{1}
+\setlist[resumebullets]{
+    label=\textbullet,
+    leftmargin=15pt,
+    labelsep=6pt,
+    itemsep=0.45pt,
+    topsep=0pt,
+    parsep=0pt,
+    partopsep=0pt,
+    font=\fontsize{9.0pt}{9.9pt}\selectfont\color{textcolor}
+}
+
+% --- Education / Languages line entries ---
+% CSS: edu-line 9.4pt margin-bottom 1px; edu-school 8.7pt italic muted
+\newcommand{\eduline}[1]{%
+    {\fontsize{9.4pt}{12pt}\selectfont\color{textcolor} #1}\par\vspace{0.6pt}
+}
+\newcommand{\eduschool}[1]{%
+    {\fontsize{8.7pt}{11pt}\selectfont\itshape\color{mutedcolor} #1}\par
+}
+\newcommand{\langline}[1]{%
+    {\fontsize{9.3pt}{12pt}\selectfont\color{textcolor} #1}\par
+}
+
+% ============================================================================
+% DOCUMENT BODY
+% Content below is the reference master (Khubaib Qaiser's full career history).
+% For a per-job variant: copy this file, keep the preamble above UNCHANGED,
+% and edit only the summary, skills lines, bullet content, and role selection
+% per the content rules in the accompanying system prompt.
+% ============================================================================
+\begin{document}
+\pagestyle{empty}
+
+% ---------------- HEADER (EDIT: title only changes if targeting a
+% different track, e.g. "Senior Fullstack Engineer" vs "Senior Software
+% Engineer"; name/contact never change) ----------------------------------
+\resumename{Khubaib Qaiser}
+\resumetitle{Senior Fullstack Engineer}
+\resumecontact{%
+Islamabad, Pakistan \textbar\ +92 336 5532933 \textbar\
+\href{mailto:khubaib.dev@gmail.com}{khubaib.dev@gmail.com} \textbar\
+\href{https://khubaibqaiser.com}{khubaibqaiser.com} \textbar\
+\href{https://github.com/khubaibqaiser}{github.com/khubaibqaiser} \textbar\
+\href{https://linkedin.com/in/khubaib-qaiser}{linkedin.com/in/khubaib-qaiser}%
+}
+\resumehrule
+
+% ---------------- PROFESSIONAL SUMMARY (EDIT PER APPLICATION) --------------
+\sectionheadingfirst{Professional Summary}
+\resumesummary{%
+Fullstack Engineer with 11 years building scalable backend services and
+intuitive frontend interfaces across financial services, ecommerce, and SaaS
+platforms. 5+ years of MERN based stack experience (React, Node.js,
+TypeScript, Express) with deep expertise in microservices architecture, test
+driven development, and AWS production systems. Holds full technical
+ownership from architecture through delivery, and integrates AI coding tools
+(Claude, Cursor) into daily development to accelerate shipping. 7+ years of
+distributed agile team experience across US, EU, and APAC time zones.%
+}
+
+% ---------------- TECHNICAL SKILLS (EDIT PER APPLICATION) ------------------
+\sectionheading{Technical Skills}
+\skillsline{Frontend}{React, React 18, Next.js, TypeScript, JavaScript (ES6+), Tailwind CSS, React Native}
+\skillsline{Backend \& APIs}{Node.js, Express, REST APIs, GraphQL, Microservices Architecture}
+\skillsline{Databases}{PostgreSQL, MySQL, SQLite, Database Design, Schema Optimization}
+\skillsline{Testing}{Jest, React Testing Library, Playwright, Detox, Unit Testing, E2E Testing, Test-Driven Development}
+\skillsline{Cloud \& DevOps}{AWS (Lambda, API Gateway, DynamoDB, S3), AWS CDK, Docker, CI/CD, GitHub Actions, Infrastructure as Code, Serverless}
+\skillsline{AI Tooling \& Workflow}{Claude, Cursor, Architecture First Development, AI Assisted Code Review}
+\skillsline{Practices}{Agile, Design Systems, Full Technical Ownership, Mentorship, Distributed Team Collaboration}
+
+% ---------------- PROFESSIONAL EXPERIENCE (EDIT PER APPLICATION) -----------
+% Bullet-writing rules (see system prompt): strict XYZ formula, no repeated
+% leading verbs, quantify only with real/verifiable numbers, every bullet
+% ends with a period, no hyphenated compound modifiers (see banned-hyphen list).
+\sectionheading{Professional Experience}
+
+\begin{roleblock}
+\roletitle{Senior Software Engineer}
+\rolemeta{Shopsense AI \textbar\ San Francisco, CA (Remote) \textbar\ 08/2024 - 07/2026}
+\begin{resumebullets}
+\item Set technical direction for the migration from a monolithic backend to microservices, designing four independently deployable services (Products, Link, AI, Ads) for improved scalability and engineering team autonomy companywide.
+\item Proposed and led companywide adoption of an event driven webhook architecture across 3 teams as lead architect, replacing fixed interval polling to cut infrastructure costs and shorten the ad generation feedback loop.
+\item Owned the AWS serverless backend architecture (CDK, Lambda, API Gateway) on Infrastructure as Code, powering AI generated content across five embed types.
+\item Directed Embeds, Shopsense's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5\% CTR.
+\item Designed and launched Shopsense's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{Senior Web Developer}
+\rolemeta{Achieve \textbar\ Jersey City, NJ (Remote) \textbar\ 07/2023 - 08/2024}
+\begin{resumebullets}
+\item Directed a Core Web Vitals initiative that cut load time by 60\% through code splitting and lazy loading, then modernized the legacy codebase by migrating from Create React App to Vite and TypeScript.
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{Senior Software Engineer}
+\rolemeta{GudangAda \textbar\ Jakarta, Indonesia (Remote) \textbar\ 09/2020 - 01/2023}
+\begin{resumebullets}
+\item Spearheaded GudangAda's first companywide design system, designing a private npm package adopted by 40 engineers across 4 product teams, then drove architecture and CI/CD automation for a new PWA powered seller web app.
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{Senior React Native Engineer}
+\rolemeta{Tradeblock.us \textbar\ Austin, TX (Remote, Contract) \textbar\ 01/2023 - 06/2023}
+\begin{resumebullets}
+\item Owned release stability across a shared web and mobile codebase, integrating Apollo GraphQL and Auth0, then establishing the team's complete testing standard (Detox, Playwright).
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{React Developer}
+\rolemeta{Nordic Tech Clients \textbar\ Islamabad, Pakistan (Remote, Freelance) \textbar\ 05/2020 - 12/2020}
+\begin{resumebullets}
+\item Delivered React Native mobile apps for international clients, integrating native APIs and partnering directly with backend engineers and designers to ship Android and iOS releases.
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{Software Engineer}
+\rolemeta{STOQO \textbar\ Jakarta, Indonesia (Remote) \textbar\ 02/2019 - 04/2020}
+\begin{resumebullets}
+\item Built transport management dashboards and driver tracking systems covering geofencing, route management, and fleet cost tracking, giving logistics operations real time visibility, while rewriting the Android driver app in Kotlin (MVVM) to improve performance and mentoring junior engineers.
+\end{resumebullets}
+\end{roleblock}
+
+\begin{roleblock}
+\roletitle{Mobile App Developer}
+\rolemeta{Knowledge Platform \textbar\ Islamabad, Pakistan (Onsite) \textbar\ 09/2015 - 02/2019}
+\begin{resumebullets}
+\item Reached 500K+ K6-K9 students across Pakistan by developing cross platform educational games and mobile apps integrated with the LSP and Ultrabot learning platforms.
+\end{resumebullets}
+\end{roleblock}
+
+% ---------------- EDUCATION (fixed — rarely changes) ------------------------
+\sectionheading{Education}
+\eduline{Bachelor of Computer Science}
+\eduschool{Quaid-i-Azam University, Islamabad \textbar\ 2015}
+
+% ---------------- LANGUAGES (fixed — rarely changes) ------------------------
+\sectionheading{Languages}
+\langline{English (C1) \textbar\ Urdu (Native)}
+
+\end{document}

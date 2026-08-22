@@ -169,7 +169,7 @@ describe("POST /api/resume/export", () => {
     expect(res.status).toBe(202);
     const json = (await res.json()) as { jobId: string; filename: string };
     expect(json.jobId).toBeTruthy();
-    expect(json.filename).toContain("Resume");
+    expect(json.filename).toBe("Jane-Doe-Engineer.pdf");
     expect(mocks.createRenderJob).toHaveBeenCalledWith(
       expect.objectContaining({
         createdBy: "admin-1",

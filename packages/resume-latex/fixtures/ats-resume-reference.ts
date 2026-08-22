@@ -1,0 +1,204 @@
+import type { ResumeData } from "@portfolio/shared/resume-data";
+
+/** ResumeData matching the vendored reference template / golden PDF. */
+export const atsResumeReferenceData: ResumeData = {
+  name: "Khubaib Qaiser",
+  title: "Senior Fullstack Engineer",
+  location: "Islamabad, Pakistan",
+  phone: "+92 336 5532933",
+  email: "khubaib.dev@gmail.com",
+  website: "khubaibqaiser.com",
+  socialLinks: [
+    {
+      platform: "github",
+      url: "https://github.com/khubaibqaiser",
+      label: "github.com/khubaibqaiser",
+    },
+    {
+      platform: "linkedin",
+      url: "https://linkedin.com/in/khubaib-qaiser",
+      label: "linkedin.com/in/khubaib-qaiser",
+    },
+  ],
+  summary:
+    "Fullstack Engineer with 11 years building scalable backend services and intuitive frontend interfaces across financial services, ecommerce, and SaaS platforms. 5+ years of MERN based stack experience (React, Node.js, TypeScript, Express) with deep expertise in microservices architecture, test driven development, and AWS production systems. Holds full technical ownership from architecture through delivery, and integrates AI coding tools (Claude, Cursor) into daily development to accelerate shipping. 7+ years of distributed agile team experience across US, EU, and APAC time zones.",
+  keywords: "",
+  visibleSections: ["experience", "skills", "education", "languages"],
+  experience: [
+    {
+      role: "Senior Software Engineer",
+      company: "Shopsense AI",
+      startDate: "08/2024",
+      endDate: "07/2026",
+      period: "08/2024 - 07/2026",
+      location: "San Francisco, CA (Remote)",
+      contractType: "Full-time",
+      bullets: [
+        "Set technical direction for the migration from a monolithic backend to microservices, designing four independently deployable services (Products, Link, AI, Ads) for improved scalability and engineering team autonomy companywide.",
+        "Proposed and led companywide adoption of an event driven webhook architecture across 3 teams as lead architect, replacing fixed interval polling to cut infrastructure costs and shorten the ad generation feedback loop.",
+        "Owned the AWS serverless backend architecture (CDK, Lambda, API Gateway) on Infrastructure as Code, powering AI generated content across five embed types.",
+        "Directed Embeds, Shopsense's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5% CTR.",
+        "Designed and launched Shopsense's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior Web Developer",
+      company: "Achieve",
+      startDate: "07/2023",
+      endDate: "08/2024",
+      period: "07/2023 - 08/2024",
+      location: "Jersey City, NJ (Remote)",
+      contractType: "Full-time",
+      bullets: [
+        "Directed a Core Web Vitals initiative that cut load time by 60% through code splitting and lazy loading, then modernized the legacy codebase by migrating from Create React App to Vite and TypeScript.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior Software Engineer",
+      company: "GudangAda",
+      startDate: "09/2020",
+      endDate: "01/2023",
+      period: "09/2020 - 01/2023",
+      location: "Jakarta, Indonesia (Remote)",
+      contractType: "Full-time",
+      bullets: [
+        "Spearheaded GudangAda's first companywide design system, designing a private npm package adopted by 40 engineers across 4 product teams, then drove architecture and CI/CD automation for a new PWA powered seller web app.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Senior React Native Engineer",
+      company: "Tradeblock.us",
+      startDate: "01/2023",
+      endDate: "06/2023",
+      period: "01/2023 - 06/2023",
+      location: "Austin, TX (Remote, Contract)",
+      contractType: "Contract",
+      bullets: [
+        "Owned release stability across a shared web and mobile codebase, integrating Apollo GraphQL and Auth0, then establishing the team's complete testing standard (Detox, Playwright).",
+      ],
+      tech: "",
+    },
+    {
+      role: "React Developer",
+      company: "Nordic Tech Clients",
+      startDate: "05/2020",
+      endDate: "12/2020",
+      period: "05/2020 - 12/2020",
+      location: "Islamabad, Pakistan (Remote, Freelance)",
+      contractType: "Freelance",
+      bullets: [
+        "Delivered React Native mobile apps for international clients, integrating native APIs and partnering directly with backend engineers and designers to ship Android and iOS releases.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Software Engineer",
+      company: "STOQO",
+      startDate: "02/2019",
+      endDate: "04/2020",
+      period: "02/2019 - 04/2020",
+      location: "Jakarta, Indonesia (Remote)",
+      contractType: "Full-time",
+      bullets: [
+        "Built transport management dashboards and driver tracking systems covering geofencing, route management, and fleet cost tracking, giving logistics operations real time visibility, while rewriting the Android driver app in Kotlin (MVVM) to improve performance and mentoring junior engineers.",
+      ],
+      tech: "",
+    },
+    {
+      role: "Mobile App Developer",
+      company: "Knowledge Platform",
+      startDate: "09/2015",
+      endDate: "02/2019",
+      period: "09/2015 - 02/2019",
+      location: "Islamabad, Pakistan (Onsite)",
+      contractType: "Full-time",
+      bullets: [
+        "Reached 500K+ K6-K9 students across Pakistan by developing cross platform educational games and mobile apps integrated with the LSP and Ultrabot learning platforms.",
+      ],
+      tech: "",
+    },
+  ],
+  projects: [],
+  education: [
+    {
+      degree: "Bachelor of Computer Science",
+      institution: "Quaid-i-Azam University, Islamabad",
+      year: "2015",
+    },
+  ],
+  certifications: [],
+  skills: [
+    {
+      category: "Frontend",
+      items: [
+        "React",
+        "React 18",
+        "Next.js",
+        "TypeScript",
+        "JavaScript (ES6+)",
+        "Tailwind CSS",
+        "React Native",
+      ],
+    },
+    {
+      category: "Backend & APIs",
+      items: ["Node.js", "Express", "REST APIs", "GraphQL", "Microservices Architecture"],
+    },
+    {
+      category: "Databases",
+      items: ["PostgreSQL", "MySQL", "SQLite", "Database Design", "Schema Optimization"],
+    },
+    {
+      category: "Testing",
+      items: [
+        "Jest",
+        "React Testing Library",
+        "Playwright",
+        "Detox",
+        "Unit Testing",
+        "E2E Testing",
+        "Test-Driven Development",
+      ],
+    },
+    {
+      category: "Cloud & DevOps",
+      items: [
+        "AWS (Lambda, API Gateway, DynamoDB, S3)",
+        "AWS CDK",
+        "Docker",
+        "CI/CD",
+        "GitHub Actions",
+        "Infrastructure as Code",
+        "Serverless",
+      ],
+    },
+    {
+      category: "AI Tooling & Workflow",
+      items: [
+        "Claude",
+        "Cursor",
+        "Architecture First Development",
+        "AI Assisted Code Review",
+      ],
+    },
+    {
+      category: "Practices",
+      items: [
+        "Agile",
+        "Design Systems",
+        "Full Technical Ownership",
+        "Mentorship",
+        "Distributed Team Collaboration",
+      ],
+    },
+  ],
+  languages: [
+    { name: "English", level: "C1" },
+    { name: "Urdu", level: "Native" },
+  ],
+  remoteWorkLine: null,
+  referencesLine: null,
+};
