@@ -185,28 +185,31 @@ export default async function ResumePage() {
           ))}
         </section>
 
-        <section className="mt-10">
-          <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
-            Certifications
-          </h2>
-          <div className="bg-border mt-3 h-px" />
-          <ul className="text-foreground/90 dark:text-foreground/85 mt-4 space-y-1 text-sm">
-            {resume.certifications.map((cert) => (
-              <li
-                key={cert.name}
-                className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
-              >
-                <span className="bg-accent h-1 w-1 shrink-0 rounded-full" />
-                {cert.name}
-                {cert.issuer && (
-                  <span className="text-foreground/72 dark:text-foreground/65 text-xs">
-                    ({cert.issuer})
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {resume.visibleSections.includes("certifications") &&
+        resume.certifications.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
+              Certifications
+            </h2>
+            <div className="bg-border mt-3 h-px" />
+            <ul className="text-foreground/90 dark:text-foreground/85 mt-4 space-y-1 text-sm">
+              {resume.certifications.map((cert) => (
+                <li
+                  key={cert.name}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
+                >
+                  <span className="bg-accent h-1 w-1 shrink-0 rounded-full" />
+                  {cert.name}
+                  {cert.issuer && (
+                    <span className="text-foreground/72 dark:text-foreground/65 text-xs">
+                      ({cert.issuer})
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="mt-10">
           <h2 className="text-foreground text-lg font-semibold tracking-wider uppercase">
