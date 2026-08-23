@@ -6,9 +6,12 @@ import { getContentRepository } from "@portfolio/data";
 import { getMediaStore } from "@portfolio/data/media";
 import { getResumeData } from "@/lib/resume-data";
 import {
+  CANONICAL_RESUME_CACHED_AT_METADATA_KEY,
   CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY,
+  CANONICAL_RESUME_PDF_CACHE_CONTROL,
   CANONICAL_RESUME_PDF_KEY,
   hashCanonicalResumeContent,
+  isCanonicalResumeCacheFresh,
 } from "@/lib/resume-pdf-cache";
 import { logger } from "@/lib/logger";
 import { checkResumePdfRateLimit } from "@/lib/resume-pdf-rate-limit";
@@ -67,14 +70,16 @@ export async function GET(request: Request) {
       logger.error("canonical resume pdf cache read failed", { error: toError(error) });
       return null;
     });
-    if (cached?.metadata?.[CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY] === contentHash) {
+    if (
+      cached?.metadata?.[CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY] === contentHash &&
+      isCanonicalResumeCacheFresh(cached.metadata)
+    ) {
       return new Response(new Uint8Array(cached.body), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${filename}"`,
-          "Cache-Control":
-            "public, max-age=10, s-maxage=10, stale-while-revalidate=86400",
+          "Cache-Control": CANONICAL_RESUME_PDF_CACHE_CONTROL,
         },
       });
     }
@@ -106,6 +111,7 @@ export async function GET(request: Request) {
       mediaStore
         .uploadObject(bytes, CANONICAL_RESUME_PDF_KEY, "application/pdf", {
           [CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY]: contentHash,
+          [CANONICAL_RESUME_CACHED_AT_METADATA_KEY]: new Date().toISOString(),
         })
         .catch((error: unknown) => {
           logger.error("canonical resume pdf cache write failed", {
@@ -119,7 +125,7 @@ export async function GET(request: Request) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "public, max-age=10, s-maxage=10, stale-while-revalidate=86400",
+        "Cache-Control": CANONICAL_RESUME_PDF_CACHE_CONTROL,
         ...(fitReport ? { "X-Resume-Fit-Report": JSON.stringify(fitReport) } : {}),
       },
     });

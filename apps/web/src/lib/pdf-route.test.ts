@@ -83,16 +83,19 @@ describe("public PDF route", () => {
       fit: "guidelines-only",
       deadlineAt: expect.any(Number),
     });
-    expect(response.headers.get("cache-control")).toContain("s-maxage=10");
+    expect(response.headers.get("cache-control")).toContain("s-maxage=3600");
   });
 
-  it("serves the cached PDF without rendering when the content hash matches", async () => {
+  it("serves the cached PDF without rendering when hash and age are fresh", async () => {
     vi.mocked(checkResumePdfRateLimit).mockResolvedValue({ ok: true });
     const { hashCanonicalResumeContent } = await import("@/lib/resume-pdf-cache");
     const contentHash = hashCanonicalResumeContent(resumeData as never, layout as never);
     getObject.mockResolvedValue({
       body: new Uint8Array([1, 2, 3]),
-      metadata: { "content-hash": contentHash },
+      metadata: {
+        "content-hash": contentHash,
+        "cached-at": new Date().toISOString(),
+      },
     });
 
     const response = await GET(new Request("https://example.com/api/pdf"));
@@ -100,7 +103,29 @@ describe("public PDF route", () => {
     expect(response.status).toBe(200);
     expect(renderResumePdfBuffer).not.toHaveBeenCalled();
     expect(uploadObject).not.toHaveBeenCalled();
-    expect(response.headers.get("cache-control")).toContain("s-maxage=10");
+    expect(response.headers.get("cache-control")).toContain("s-maxage=3600");
+  });
+
+  it("re-renders when the cached object is older than 1h even if the hash matches", async () => {
+    vi.mocked(checkResumePdfRateLimit).mockResolvedValue({ ok: true });
+    vi.mocked(renderResumePdfBuffer).mockResolvedValue({
+      buffer: Buffer.from("%PDF-fresh"),
+      fitReport: null,
+    });
+    const { hashCanonicalResumeContent } = await import("@/lib/resume-pdf-cache");
+    const contentHash = hashCanonicalResumeContent(resumeData as never, layout as never);
+    getObject.mockResolvedValue({
+      body: new Uint8Array([1, 2, 3]),
+      metadata: {
+        "content-hash": contentHash,
+        "cached-at": new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+
+    const response = await GET(new Request("https://example.com/api/pdf"));
+
+    expect(response.status).toBe(200);
+    expect(renderResumePdfBuffer).toHaveBeenCalled();
   });
 
   it("falls back to rendering when the cached hash is stale", async () => {

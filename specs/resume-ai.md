@@ -49,7 +49,7 @@ Layout numbers (`minExperienceItems`, `maxExperienceItems`, bullet budget,
 - Role count below `minExperienceItems` is a hard violation. Roles above
   `maxExperienceItems` are clamped with a warning.
 
-### `ats-resume` layout (admin LaTeX export)
+### `ats-resume` layout (Carlito React-PDF)
 
 - All CMS experience roles must appear in output — never drop roles to save space.
 - `titleOverride` must be null or exactly `Senior Software Engineer` or
@@ -58,9 +58,9 @@ Layout numbers (`minExperienceItems`, `maxExperienceItems`, bullet budget,
 - No banned Unicode (smart quotes, en dash, em dash) in text fields.
 - Hyphenated compounds in prose are rejected except allowlisted proper names
   (`Quaid-i-Azam`, `Content-to-Commerce`) and skills-line JD keywords.
-- Exactly one page after trim + compile; overflow is trimmed by bullets
-  oldest-first, never by removing roles.
-- See `specs/resume-ats-latex.md` for compile/verify and golden PDF workflow.
+- Exactly one page after trim; overflow is trimmed by bullets oldest-first,
+  never by removing roles.
+- See `specs/resume-ats-react-pdf.md` for the React-PDF print contract.
 
 ## Must not
 

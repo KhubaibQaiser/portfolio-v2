@@ -26,6 +26,7 @@ function fontCandidates(fileName: string): string[] {
     join(cwd, "public/fonts", fileName),
     join(cwd, "apps/web/public/fonts", fileName),
     join(cwd, "apps/admin/public/fonts", fileName),
+    join(cwd, "packages/ui/src/resume-pdf/fonts", fileName),
   ].filter((candidate): candidate is string => candidate !== null);
 }
 
@@ -41,11 +42,19 @@ export function registerResumePdfFonts(): void {
   const sansRegular = resolveFont("DMSans-Regular.ttf");
   const sansMedium = resolveFont("DMSans-Medium.ttf");
   const sansItalic = resolveFont("DMSans-Italic.ttf");
+  const carlitoRegular = resolveFont("Carlito-Regular.ttf");
+  const carlitoBold = resolveFont("Carlito-Bold.ttf");
+  const carlitoItalic = resolveFont("Carlito-Italic.ttf");
+  const carlitoBoldItalic = resolveFont("Carlito-BoldItalic.ttf");
   const missing = [
     ["DM Serif Display", serif],
     ["DM Sans Regular", sansRegular],
     ["DM Sans Medium", sansMedium],
     ["DM Sans Italic", sansItalic],
+    ["Carlito Regular", carlitoRegular],
+    ["Carlito Bold", carlitoBold],
+    ["Carlito Italic", carlitoItalic],
+    ["Carlito Bold Italic", carlitoBoldItalic],
   ]
     .filter((entry) => !entry[1])
     .map((entry) => entry[0]);
@@ -64,6 +73,15 @@ export function registerResumePdfFonts(): void {
     Font.register({ family: "DM Sans Medium", src: sansMedium! });
     Font.register({ family: "DM Sans SemiBold", src: sansMedium! });
     Font.register({ family: "DM Sans Italic", src: sansItalic!, fontStyle: "italic" });
+    Font.register({
+      family: "Carlito",
+      fonts: [
+        { src: carlitoRegular! },
+        { src: carlitoBold!, fontWeight: 700 },
+        { src: carlitoItalic!, fontStyle: "italic" },
+        { src: carlitoBoldItalic!, fontWeight: 700, fontStyle: "italic" },
+      ],
+    });
     family = "DM Serif Display";
     registrationState = "success";
   } catch (error) {

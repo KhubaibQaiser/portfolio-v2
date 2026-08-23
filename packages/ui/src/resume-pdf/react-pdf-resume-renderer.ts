@@ -6,7 +6,11 @@ import type {
 import type { ResumeLayoutComponentKey } from "@portfolio/shared/schemas";
 import { renderResumePdfBuffer } from "./render-resume-pdf";
 
-const REACT_PDF_KEYS: ResumeLayoutComponentKey[] = ["classic", "modern-blue"];
+const REACT_PDF_KEYS: ResumeLayoutComponentKey[] = [
+  "classic",
+  "modern-blue",
+  "ats-resume",
+];
 
 export const reactPdfResumeRenderer: ResumePdfRenderer = {
   supports(componentKey: ResumeLayoutComponentKey): boolean {

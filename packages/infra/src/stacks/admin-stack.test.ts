@@ -59,6 +59,10 @@ function synth(): Template {
     env: { account: "123456789012", region: "eu-west-1" },
     config: baseConfig,
     openNextDir,
+    renderJobWorkerEntry: path.join(
+      repoRoot,
+      "apps/admin/src/lambda/render-job-worker/index.ts",
+    ),
     renderJobDlqHandlerEntry: path.join(
       repoRoot,
       "apps/admin/src/lambda/render-job-dlq-handler/index.ts",
@@ -73,13 +77,12 @@ function synth(): Template {
     ),
     depsLockFilePath: path.join(repoRoot, "pnpm-lock.yaml"),
     resumeFontsDir: path.join(repoRoot, "packages/ui/src/resume-pdf/fonts"),
-    repoRoot,
   });
   return Template.fromStack(stack);
 }
 
 describe("AdminStack render worker", () => {
-  it("uses a container image for RenderJobWorker (XeLaTeX for ats-resume)", () => {
+  it("uses a zip NodejsFunction for RenderJobWorker", () => {
     const template = synth();
     const functions = template.findResources("AWS::Lambda::Function");
     const renderWorker = Object.values(functions).find(
@@ -87,8 +90,9 @@ describe("AdminStack render worker", () => {
         resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
         "portfolio-admin-render-job-worker",
     );
-    expect(renderWorker?.Properties?.PackageType).toBe("Image");
-    expect(renderWorker?.Properties?.MemorySize).toBe(3008);
+    expect(renderWorker?.Properties?.PackageType).not.toBe("Image");
+    expect(renderWorker?.Properties?.Runtime).toBe("nodejs22.x");
+    expect(renderWorker?.Properties?.MemorySize).toBe(2048);
     expect(renderWorker?.Properties?.Timeout).toBe(300);
-  });
+  }, 30_000);
 });

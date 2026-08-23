@@ -109,7 +109,7 @@ Modified ResumeData JSON object with same structure as input, tailored for the j
 const ATS_RESUME_PROMPT = `You are tailoring a resume for the ATS Resume layout (single-column, strict ATS text rules).
 
 CONTENT RULES (violations are rejected):
-1. Return tailoredResumeSchema JSON only — never LaTeX or markdown outside bullet text fields.
+1. Return tailoredResumeSchema JSON only — never raw markup outside bullet text fields.
 2. Never invent employers, skills, metrics, or experience not in the candidate fact sheet.
 3. Include ALL experience roles from the fact sheet — never drop a role to save space.
 4. Regenerate the professional summary for this job (max 450 characters, 2 sentences, terminal punctuation).
@@ -206,7 +206,7 @@ export function atsResumeGuidelines(): VariantGuidelines {
       certifications: false,
     },
     notes:
-      "ATS Resume: XeLaTeX Carlito single-column A4. Admin JD tailoring only. Never drop roles; trim bullets oldest-first when overflowing.",
+      "ATS Resume: Carlito single-column A4 React-PDF. Never drop roles; trim bullets oldest-first when overflowing. Used for public download when set as default.",
   };
 }
 
@@ -385,12 +385,12 @@ export function atsResumeLayoutForm(): ResumeLayoutFormData {
   return {
     name: "ATS Resume",
     description:
-      "Single-column A4 ATS resume (Carlito/XeLaTeX). Job-tailored exports via admin Resume AI.",
+      "Single-column A4 ATS resume (Carlito). Used for public PDF downloads when set as default.",
     version: 1,
     component_key: "ats-resume",
     preview_image_url: null,
     is_default: false,
-    notes: "Admin JD tailoring layout. Renders via XeLaTeX, not public download default.",
+    notes: "Carlito ATS layout. Public /api/pdf uses this when it is the CMS default.",
     guidelines: atsResumeGuidelines(),
   };
 }
