@@ -14,6 +14,7 @@ import {
   resumeLayoutSchema,
   classicLayoutForm,
   modernBlueLayoutForm,
+  atsResumeLayoutForm,
   cloneLayoutForm,
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
@@ -344,13 +345,17 @@ export async function saveResumeLayout(
 }
 
 export async function createResumeLayoutFromTemplate(
-  template: "classic" | "modern-blue",
+  template: "classic" | "modern-blue" | "ats-resume",
 ): Promise<ActionResult & { id?: string }> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
 
   const source =
-    template === "modern-blue" ? modernBlueLayoutForm() : classicLayoutForm();
+    template === "ats-resume"
+      ? atsResumeLayoutForm()
+      : template === "modern-blue"
+        ? modernBlueLayoutForm()
+        : classicLayoutForm();
   const values = cloneLayoutForm(source, { name: `${source.name} copy` });
 
   try {
