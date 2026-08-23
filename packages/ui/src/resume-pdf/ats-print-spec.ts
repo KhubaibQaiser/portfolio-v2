@@ -16,8 +16,8 @@ export function createAtsResumeStyles() {
       backgroundColor: "#FFFFFF",
       paddingTop: 0.5 * IN,
       paddingBottom: 0.5 * IN,
-      paddingLeft: 0.55 * IN,
-      paddingRight: 0.55 * IN,
+      paddingLeft: 0.45 * IN,
+      paddingRight: 0.45 * IN,
     },
     header: {
       marginBottom: 0,

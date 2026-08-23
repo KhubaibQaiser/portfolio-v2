@@ -345,6 +345,7 @@ describe("Modern Blue PDF rendering", () => {
     expect(text).toContain("github.com/khubaibqaiser");
     expect(text).not.toContain("Portfolio");
     expect(text).toContain("• Led Embeds");
+    expect(text.indexOf("Frontend & UI:")).toBeLessThan(text.indexOf("• Led Embeds"));
     expect(text.indexOf("Frontend & UI:")).toBeLessThan(
       text.indexOf("Bachelor's Computer Science"),
     );
