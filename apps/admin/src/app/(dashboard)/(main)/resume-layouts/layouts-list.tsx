@@ -20,9 +20,11 @@ export function LayoutsList({ initialData }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [creating, setCreating] = useState<"classic" | "modern-blue" | null>(null);
+  const [creating, setCreating] = useState<
+    "classic" | "modern-blue" | "ats-resume" | null
+  >(null);
 
-  async function clone(template: "classic" | "modern-blue") {
+  async function clone(template: "classic" | "modern-blue" | "ats-resume") {
     setCreating(template);
     const result = await createResumeLayoutFromTemplate(template);
     setCreating(null);
@@ -68,10 +70,18 @@ export function LayoutsList({ initialData }: Props) {
         >
           {creating === "modern-blue" ? "Cloning…" : "Clone Modern Blue"}
         </button>
+        <button
+          type="button"
+          onClick={() => void clone("ats-resume")}
+          disabled={creating !== null}
+          className="border-border bg-muted/30 hover:bg-muted/50 rounded-lg border px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+        >
+          {creating === "ats-resume" ? "Cloning…" : "Clone ATS Resume"}
+        </button>
       </div>
       {initialData.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          No layouts yet. Clone Classic or Modern Blue to get started.
+          No layouts yet. Clone Classic, Modern Blue, or ATS Resume to get started.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
