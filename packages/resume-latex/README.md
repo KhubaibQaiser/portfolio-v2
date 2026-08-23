@@ -12,6 +12,11 @@ sudo apt-get update
 sudo apt-get install -y texlive-xetex fonts-crosextra-carlito poppler-utils
 ```
 
+The Lambda render-worker image vendors Carlito OFL `.ttf` files from
+`packages/resume-latex/fonts/` into `/usr/share/fonts/carlito/` (see
+`packages/infra/docker/render-job-worker/Dockerfile`) so it does not depend on
+distro font packages.
+
 Compile the vendored reference (golden master):
 
 ```bash
