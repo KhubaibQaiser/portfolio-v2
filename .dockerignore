@@ -1,9 +1,11 @@
-# Monorepo Docker build context — keep image lean
+# Monorepo Docker build context — keep image lean / avoid CDK asset recursion
 node_modules
 **/node_modules
 .git
 .next
 **/.next
+.open-next
+**/.open-next
 .turbo
 **/.turbo
 dist
@@ -11,6 +13,12 @@ dist
 coverage
 **/coverage
 *.log
+**/*.log
 .env
 .env.*
 !.env.example
+cdk.out
+**/cdk.out
+storybook-static
+**/storybook-static
+packages/resume-latex/fixtures

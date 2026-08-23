@@ -51,9 +51,19 @@ Skipped when `xelatex` / `pdftoppm` are not installed.
 
 ## Infrastructure
 
-Production render worker: Lambda **container image** with TeX Live
-(`packages/infra/docker/render-job-worker/Dockerfile`). Classic / modern-blue
-still use React-PDF fonts bundled in the same image.
+Production render worker: Lambda **container image**
+(`packages/infra/docker/render-job-worker/Dockerfile`) with:
+
+- XeLaTeX + a thin TeX package set (not full TeX Live collections)
+- **Vendored Carlito** OFL fonts under `packages/resume-latex/fonts/` installed
+  into `/usr/share/fonts/carlito/` (fontconfig). Local Debian/Ubuntu can keep
+  using `fonts-crosextra-carlito` instead.
+- Poppler (`pdftotext` / `pdfinfo`) for verify
+- React-PDF fonts for classic / modern-blue / cover letters in the same image
+
+CDK `fromImageAsset` excludes must include `cdk.out` / `**/cdk.out` (see
+`RENDER_JOB_WORKER_IMAGE_EXCLUDES` in `admin-stack.ts` and root `.dockerignore`)
+or deploy fails with `ENAMETOOLONG` from nested asset staging.
 
 ## Operator docs
 
