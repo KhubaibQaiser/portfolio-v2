@@ -181,7 +181,8 @@ jobs:
     runs-on: ubuntu-latest
     # Optional manual approval gate: add required reviewers to this environment.
     environment: production
-    timeout-minutes: 30
+    # QEMU arm64 image build (TeX dnf install) is slower than native OpenNext publish.
+    timeout-minutes: 60
     # OIDC: GitHub mints a short-lived token that assumes the AWS deploy role.
     permissions:
       id-token: write
@@ -210,12 +211,24 @@ jobs:
           POSTHOG_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_POSTHOG_ENVIRONMENT }}
         run: pnpm build:open-next
 
+      # RenderJobWorker is linux/arm64; ubuntu-latest is amd64. Without QEMU,
+      # CDK's docker build fails on `dnf install` with exit 255.
+      - name: Set up QEMU (arm64 Docker builds)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       # CloudFront ACM certs must live in us-east-1. Deploy Dns then Cert first
       # so a cert/DNS failure is visible before the regional app stacks. Only
       # the context keys these two stacks actually read are passed.
       - name: CDK deploy (edge — Dns then Cert, us-east-1)
         if: vars.DOMAIN_ENABLED == 'true'
         working-directory: packages/infra
+        env:
+          DOCKER_BUILDKIT: "1"
         run: >
           pnpm exec cdk deploy Portfolio-Dns Portfolio-Cert
           --require-approval never
@@ -224,6 +237,8 @@ jobs:
 
       - name: CDK deploy
         working-directory: packages/infra
+        env:
+          DOCKER_BUILDKIT: "1"
         run: >
           pnpm exec cdk deploy --all
           --require-approval never --concurrency 4

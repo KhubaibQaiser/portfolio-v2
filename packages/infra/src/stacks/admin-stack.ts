@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
@@ -124,6 +125,9 @@ export class AdminStack extends cdk.Stack {
       code: lambda.DockerImageCode.fromImageAsset(props.repoRoot, {
         file: "packages/infra/docker/render-job-worker/Dockerfile",
         exclude: RENDER_JOB_WORKER_IMAGE_EXCLUDES,
+        // Match Lambda architecture. CI (ubuntu-latest/amd64) must register
+        // QEMU before cdk deploy or `dnf` RUN steps exit 255 under arm64.
+        platform: ecr_assets.Platform.LINUX_ARM64,
       }),
       architecture: lambda.Architecture.ARM_64,
       memorySize: 3008,
