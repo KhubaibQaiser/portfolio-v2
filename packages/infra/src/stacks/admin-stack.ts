@@ -102,10 +102,28 @@ export class AdminStack extends cdk.Stack {
       deadLetterQueue: { queue: renderJobDlq, maxReceiveCount: 3 },
     });
 
+    // Exclude cdk.out or CDK stages the asset into cdk.out/asset.* which
+    // already contains cdk.out → nested paths → ENAMETOOLONG on deploy.
+    const RENDER_JOB_WORKER_IMAGE_EXCLUDES = [
+      "node_modules",
+      "**/node_modules",
+      ".git",
+      "**/.next",
+      "**/.open-next",
+      "**/.turbo",
+      "**/dist",
+      "cdk.out",
+      "**/cdk.out",
+      "**/storybook-static",
+      "**/coverage",
+      "**/*.log",
+      "packages/resume-latex/fixtures",
+    ];
+
     const renderJobWorkerFn = new lambda.DockerImageFunction(this, "RenderJobWorkerFn", {
       code: lambda.DockerImageCode.fromImageAsset(props.repoRoot, {
         file: "packages/infra/docker/render-job-worker/Dockerfile",
-        exclude: ["node_modules", ".git", "**/.next", "**/.turbo", "**/dist"],
+        exclude: RENDER_JOB_WORKER_IMAGE_EXCLUDES,
       }),
       architecture: lambda.Architecture.ARM_64,
       memorySize: 3008,
