@@ -3,6 +3,7 @@ import { Document } from "@react-pdf/renderer";
 import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { ResumeLayout } from "@portfolio/shared/schemas";
 import { classicGuidelines } from "@portfolio/shared/schemas";
+import { ResumeAtsDocument } from "./resume-ats-document";
 import { ResumeDocument } from "./resume-document";
 import { ResumeModernDocument } from "./resume-modern-document";
 import { registerResumePdfFonts } from "./register-fonts";
@@ -27,6 +28,11 @@ export function renderResumeDocument(
         mode={options.mode}
         highlightedSkills={options.highlightedSkills}
       />
+    ) as ResumePdfElement;
+  }
+  if (key === "ats-resume") {
+    return (
+      <ResumeAtsDocument data={data} guidelines={guidelines} />
     ) as ResumePdfElement;
   }
   return (

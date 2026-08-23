@@ -14,6 +14,26 @@ export const CANONICAL_RESUME_PDF_KEY = "system/resume-canonical.pdf";
 /** S3 object-metadata key the content hash is stored under. */
 export const CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY = "content-hash";
 
+/** ISO timestamp written on each cache write-through. */
+export const CANONICAL_RESUME_CACHED_AT_METADATA_KEY = "cached-at";
+
+/** Origin + CDN freshness ceiling for the public PDF. */
+export const CANONICAL_RESUME_PDF_TTL_SECONDS = 3600;
+
+export const CANONICAL_RESUME_PDF_CACHE_CONTROL =
+  "public, max-age=60, s-maxage=3600, stale-while-revalidate=60";
+
+export function isCanonicalResumeCacheFresh(
+  metadata: Record<string, string> | undefined,
+  now = Date.now(),
+): boolean {
+  const cachedAt = metadata?.[CANONICAL_RESUME_CACHED_AT_METADATA_KEY];
+  if (!cachedAt) return false;
+  const timestamp = Date.parse(cachedAt);
+  if (Number.isNaN(timestamp)) return false;
+  return now - timestamp <= CANONICAL_RESUME_PDF_TTL_SECONDS * 1000;
+}
+
 /**
  * The website host shown on the resume PDF header. Kept here (rather than
  * inline in resume-data.ts) so the rebuild Lambda — which can't use Next's
@@ -44,6 +64,7 @@ export function hashCanonicalResumeContent(
       JSON.stringify({
         data,
         layoutId: layout?.id ?? null,
+        layoutComponentKey: layout?.component_key ?? null,
         layoutVersion: layout?.version ?? null,
         // Layout guidelines (typography, spacing, colors, ...) can change
         // without a version bump — e.g. an admin edit to an existing row.

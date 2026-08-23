@@ -1,6 +1,6 @@
 import type { ResumeData } from "@portfolio/shared/resume-data";
 
-/** ResumeData matching the vendored reference template / golden PDF. */
+/** ResumeData matching the ATS React-PDF reference layout. */
 export const atsResumeReferenceData: ResumeData = {
   name: "Khubaib Qaiser",
   title: "Senior Fullstack Engineer",
