@@ -25,8 +25,8 @@ export function createAtsResumeStyles() {
     name: {
       fontFamily: "Carlito",
       fontWeight: 700,
-      fontSize: 19,
-      lineHeight: 20.5 / 19,
+      fontSize: 22,
+      lineHeight: 24 / 22,
       color: "#1A1A1A",
     },
     title: {

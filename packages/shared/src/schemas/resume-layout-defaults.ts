@@ -145,7 +145,7 @@ export function atsResumeGuidelines(): VariantGuidelines {
       typography: {
         headingFont: "Carlito",
         bodyFont: "Carlito",
-        headingSizes: { name: 19, title: 11.2, section: 10.3, job: 9.8 },
+        headingSizes: { name: 22, title: 11.2, section: 10.3, job: 9.8 },
         bodySizes: { contact: 8.6, body: 9.1, meta: 8.6, skills: 8.9 },
       },
       spacing: {

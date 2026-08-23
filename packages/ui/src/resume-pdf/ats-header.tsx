@@ -11,33 +11,35 @@ function displayUrl(value: string): string {
   return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
+function displayPhone(value: string): string {
+  const raw = value.replace(/^tel:/i, "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("92")) {
+    return `+${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+  return raw;
+}
+
 export function AtsHeader({ data, styles }: Props) {
   const github = data.socialLinks.find((link) => link.platform === "github");
   const linkedin = data.socialLinks.find((link) => link.platform === "linkedin");
   const items: Array<{ label: string; href?: string }> = [
     { label: data.location },
-    ...(data.phone?.trim() ? [{ label: data.phone.trim() }] : []),
+    ...(data.phone?.trim()
+      ? [
+          {
+            label: displayPhone(data.phone),
+            href: `tel:${data.phone.replace(/^tel:/i, "")}`,
+          },
+        ]
+      : []),
     { label: data.email, href: `mailto:${data.email}` },
     {
       label: displayUrl(data.website),
       href: /^https?:\/\//i.test(data.website) ? data.website : `https://${data.website}`,
     },
-    ...(github
-      ? [
-          {
-            label: displayUrl(github.label || github.url),
-            href: github.url,
-          },
-        ]
-      : []),
-    ...(linkedin
-      ? [
-          {
-            label: displayUrl(linkedin.label || linkedin.url),
-            href: linkedin.url,
-          },
-        ]
-      : []),
+    ...(github ? [{ label: displayUrl(github.url), href: github.url }] : []),
+    ...(linkedin ? [{ label: displayUrl(linkedin.url), href: linkedin.url }] : []),
   ].filter((item) => item.label.trim().length > 0);
 
   return (
