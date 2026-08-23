@@ -13,6 +13,7 @@ CDK passes the **monorepo root** as the Docker build context:
 DockerImageCode.fromImageAsset(repoRoot, {
   file: "packages/infra/docker/render-job-worker/Dockerfile",
   exclude: RENDER_JOB_WORKER_IMAGE_EXCLUDES,
+  platform: Platform.LINUX_ARM64,
 });
 ```
 
@@ -24,6 +25,11 @@ all stacks).
 
 Also excluded: `.open-next`, storybook output, coverage, logs, and
 `packages/resume-latex/fixtures` (golden PDF/PNG are not needed at runtime).
+
+The image is **linux/arm64** (matches Lambda `ARM_64`). GitHub Actions
+`ubuntu-latest` is amd64, so the deploy job registers QEMU
+(`docker/setup-qemu-action`) and Buildx before `cdk deploy`. Without that,
+`dnf install` inside the arm64 base image exits **255**.
 
 The Dockerfile copies only the worker dependency slice
 (`shared`, `data`, `ai`, `observability`, `resume-latex`, `ui`, `apps/admin`)
@@ -40,7 +46,9 @@ with package.json-first layers for cache friendliness.
 ## Local smoke test
 
 ```bash
-docker build -f packages/infra/docker/render-job-worker/Dockerfile -t portfolio-render-worker .
+docker build --platform linux/arm64 \
+  -f packages/infra/docker/render-job-worker/Dockerfile \
+  -t portfolio-render-worker .
 
 docker run --rm --entrypoint xelatex portfolio-render-worker --version
 docker run --rm --entrypoint pdftotext portfolio-render-worker -v
