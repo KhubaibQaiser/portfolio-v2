@@ -191,6 +191,26 @@ export function ResumeDocument({
           <RichPdfText value={data.summary} style={s.summary} enabled={richText} />
         </View>
 
+        {showSkills ? (
+          <View style={s.section}>
+            <View wrap={false}>
+              <Text style={s.sectionTitle}>Technical Skills</Text>
+              {firstSkill ? (
+                <Text style={s.skillLine}>
+                  <Text style={s.skillCategory}>{firstSkill.category}: </Text>
+                  {firstSkill.items.join(", ")}
+                </Text>
+              ) : null}
+            </View>
+            {restSkills.map((group) => (
+              <Text key={group.category} style={s.skillLine}>
+                <Text style={s.skillCategory}>{group.category}: </Text>
+                {group.items.join(", ")}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
         {showExperience ? (
           <View style={s.section}>
             <View wrap={false}>
@@ -363,26 +383,6 @@ export function ResumeDocument({
                   ) : null}
                 </Text>
               </View>
-            ))}
-          </View>
-        ) : null}
-
-        {showSkills ? (
-          <View style={s.section}>
-            <View wrap={false}>
-              <Text style={s.sectionTitle}>Technical Skills</Text>
-              {firstSkill ? (
-                <Text style={s.skillLine}>
-                  <Text style={s.skillCategory}>{firstSkill.category}: </Text>
-                  {firstSkill.items.join(", ")}
-                </Text>
-              ) : null}
-            </View>
-            {restSkills.map((group) => (
-              <Text key={group.category} style={s.skillLine}>
-                <Text style={s.skillCategory}>{group.category}: </Text>
-                {group.items.join(", ")}
-              </Text>
             ))}
           </View>
         ) : null}
