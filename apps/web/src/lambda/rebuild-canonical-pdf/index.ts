@@ -5,9 +5,11 @@ import { getResumeData, projectCanonicalResume } from "@portfolio/shared/resume-
 import { classicGuidelines, pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { renderResumePdfBuffer } from "@portfolio/ui/resume-pdf";
 import {
+  CANONICAL_RESUME_CACHED_AT_METADATA_KEY,
   CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY,
   CANONICAL_RESUME_PDF_KEY,
   hashCanonicalResumeContent,
+  isCanonicalResumeCacheFresh,
   resolveWebsiteHost,
 } from "../../lib/resume-pdf-cache";
 
@@ -43,7 +45,10 @@ export async function handler(): Promise<void> {
       });
       return null;
     });
-  if (cached?.metadata?.[CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY] === contentHash) {
+  if (
+    cached?.metadata?.[CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY] === contentHash &&
+    isCanonicalResumeCacheFresh(cached.metadata)
+  ) {
     logger.info("canonical resume pdf cache already warm, skipping rebuild", {
       contentHash,
     });
@@ -60,7 +65,10 @@ export async function handler(): Promise<void> {
     new Uint8Array(buffer),
     CANONICAL_RESUME_PDF_KEY,
     "application/pdf",
-    { [CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY]: contentHash },
+    {
+      [CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY]: contentHash,
+      [CANONICAL_RESUME_CACHED_AT_METADATA_KEY]: new Date().toISOString(),
+    },
   );
 
   if (fitReport?.degraded) {

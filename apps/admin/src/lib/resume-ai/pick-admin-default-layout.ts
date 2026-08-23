@@ -3,8 +3,8 @@ import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 
 /**
  * Admin Resume AI default layout. On fixture backend (localhost), prefer
- * ats-resume so tailoring tests hit the LaTeX path without manual selection.
- * Public `/api/pdf` continues to use pickDefaultResumeLayout (classic).
+ * ats-resume so tailoring tests hit that layout without manual selection.
+ * Public `/api/pdf` uses pickDefaultResumeLayout (whatever is default in CMS).
  */
 export function pickAdminResumeGeneratorDefaultLayout(
   layouts: ResumeLayout[],

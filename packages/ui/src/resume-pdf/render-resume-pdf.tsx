@@ -15,7 +15,9 @@ import {
 } from "./fit-modern-blue-resume";
 import { renderResumeDocument } from "./layout-registry";
 import type { ModernBlueDensity } from "./modern-blue-print-spec";
-import type { ResumePdfRenderOptions } from "./resume-render-options";
+import type { ResumePdfMode, ResumePdfRenderOptions } from "./resume-render-options";
+import { trimAtsResumeForPage, trimOneOldestAtsBullet } from "./trim-ats-resume-for-page";
+import { verifyAtsResumePdf } from "./verify-ats-resume-pdf";
 
 const DENSITIES: ModernBlueDensity[] = ["reference", "elegantCompact", "fitCompact"];
 const MAX_RENDER_ATTEMPTS = 128;
@@ -85,6 +87,72 @@ function isBetterCandidate(
   return candidate.densityIndex < current.densityIndex;
 }
 
+const MAX_ATS_TRIM_ATTEMPTS = 32;
+
+async function renderAtsResumePdf(
+  data: ResumeData,
+  layout: ResumeLayout,
+  options: ResumePdfRenderOptions,
+  mode: ResumePdfMode,
+): Promise<RenderedResumePdf> {
+  const maxBullets = Math.min(
+    layout.guidelines.validation.maxBulletsPerRole,
+    layout.guidelines.formatting.layout.maxBulletsPerJob,
+  );
+  let working = trimAtsResumeForPage(data, maxBullets);
+  const originalBullets = data.experience.reduce(
+    (sum, exp) => sum + exp.bullets.length,
+    0,
+  );
+  let buffer = await renderToBuffer(
+    renderResumeDocument(working, layout, { ...options, mode }),
+  );
+  let pageCount = await getPageCount(buffer);
+  let renderAttempts = 1;
+
+  while (pageCount > layout.guidelines.validation.maxPageCount) {
+    if (renderAttempts >= MAX_ATS_TRIM_ATTEMPTS) break;
+    const next = trimOneOldestAtsBullet(working);
+    if (!next) break;
+    working = next;
+    buffer = await renderToBuffer(
+      renderResumeDocument(working, layout, { ...options, mode }),
+    );
+    pageCount = await getPageCount(buffer);
+    renderAttempts += 1;
+  }
+
+  const retainedBullets = working.experience.reduce(
+    (sum, exp) => sum + exp.bullets.length,
+    0,
+  );
+  const fitReport: FitReport = {
+    mode,
+    density: "reference",
+    pageCount,
+    candidateRoles: data.experience.length,
+    retainedRoles: working.experience.length,
+    acceptedBulletCounts: working.experience.map((exp) => exp.bullets.length),
+    fallbackSteps: renderAttempts > 1 ? ["trim-ats-oldest-bullets"] : [],
+    roleDropReason: null,
+    renderAttempts,
+    droppedRoles: 0,
+    droppedBullets: Math.max(0, originalBullets - retainedBullets),
+    droppedSkillGroups: 0,
+    droppedSkills: 0,
+    droppedSections: [],
+    clampedSummary: false,
+    clampedBullets: 0,
+    degraded: pageCount > layout.guidelines.validation.maxPageCount,
+  };
+
+  if (mode === "tailored") {
+    await verifyAtsResumePdf(buffer, { requireOnePage: true });
+  }
+
+  return { buffer, fitReport };
+}
+
 export async function renderResumePdfBuffer(
   data: ResumeData,
   layout: ResumeLayout | null,
@@ -92,6 +160,9 @@ export async function renderResumePdfBuffer(
 ): Promise<RenderedResumePdf> {
   const mode = options.mode ?? "canonical";
   const fit = options.fit ?? "one-page";
+  if (layout?.component_key === "ats-resume") {
+    return renderAtsResumePdf(data, layout, options, mode);
+  }
   if (layout?.component_key !== "modern-blue") {
     return {
       buffer: await renderToBuffer(

@@ -1,6 +1,5 @@
 import * as cdk from "aws-cdk-lib";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
-import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
@@ -29,8 +28,8 @@ export type AdminStackProps = cdk.StackProps & {
   depsLockFilePath: string;
   /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
   resumeFontsDir: string;
-  /** Absolute path to monorepo root (Docker build context for render worker image). */
-  repoRoot: string;
+  /** Absolute path to apps/admin's render-job worker Lambda entry (TS). */
+  renderJobWorkerEntry: string;
   /** Dns/Cert stack constructs, only present when `config.domainEnabled`. */
   hostedZone?: route53.IHostedZone;
   certificate?: acm.ICertificate;
@@ -103,35 +102,24 @@ export class AdminStack extends cdk.Stack {
       deadLetterQueue: { queue: renderJobDlq, maxReceiveCount: 3 },
     });
 
-    // Exclude cdk.out or CDK stages the asset into cdk.out/asset.* which
-    // already contains cdk.out → nested paths → ENAMETOOLONG on deploy.
-    const RENDER_JOB_WORKER_IMAGE_EXCLUDES = [
-      "node_modules",
-      "**/node_modules",
-      ".git",
-      "**/.next",
-      "**/.open-next",
-      "**/.turbo",
-      "**/dist",
-      "cdk.out",
-      "**/cdk.out",
-      "**/storybook-static",
-      "**/coverage",
-      "**/*.log",
-      "packages/resume-latex/fixtures",
-    ];
-
-    const renderJobWorkerFn = new lambda.DockerImageFunction(this, "RenderJobWorkerFn", {
-      code: lambda.DockerImageCode.fromImageAsset(props.repoRoot, {
-        file: "packages/infra/docker/render-job-worker/Dockerfile",
-        exclude: RENDER_JOB_WORKER_IMAGE_EXCLUDES,
-        // Match Lambda architecture. CI (ubuntu-latest/amd64) must register
-        // QEMU before cdk deploy or `dnf` RUN steps exit 255 under arm64.
-        platform: ecr_assets.Platform.LINUX_ARM64,
-      }),
+    const renderJobWorkerFn = new nodeLambda.NodejsFunction(this, "RenderJobWorkerFn", {
+      entry: props.renderJobWorkerEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
-      memorySize: 3008,
+      memorySize: 2048,
       timeout: cdk.Duration.seconds(300),
+      bundling: {
+        externalModules: [],
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (_inputDir: string, outputDir: string) => [
+            `mkdir -p "${outputDir}/public/fonts"`,
+            `cp "${props.resumeFontsDir}"/*.ttf "${outputDir}/public/fonts/"`,
+          ],
+        },
+      },
       logGroup: new logs.LogGroup(this, "RenderJobWorkerFnLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,
         removalPolicy: cdk.RemovalPolicy.DESTROY,
