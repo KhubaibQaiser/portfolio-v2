@@ -78,6 +78,7 @@ export function LayoutForm({ layout }: Props) {
             <select {...register("component_key")} className={inputCls}>
               <option value="classic">Classic (single column)</option>
               <option value="modern-blue">Modern Blue (two column)</option>
+              <option value="ats-resume">ATS Resume (XeLaTeX)</option>
             </select>
           </LabeledField>
           <LabeledField label="Description" className="sm:col-span-2">
