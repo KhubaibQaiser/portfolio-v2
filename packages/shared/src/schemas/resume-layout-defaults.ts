@@ -149,7 +149,7 @@ export function atsResumeGuidelines(): VariantGuidelines {
         bodySizes: { contact: 8.6, body: 9.1, meta: 8.6, skills: 8.9 },
       },
       spacing: {
-        pageMargins: "0.5in top/bottom, 0.55in left/right",
+        pageMargins: "0.5in top/bottom, 0.45in left/right",
         sectionGap: 3.2,
         jobGap: 1.4,
         bulletIndent: 15,
@@ -258,7 +258,7 @@ export function classicGuidelines(): VariantGuidelines {
     },
     sections: SHARED_SECTIONS,
     notes:
-      "Classic single-column LETTER layout. Suited to most tech roles. Target two pages.",
+      "Classic single-column LETTER layout. Skills sit above experience. Target two pages.",
   };
 }
 

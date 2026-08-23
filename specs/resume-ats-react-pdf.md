@@ -26,7 +26,7 @@ Public `/api/pdf` uses `pickDefaultResumeLayout`. When the CMS default is
 
 ## Layout rules
 
-- Page: A4, margins 0.5in top/bottom, 0.55in left/right.
+- Page: A4, margins 0.5in top/bottom, 0.45in left/right.
 - Font: Carlito only.
 - Section order: Professional Summary, Technical Skills, Professional
   Experience, Education, Languages, optional Personal Projects.
