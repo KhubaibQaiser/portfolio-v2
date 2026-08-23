@@ -11,7 +11,7 @@
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^3.0.35",
+    "@ai-sdk/groq": "^4.0.29",
     "@ai-sdk/react": "^3.0.160",
     "@gsap/react": "^2.1.2",
     "@marsidev/react-turnstile": "^1.5.3",
