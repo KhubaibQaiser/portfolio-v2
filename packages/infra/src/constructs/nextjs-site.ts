@@ -185,7 +185,7 @@ export class NextjsSite extends Construct {
     });
 
     const signBodyFn = new cloudfront.experimental.EdgeFunction(this, "SignPostBodyFn", {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime,
       handler: "index.handler",
       code: lambda.Code.fromAsset(path.join(lambdaDir, "sign-post-body")),
     });
