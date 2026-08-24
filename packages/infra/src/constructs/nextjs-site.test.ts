@@ -63,9 +63,7 @@ function synth(): Template {
 function edgeStackTemplate(app: cdk.App, siteStack: cdk.Stack): Template {
   const edgeStack = app.node.children.find(
     (child): child is cdk.Stack =>
-      child instanceof cdk.Stack &&
-      child !== siteStack &&
-      child.region === "us-east-1",
+      child instanceof cdk.Stack && child !== siteStack && child.region === "us-east-1",
   );
   expect(edgeStack).toBeDefined();
   return Template.fromStack(edgeStack!);
