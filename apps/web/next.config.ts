@@ -14,6 +14,10 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
+  // Cap CDN/browser stale-while-revalidate for ISR pages. Default is ~1 year,
+  // which keeps old HTML (and its hashed CSS links) around across deploys.
+  // With revalidate=10 this becomes s-maxage=10, stale-while-revalidate=50.
+  expireTime: 60,
   // Bundle server deps into traced Lambda artifacts. Turbopack production builds
   // externalize packages into .next/node_modules with hashed names and omit
   // transitive deps on Lambda — use `next build --webpack` (see package.json).

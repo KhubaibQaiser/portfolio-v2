@@ -46,6 +46,7 @@ flowchart LR
     cf[CloudFront]
     subgraph web [apps/web]
       webfn[Lambda - SSR/ISR + route handlers]
+      s3assets[(S3 hashed assets)]
       s3cache[(S3 ISR cache)]
     end
     subgraph adm [apps/admin]
@@ -56,7 +57,9 @@ flowchart LR
     google[Google OAuth]
   end
 
-  user --> cf --> webfn
+  user --> cf
+  cf -->|"HTML RSC API"| webfn
+  cf -->|"/_next/static"| s3assets
   webfn <--> s3cache
   webfn --> ddb
   webfn --> s3media
@@ -66,13 +69,24 @@ flowchart LR
   admfn --> s3media
 ```
 
+Deeper routing, cache headers, and deploy ordering:
+[docs/architecture.md](docs/architecture.md).
+
 ### OpenNext caching
 
 Each site (`web` and `admin`) uses OpenNext with:
 
-- **S3 incremental cache** — stores ISR/SSG output (`_cache` prefix in the site bucket).
-- **`queue: "direct"`** — when a page is stale, the server Lambda triggers regeneration via a self HEAD request (no SQS or separate revalidation Lambda).
-- **`disableTagCache: true`** — no DynamoDB tag cache; content pages use `export const revalidate = 10` and data loaders use React `cache()` for per-request dedup.
+- **Hashed static assets** (`_assets/_next/**`) — `immutable`, never pruned on
+  deploy; unused hashes expire after 30 days so stale HTML can still load CSS/JS.
+- **Unhashed public files** — short browser cache; CloudFront invalidated on deploy.
+- **S3 incremental cache** — ISR/SSG seed under `_cache` (replaced each deploy).
+- **`queue: "direct"`** — when a page is stale, the server Lambda regenerates via
+  a self HEAD request (no SQS or separate revalidation Lambda).
+- **`disableTagCache: true`** — no DynamoDB tag cache; content pages use
+  `export const revalidate = 10` and data loaders use React `cache()` for
+  per-request dedup.
+- **Web `expireTime: 60`** — caps document `stale-while-revalidate` so browsers
+  do not keep ISR HTML for ~1 year across releases.
 
 The admin app is `force-dynamic` — it always reads fresh content from DynamoDB.
 
