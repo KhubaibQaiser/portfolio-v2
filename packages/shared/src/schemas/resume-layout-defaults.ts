@@ -230,9 +230,9 @@ export function classicGuidelines(): VariantGuidelines {
         bodySizes: { contact: 8.5, body: 9.5, meta: 9 },
       },
       spacing: {
-        pageMargins: "28pt top, 32pt bottom, 32pt horizontal",
-        sectionGap: 13,
-        jobGap: 6,
+        pageMargins: "22pt top, 24pt bottom, 28pt horizontal",
+        sectionGap: 9,
+        jobGap: 4,
         bulletIndent: 10,
       },
       layout: {
@@ -258,7 +258,7 @@ export function classicGuidelines(): VariantGuidelines {
     },
     sections: SHARED_SECTIONS,
     notes:
-      "Classic single-column LETTER layout. Skills sit above experience. Target two pages.",
+      "Classic single-column LETTER layout. Condensed rhythm; skills sit above experience. Target two pages.",
   };
 }
 
