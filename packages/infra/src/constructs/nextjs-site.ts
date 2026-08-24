@@ -49,8 +49,19 @@ export type NextjsSiteProps = {
  *  - a streaming server Lambda (SSR/API/ISR) behind a CloudFront origin
  *  - an image-optimization Lambda for `/_next/image`
  *
- * Time-based ISR: OpenNext uses the S3 incremental cache and the direct queue
- * (self HEAD on stale pages). No DynamoDB tag cache, SQS, or revalidation Lambda.
+ * Asset classes (OpenNext fingerprinted-asset model):
+ *  - Hashed `_assets/_next/**` — immutable, never pruned; lifecycle expires
+ *    unused hashes after 30 days so stale HTML can still load old CSS/JS.
+ *  - Unhashed public files under `_assets` — short browser cache; CloudFront
+ *    invalidated on deploy. Both asset uploads use `prune: false` because a
+ *    second deploy to the shared `_assets` prefix with `prune: true` would
+ *    delete `_next/**`.
+ *  - ISR seed `_cache/**` — replaced each deploy (`prune: true`).
+ *
+ * Server Lambda depends on hashed assets + cache seed so new HTML never
+ * references CSS that is not yet on S3. Time-based ISR uses the S3
+ * incremental cache and the direct queue (self HEAD on stale pages). No
+ * DynamoDB tag cache, SQS, or revalidation Lambda.
  */
 export class NextjsSite extends Construct {
   readonly distribution: cloudfront.Distribution;
@@ -84,6 +95,15 @@ export class NextjsSite extends Construct {
       enforceSSL: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+      lifecycleRules: [
+        {
+          // Re-PUT on each deploy refreshes LastModified for the current
+          // build; only abandoned hashes from previous builds age out.
+          id: "ExpireUnusedHashedAssets",
+          prefix: `${ASSETS_PREFIX}/_next/`,
+          expiration: cdk.Duration.days(30),
+        },
+      ],
     });
 
     this.serverFunction = new lambda.Function(this, "ServerFn", {
@@ -245,6 +265,12 @@ export class NextjsSite extends Construct {
         "_next/*": staticBehavior,
         BUILD_ID: staticBehavior,
       },
+      // Do not map errors to index.html (that is Storybook SPA only). Zero TTL
+      // so a mid-deploy S3 miss is not sticky for five minutes.
+      errorResponses: [
+        { httpStatus: 403, ttl: cdk.Duration.seconds(0) },
+        { httpStatus: 404, ttl: cdk.Duration.seconds(0) },
+      ],
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
       domainNames: props.domain?.domainNames,
@@ -265,11 +291,35 @@ export class NextjsSite extends Construct {
       });
     }
 
-    new s3deploy.BucketDeployment(this, "AssetsDeployment", {
-      sources: [s3deploy.Source.asset(path.join(openNextDir, "assets"))],
+    // Hashed CSS/JS: never prune and never invalidate — unique filenames;
+    // stale HTML from a prior build must still resolve these objects.
+    const hashedAssets = new s3deploy.BucketDeployment(this, "HashedAssets", {
+      sources: [
+        s3deploy.Source.asset(path.join(openNextDir, "assets"), {
+          exclude: ["*", "!_next", "!_next/**"],
+        }),
+      ],
       destinationBucket: this.bucket,
       destinationKeyPrefix: ASSETS_PREFIX,
-      prune: true,
+      prune: false,
+      memoryLimit: 1024,
+      cacheControl: [
+        s3deploy.CacheControl.fromString("public,max-age=31536000,immutable"),
+      ],
+    });
+
+    // Unhashed public/ files: short browser cache; invalidate CloudFront on
+    // deploy. prune: false — a prune on the shared _assets prefix would delete
+    // _next/** because those keys are absent from this source.
+    new s3deploy.BucketDeployment(this, "PublicAssets", {
+      sources: [
+        s3deploy.Source.asset(path.join(openNextDir, "assets"), {
+          exclude: ["_next", "_next/**"],
+        }),
+      ],
+      destinationBucket: this.bucket,
+      destinationKeyPrefix: ASSETS_PREFIX,
+      prune: false,
       cacheControl: [
         s3deploy.CacheControl.fromString(
           "public,max-age=0,s-maxage=31536000,must-revalidate",
@@ -278,13 +328,19 @@ export class NextjsSite extends Construct {
       distribution: this.distribution,
       distributionPaths: ["/*"],
     });
-    new s3deploy.BucketDeployment(this, "CacheDeployment", {
+
+    const cacheDeployment = new s3deploy.BucketDeployment(this, "CacheDeployment", {
       sources: [s3deploy.Source.asset(path.join(openNextDir, "cache"))],
       destinationBucket: this.bucket,
       destinationKeyPrefix: CACHE_PREFIX,
       prune: true,
       memoryLimit: 1024,
     });
+
+    // New BUILD_ID HTML must not go live before hashed CSS/JS and the ISR seed
+    // are on S3 (avoids new-HTML / missing-new-CSS and sticky 403s).
+    this.serverFunction.node.addDependency(hashedAssets);
+    this.serverFunction.node.addDependency(cacheDeployment);
 
     new cdk.CfnOutput(this, "SiteUrl", {
       value: `https://${this.distribution.distributionDomainName}`,
