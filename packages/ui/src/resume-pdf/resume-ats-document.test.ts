@@ -4,10 +4,13 @@ import { atsResumeLayoutForm, type ResumeLayout } from "@portfolio/shared/schema
 import { atsResumeReferenceData } from "./fixtures/ats-resume-reference";
 import { renderResumePdfBuffer } from "./render-resume-pdf";
 
-function layout(): ResumeLayout {
+function layout(overrides?: Partial<ResumeLayout>): ResumeLayout {
+  const form = atsResumeLayoutForm();
   return {
     id: "layout-ats-resume",
-    ...atsResumeLayoutForm(),
+    ...form,
+    ...overrides,
+    guidelines: overrides?.guidelines ?? form.guidelines,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   };
@@ -52,6 +55,7 @@ describe("ATS React-PDF rendering", () => {
     expect(result.fitReport?.pageCount).toBe(1);
     expect(result.fitReport?.droppedRoles).toBe(0);
     expect(result.fitReport?.degraded).toBe(false);
+    expect(result.fitReport?.droppedBullets).toBeLessThanOrEqual(1);
 
     const text = await extractPdfText(result.buffer);
     expect(text).toContain("Khubaib Qaiser");
@@ -63,8 +67,26 @@ describe("ATS React-PDF rendering", () => {
     expect(text).toContain("Shopsense AI");
     expect(text).toContain("github.com/khubaibqaiser");
     expect(text).toContain("linkedin.com/in/khubaib-qaiser");
+    expect(text).toContain("08/2024 - 07/2026");
     expect(text).not.toMatch(/tel:/i);
     expect(text).not.toMatch(/Jan(?:uary)?\s+2024/);
+    expect(text).not.toMatch(/[\u2013\u2014]/);
+
+    expect(text.indexOf("Frontend:")).toBeGreaterThan(
+      text.indexOf("Fullstack Engineer with 11 years"),
+    );
+    expect(text.indexOf("Shopsense AI")).toBeGreaterThan(text.indexOf("Frontend:"));
+    expect(text.indexOf("Bachelor of Computer Science")).toBeGreaterThan(
+      text.indexOf("Shopsense AI"),
+    );
+    expect(text.indexOf("English (C1)")).toBeGreaterThan(
+      text.indexOf("Bachelor of Computer Science"),
+    );
+
+    const companyAt = text.indexOf("Shopsense AI");
+    const roleAt = text.indexOf("Senior Software Engineer");
+    expect(companyAt).toBeGreaterThan(-1);
+    expect(roleAt).toBeGreaterThan(companyAt);
   }, 30_000);
 
   it("uses clickable URL labels even when CMS social labels are names", async () => {
@@ -89,8 +111,9 @@ describe("ATS React-PDF rendering", () => {
       { mode: "canonical" },
     );
     const text = await extractPdfText(result.buffer);
-    // PDF extractors often split digit groups; ignore whitespace/invisible gaps.
     expect(text.replace(/\s+/g, "")).toContain("+923365532933");
+    expect(text).toContain("Islamabad, Pakistan");
+    expect(text).toContain("khubaibqaiser.com");
     expect(text).not.toMatch(/tel:/i);
     expect(text).toContain("github.com/khubaibqaiser");
     expect(text).toContain("linkedin.com/in/khubaib-qaiser");
@@ -106,7 +129,88 @@ describe("ATS React-PDF rendering", () => {
     const titleSize = await renderedFontSize(result.buffer, "Senior Fullstack Engineer");
     const contactSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
     expect(nameSize).toBeCloseTo(22, 1);
-    expect(titleSize).toBeCloseTo(11.2, 1);
-    expect(contactSize).toBeCloseTo(8.6, 1);
+    expect(titleSize).toBeCloseTo(11, 1);
+    expect(contactSize).toBeCloseTo(9, 1);
+  }, 30_000);
+
+  it("omits section headings when CMS visibility or data is empty", async () => {
+    const result = await renderResumePdfBuffer(
+      {
+        ...atsResumeReferenceData,
+        visibleSections: atsResumeReferenceData.visibleSections.filter(
+          (section) => section !== "languages",
+        ),
+        projects: [],
+        certifications: [],
+        remoteWorkLine: null,
+        referencesLine: null,
+      },
+      layout(),
+      { mode: "canonical" },
+    );
+    const text = await extractPdfText(result.buffer);
+    expect(text.toUpperCase()).not.toContain("LANGUAGES");
+    expect(text.toUpperCase()).not.toContain("PROJECTS");
+    expect(text.toUpperCase()).not.toContain("CERTIFICATIONS");
+    expect(text.toUpperCase()).not.toContain("REMOTE WORK");
+    expect(text.toUpperCase()).not.toContain("REFERENCES");
+  }, 30_000);
+
+  it("renders projects before education and optional blocks when enabled", async () => {
+    const form = atsResumeLayoutForm();
+    const result = await renderResumePdfBuffer(
+      {
+        ...atsResumeReferenceData,
+        visibleSections: [
+          ...atsResumeReferenceData.visibleSections,
+          "projects",
+          "certifications",
+          "remote",
+          "references",
+        ],
+        projects: [
+          {
+            name: "Portfolio Site",
+            status: "Live",
+            bullets: ["Shipped a public portfolio used as the canonical resume source."],
+          },
+        ],
+        certifications: [{ name: "AWS Certified Developer", issuer: "Amazon" }],
+        remoteWorkLine: "Remote-first across US, EU, and APAC time zones.",
+        referencesLine: "Available on request.",
+      },
+      layout({
+        guidelines: {
+          ...form.guidelines,
+          sections: {
+            ...form.guidelines.sections,
+            projects: true,
+            certifications: true,
+            remoteWorkExperience: true,
+            references: true,
+          },
+        },
+      }),
+      { mode: "canonical" },
+    );
+    const text = await extractPdfText(result.buffer);
+    expect(text.indexOf("Portfolio Site")).toBeGreaterThan(text.indexOf("Shopsense AI"));
+    expect(text.indexOf("Bachelor of Computer Science")).toBeGreaterThan(
+      text.indexOf("Portfolio Site"),
+    );
+    expect(text.indexOf("English (C1)")).toBeGreaterThan(
+      text.indexOf("Bachelor of Computer Science"),
+    );
+    expect(text.indexOf("AWS Certified Developer")).toBeGreaterThan(
+      text.indexOf("English (C1)"),
+    );
+    expect(text.indexOf("Remote-first across US")).toBeGreaterThan(
+      text.indexOf("AWS Certified Developer"),
+    );
+    expect(text.indexOf("Available on request.")).toBeGreaterThan(
+      text.indexOf("Remote-first across US"),
+    );
+    expect(text.toUpperCase()).toContain("PROJECTS");
+    expect(text.toUpperCase()).toContain("CERTIFICATIONS");
   }, 30_000);
 });

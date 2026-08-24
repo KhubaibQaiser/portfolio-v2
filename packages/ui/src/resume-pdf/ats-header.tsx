@@ -7,6 +7,11 @@ type Props = {
   styles: AtsResumeStyles;
 };
 
+type ContactItem = {
+  label: string;
+  href?: string;
+};
+
 function displayUrl(value: string): string {
   return value.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
@@ -20,46 +25,60 @@ function displayPhone(value: string): string {
   return raw;
 }
 
+function websiteHref(website: string): string {
+  return /^https?:\/\//i.test(website) ? website : `https://${website}`;
+}
+
+function findSocial(data: ResumeData, platform: string) {
+  return data.socialLinks.find((link) => link.platform.trim().toLowerCase() === platform);
+}
+
 export function AtsHeader({ data, styles }: Props) {
-  const github = data.socialLinks.find((link) => link.platform === "github");
-  const linkedin = data.socialLinks.find((link) => link.platform === "linkedin");
-  const items: Array<{ label: string; href?: string }> = [
+  const github = findSocial(data, "github");
+  const linkedin = findSocial(data, "linkedin");
+  const items: ContactItem[] = [
     { label: data.location },
     ...(data.phone?.trim()
       ? [
           {
             label: displayPhone(data.phone),
-            href: `tel:${data.phone.replace(/^tel:/i, "")}`,
+            href: `tel:${data.phone.replace(/^tel:/i, "").trim()}`,
           },
         ]
       : []),
-    { label: data.email, href: `mailto:${data.email}` },
-    {
-      label: displayUrl(data.website),
-      href: /^https?:\/\//i.test(data.website) ? data.website : `https://${data.website}`,
-    },
+    ...(data.email.trim() ? [{ label: data.email, href: `mailto:${data.email}` }] : []),
+    ...(data.website.trim()
+      ? [
+          {
+            label: displayUrl(data.website),
+            href: websiteHref(data.website),
+          },
+        ]
+      : []),
     ...(github ? [{ label: displayUrl(github.url), href: github.url }] : []),
     ...(linkedin ? [{ label: displayUrl(linkedin.url), href: linkedin.url }] : []),
   ].filter((item) => item.label.trim().length > 0);
 
   return (
-    <View style={styles.header}>
+    <View style={styles.header} wrap={false}>
       <Text style={styles.name}>{data.name}</Text>
-      <Text style={styles.title}>{data.title}</Text>
-      <View style={styles.contact}>
-        {items.map((item, index) => (
-          <Text key={`${item.label}-${index}`} style={styles.contactText}>
-            {index > 0 ? <Text style={styles.contactSeparator}>{" | "}</Text> : null}
-            {item.href ? (
-              <Link src={item.href} style={styles.contactLink}>
-                {item.label}
-              </Link>
-            ) : (
-              item.label
-            )}
-          </Text>
-        ))}
-      </View>
+      {data.title.trim() ? <Text style={styles.title}>{data.title}</Text> : null}
+      {items.length > 0 ? (
+        <View style={styles.contact}>
+          {items.map((item, index) => (
+            <Text key={`${item.label}-${index}`} style={styles.contactText}>
+              {index > 0 ? <Text style={styles.contactSeparator}>{" | "}</Text> : null}
+              {item.href ? (
+                <Link src={item.href} style={styles.contactLink}>
+                  {item.label}
+                </Link>
+              ) : (
+                item.label
+              )}
+            </Text>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.headerRule} />
     </View>
   );
