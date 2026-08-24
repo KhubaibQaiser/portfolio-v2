@@ -361,6 +361,10 @@ for the full trust-boundary decision; this is a summary.
   OAC; they authenticate with cookies).
 - **Demo:** [`docs/n8n-candidate-mcp-demo.md`](docs/n8n-candidate-mcp-demo.md)
   walks through an n8n workflow that authenticates and calls both tools.
+- **Roadmap:** [ADR 0005](docs/adr/0005-job-search-automation-phase2.md) is
+  the research/planning ADR for Phase 2 (configurable job-search
+  preferences, multi-agent sourcing + recruiter-style matching, a Google
+  Sheet tracker) — proposed, not yet implemented.
 
 Run locally over stdio with `pnpm --filter @portfolio/candidate-mcp dev`; run
 `pnpm --filter @portfolio/candidate-mcp mcp-scan` for a manual, pre-release
