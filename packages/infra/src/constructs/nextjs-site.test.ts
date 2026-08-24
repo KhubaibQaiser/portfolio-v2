@@ -37,7 +37,7 @@ function writeMinimalOpenNext(openNextDir: string): void {
   );
 }
 
-function synth(): Template {
+function synthApp(): { app: cdk.App; siteStack: cdk.Stack } {
   const openNextDir = path.join(
     repoRoot,
     "packages/infra/fixtures/minimal-open-next-nextjs-site",
@@ -45,14 +45,28 @@ function synth(): Template {
   writeMinimalOpenNext(openNextDir);
 
   const app = new cdk.App();
-  const stack = new cdk.Stack(app, "NextjsSiteTest", {
+  const siteStack = new cdk.Stack(app, "NextjsSiteTest", {
     env: { account: "123456789012", region: "eu-west-1" },
   });
-  new NextjsSite(stack, "Site", {
+  new NextjsSite(siteStack, "Site", {
     openNextDir,
     region: "eu-west-1",
   });
-  return Template.fromStack(stack);
+  return { app, siteStack };
+}
+
+function synth(): Template {
+  return Template.fromStack(synthApp().siteStack);
+}
+
+/** Lambda@Edge lives in a sibling us-east-1 stack when the site is regional. */
+function edgeStackTemplate(app: cdk.App, siteStack: cdk.Stack): Template {
+  const edgeStack = app.node.children.find(
+    (child): child is cdk.Stack =>
+      child instanceof cdk.Stack && child !== siteStack && child.region === "us-east-1",
+  );
+  expect(edgeStack).toBeDefined();
+  return Template.fromStack(edgeStack!);
 }
 
 function dependsOnList(resource: { DependsOn?: string | string[] }): string[] {
@@ -152,5 +166,17 @@ describe("NextjsSite asset deploy", () => {
           (cacheLogicalId !== undefined && dep.includes(cacheLogicalId)),
       ),
     ).toBe(true);
+  }, 60_000);
+
+  it("deploys SignPostBodyFn Lambda@Edge on nodejs22.x", () => {
+    const { app, siteStack } = synthApp();
+    const edgeTemplate = edgeStackTemplate(app, siteStack);
+
+    const lambdas = Object.values(edgeTemplate.findResources("AWS::Lambda::Function"));
+    expect(lambdas.length).toBeGreaterThan(0);
+    for (const fn of lambdas) {
+      expect(fn.Properties?.Runtime).toBe("nodejs22.x");
+      expect(fn.Properties?.Runtime).not.toBe("nodejs20.x");
+    }
   }, 60_000);
 });
