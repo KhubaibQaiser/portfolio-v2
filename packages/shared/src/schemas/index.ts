@@ -117,3 +117,11 @@ export {
 } from "./site-config";
 export { contactSchema, type ContactFormData } from "./contact";
 export { mediaInsertSchema, mediaRowSchema, type MediaInsert, type Media } from "./media";
+export {
+  mcpApiKeyCreateSchema,
+  mcpApiKeyNameSchema,
+  mcpApiKeyRowSchema,
+  MCP_API_KEY_PREFIX,
+  type McpApiKeyCreateFormData,
+  type McpApiKeyRow,
+} from "./mcp-api-key";

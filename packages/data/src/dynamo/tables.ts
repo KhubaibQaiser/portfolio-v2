@@ -26,6 +26,8 @@ export const TABLE_SUFFIXES = {
   renderJob: "render-job",
   /** Async AI generation-job status (admin generate flow), keyed by `id` with a `ttl` sweep. */
   generationJob: "generation-job",
+  /** MCP API key hashes for candidate-mcp consumers, keyed by `id`. */
+  mcpApiKey: "mcp-api-key",
 } as const;
 
 export type TableKey = keyof typeof TABLE_SUFFIXES;
@@ -136,5 +138,21 @@ export function buildCreateTableInputs(
     simpleTable(names.chatCache, "pk"),
     simpleTable(names.renderJob, "id"),
     simpleTable(names.generationJob, "id"),
+    {
+      TableName: names.mcpApiKey,
+      BillingMode: PAY_PER_REQUEST,
+      AttributeDefinitions: [
+        { AttributeName: "id", AttributeType: "S" },
+        { AttributeName: "name", AttributeType: "S" },
+      ],
+      KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "by-name",
+          KeySchema: [{ AttributeName: "name", KeyType: "HASH" }],
+          Projection: { ProjectionType: "ALL" },
+        },
+      ],
+    },
   ];
 }

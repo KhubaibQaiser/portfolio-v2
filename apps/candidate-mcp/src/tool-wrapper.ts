@@ -1,7 +1,7 @@
 import type { AuthInfo, CallToolResult } from "@modelcontextprotocol/server";
 import { auditToolCall } from "./audit-log";
 import { checkRateLimit } from "./rate-limit";
-import type { Config } from "./config";
+import type { ClientRateLimit } from "./config";
 
 /**
  * Wraps a tool handler with the two per-call guardrails every tool in this
@@ -15,14 +15,14 @@ import type { Config } from "./config";
 export function withGuardrails(
   toolName: string,
   authInfo: AuthInfo | undefined,
-  config: Pick<Config, "rateLimitMax" | "rateLimitWindowSec">,
+  clientRateLimit: ClientRateLimit,
   handler: () => Promise<CallToolResult>,
 ): () => Promise<CallToolResult> {
   return async () => {
     const clientId = authInfo?.clientId ?? "stdio";
     const scopes = authInfo?.scopes ?? [];
 
-    const rateLimit = await checkRateLimit(clientId, config);
+    const rateLimit = await checkRateLimit(clientId, clientRateLimit);
     if (!rateLimit.ok) {
       auditToolCall({
         tool: toolName,

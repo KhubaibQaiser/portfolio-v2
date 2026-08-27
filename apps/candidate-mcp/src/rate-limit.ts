@@ -1,5 +1,5 @@
 import { getRateLimiter } from "@portfolio/data";
-import type { Config } from "./config";
+import type { ClientRateLimit } from "./config";
 
 const RATE_LIMIT_PREFIX = "candidate-mcp";
 
@@ -14,7 +14,7 @@ export type RateLimitCheck = { ok: true } | { ok: false; retryAfterSeconds: numb
  */
 export async function checkRateLimit(
   clientId: string,
-  config: Pick<Config, "rateLimitMax" | "rateLimitWindowSec">,
+  config: ClientRateLimit,
 ): Promise<RateLimitCheck> {
   const result = await getRateLimiter().check(clientId, {
     max: config.rateLimitMax,

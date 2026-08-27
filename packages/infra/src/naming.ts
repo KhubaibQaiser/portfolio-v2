@@ -168,6 +168,8 @@ const CANDIDATE_MCP_READ_SUFFIXES = [
   TABLE_SUFFIXES.testimonial,
 ] as const;
 
+const CANDIDATE_MCP_API_KEY_SUFFIX = TABLE_SUFFIXES.mcpApiKey;
+
 /**
  * Candidate-mcp permissions: tighter than {@link grantWebDataAccess}'s
  * `${tablePrefix}-*` wildcard. This Lambda is reachable by external
@@ -206,6 +208,13 @@ export function grantCandidateMcpDataAccess(
       sid: "CandidateMcpRateLimitCounter",
       actions: ["dynamodb:UpdateItem"],
       resources: [tableArn(TABLE_SUFFIXES.rateLimit)],
+    }),
+  );
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "CandidateMcpApiKeyVerify",
+      actions: ["dynamodb:GetItem"],
+      resources: [tableArn(CANDIDATE_MCP_API_KEY_SUFFIX)],
     }),
   );
 }

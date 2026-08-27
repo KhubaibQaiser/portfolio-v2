@@ -1,78 +1,71 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { createFixtureContentRepository } from "@portfolio/data";
+import {
+  createFixtureContentRepository,
+  createMemoryMcpApiKeyStore,
+} from "@portfolio/data";
 import type { Config } from "./config";
 import { createHttpHandler } from "./http-handler";
-import {
-  createAgentTokenVerifier,
-  createCognitoVerifier,
-} from "./auth/verify-agent-token";
-import { generateTestKeyPair, signTestJwt, testJwks } from "./auth/test-jwt";
 import { candidateProfileSchema } from "./schemas/candidate-profile";
 import { ORIGIN_VERIFY_HEADER } from "./origin-verify";
 
 const config: Config = {
   serverUrl: "https://mcp.example.com/mcp",
-  cognitoUserPoolId: "eu-west-1_TestPool123",
-  cognitoRegion: "eu-west-1",
-  resourceServerIdentifier: "https://mcp.example.com",
-  cognitoDomain: "test-domain",
   enabled: true,
+  ipRateLimitMax: 1000,
+  ipRateLimitWindowSec: 60,
   rateLimitMax: 30,
   rateLimitWindowSec: 60,
+  smokeTestRateLimitMax: 10,
+  smokeTestRateLimitWindowSec: 60,
+  smokeTestKeySecretArn: null,
   originVerifySecret: "test-origin-verify-secret",
 };
 
-const KID = "test-key-1";
-
 function setUp(configOverrides: Partial<Config> = {}) {
   const effectiveConfig = { ...config, ...configOverrides };
-  const { publicKey, privateKey } = generateTestKeyPair();
-  const cognitoVerifier = createCognitoVerifier(effectiveConfig);
-  cognitoVerifier.cacheJwks(testJwks(publicKey, KID));
-  const verifier = createAgentTokenVerifier(effectiveConfig, cognitoVerifier);
+  const keyStore = createMemoryMcpApiKeyStore();
   const repo = createFixtureContentRepository();
-  const handler = createHttpHandler({ config: effectiveConfig, repo, verifier });
+  let apiKey = "";
 
-  const { issuer } = CognitoJwtVerifier.parseUserPoolId(
-    effectiveConfig.cognitoUserPoolId,
-  );
-  const now = Math.floor(Date.now() / 1000);
-  const validToken = signTestJwt(
-    {
-      sub: "n8n-workflow",
-      client_id: "n8n-workflow",
-      token_use: "access",
-      scope: `${effectiveConfig.resourceServerIdentifier}/profile.read`,
-      iss: issuer,
-      iat: now,
-      auth_time: now,
-      exp: now + 3600,
-      jti: "22222222-2222-2222-2222-222222222222",
+  const handler = createHttpHandler({
+    config: effectiveConfig,
+    repo,
+    keyStore,
+  });
+
+  return {
+    handler,
+    keyStore,
+    async createKey(name = "test-client") {
+      const result = await keyStore.createKey({
+        name,
+        rateLimitMax: 30,
+        rateLimitWindowSec: 60,
+      });
+      apiKey = result.key;
+      return result;
     },
-    privateKey,
-    KID,
-  );
-
-  return { handler, validToken };
+    get apiKey() {
+      return apiKey;
+    },
+  };
 }
 
 const SERVER_HOST = new URL(config.serverUrl).host;
 
-/**
- * Tests stamp Host because in-memory `Request` objects have none, and stamp
- * origin-verify because production CloudFront injects that header before the
- * Function URL. `toWebRequest` rewrites the Function URL Host to the public
- * custom-domain Host before this handler runs.
- */
-function withHost(request: Request, originSecret = config.originVerifySecret): Request {
+function withHost(
+  request: Request,
+  originSecret = config.originVerifySecret,
+  bearer?: string,
+): Request {
   request.headers.set("host", SERVER_HOST);
   if (originSecret) request.headers.set(ORIGIN_VERIFY_HEADER, originSecret);
+  if (bearer) request.headers.set("authorization", `Bearer ${bearer}`);
   return request;
 }
 
-function initializeRequest(): Request {
+function initializeRequest(bearer?: string): Request {
   return withHost(
     new Request(config.serverUrl, {
       method: "POST",
@@ -88,19 +81,21 @@ function initializeRequest(): Request {
         },
       }),
     }),
+    config.originVerifySecret,
+    bearer,
   );
 }
 
 describe("createHttpHandler", () => {
-  it("rejects an unauthenticated request with 401 and a WWW-Authenticate challenge", async () => {
+  it("rejects an unauthenticated request with 401 JSON (no OAuth challenge)", async () => {
     const { handler } = setUp();
 
     const response = await handler(initializeRequest());
 
     expect(response.status).toBe(401);
-    const challenge = response.headers.get("www-authenticate");
-    expect(challenge).toContain("Bearer");
-    expect(challenge).toContain("resource_metadata");
+    expect(response.headers.get("www-authenticate")).toBeNull();
+    const body = (await response.json()) as { error: string };
+    expect(body.error).toBe("unauthorized");
   });
 
   it("rejects a Function URL Host that is not the public hostname", async () => {
@@ -126,70 +121,28 @@ describe("createHttpHandler", () => {
   it("rejects a request with an invalid bearer token", async () => {
     const { handler } = setUp();
 
-    const response = await handler(
-      withHost(
-        new Request(config.serverUrl, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: "Bearer not-a-real-token",
-          },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "initialize",
-            params: {},
-          }),
-        }),
-      ),
-    );
+    const response = await handler(initializeRequest("not-a-real-token"));
 
     expect(response.status).toBe(401);
   });
 
-  it("serves RFC 9728 protected-resource metadata unauthenticated", async () => {
-    const { handler } = setUp();
-
-    const response = await handler(
-      withHost(
-        new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      resource: string;
-      scopes_supported: string[];
-    };
-    expect(body.resource).toBe(config.serverUrl);
-    expect(body.scopes_supported).toContain(
-      `${config.resourceServerIdentifier}/profile.read`,
-    );
-  });
-
-  it("answers 503 for every route when MCP_ENABLED is false (kill switch)", async () => {
+  it("answers 503 when MCP_ENABLED is false (kill switch)", async () => {
     const { handler } = setUp({ enabled: false });
 
-    const [mcpResponse, metadataResponse] = await Promise.all([
-      handler(initializeRequest()),
-      handler(
-        withHost(
-          new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
-        ),
-      ),
-    ]);
+    const response = await handler(initializeRequest());
 
-    expect(mcpResponse.status).toBe(503);
-    expect(metadataResponse.status).toBe(503);
+    expect(response.status).toBe(503);
   });
 
-  it("serves a schema-valid get_candidate_profile response for an authenticated, correctly-scoped caller", async () => {
-    const { handler, validToken } = setUp();
+  it("serves a schema-valid get_candidate_profile response for a valid API key", async () => {
+    const setup = setUp();
+    await setup.createKey();
+    const { handler, apiKey } = setup;
 
     const transport = new StreamableHTTPClientTransport(new URL(config.serverUrl), {
       fetch: (async (input: string | URL | Request, init?: RequestInit) =>
-        handler(withHost(new Request(input, init)))) as typeof fetch,
-      authProvider: { token: async () => validToken },
+        handler(withHost(new Request(input, init), config.originVerifySecret, apiKey))) as typeof fetch,
+      authProvider: { token: async () => apiKey },
     });
     const client = new Client({ name: "test-client", version: "1.0.0" });
 

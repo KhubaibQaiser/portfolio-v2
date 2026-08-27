@@ -62,11 +62,8 @@ export function getStackOutput(
   }
 }
 
-/** Parsed JSON value of a Secrets Manager secret (caller must have credentials). */
-export function getSecretJson<T = Record<string, string>>(
-  secretId: string,
-  region?: string,
-): T {
+/** Raw string value of a Secrets Manager secret (caller must have credentials). */
+export function getSecretString(secretId: string, region?: string): string {
   const args = [
     "secretsmanager",
     "get-secret-value",
@@ -86,13 +83,22 @@ export function getSecretJson<T = Record<string, string>>(
     if (!value) {
       throw new Error(`Secret ${secretId} returned an empty value`);
     }
-    return JSON.parse(value) as T;
+    return value;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Failed to read secret ${secretId}. Ensure AWS credentials are configured and the stack has been deployed.\n${message}`,
     );
   }
+}
+
+/** Parsed JSON value of a Secrets Manager secret (caller must have credentials). */
+export function getSecretJson<T = Record<string, string>>(
+  secretId: string,
+  region?: string,
+): T {
+  const value = getSecretString(secretId, region);
+  return JSON.parse(value) as T;
 }
 
 /** First object key under `prefix` in the bucket, or undefined when empty. */
