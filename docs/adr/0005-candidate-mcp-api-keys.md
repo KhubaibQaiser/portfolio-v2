@@ -54,6 +54,10 @@ admin CMS (`requireAdmin()` + Google allowlist):
   `last_used_at` from the internet-facing path.
 - Admin caps `rate_limit_max` (1–120) to prevent misconfiguration.
 - Fail closed on Dynamo errors during verify (503).
+- **Origin allowlist (global):** Host header stays pinned to the public MCP
+  hostname. Browser `Origin` also allows `claude.ai` and `api.anthropic.com`
+  so Claude.ai connectors are not rejected with 403 (missing Origin still
+  passes for n8n/curl/smoke).
 
 ## Consequences
 

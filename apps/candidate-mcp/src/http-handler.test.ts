@@ -69,7 +69,10 @@ function initializeRequest(bearer?: string): Request {
   return withHost(
     new Request(config.serverUrl, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+      },
       body: JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
@@ -132,6 +135,28 @@ describe("createHttpHandler", () => {
     const response = await handler(initializeRequest());
 
     expect(response.status).toBe(503);
+  });
+
+  it("accepts Claude.ai Origin with a valid API key", async () => {
+    const setup = setUp();
+    await setup.createKey("claude-ai");
+    const request = initializeRequest(setup.apiKey);
+    request.headers.set("origin", "https://claude.ai");
+
+    const response = await setup.handler(request);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects an unknown browser Origin even with a valid API key", async () => {
+    const setup = setUp();
+    await setup.createKey("claude-ai");
+    const request = initializeRequest(setup.apiKey);
+    request.headers.set("origin", "https://evil.example");
+
+    const response = await setup.handler(request);
+
+    expect(response.status).toBe(403);
   });
 
   it("serves a schema-valid get_candidate_profile response for a valid API key", async () => {

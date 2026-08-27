@@ -89,5 +89,6 @@ can address individual fields.
 | ------------------------------------- | ----------------------------------------------------------------- |
 | `401 {"error":"unauthorized"}`        | Missing/wrong/expired/revoked API key.                            |
 | `403 {"error":"forbidden"}`           | Request bypassed CloudFront (direct Function URL).                |
+| `403` JSON-RPC `Invalid Origin: …`    | Browser Origin not in the global allowlist (`claude.ai`, etc.).   |
 | `429 {"error":"rate_limited"}`        | Per-key or per-IP limit — wait or raise the key's limit in admin. |
 | `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch on the Lambda.                    |
