@@ -98,4 +98,47 @@ describe("handleDynamicClientRegistration", () => {
     expect(result.body.token_endpoint_auth_method).toBe("none");
     expect(send).toHaveBeenCalledTimes(1);
   });
+
+  it("rejects grant_types that omit authorization_code", async () => {
+    const result = await handleDynamicClientRegistration(
+      new Request("https://mcp.example.com/register", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          redirect_uris: ["http://127.0.0.1:6274/oauth/callback"],
+          token_endpoint_auth_method: "none",
+          grant_types: ["client_credentials"],
+        }),
+      }),
+      config,
+      { send: vi.fn() },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(400);
+  });
+
+  it("accepts connector bodies with refresh_token and empty scope", async () => {
+    const send = vi.fn().mockResolvedValue({
+      UserPoolClient: { ClientId: "dcr-extra-fields" },
+    });
+    const result = await handleDynamicClientRegistration(
+      new Request("https://mcp.example.com/register", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          redirect_uris: ["https://claude.ai/api/mcp/auth_callback"],
+          token_endpoint_auth_method: "none",
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          application_type: "native",
+          scope: "",
+          client_name: "connector",
+        }),
+      }),
+      config,
+      { send },
+    );
+    expect(result.ok).toBe(true);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
 });
