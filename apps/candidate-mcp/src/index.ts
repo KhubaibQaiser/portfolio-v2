@@ -9,7 +9,7 @@ import { createCandidateMcpServer } from "./server";
  *
  * This process never runs in production — the deployed server is
  * `lambda.ts`, reached only through CloudFront with origin-verify plus an
- * API-key bearer token (ADR 0005). stdio has no network exposure, so skipping
+ * OAuth Bearer access token (ADR 0006). stdio has no network exposure, so skipping
  * auth here mirrors `packages/agent-mcp`'s existing local-only trust model.
  */
 const repo = getContentRepository();

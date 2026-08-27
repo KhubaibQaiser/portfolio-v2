@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-export const ADR_IDS = ["0001", "0002", "0003", "0005"] as const;
+export const ADR_IDS = ["0001", "0002", "0003", "0005", "0006"] as const;
 export type AdrId = (typeof ADR_IDS)[number];
 
 export const AI_CONTRACT_MODULES = ["resume", "cover-letter"] as const;
