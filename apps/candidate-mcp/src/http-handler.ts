@@ -1,49 +1,66 @@
 import {
   createMcpHandler,
-  getOAuthProtectedResourceMetadataUrl,
   hostHeaderValidationResponse,
-  oauthMetadataResponse,
   originValidationResponse,
-  requireBearerAuth,
-  type OAuthTokenVerifier,
+  type AuthInfo,
 } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
-import { buildAuthMetadataOptions } from "./oauth-metadata";
+import type { McpApiKeyStore } from "@portfolio/shared/ports/mcp-api-key-store";
+import {
+  getViewerIp,
+  parseBearerToken,
+  verifyApiKeyBearer,
+  type SmokeKeyConfig,
+} from "./auth/verify-api-key";
 import { originVerifyResponse } from "./origin-verify";
-import { profileReadScope, type Config } from "./config";
+import type { ClientRateLimit, Config } from "./config";
 import { createCandidateMcpServer } from "./server";
+import { checkIpRateLimit } from "./ip-rate-limit";
+import { clientRateLimitStorage } from "./request-context";
 
 export type HttpHandlerDeps = {
   config: Config;
   repo: ContentRepository;
-  verifier: OAuthTokenVerifier;
+  keyStore: McpApiKeyStore;
+  getSmokeKey?: () => Promise<SmokeKeyConfig | undefined>;
 };
+
+export type RequestAuth = {
+  authInfo: AuthInfo;
+  clientRateLimit: ClientRateLimit;
+};
+
+function toAuthInfo(
+  bearerToken: string,
+  verified: { id: string; name: string; expiresAt: number | null },
+  serverUrl: string,
+): AuthInfo {
+  return {
+    token: bearerToken,
+    clientId: verified.name,
+    scopes: ["profile.read"],
+    expiresAt: verified.expiresAt ?? undefined,
+    resource: new URL(serverUrl),
+  };
+}
 
 /**
  * Assembles this server's web-standard `fetch(request) => Response` handler:
- * origin-verify → kill switch → Host/Origin validation → RFC 9728/8414
- * discovery → Bearer-token gate → MCP dispatch. Framework-free
- * (`Request`/`Response` only) so the same function is unit-testable
- * in-memory and directly usable from the Lambda Function URL adapter
- * (`lambda.ts`).
+ * origin-verify → kill switch → Host/Origin validation → per-IP limit →
+ * API-key gate → MCP dispatch. No OAuth discovery (ADR 0005).
  */
 export function createHttpHandler(
   deps: HttpHandlerDeps,
 ): (request: Request) => Promise<Response> {
-  const { config, repo, verifier } = deps;
+  const { config, repo, keyStore, getSmokeKey } = deps;
   const serverUrl = new URL(config.serverUrl);
   const allowedHostnames = [serverUrl.hostname];
-  const authMetadata = buildAuthMetadataOptions(config);
-  const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(serverUrl);
-
-  const gate = requireBearerAuth({
-    verifier,
-    requiredScopes: [profileReadScope(config)],
-    resourceMetadataUrl,
-  });
 
   const mcpHandler = createMcpHandler((ctx) =>
-    createCandidateMcpServer(repo, ctx.authInfo, config),
+    createCandidateMcpServer(repo, ctx.authInfo, {
+      rateLimitMax: config.rateLimitMax,
+      rateLimitWindowSec: config.rateLimitWindowSec,
+    }),
   );
 
   return async function fetch(request: Request): Promise<Response> {
@@ -59,12 +76,56 @@ export function createHttpHandler(
       originValidationResponse(request, allowedHostnames);
     if (rejected) return rejected;
 
-    const metadataResponse = oauthMetadataResponse(request, authMetadata);
-    if (metadataResponse) return metadataResponse;
+    let ipLimit;
+    try {
+      ipLimit = await checkIpRateLimit(getViewerIp(request), config);
+    } catch {
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    }
+    if (!ipLimit.ok) {
+      return Response.json(
+        { error: "rate_limited", retryAfterSeconds: ipLimit.retryAfterSeconds },
+        {
+          status: 429,
+          headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+        },
+      );
+    }
 
-    const auth = await gate(request);
-    if (auth instanceof Response) return auth;
+    const bearer = parseBearerToken(request);
+    if (!bearer) {
+      return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
 
-    return mcpHandler.fetch(request, { authInfo: auth });
+    let smokeKey: SmokeKeyConfig | undefined;
+    try {
+      smokeKey = getSmokeKey ? await getSmokeKey() : undefined;
+    } catch {
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    }
+
+    let authContext;
+    try {
+      authContext = await verifyApiKeyBearer(bearer, keyStore, smokeKey);
+    } catch {
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    }
+    if (!authContext) {
+      return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const authInfo = toAuthInfo(
+      authContext.bearerToken,
+      authContext.verified,
+      config.serverUrl,
+    );
+    const clientRateLimit: ClientRateLimit = {
+      rateLimitMax: authContext.verified.rateLimitMax,
+      rateLimitWindowSec: authContext.verified.rateLimitWindowSec,
+    };
+
+    return clientRateLimitStorage.run(clientRateLimit, () =>
+      mcpHandler.fetch(request, { authInfo }),
+    );
   };
 }

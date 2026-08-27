@@ -22,7 +22,6 @@ const baseConfig: InfraConfig = {
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
 };
 
 function writeMinimalOpenNext(openNextDir: string): void {

@@ -143,9 +143,7 @@ const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {
   description: "Storybook design-system showcase (static S3 + CloudFront)",
 });
 
-// Candidate-mcp needs a stable hostname for its Cognito resource-server
-// identifier and Host-header allowlist (see docs/adr/0003), so — unlike
-// Web/Admin/Storybook — it only deploys once the custom domain is live.
+// Candidate-mcp needs a stable hostname for its Host-header allowlist (ADR 0003).
 let candidateMcp: CandidateMcpStack | undefined;
 if (config.domainEnabled && cert) {
   candidateMcp = new CandidateMcpStack(app, `${config.appName}-CandidateMcp`, {
@@ -155,8 +153,7 @@ if (config.domainEnabled && cert) {
     entry: path.join(repoRoot, "apps/candidate-mcp/src/lambda.ts"),
     hostedZone: dns.hostedZone,
     certificate: cert.certificate,
-    description:
-      "Candidate profile MCP server (Cognito-authenticated Lambda + CloudFront)",
+    description: "Candidate profile MCP server (API-key auth Lambda + CloudFront)",
   });
   candidateMcp.addDependency(data);
 }

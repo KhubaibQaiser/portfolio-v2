@@ -159,6 +159,9 @@ importers:
       '@aws-lambda-powertools/logger':
         specifier: ^2.33.1
         version: 2.33.1
+      '@aws-sdk/client-secrets-manager':
+        specifier: ^3.1075.0
+        version: 3.1075.0
       '@modelcontextprotocol/server':
         specifier: ^2.0.0
         version: 2.0.0
@@ -174,9 +177,6 @@ importers:
       '@portfolio/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      aws-jwt-verify:
-        specifier: ^5.2.1
-        version: 5.2.1
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -3739,10 +3739,6 @@ packages:
     resolution: {integrity: sha512-y9OHn5/BOcIiq409vPvpypMIr7/8M1ScFe8IkFMSCN1/GI/5c73fQ4pfzNq+VDkj86T5zxs7BQ1qU2lQQytdXA==}
     engines: {node: '>= 18.0.0'}
     hasBin: true
-
-  aws-jwt-verify@5.2.1:
-    resolution: {integrity: sha512-J+buA4M+qvQDk58WXFBLkDodkEX3DDL1ac5XFQPW3opxAsaLXYu5hYnlSHsaBRDBUXBAn695kE/cw/mdyJKwJg==}
-    engines: {node: '>=18.0.0'}
 
   aws4fetch@1.0.20:
     resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
@@ -10108,8 +10104,6 @@ snapshots:
       constructs: 10.6.0
 
   aws-cdk@2.1128.1: {}
-
-  aws-jwt-verify@5.2.1: {}
 
   aws4fetch@1.0.20: {}
 

@@ -90,6 +90,16 @@ export class DataStack extends cdk.Stack {
     });
     durableTable("MediaTable", TABLE_SUFFIXES.media, { name: "id", type: STRING });
 
+    const mcpApiKeyTable = durableTable("McpApiKeyTable", TABLE_SUFFIXES.mcpApiKey, {
+      name: "id",
+      type: STRING,
+    });
+    mcpApiKeyTable.addGlobalSecondaryIndex({
+      indexName: "by-name",
+      partitionKey: { name: "name", type: STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     const resumeGenerationTable = durableTable(
       "ResumeGenerationTable",
       TABLE_SUFFIXES.resumeGeneration,

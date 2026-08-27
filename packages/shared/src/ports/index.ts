@@ -45,3 +45,10 @@ export type {
   GenerationJobQueue,
   GenerationJobQueueMessage,
 } from "./generation-job-queue";
+export type {
+  McpApiKeyStore,
+  McpApiKeyRecord,
+  McpApiKeyCreateInput,
+  McpApiKeyCreateResult,
+  VerifiedMcpApiKey,
+} from "./mcp-api-key-store";

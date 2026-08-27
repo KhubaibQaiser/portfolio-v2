@@ -17,6 +17,7 @@ import {
   X,
   Wand2,
   LayoutTemplate,
+  KeyRound,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
   { href: "/recommendations", label: "Recommendations", icon: MessageSquare },
   { href: "/site-config", label: "Site Config", icon: Settings },
+  { href: "/api-keys", label: "MCP API keys", icon: KeyRound },
   { href: "/media", label: "Media", icon: Image },
 ];
 

@@ -8,15 +8,14 @@ import { createCandidateMcpServer } from "./server";
  * `DATA_BACKEND=dynamo` + AWS credentials to point at real data).
  *
  * This process never runs in production — the deployed server is
- * `lambda.ts`, reached only through CloudFront with origin-verify plus a
- * Cognito-verified bearer token (ADR 0003). stdio has no network exposure,
- * so skipping auth here mirrors `packages/agent-mcp`'s existing local-only
- * trust model.
+ * `lambda.ts`, reached only through CloudFront with origin-verify plus an
+ * API-key bearer token (ADR 0005). stdio has no network exposure, so skipping
+ * auth here mirrors `packages/agent-mcp`'s existing local-only trust model.
  */
 const repo = getContentRepository();
-const rateLimitConfig = {
+const stdioRateLimit = {
   rateLimitMax: Number(process.env.MCP_RATE_LIMIT_MAX ?? 30),
   rateLimitWindowSec: Number(process.env.MCP_RATE_LIMIT_WINDOW_SEC ?? 60),
 };
 
-serveStdio(() => createCandidateMcpServer(repo, undefined, rateLimitConfig));
+serveStdio(() => createCandidateMcpServer(repo, undefined, stdioRateLimit));

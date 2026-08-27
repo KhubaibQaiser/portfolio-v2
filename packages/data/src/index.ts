@@ -5,6 +5,7 @@ import type {
   CostCap,
   GenerationJobQueue,
   GenerationJobStore,
+  McpApiKeyStore,
   RateLimiter,
   RenderJobQueue,
   RenderJobStore,
@@ -24,6 +25,8 @@ import { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
 import { createDynamoGenerationJobStore } from "./adapters/dynamo-generation-job-store";
 import { createMemoryGenerationJobStore } from "./adapters/memory-generation-job-store";
 import { createSqsGenerationJobQueue } from "./adapters/sqs-generation-job-queue";
+import { createDynamoMcpApiKeyStore } from "./adapters/dynamo-mcp-api-key-store";
+import { createMemoryMcpApiKeyStore } from "./adapters/memory-mcp-api-key-store";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { buildTableNames } from "./dynamo/tables";
@@ -42,6 +45,15 @@ export { createSqsRenderJobQueue } from "./adapters/sqs-render-job-queue";
 export { createDynamoGenerationJobStore } from "./adapters/dynamo-generation-job-store";
 export { createMemoryGenerationJobStore } from "./adapters/memory-generation-job-store";
 export { createSqsGenerationJobQueue } from "./adapters/sqs-generation-job-queue";
+export { createDynamoMcpApiKeyStore } from "./adapters/dynamo-mcp-api-key-store";
+export { createMemoryMcpApiKeyStore } from "./adapters/memory-mcp-api-key-store";
+export {
+  hashApiKey,
+  parseApiKeyToken,
+  buildApiKeyToken,
+  runDummyHashCompare,
+  secretsEqual,
+} from "./adapters/mcp-api-key-crypto";
 export { createContentCostCap } from "./adapters/content-cost-cap";
 export { createDynamoClient } from "./dynamo/client";
 export {
@@ -208,4 +220,17 @@ export function getUsageReservation(): UsageReservation {
         : createMemoryUsageReservation();
   }
   return cachedUsageReservation;
+}
+
+let cachedMcpApiKeyStore: McpApiKeyStore | undefined;
+
+/** Returns the MCP API key store for admin minting and candidate-mcp verification. */
+export function getMcpApiKeyStore(): McpApiKeyStore {
+  if (!cachedMcpApiKeyStore) {
+    cachedMcpApiKeyStore =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoMcpApiKeyStore(createDynamoClient(), buildTableNames().mcpApiKey)
+        : createMemoryMcpApiKeyStore();
+  }
+  return cachedMcpApiKeyStore;
 }

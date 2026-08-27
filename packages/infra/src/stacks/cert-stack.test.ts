@@ -15,7 +15,6 @@ const baseConfig: InfraConfig = {
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
 };
 
 function synth(): Template {

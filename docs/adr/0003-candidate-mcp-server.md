@@ -1,6 +1,6 @@
 # ADR 0003 — Candidate Profile MCP server: a new network trust boundary
 
-- **Status:** Accepted
+- **Status:** Accepted (identity amended 2026-08-27 — Cognito M2M superseded by [ADR 0005](0005-candidate-mcp-api-keys.md))
 - **Date:** 2026-08-19 (network layer amended 2026-08-20: origin-verify
   replaces Function URL OAC so MCP Bearer can pass through)
 - **Deciders:** Khubaib (with AI pairing)
@@ -29,7 +29,11 @@ stack (`Portfolio-CandidateMcp`) in the _same_ AWS account and CDK app as the
 rest of the site, reading the _same_ DynamoDB tables through the existing
 `ContentRepository` port — but isolated and authenticated as follows.
 
-### 1. Authorization: OAuth 2.1 client-credentials via Amazon Cognito, not static tokens or a custom auth server
+### 1. Authorization: OAuth 2.1 client-credentials via Amazon Cognito — _superseded by ADR 0005_
+
+> **2026-08-27:** Identity is now **hashed API keys** minted in admin (see
+> [ADR 0005](0005-candidate-mcp-api-keys.md)). The Cognito design below is
+> retained for historical context only.
 
 The MCP authorization spec's guidance for remote servers is OAuth 2.1 with
 short-lived, audience-bound tokens validated server-side; token passthrough
@@ -212,13 +216,10 @@ externally-authenticated service. Different trust boundary, different
 deployment target (nothing today deploys `agent-mcp` to AWS), different
 consumers. Keeping them separate keeps each one's threat model simple.
 
-### B. Static per-client bearer tokens in Secrets Manager — _rejected_
+### B. Static per-client bearer tokens in Secrets Manager — _superseded by ADR 0005_
 
-Simpler to build, but a shared-secret model with no standard expiry,
-rotation, or scoping story, and it doesn't follow the MCP spec's explicit
-recommendation for remote servers. Cognito gives short-lived, scoped,
-revocable tokens as a managed service for negligible cost — the "boring,
-managed service" choice here is _more_ protocol-correct, not less.
+Originally rejected as a shared-secret model. ADR 0005 adopts **hashed,
+admin-minted, revocable** API keys instead — not plaintext secrets in git.
 
 ### C. API Gateway + Cognito authorizer — _rejected (for now)_
 

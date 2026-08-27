@@ -7,7 +7,7 @@ import {
 } from "@portfolio/ai/context/build-candidate-facts";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
-import type { Config } from "../config";
+import type { ClientRateLimit } from "../config";
 
 /**
  * Assembles the same compact "fact sheet" the resume-AI pipeline feeds its
@@ -46,7 +46,7 @@ export function registerGetCandidateFactsTool(
   server: McpServer,
   repo: ContentRepository,
   authInfo: AuthInfo | undefined,
-  config: Pick<Config, "rateLimitMax" | "rateLimitWindowSec">,
+  config: ClientRateLimit,
 ): void {
   server.registerTool(
     "get_candidate_facts",

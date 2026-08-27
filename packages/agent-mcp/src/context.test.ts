@@ -14,9 +14,15 @@ describe("portfolio-context MCP readers", () => {
     expect(text).toContain("AppErrors");
   });
 
-  it("returns ADR 0003 with the candidate-mcp Cognito decision", () => {
+  it("returns ADR 0003 with the candidate-mcp trust boundary", () => {
     const text = readAdr("0003");
     expect(text).toContain("Candidate Profile MCP server");
+    expect(text).toContain("origin-verify");
+  });
+
+  it("returns ADR 0005 with the API key auth decision", () => {
+    const text = readAdr("0005");
+    expect(text).toContain("API keys");
     expect(text).toContain("Cognito");
   });
 
