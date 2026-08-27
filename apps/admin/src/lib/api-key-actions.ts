@@ -5,17 +5,13 @@ import { mcpApiKeyCreateSchema } from "@portfolio/shared/schemas/mcp-api-key";
 import type { McpApiKeyRecord } from "@portfolio/shared/ports/mcp-api-key-store";
 import { requireAdmin } from "@/lib/auth-guard";
 
-export type ActionResult =
-  | { success: true }
-  | { success: false; error: string };
+export type ActionResult = { success: true } | { success: false; error: string };
 
 export type CreateMcpApiKeyResult =
   | { success: true; key: string; record: McpApiKeyRecord }
   | { success: false; error: string };
 
-export async function createMcpApiKey(
-  values: unknown,
-): Promise<CreateMcpApiKeyResult> {
+export async function createMcpApiKey(values: unknown): Promise<CreateMcpApiKeyResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
 

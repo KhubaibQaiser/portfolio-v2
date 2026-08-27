@@ -11,7 +11,7 @@ export function ApiKeySecretBanner({ apiKey, onDismiss }: ApiKeySecretBannerProp
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="border-amber-500/40 bg-amber-500/10 space-y-3 rounded-lg border p-4">
+    <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
       <div>
         <h2 className="font-semibold text-amber-900 dark:text-amber-100">
           Copy your new API key

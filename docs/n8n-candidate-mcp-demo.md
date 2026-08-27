@@ -85,9 +85,9 @@ can address individual fields.
 
 ## Troubleshooting
 
-| Symptom | Cause |
-| --- | --- |
-| `401 {"error":"unauthorized"}` | Missing/wrong/expired/revoked API key. |
-| `403 {"error":"forbidden"}` | Request bypassed CloudFront (direct Function URL). |
-| `429 {"error":"rate_limited"}` | Per-key or per-IP limit — wait or raise the key's limit in admin. |
-| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch on the Lambda. |
+| Symptom                               | Cause                                                             |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `401 {"error":"unauthorized"}`        | Missing/wrong/expired/revoked API key.                            |
+| `403 {"error":"forbidden"}`           | Request bypassed CloudFront (direct Function URL).                |
+| `429 {"error":"rate_limited"}`        | Per-key or per-IP limit — wait or raise the key's limit in admin. |
+| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch on the Lambda.                    |

@@ -38,7 +38,9 @@ function toRecord(row: ReturnType<typeof mcpApiKeyRowSchema.parse>): McpApiKeyRe
   };
 }
 
-function rowToVerified(row: ReturnType<typeof mcpApiKeyRowSchema.parse>): VerifiedMcpApiKey {
+function rowToVerified(
+  row: ReturnType<typeof mcpApiKeyRowSchema.parse>,
+): VerifiedMcpApiKey {
   return {
     id: row.id,
     name: row.name,

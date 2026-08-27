@@ -51,10 +51,7 @@ export function ApiKeyCreateForm({ onCreated }: ApiKeyCreateFormProps) {
   });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="border-border space-y-4 rounded-lg border p-4"
-    >
+    <form onSubmit={onSubmit} className="border-border space-y-4 rounded-lg border p-4">
       <h2 className="text-lg font-semibold">Create API key</h2>
       <p className="text-muted-foreground text-sm">
         Use for Claude.ai (Authentication → None + Authorization header) or n8n.

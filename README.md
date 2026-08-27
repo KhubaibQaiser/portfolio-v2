@@ -94,17 +94,17 @@ The admin app is `force-dynamic` — it always reads fresh content from DynamoDB
 
 Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages/infra/bin/portfolio.ts).
 
-| Stack                    | Region      | Contents                                                                                                                                                  |
-| ------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Portfolio-Data`         | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                                                                                                        |
-| `Portfolio-Web`          | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache                                                                                     |
-| `Portfolio-Auth`         | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                                                                                                     |
-| `Portfolio-Admin`        | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                                                                                                    |
-| `Portfolio-Shared`       | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget                                                                           |
-| `Portfolio-Storybook`    | `eu-west-1` | Static Storybook: private S3 + CloudFront                                                                                                                 |
-| `Portfolio-Oidc`         | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                                                                                             |
-| `Portfolio-Dns`          | `us-east-1` | Route 53 hosted zone                                                                                                                                      |
-| `Portfolio-Cert`         | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                                                                                       |
+| Stack                    | Region      | Contents                                                                                                                                                                                                   |
+| ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Portfolio-Data`         | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                                                                                                                                                         |
+| `Portfolio-Web`          | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache                                                                                                                                      |
+| `Portfolio-Auth`         | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                                                                                                                                                      |
+| `Portfolio-Admin`        | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                                                                                                                                                     |
+| `Portfolio-Shared`       | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget                                                                                                                            |
+| `Portfolio-Storybook`    | `eu-west-1` | Static Storybook: private S3 + CloudFront                                                                                                                                                                  |
+| `Portfolio-Oidc`         | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                                                                                                                                              |
+| `Portfolio-Dns`          | `us-east-1` | Route 53 hosted zone                                                                                                                                                                                       |
+| `Portfolio-Cert`         | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                                                                                                                                        |
 | `Portfolio-CandidateMcp` | `eu-west-1` | Candidate profile MCP server: API-key auth, Lambda, CloudFront (requires `domainEnabled=true`; see [ADR 0003](docs/adr/0003-candidate-mcp-server.md), [ADR 0005](docs/adr/0005-candidate-mcp-api-keys.md)) |
 
 The custom domain is **deferred by default** (`domainEnabled=false`): both apps run on their default `*.cloudfront.net` URLs until you delegate nameservers and redeploy with `-c domainEnabled=true`.

@@ -141,7 +141,9 @@ describe("createHttpHandler", () => {
 
     const transport = new StreamableHTTPClientTransport(new URL(config.serverUrl), {
       fetch: (async (input: string | URL | Request, init?: RequestInit) =>
-        handler(withHost(new Request(input, init), config.originVerifySecret, apiKey))) as typeof fetch,
+        handler(
+          withHost(new Request(input, init), config.originVerifySecret, apiKey),
+        )) as typeof fetch,
       authProvider: { token: async () => apiKey },
     });
     const client = new Client({ name: "test-client", version: "1.0.0" });

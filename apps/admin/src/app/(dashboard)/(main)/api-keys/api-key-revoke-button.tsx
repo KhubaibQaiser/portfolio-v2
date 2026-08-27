@@ -24,11 +24,9 @@ export function ApiKeyRevokeButton({ keyId, name, onRevoked }: ApiKeyRevokeButto
         if (!window.confirm(`Revoke API key "${name}"? This cannot be undone.`)) return;
         setPending(true);
         try {
-          const result = await runServerAction(
-            () => deleteMcpApiKey(keyId),
-            toast,
-            { successMessage: "API key revoked" },
-          );
+          const result = await runServerAction(() => deleteMcpApiKey(keyId), toast, {
+            successMessage: "API key revoked",
+          });
           if (result.success) onRevoked();
         } finally {
           setPending(false);

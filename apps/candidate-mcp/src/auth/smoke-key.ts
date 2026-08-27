@@ -1,4 +1,7 @@
-import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
+import {
+  GetSecretValueCommand,
+  SecretsManagerClient,
+} from "@aws-sdk/client-secrets-manager";
 import type { SmokeKeyConfig } from "./verify-api-key";
 
 const SMOKE_CLIENT_ID = "smoke-test";

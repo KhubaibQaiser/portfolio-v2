@@ -17,10 +17,7 @@ export function ApiKeysList({ initialKeys }: ApiKeysListProps) {
   return (
     <div className="mt-8 space-y-8">
       {createdKey ? (
-        <ApiKeySecretBanner
-          apiKey={createdKey}
-          onDismiss={() => setCreatedKey(null)}
-        />
+        <ApiKeySecretBanner apiKey={createdKey} onDismiss={() => setCreatedKey(null)} />
       ) : null}
 
       <ApiKeyCreateForm
