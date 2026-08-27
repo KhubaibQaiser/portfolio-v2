@@ -24,7 +24,6 @@ describe("admin authorization guardrail", () => {
     const files = sourceFiles("src/lib/*actions.ts");
     expect(files).toEqual([
       "src/lib/actions.ts",
-      "src/lib/api-key-actions.ts",
       "src/lib/media-actions.ts",
     ]);
     expectGuarded(files);

@@ -5,8 +5,8 @@ import type { Config } from "./config";
 const IP_RATE_LIMIT_PREFIX = "candidate-mcp-ip";
 
 /**
- * Per-viewer-IP HTTP rate limit checked before API-key verification so brute
- * force and session spam are throttled even when tokens are invalid.
+ * Per-viewer-IP HTTP rate limit checked after OAuth discovery so brute force
+ * and session spam are throttled even when tokens are invalid.
  */
 export async function checkIpRateLimit(
   ip: string,

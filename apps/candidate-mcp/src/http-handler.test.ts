@@ -1,78 +1,88 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import {
-  createFixtureContentRepository,
-  createMemoryMcpApiKeyStore,
-} from "@portfolio/data";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
+import { createFixtureContentRepository } from "@portfolio/data";
 import type { Config } from "./config";
 import { createHttpHandler } from "./http-handler";
+import {
+  createAgentTokenVerifier,
+  createCognitoVerifier,
+} from "./auth/verify-agent-token";
+import { generateTestKeyPair, signTestJwt, testJwks } from "./auth/test-jwt";
 import { candidateProfileSchema } from "./schemas/candidate-profile";
 import { ORIGIN_VERIFY_HEADER } from "./origin-verify";
 
+vi.mock("./ip-rate-limit", () => ({
+  checkIpRateLimit: vi.fn(async () => ({ ok: true })),
+}));
+
 const config: Config = {
   serverUrl: "https://mcp.example.com/mcp",
+  cognitoUserPoolId: "eu-west-1_TestPool123",
+  cognitoRegion: "eu-west-1",
+  resourceServerIdentifier: "https://mcp.example.com",
+  cognitoDomain: "test-domain",
   enabled: true,
   ipRateLimitMax: 1000,
   ipRateLimitWindowSec: 60,
   rateLimitMax: 30,
   rateLimitWindowSec: 60,
-  smokeTestRateLimitMax: 10,
-  smokeTestRateLimitWindowSec: 60,
-  smokeTestKeySecretArn: null,
   originVerifySecret: "test-origin-verify-secret",
 };
 
+const KID = "test-key-1";
+
 function setUp(configOverrides: Partial<Config> = {}) {
   const effectiveConfig = { ...config, ...configOverrides };
-  const keyStore = createMemoryMcpApiKeyStore();
+  const { publicKey, privateKey } = generateTestKeyPair();
+  const cognitoVerifier = createCognitoVerifier(effectiveConfig);
+  cognitoVerifier.cacheJwks(testJwks(publicKey, KID));
+  const verifier = createAgentTokenVerifier(effectiveConfig, cognitoVerifier);
   const repo = createFixtureContentRepository();
-  let apiKey = "";
+  const handler = createHttpHandler({ config: effectiveConfig, repo, verifier });
 
-  const handler = createHttpHandler({
-    config: effectiveConfig,
-    repo,
-    keyStore,
-  });
+  const { issuer } = CognitoJwtVerifier.parseUserPoolId(
+    effectiveConfig.cognitoUserPoolId,
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const validToken = signTestJwt(
+    {
+      sub: "n8n-workflow",
+      client_id: "n8n-workflow",
+      token_use: "access",
+      scope: `${effectiveConfig.resourceServerIdentifier}/profile.read`,
+      iss: issuer,
+      iat: now,
+      auth_time: now,
+      exp: now + 3600,
+      jti: "22222222-2222-2222-2222-222222222222",
+    },
+    privateKey,
+    KID,
+  );
 
-  return {
-    handler,
-    keyStore,
-    async createKey(name = "test-client") {
-      const result = await keyStore.createKey({
-        name,
-        rateLimitMax: 30,
-        rateLimitWindowSec: 60,
-      });
-      apiKey = result.key;
-      return result;
-    },
-    get apiKey() {
-      return apiKey;
-    },
-  };
+  return { handler, validToken };
 }
 
 const SERVER_HOST = new URL(config.serverUrl).host;
 
-function withHost(
-  request: Request,
-  originSecret = config.originVerifySecret,
-  bearer?: string,
-): Request {
+/**
+ * Tests stamp Host because in-memory `Request` objects have none, and stamp
+ * origin-verify because production CloudFront injects that header before the
+ * Function URL. `toWebRequest` rewrites the Function URL Host to the public
+ * custom-domain Host before this handler runs.
+ */
+function withHost(request: Request, originSecret = config.originVerifySecret): Request {
   request.headers.set("host", SERVER_HOST);
   if (originSecret) request.headers.set(ORIGIN_VERIFY_HEADER, originSecret);
-  if (bearer) request.headers.set("authorization", `Bearer ${bearer}`);
   return request;
 }
 
-function initializeRequest(bearer?: string): Request {
+function initializeRequest(): Request {
   return withHost(
     new Request(config.serverUrl, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        accept: "application/json, text/event-stream",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
@@ -84,21 +94,22 @@ function initializeRequest(bearer?: string): Request {
         },
       }),
     }),
-    config.originVerifySecret,
-    bearer,
   );
 }
 
 describe("createHttpHandler", () => {
-  it("rejects an unauthenticated request with 401 JSON (no OAuth challenge)", async () => {
+  it("rejects an unauthenticated request with 401 and a WWW-Authenticate challenge", async () => {
     const { handler } = setUp();
 
     const response = await handler(initializeRequest());
 
     expect(response.status).toBe(401);
-    expect(response.headers.get("www-authenticate")).toBeNull();
-    const body = (await response.json()) as { error: string };
-    expect(body.error).toBe("unauthorized");
+    const challenge = response.headers.get("www-authenticate");
+    expect(challenge).toContain("Bearer");
+    expect(challenge).toContain("resource_metadata=");
+    expect(challenge).toMatch(
+      /resource_metadata="https:\/\/mcp\.example\.com\/\.well-known\/oauth-protected-resource/,
+    );
   });
 
   it("rejects a Function URL Host that is not the public hostname", async () => {
@@ -121,78 +132,79 @@ describe("createHttpHandler", () => {
     expect(response.status).toBe(403);
   });
 
-  it("rejects a request with an invalid bearer token", async () => {
+  it("rejects an invalid bearer with 401 invalid_token", async () => {
     const { handler } = setUp();
 
-    const response = await handler(initializeRequest("not-a-real-token"));
+    const response = await handler(
+      withHost(
+        new Request(config.serverUrl, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: "Bearer not-a-real-token",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "initialize",
+            params: {},
+          }),
+        }),
+      ),
+    );
 
     expect(response.status).toBe(401);
+    const challenge = response.headers.get("www-authenticate");
+    expect(challenge).toContain('error="invalid_token"');
   });
 
-  it("answers 503 when MCP_ENABLED is false (kill switch)", async () => {
-    const { handler } = setUp({ enabled: false });
+  it("serves RFC 9728 protected-resource metadata unauthenticated", async () => {
+    const { handler } = setUp();
 
-    const response = await handler(initializeRequest());
-
-    expect(response.status).toBe(503);
-  });
-
-  it("accepts Claude.ai Origin with a valid API key", async () => {
-    const setup = setUp();
-    await setup.createKey("claude-ai");
-    const request = initializeRequest(setup.apiKey);
-    request.headers.set("origin", "https://claude.ai");
-
-    const response = await setup.handler(request);
+    const response = await handler(
+      withHost(
+        new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
+      ),
+    );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("access-control-allow-origin")).toBe("https://claude.ai");
-  });
-
-  it("answers CORS preflight for Claude.ai without requiring a Bearer token", async () => {
-    const { handler } = setUp();
-    const request = withHost(
-      new Request(config.serverUrl, {
-        method: "OPTIONS",
-        headers: {
-          origin: "https://claude.ai",
-          "access-control-request-method": "POST",
-          "access-control-request-headers": "authorization,content-type,accept",
-        },
-      }),
+    const body = (await response.json()) as {
+      resource: string;
+      scopes_supported: string[];
+      authorization_servers: string[];
+    };
+    expect(body.resource).toBe(config.serverUrl);
+    expect(body.scopes_supported).toContain(
+      `${config.resourceServerIdentifier}/profile.read`,
     );
-
-    const response = await handler(request);
-
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe("https://claude.ai");
-    expect(response.headers.get("access-control-allow-headers")?.toLowerCase()).toContain(
-      "authorization",
+    expect(body.authorization_servers).toContain(
+      `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}`,
     );
   });
 
-  it("rejects an unknown browser Origin even with a valid API key", async () => {
-    const setup = setUp();
-    await setup.createKey("claude-ai");
-    const request = initializeRequest(setup.apiKey);
-    request.headers.set("origin", "https://evil.example");
+  it("answers 503 for every route when MCP_ENABLED is false (kill switch)", async () => {
+    const { handler } = setUp({ enabled: false });
 
-    const response = await setup.handler(request);
+    const [mcpResponse, metadataResponse] = await Promise.all([
+      handler(initializeRequest()),
+      handler(
+        withHost(
+          new Request("https://mcp.example.com/.well-known/oauth-protected-resource/mcp"),
+        ),
+      ),
+    ]);
 
-    expect(response.status).toBe(403);
+    expect(mcpResponse.status).toBe(503);
+    expect(metadataResponse.status).toBe(503);
   });
 
-  it("serves a schema-valid get_candidate_profile response for a valid API key", async () => {
-    const setup = setUp();
-    await setup.createKey();
-    const { handler, apiKey } = setup;
+  it("serves a schema-valid get_candidate_profile response for an authenticated, correctly-scoped caller", async () => {
+    const { handler, validToken } = setUp();
 
     const transport = new StreamableHTTPClientTransport(new URL(config.serverUrl), {
       fetch: (async (input: string | URL | Request, init?: RequestInit) =>
-        handler(
-          withHost(new Request(input, init), config.originVerifySecret, apiKey),
-        )) as typeof fetch,
-      authProvider: { token: async () => apiKey },
+        handler(withHost(new Request(input, init)))) as typeof fetch,
+      authProvider: { token: async () => validToken },
     });
     const client = new Client({ name: "test-client", version: "1.0.0" });
 

@@ -1,11 +1,15 @@
 # ADR 0003 — Candidate Profile MCP server: a new network trust boundary
 
-- **Status:** Accepted (identity amended 2026-08-27 — Cognito M2M superseded by [ADR 0005](0005-candidate-mcp-api-keys.md))
+- **Status:** Accepted (identity: [ADR 0006](0006-candidate-mcp-oauth.md) OAuth 2.1; ADR 0005 API keys superseded)
 - **Date:** 2026-08-19 (network layer amended 2026-08-20: origin-verify
   replaces Function URL OAC so MCP Bearer can pass through)
 - **Deciders:** Khubaib (with AI pairing)
 
 ## Context
+
+> **2026-08-27 (auth):** HTTP identity is OAuth 2.1 with Cognito as AS per
+> [ADR 0006](0006-candidate-mcp-oauth.md). [ADR 0005](0005-candidate-mcp-api-keys.md)
+> (hashed API keys) is superseded.
 
 `packages/agent-mcp` is a local, unauthenticated, stdio-only MCP server that
 gives coding agents read-only access to ADRs and AI module contracts. It has
@@ -29,11 +33,14 @@ stack (`Portfolio-CandidateMcp`) in the _same_ AWS account and CDK app as the
 rest of the site, reading the _same_ DynamoDB tables through the existing
 `ContentRepository` port — but isolated and authenticated as follows.
 
-### 1. Authorization: OAuth 2.1 client-credentials via Amazon Cognito — _superseded by ADR 0005_
+### 1. Authorization: OAuth 2.1 via Amazon Cognito — see ADR 0006
 
-> **2026-08-27:** Identity is now **hashed API keys** minted in admin (see
-> [ADR 0005](0005-candidate-mcp-api-keys.md)). The Cognito design below is
-> retained for historical context only.
+> **2026-08-27:** Current identity is **OAuth 2.1** (Cognito AS + MCP resource
+> server) per [ADR 0006](0006-candidate-mcp-oauth.md), including authorization
+> code + PKCE for interactive clients and client_credentials for M2M.
+> [ADR 0005](0005-candidate-mcp-api-keys.md) briefly used hashed API keys and
+> is superseded. The original M2M-focused Cognito notes below remain useful
+> background for n8n / smoke.
 
 The MCP authorization spec's guidance for remote servers is OAuth 2.1 with
 short-lived, audience-bound tokens validated server-side; token passthrough

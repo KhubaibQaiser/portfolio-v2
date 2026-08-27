@@ -4,7 +4,7 @@
  * stays pinned to the public MCP hostname separately.
  *
  * Claude.ai / Desktop connectors may send `claude.ai`, `claude.com`, or
- * `api.anthropic.com`. See ADR 0005 connector notes.
+ * `api.anthropic.com`. See ADR 0006 connector notes.
  */
 export const MCP_ALLOWED_ORIGIN_HOSTNAMES = [
   "claude.ai",

@@ -1,75 +1,58 @@
 import {
   createMcpHandler,
+  getOAuthProtectedResourceMetadataUrl,
   hostHeaderValidationResponse,
+  oauthMetadataResponse,
   originValidationResponse,
-  type AuthInfo,
+  requireBearerAuth,
+  type OAuthTokenVerifier,
 } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
-import type { McpApiKeyStore } from "@portfolio/shared/ports/mcp-api-key-store";
-import {
-  getViewerIp,
-  parseBearerToken,
-  verifyApiKeyBearer,
-  type SmokeKeyConfig,
-} from "./auth/verify-api-key";
 import {
   corsPreflightResponse,
   mcpAllowedOriginHostnames,
   withCors,
 } from "./allowed-origins";
+import { handleDynamicClientRegistration, isDcrRegistrationRequest } from "./auth/dcr";
+import { getViewerIp } from "./auth/viewer-ip";
+import { buildAuthMetadataOptions } from "./oauth-metadata";
 import { originVerifyResponse } from "./origin-verify";
-import type { ClientRateLimit, Config } from "./config";
+import { profileReadScope, type Config } from "./config";
 import { createCandidateMcpServer } from "./server";
 import { checkIpRateLimit } from "./ip-rate-limit";
-import { clientRateLimitStorage } from "./request-context";
 
 export type HttpHandlerDeps = {
   config: Config;
   repo: ContentRepository;
-  keyStore: McpApiKeyStore;
-  getSmokeKey?: () => Promise<SmokeKeyConfig | undefined>;
+  verifier: OAuthTokenVerifier;
 };
-
-export type RequestAuth = {
-  authInfo: AuthInfo;
-  clientRateLimit: ClientRateLimit;
-};
-
-function toAuthInfo(
-  bearerToken: string,
-  verified: { id: string; name: string; expiresAt: number | null },
-  serverUrl: string,
-): AuthInfo {
-  return {
-    token: bearerToken,
-    clientId: verified.name,
-    scopes: ["profile.read"],
-    expiresAt: verified.expiresAt ?? undefined,
-    resource: new URL(serverUrl),
-  };
-}
 
 /**
- * Assembles this server's web-standard `fetch(request) => Response` handler:
- * origin-verify → kill switch → Host + Origin allowlist → CORS preflight →
- * per-IP limit → API-key gate → MCP dispatch. No OAuth discovery (ADR 0005).
- *
- * Host stays pinned to the public MCP hostname. Origin allowlist also includes
- * known Claude connector hosts so browser `Origin` headers are not 403'd.
+ * Origin-verify → kill switch → Host/Origin → OPTIONS → public OAuth discovery
+ * → IP rate limit → DCR → Bearer gate → MCP. See ADR 0006.
  */
 export function createHttpHandler(
   deps: HttpHandlerDeps,
 ): (request: Request) => Promise<Response> {
-  const { config, repo, keyStore, getSmokeKey } = deps;
+  const { config, repo, verifier } = deps;
   const serverUrl = new URL(config.serverUrl);
   const allowedHostnames = [serverUrl.hostname];
   const allowedOriginHostnames = mcpAllowedOriginHostnames(serverUrl.hostname);
+  const authMetadata = buildAuthMetadataOptions(config);
+  const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(serverUrl);
+  const clientRateLimit = {
+    rateLimitMax: config.rateLimitMax,
+    rateLimitWindowSec: config.rateLimitWindowSec,
+  };
+
+  const gate = requireBearerAuth({
+    verifier,
+    requiredScopes: [profileReadScope(config)],
+    resourceMetadataUrl,
+  });
 
   const mcpHandler = createMcpHandler((ctx) =>
-    createCandidateMcpServer(repo, ctx.authInfo, {
-      rateLimitMax: config.rateLimitMax,
-      rateLimitWindowSec: config.rateLimitWindowSec,
-    }),
+    createCandidateMcpServer(repo, ctx.authInfo, clientRateLimit),
   );
 
   return async function fetch(request: Request): Promise<Response> {
@@ -88,10 +71,12 @@ export function createHttpHandler(
       originValidationResponse(request, allowedOriginHostnames);
     if (rejected) return respond(rejected);
 
-    // Browser / Claude UI preflight — must succeed without Authorization.
     if (request.method === "OPTIONS") {
       return corsPreflightResponse(request, allowedOriginHostnames);
     }
+
+    const metadataResponse = oauthMetadataResponse(request, authMetadata);
+    if (metadataResponse) return respond(metadataResponse);
 
     let ipLimit;
     try {
@@ -111,41 +96,14 @@ export function createHttpHandler(
       );
     }
 
-    const bearer = parseBearerToken(request);
-    if (!bearer) {
-      return respond(Response.json({ error: "unauthorized" }, { status: 401 }));
+    if (isDcrRegistrationRequest(request, serverUrl)) {
+      const dcr = await handleDynamicClientRegistration(request, config);
+      return respond(Response.json(dcr.body, { status: dcr.status }));
     }
 
-    let smokeKey: SmokeKeyConfig | undefined;
-    try {
-      smokeKey = getSmokeKey ? await getSmokeKey() : undefined;
-    } catch {
-      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
-    }
+    const auth = await gate(request);
+    if (auth instanceof Response) return respond(auth);
 
-    let authContext;
-    try {
-      authContext = await verifyApiKeyBearer(bearer, keyStore, smokeKey);
-    } catch {
-      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
-    }
-    if (!authContext) {
-      return respond(Response.json({ error: "unauthorized" }, { status: 401 }));
-    }
-
-    const authInfo = toAuthInfo(
-      authContext.bearerToken,
-      authContext.verified,
-      config.serverUrl,
-    );
-    const clientRateLimit: ClientRateLimit = {
-      rateLimitMax: authContext.verified.rateLimitMax,
-      rateLimitWindowSec: authContext.verified.rateLimitWindowSec,
-    };
-
-    const mcpResponse = await clientRateLimitStorage.run(clientRateLimit, () =>
-      mcpHandler.fetch(request, { authInfo }),
-    );
-    return respond(mcpResponse);
+    return respond(await mcpHandler.fetch(request, { authInfo: auth }));
   };
 }

@@ -96,13 +96,14 @@ export class OidcStack extends cdk.Stack {
       }),
     );
 
-    // Read-only access for the post-deploy candidate-mcp smoke test bearer.
+    // Read-only access for the post-deploy candidate-mcp smoke test: Cognito
+    // n8n/smoke client-credentials secret (not AI-key/auth secrets).
     role.addToPolicy(
       new iam.PolicyStatement({
         sid: "ReadCandidateMcpSmokeTestSecret",
         actions: ["secretsmanager:GetSecretValue"],
         resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/${config.appName.toLowerCase()}/candidate-mcp/smoke-test-key-*`,
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/${config.appName.toLowerCase()}/candidate-mcp/n8n-workflow-client-*`,
         ],
       }),
     );
