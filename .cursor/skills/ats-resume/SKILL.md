@@ -4,6 +4,7 @@ Carlito single-column A4 resume rendered with React-PDF — same engine as
 classic and modern-blue.
 
 - **Print spec:** `packages/ui/src/resume-pdf/ats-print-spec.ts`
+  (A4, 13mm/14mm margins, Carlito Regular+Bold, company-first experience row)
 - **Document:** `packages/ui/src/resume-pdf/resume-ats-document.tsx`
 - **Reference data:** `packages/ui/src/resume-pdf/fixtures/ats-resume-reference.ts`
 - **Pipeline:** CMS + JD → `tailoredResumeSchema` JSON → policy + fabrication →

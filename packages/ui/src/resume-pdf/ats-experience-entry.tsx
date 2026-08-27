@@ -7,20 +7,23 @@ import type { AtsResumeStyles } from "./ats-print-spec";
 
 type Props = {
   experience: ResumeDataExperience;
+  first?: boolean;
   styles: AtsResumeStyles;
 };
 
-export function AtsExperienceEntry({ experience, styles }: Props) {
-  const meta = [
-    experience.company,
-    experience.location,
-    formatAtsEmploymentPeriod(experience.period),
-  ].join(" | ");
+export function AtsExperienceEntry({ experience, first = false, styles }: Props) {
+  const location = experience.location.trim();
 
   return (
-    <View style={styles.roleBlock}>
-      <Text style={styles.roleTitle}>{experience.role}</Text>
-      <Text style={styles.roleMeta}>{meta}</Text>
+    <View style={first ? styles.roleBlockFirst : styles.roleBlock}>
+      <View style={styles.companyRow} wrap={false}>
+        <Text style={styles.companyName}>{experience.company}</Text>
+        <Text style={styles.period}>{formatAtsEmploymentPeriod(experience.period)}</Text>
+      </View>
+      <Text style={styles.roleLine} wrap={false}>
+        {experience.role}
+        {location ? <Text style={styles.roleLocation}>{` · ${location}`}</Text> : null}
+      </Text>
       <PdfBulletList
         bullets={experience.bullets.map(stripAtsMarkdownBold)}
         styles={{

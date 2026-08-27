@@ -14,9 +14,12 @@ export const ATS_RESUME_SECTION_HEADERS = [
   "Professional Summary",
   "Technical Skills",
   "Professional Experience",
+  "Projects",
   "Education",
   "Languages",
-  "Personal Projects",
+  "Certifications",
+  "Remote Work",
+  "References",
 ] as const;
 
 const BANNED_UNICODE = /[\u2013\u2014\u2018\u2019\u201c\u201d]/g;
