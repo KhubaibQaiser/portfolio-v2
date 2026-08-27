@@ -12,6 +12,7 @@ import {
   verifyApiKeyBearer,
   type SmokeKeyConfig,
 } from "./auth/verify-api-key";
+import { mcpAllowedOriginHostnames } from "./allowed-origins";
 import { originVerifyResponse } from "./origin-verify";
 import type { ClientRateLimit, Config } from "./config";
 import { createCandidateMcpServer } from "./server";
@@ -46,8 +47,11 @@ function toAuthInfo(
 
 /**
  * Assembles this server's web-standard `fetch(request) => Response` handler:
- * origin-verify → kill switch → Host/Origin validation → per-IP limit →
+ * origin-verify → kill switch → Host + Origin allowlist → per-IP limit →
  * API-key gate → MCP dispatch. No OAuth discovery (ADR 0005).
+ *
+ * Host stays pinned to the public MCP hostname. Origin allowlist also includes
+ * known Claude.ai connector hosts so browser `Origin` headers are not 403'd.
  */
 export function createHttpHandler(
   deps: HttpHandlerDeps,
@@ -55,6 +59,7 @@ export function createHttpHandler(
   const { config, repo, keyStore, getSmokeKey } = deps;
   const serverUrl = new URL(config.serverUrl);
   const allowedHostnames = [serverUrl.hostname];
+  const allowedOriginHostnames = mcpAllowedOriginHostnames(serverUrl.hostname);
 
   const mcpHandler = createMcpHandler((ctx) =>
     createCandidateMcpServer(repo, ctx.authInfo, {
@@ -73,7 +78,7 @@ export function createHttpHandler(
 
     const rejected =
       hostHeaderValidationResponse(request, allowedHostnames) ??
-      originValidationResponse(request, allowedHostnames);
+      originValidationResponse(request, allowedOriginHostnames);
     if (rejected) return rejected;
 
     let ipLimit;
