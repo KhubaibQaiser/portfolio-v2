@@ -146,6 +146,29 @@ describe("createHttpHandler", () => {
     const response = await setup.handler(request);
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe("https://claude.ai");
+  });
+
+  it("answers CORS preflight for Claude.ai without requiring a Bearer token", async () => {
+    const { handler } = setUp();
+    const request = withHost(
+      new Request(config.serverUrl, {
+        method: "OPTIONS",
+        headers: {
+          origin: "https://claude.ai",
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "authorization,content-type,accept",
+        },
+      }),
+    );
+
+    const response = await handler(request);
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe("https://claude.ai");
+    expect(response.headers.get("access-control-allow-headers")?.toLowerCase()).toContain(
+      "authorization",
+    );
   });
 
   it("rejects an unknown browser Origin even with a valid API key", async () => {

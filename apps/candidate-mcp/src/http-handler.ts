@@ -12,7 +12,11 @@ import {
   verifyApiKeyBearer,
   type SmokeKeyConfig,
 } from "./auth/verify-api-key";
-import { mcpAllowedOriginHostnames } from "./allowed-origins";
+import {
+  corsPreflightResponse,
+  mcpAllowedOriginHostnames,
+  withCors,
+} from "./allowed-origins";
 import { originVerifyResponse } from "./origin-verify";
 import type { ClientRateLimit, Config } from "./config";
 import { createCandidateMcpServer } from "./server";
@@ -47,11 +51,11 @@ function toAuthInfo(
 
 /**
  * Assembles this server's web-standard `fetch(request) => Response` handler:
- * origin-verify → kill switch → Host + Origin allowlist → per-IP limit →
- * API-key gate → MCP dispatch. No OAuth discovery (ADR 0005).
+ * origin-verify → kill switch → Host + Origin allowlist → CORS preflight →
+ * per-IP limit → API-key gate → MCP dispatch. No OAuth discovery (ADR 0005).
  *
  * Host stays pinned to the public MCP hostname. Origin allowlist also includes
- * known Claude.ai connector hosts so browser `Origin` headers are not 403'd.
+ * known Claude connector hosts so browser `Origin` headers are not 403'd.
  */
 export function createHttpHandler(
   deps: HttpHandlerDeps,
@@ -69,54 +73,64 @@ export function createHttpHandler(
   );
 
   return async function fetch(request: Request): Promise<Response> {
+    const respond = (response: Response) =>
+      withCors(request, response, allowedOriginHostnames);
+
     const originRejected = originVerifyResponse(request, config.originVerifySecret);
-    if (originRejected) return originRejected;
+    if (originRejected) return respond(originRejected);
 
     if (!config.enabled) {
-      return Response.json({ error: "service_unavailable" }, { status: 503 });
+      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
     }
 
     const rejected =
       hostHeaderValidationResponse(request, allowedHostnames) ??
       originValidationResponse(request, allowedOriginHostnames);
-    if (rejected) return rejected;
+    if (rejected) return respond(rejected);
+
+    // Browser / Claude UI preflight — must succeed without Authorization.
+    if (request.method === "OPTIONS") {
+      return corsPreflightResponse(request, allowedOriginHostnames);
+    }
 
     let ipLimit;
     try {
       ipLimit = await checkIpRateLimit(getViewerIp(request), config);
     } catch {
-      return Response.json({ error: "service_unavailable" }, { status: 503 });
+      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
     }
     if (!ipLimit.ok) {
-      return Response.json(
-        { error: "rate_limited", retryAfterSeconds: ipLimit.retryAfterSeconds },
-        {
-          status: 429,
-          headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
-        },
+      return respond(
+        Response.json(
+          { error: "rate_limited", retryAfterSeconds: ipLimit.retryAfterSeconds },
+          {
+            status: 429,
+            headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+          },
+        ),
       );
     }
 
     const bearer = parseBearerToken(request);
     if (!bearer) {
-      return Response.json({ error: "unauthorized" }, { status: 401 });
+      return respond(Response.json({ error: "unauthorized" }, { status: 401 }));
     }
 
     let smokeKey: SmokeKeyConfig | undefined;
     try {
       smokeKey = getSmokeKey ? await getSmokeKey() : undefined;
     } catch {
-      return Response.json({ error: "service_unavailable" }, { status: 503 });
+      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
     }
 
     let authContext;
     try {
       authContext = await verifyApiKeyBearer(bearer, keyStore, smokeKey);
     } catch {
-      return Response.json({ error: "service_unavailable" }, { status: 503 });
+      return respond(Response.json({ error: "service_unavailable" }, { status: 503 }));
     }
     if (!authContext) {
-      return Response.json({ error: "unauthorized" }, { status: 401 });
+      return respond(Response.json({ error: "unauthorized" }, { status: 401 }));
     }
 
     const authInfo = toAuthInfo(
@@ -129,8 +143,9 @@ export function createHttpHandler(
       rateLimitWindowSec: authContext.verified.rateLimitWindowSec,
     };
 
-    return clientRateLimitStorage.run(clientRateLimit, () =>
+    const mcpResponse = await clientRateLimitStorage.run(clientRateLimit, () =>
       mcpHandler.fetch(request, { authInfo }),
     );
+    return respond(mcpResponse);
   };
 }
