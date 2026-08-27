@@ -1,9 +1,14 @@
 # ADR 0005 — Candidate MCP API keys (supersedes Cognito M2M)
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0006](0006-candidate-mcp-oauth.md)
 - **Date:** 2026-08-27
 - **Deciders:** Khubaib (with AI pairing)
 - **Supersedes:** [ADR 0003 §1](0003-candidate-mcp-server.md) (Cognito client-credentials identity)
+- **Superseded-by:** [ADR 0006](0006-candidate-mcp-oauth.md) (OAuth 2.1 RS + Cognito AS; Claude Connect / Inspector discovery)
+
+> **Note (2026-08-27):** Auth None + hashed API keys did not satisfy MCP
+> Authorization discovery (missing `WWW-Authenticate` / public `.well-known`).
+> Identity for HTTP MCP returns to OAuth under ADR 0006.
 
 ## Context
 

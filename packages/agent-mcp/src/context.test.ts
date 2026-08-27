@@ -20,9 +20,15 @@ describe("portfolio-context MCP readers", () => {
     expect(text).toContain("origin-verify");
   });
 
-  it("returns ADR 0005 with the API key auth decision", () => {
+  it("returns ADR 0005 with the superseded API key auth decision", () => {
     const text = readAdr("0005");
     expect(text).toContain("API keys");
+    expect(text).toContain("Superseded");
+  });
+
+  it("returns ADR 0006 with the OAuth 2.1 RS decision", () => {
+    const text = readAdr("0006");
+    expect(text).toContain("OAuth 2.1");
     expect(text).toContain("Cognito");
   });
 

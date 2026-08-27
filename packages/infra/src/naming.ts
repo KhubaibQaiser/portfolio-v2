@@ -168,14 +168,12 @@ const CANDIDATE_MCP_READ_SUFFIXES = [
   TABLE_SUFFIXES.testimonial,
 ] as const;
 
-const CANDIDATE_MCP_API_KEY_SUFFIX = TABLE_SUFFIXES.mcpApiKey;
-
 /**
  * Candidate-mcp permissions: tighter than {@link grantWebDataAccess}'s
  * `${tablePrefix}-*` wildcard. This Lambda is reachable by external
- * automation over the network (see ADR 0003), so it gets read-only access to
- * exactly the five tables its two tools query (plus their GSIs) — not the
- * resume-generation, media, or chat-cache tables — and a scoped
+ * automation over the network (see ADR 0003 / 0006), so it gets read-only
+ * access to exactly the five tables its two tools query (plus their GSIs) —
+ * not the resume-generation, media, or chat-cache tables — and a scoped
  * `UpdateItem` on the rate-limit table for its own per-client counters.
  */
 export function grantCandidateMcpDataAccess(
@@ -208,13 +206,6 @@ export function grantCandidateMcpDataAccess(
       sid: "CandidateMcpRateLimitCounter",
       actions: ["dynamodb:UpdateItem"],
       resources: [tableArn(TABLE_SUFFIXES.rateLimit)],
-    }),
-  );
-  fn.addToRolePolicy(
-    new iam.PolicyStatement({
-      sid: "CandidateMcpApiKeyVerify",
-      actions: ["dynamodb:GetItem"],
-      resources: [tableArn(CANDIDATE_MCP_API_KEY_SUFFIX)],
     }),
   );
 }

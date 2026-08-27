@@ -12,8 +12,8 @@ and packages `shared`, `data`, `ai`, `infra`, `ui`, `agent-mcp`.
 - Untrusted job-description text: `stripPromptInjection` then `wrapUntrusted`.
 - Apps depend on ports in `packages/shared`, not AWS SDKs.
 - Infra: ADR 0001 (no CFN exports for data/auth), ADR 0002 (one AppErrors
-  alarm, not per-table alarms), ADR 0003/0005 (candidate-mcp: API keys +
-  CloudFront origin-verify, not Function URL OAC).
+  alarm, not per-table alarms), ADR 0003/0006 (candidate-mcp: Cognito OAuth 2.1
+  RS + CloudFront origin-verify, not Function URL OAC; ADR 0005 superseded).
 - `apps/candidate-mcp` tools stay read-only and sanitized (`deepSanitize`);
   any write-capable tool needs a new ADR. See ADR 0003.
 

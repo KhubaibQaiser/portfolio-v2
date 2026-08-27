@@ -8,7 +8,7 @@ below as the source of truth, not guesses from training data.
 - `apps/web` — public Next.js site (chat, resume PDF, contact).
 - `apps/admin` — CMS. Better Auth + Google. DynamoDB has no row-level security.
 - `apps/candidate-mcp` — network-facing MCP server for external automation
-  (hashed API keys, ADR 0005). See ADR 0003/0005 before changing auth, IAM, or
+  (OAuth 2.1 + Cognito, ADR 0006). See ADR 0003/0006 before changing auth, IAM, or
   adding tools.
 - `packages/shared` — Zod schemas and ports (`ContentRepository`, `MediaStore`, …).
 - `packages/data` — DynamoDB / fixture adapters.

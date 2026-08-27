@@ -1,94 +1,94 @@
-# n8n demo: calling the candidate-mcp server
+# n8n / Claude / Inspector: candidate-mcp OAuth
 
-This is the Phase 1 demo referenced in [ADR 0003](adr/0003-candidate-mcp-server.md)
-and [ADR 0005](adr/0005-candidate-mcp-api-keys.md): an n8n workflow that calls
-both tools on the deployed `candidate-mcp` server with an API key minted in
-admin. It is deliberately just a read → display flow — job-matching, resume
-generation, and one-click-apply are Phase 2+ and out of scope here.
+Phase 1 demo for [ADR 0003](adr/0003-candidate-mcp-server.md) and
+[ADR 0006](adr/0006-candidate-mcp-oauth.md): call the deployed candidate MCP
+server with **OAuth 2.1**. Auth None + static API keys are retired.
 
-n8n does not (yet) ship a native MCP-client node, so this workflow speaks the
-MCP Streamable HTTP transport directly over n8n's built-in **HTTP Request**
-node.
+n8n does not ship a native MCP client node, so the workflow uses **HTTP Request**
+nodes against Streamable HTTP. Claude.ai and MCP Inspector use the standard
+discovery ladder (PRM → AS → authorize / DCR).
 
 ## Prerequisites
 
-- `Portfolio-CandidateMcp` deployed (`domainEnabled=true`; see the root
-  [README](../README.md#deploying-to-aws)).
-- An API key created in **Admin → MCP API keys** (e.g. name `n8n-workflow`).
-  Copy the bearer token when shown — it is not retrievable later.
+- `Portfolio-CandidateMcp` deployed (`domainEnabled=true`).
+- Cognito credentials for M2M: Secrets Manager
+  `/portfolio/candidate-mcp/n8n-workflow-client`
+  (`clientId`, `clientSecret`, `tokenEndpoint`, `scope`).
+- For Claude Hosted UI: create one Cognito user in the agent pool (console) after
+  first deploy. Stack output `ClaudeClientId` is the pre-registered PKCE client.
 
-## Workflow shape
+## Resource indicator
 
-```mermaid
-flowchart LR
-  trigger[Manual Trigger] --> init[HTTP Request: MCP initialize]
-  init --> call[HTTP Request: tools/call get_candidate_profile]
-  call --> set[Edit Fields: extract profile JSON]
+When a client supports RFC 8707, set
+`resource=https://mcp.khubaibqaiser.com/mcp` on authorize/token requests.
+
+## n8n (client_credentials)
+
+1. **Get token** (HTTP Request):
+   - Method `POST`, URL = `tokenEndpoint` from the secret.
+   - Authentication: Basic (`clientId` / `clientSecret`).
+   - Body (form): `grant_type=client_credentials`, `scope=<scope from secret>`.
+   - Store `access_token` (≈1h). Re-fetch when expired.
+
+2. **MCP initialize** / **tools/call**:
+   - `POST https://mcp.khubaibqaiser.com/mcp`
+   - Headers: `Content-Type: application/json`,
+     `Accept: application/json, text/event-stream`,
+     `Authorization: Bearer <access_token>`.
+   - Capture `Mcp-Session-Id` from initialize for later calls.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": { "name": "n8n-demo", "version": "1.0.0" }
+  }
+}
 ```
 
-### 1. `MCP initialize` (HTTP Request node)
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": { "name": "get_candidate_profile", "arguments": {} }
+}
+```
 
-- **Method:** `POST`
-- **URL:** `https://mcp.khubaibqaiser.com/mcp`
-- **Headers:**
-  - `Content-Type: application/json`
-  - `Accept: application/json, text/event-stream`
-  - `Authorization: Bearer mcp_ck_…` (paste the full key from admin)
-- **Body (JSON):**
+## Claude.ai (Always required / Detected OAuth)
 
-  ```json
-  {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "initialize",
-    "params": {
-      "protocolVersion": "2025-06-18",
-      "capabilities": {},
-      "clientInfo": { "name": "n8n-demo", "version": "1.0.0" }
-    }
-  }
-  ```
+1. Customize → Connectors → URL `https://mcp.khubaibqaiser.com/mcp`.
+2. **Authentication → Always required** (Detected OAuth). Do **not** use
+   Auth → None + Authorization header for this server.
+3. Complete Cognito Hosted UI login.
+4. If DCR fails, Advanced → paste stack output `ClaudeClientId`.
+5. Enable the connector; call `get_candidate_facts` before tailoring a JD.
 
-- **Response:** capture the `Mcp-Session-Id` response header for subsequent calls.
+## MCP Inspector
 
-### 2. `Call get_candidate_profile` (HTTP Request node)
+1. Connect to `https://mcp.khubaibqaiser.com/mcp` with OAuth.
+2. Discovery should hit `401` + `WWW-Authenticate` →
+   `/.well-known/oauth-protected-resource/mcp` → Cognito AS metadata →
+   `POST /register` (DCR) or the pre-registered Claude client.
+3. Complete authorize + PKCE; then `initialize`.
 
-- Same URL and `Authorization` header as step 1, plus
-  `Mcp-Session-Id: {{ $node["MCP initialize"].json.headers["mcp-session-id"] }}`.
-- **Body (JSON):**
+## Claude Code
 
-  ```json
-  {
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "tools/call",
-    "params": { "name": "get_candidate_profile", "arguments": {} }
-  }
-  ```
-
-  Swap `"name"` for `"get_candidate_facts"` for the compact LLM-ready fact sheet.
-
-### 3. `Extract profile JSON` (Edit Fields / Set node)
-
-`{{ JSON.parse($json.result.content[0].text) }}` — the tool result's
-`content[0].text` is a JSON string, so it needs one `JSON.parse` before n8n
-can address individual fields.
-
-## Claude.ai connector (same key)
-
-1. Admin → MCP API keys → create `claude-ai`.
-2. Customize → Connectors → `https://mcp.khubaibqaiser.com/mcp`.
-3. **Authentication → None** (do not use Detected OAuth).
-4. **Additional request headers:** `Authorization` = `Bearer mcp_ck_…` (include
-   `Bearer ` and the space).
-5. Enable the connector in chat; call `get_candidate_facts` before tailoring a JD.
+Prefer OAuth (`claude mcp add` with the HTTP URL and OAuth flow). Do not rely on
+a long-lived static Bearer header against this server.
 
 ## Troubleshooting
 
-| Symptom                               | Cause                                                             |
-| ------------------------------------- | ----------------------------------------------------------------- |
-| `401 {"error":"unauthorized"}`        | Missing/wrong/expired/revoked API key.                            |
-| `403 {"error":"forbidden"}`           | Request bypassed CloudFront (direct Function URL).                |
-| `403` JSON-RPC `Invalid Origin: …`    | Browser Origin not in the global allowlist (`claude.ai`, etc.).   |
-| `429 {"error":"rate_limited"}`        | Per-key or per-IP limit — wait or raise the key's limit in admin. |
-| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch on the Lambda.                    |
+| Symptom                               | Cause                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `401` + `WWW-Authenticate: Bearer`    | Missing/expired/invalid access token — re-run OAuth or client_credentials. |
+| `401` with `error="invalid_token"`    | Bearer present but JWT verify failed (wrong pool, scope, or signature).    |
+| Discovery `401` on `/.well-known/*`   | Bug — those routes must be public (ADR 0006).                              |
+| `403 {"error":"forbidden"}`           | Bypassed CloudFront (direct Function URL) or bad Origin.                   |
+| `429 {"error":"rate_limited"}`        | Per-IP or per-client limit — wait and retry.                               |
+| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch.                                           |
+| Hosted UI has no user                 | Create a Cognito user in the candidate-mcp agent pool.                     |

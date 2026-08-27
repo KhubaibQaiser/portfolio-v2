@@ -25,6 +25,7 @@ const baseConfig: InfraConfig = {
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
+  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
 };
 
 function synth(configOverrides: Partial<InfraConfig> = {}): Template {
@@ -53,26 +54,28 @@ function synth(configOverrides: Partial<InfraConfig> = {}): Template {
 }
 
 describe("CandidateMcpStack", () => {
-  it("does not provision Cognito (API keys per ADR 0005)", () => {
+  it("provisions Cognito user pool, resource server, and app clients (ADR 0006)", () => {
     const template = synth();
-    template.resourceCountIs("AWS::Cognito::UserPool", 0);
-    template.resourceCountIs("AWS::Cognito::UserPoolClient", 0);
+    template.resourceCountIs("AWS::Cognito::UserPool", 1);
+    template.resourceCountIs("AWS::Cognito::UserPoolClient", 2);
+    template.resourceCountIs("AWS::Cognito::UserPoolDomain", 1);
+    template.resourceCountIs("AWS::Cognito::UserPoolResourceServer", 1);
   });
 
-  it("writes the smoke-test key into Secrets Manager, never a CfnOutput", () => {
+  it("stores the n8n/smoke client secret in Secrets Manager, never a CfnOutput", () => {
     const template = synth();
 
-    template.resourceCountIs("AWS::SecretsManager::Secret", 2);
-
     const secrets = Object.values(template.findResources("AWS::SecretsManager::Secret"));
-    const smokeSecret = secrets.find((secret) =>
-      JSON.stringify(secret.Properties).includes("smoke-test-key"),
+    const n8nSecret = secrets.find((secret) =>
+      JSON.stringify(secret.Properties).includes("n8n-workflow-client"),
     );
-    expect(smokeSecret).toBeDefined();
+    expect(n8nSecret).toBeDefined();
 
     const outputs = template.toJSON().Outputs ?? {};
     for (const output of Object.values(outputs) as Array<{ Value?: unknown }>) {
-      expect(JSON.stringify(output.Value ?? "")).not.toMatch(/smoke-test-key|apiKey/i);
+      expect(JSON.stringify(output.Value ?? "")).not.toMatch(
+        /clientSecret|ClientSecret/i,
+      );
     }
   });
 
@@ -118,6 +121,22 @@ describe("CandidateMcpStack", () => {
     template.resourceCountIs("AWS::CloudFront::OriginAccessControl", 0);
   });
 
+  it("attaches RestoreWwwAuthenticate CloudFront Function on viewer-response", () => {
+    const template = synth();
+    template.resourceCountIs("AWS::CloudFront::Function", 1);
+    template.hasResourceProperties("AWS::CloudFront::Distribution", {
+      DistributionConfig: Match.objectLike({
+        DefaultCacheBehavior: Match.objectLike({
+          FunctionAssociations: Match.arrayWith([
+            Match.objectLike({
+              EventType: "viewer-response",
+            }),
+          ]),
+        }),
+      }),
+    });
+  });
+
   it("does not reserve Lambda concurrency (personal-account UnreservedConcurrentExecution floor)", () => {
     const template = synth();
 
@@ -155,7 +174,7 @@ describe("CandidateMcpStack", () => {
     });
   });
 
-  it("grants DynamoDB access scoped to content tables, api-key GetItem, and rate-limit UpdateItem", () => {
+  it("grants DynamoDB content read, rate-limit UpdateItem, and DCR CreateUserPoolClient", () => {
     const template = synth();
 
     const policies = Object.values(template.findResources("AWS::IAM::Policy"));
@@ -171,18 +190,31 @@ describe("CandidateMcpStack", () => {
       expect(readResources).toContain(`portfolio-${table}`);
     }
 
-    const apiKeyStatement = statements.find((s) => s.Sid === "CandidateMcpApiKeyVerify");
-    expect(apiKeyStatement).toBeDefined();
-    expect(apiKeyStatement?.Action).toBe("dynamodb:GetItem");
-    expect(JSON.stringify(apiKeyStatement?.Resource)).toContain("portfolio-mcp-api-key");
+    expect(statements.find((s) => s.Sid === "CandidateMcpApiKeyVerify")).toBeUndefined();
 
     const rateLimitStatement = statements.find(
       (s) => s.Sid === "CandidateMcpRateLimitCounter",
     );
     expect(rateLimitStatement).toBeDefined();
     expect(rateLimitStatement?.Action).toBe("dynamodb:UpdateItem");
-    expect(JSON.stringify(rateLimitStatement?.Resource)).toContain(
-      "portfolio-rate-limit",
-    );
+
+    const dcrStatement = statements.find((s) => s.Sid === "CandidateMcpDcrCreateClient");
+    expect(dcrStatement).toBeDefined();
+    expect(dcrStatement?.Action).toBe("cognito-idp:CreateUserPoolClient");
+  });
+
+  it("injects Cognito issuer env vars into the Lambda", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      Environment: Match.objectLike({
+        Variables: Match.objectLike({
+          COGNITO_USER_POOL_ID: Match.anyValue(),
+          COGNITO_REGION: "eu-west-1",
+          COGNITO_DOMAIN: Match.anyValue(),
+          MCP_RESOURCE_SERVER_IDENTIFIER: "https://mcp.khubaibqaiser.com",
+          MCP_SERVER_URL: "https://mcp.khubaibqaiser.com/mcp",
+        }),
+      }),
+    });
   });
 });

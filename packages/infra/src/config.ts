@@ -86,6 +86,12 @@ export type InfraConfig = {
    * per account). When unset the stack creates the provider.
    */
   githubOidcProviderArn?: string;
+  /**
+   * Cognito hosted-domain prefix for the candidate-mcp authorization server
+   * (`*.auth.<region>.amazoncognito.com`). Pass via `-c mcpCognitoDomainPrefix=…`
+   * only if the default collides with another AWS account's domain.
+   */
+  mcpCognitoDomainPrefix: string;
 };
 
 const DEFAULTS = {
@@ -152,5 +158,7 @@ export function resolveConfig(app: App): InfraConfig {
     monthlyBudgetUsd: Number(ctx("monthlyBudgetUsd") ?? DEFAULTS.monthlyBudgetUsd),
     githubRepo: ctx("githubRepo"),
     githubOidcProviderArn: ctx("githubOidcProviderArn"),
+    mcpCognitoDomainPrefix:
+      ctx("mcpCognitoDomainPrefix") ?? `${domainName.replace(/\./g, "-")}-candidate-mcp`,
   };
 }
