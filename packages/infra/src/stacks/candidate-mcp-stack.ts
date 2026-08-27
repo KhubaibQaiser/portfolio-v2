@@ -108,11 +108,7 @@ export class CandidateMcpStack extends cdk.Stack {
       authFlows: { userSrp: true },
       oAuth: {
         flows: { authorizationCodeGrant: true },
-        scopes: [
-          cognito.OAuthScope.OPENID,
-          cognito.OAuthScope.EMAIL,
-          resourceScope,
-        ],
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, resourceScope],
         callbackUrls: [...CLAUDE_CALLBACK_URLS],
         logoutUrls: ["https://claude.ai/", "https://claude.com/"],
       },

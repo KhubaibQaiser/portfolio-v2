@@ -73,7 +73,9 @@ describe("CandidateMcpStack", () => {
 
     const outputs = template.toJSON().Outputs ?? {};
     for (const output of Object.values(outputs) as Array<{ Value?: unknown }>) {
-      expect(JSON.stringify(output.Value ?? "")).not.toMatch(/clientSecret|ClientSecret/i);
+      expect(JSON.stringify(output.Value ?? "")).not.toMatch(
+        /clientSecret|ClientSecret/i,
+      );
     }
   });
 

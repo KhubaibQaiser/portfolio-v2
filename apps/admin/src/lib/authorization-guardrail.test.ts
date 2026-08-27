@@ -22,10 +22,7 @@ function expectGuarded(files: string[]) {
 describe("admin authorization guardrail", () => {
   it("guards every server action file", () => {
     const files = sourceFiles("src/lib/*actions.ts");
-    expect(files).toEqual([
-      "src/lib/actions.ts",
-      "src/lib/media-actions.ts",
-    ]);
+    expect(files).toEqual(["src/lib/actions.ts", "src/lib/media-actions.ts"]);
     expectGuarded(files);
   });
 

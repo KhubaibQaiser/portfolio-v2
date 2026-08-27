@@ -83,12 +83,12 @@ a long-lived static Bearer header against this server.
 
 ## Troubleshooting
 
-| Symptom | Cause |
-| ------- | ----- |
-| `401` + `WWW-Authenticate: Bearer` | Missing/expired/invalid access token — re-run OAuth or client_credentials. |
-| `401` with `error="invalid_token"` | Bearer present but JWT verify failed (wrong pool, scope, or signature). |
-| Discovery `401` on `/.well-known/*` | Bug — those routes must be public (ADR 0006). |
-| `403 {"error":"forbidden"}` | Bypassed CloudFront (direct Function URL) or bad Origin. |
-| `429 {"error":"rate_limited"}` | Per-IP or per-client limit — wait and retry. |
-| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch. |
-| Hosted UI has no user | Create a Cognito user in the candidate-mcp agent pool. |
+| Symptom                               | Cause                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `401` + `WWW-Authenticate: Bearer`    | Missing/expired/invalid access token — re-run OAuth or client_credentials. |
+| `401` with `error="invalid_token"`    | Bearer present but JWT verify failed (wrong pool, scope, or signature).    |
+| Discovery `401` on `/.well-known/*`   | Bug — those routes must be public (ADR 0006).                              |
+| `403 {"error":"forbidden"}`           | Bypassed CloudFront (direct Function URL) or bad Origin.                   |
+| `429 {"error":"rate_limited"}`        | Per-IP or per-client limit — wait and retry.                               |
+| `503 {"error":"service_unavailable"}` | `MCP_ENABLED=false` kill switch.                                           |
+| Hosted UI has no user                 | Create a Cognito user in the candidate-mcp agent pool.                     |

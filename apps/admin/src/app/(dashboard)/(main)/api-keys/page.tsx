@@ -15,19 +15,18 @@ export default async function McpOAuthPage() {
         <h1 className="text-2xl font-bold tracking-tight">MCP OAuth</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           The candidate MCP server authenticates with Cognito OAuth 2.1 (authorization
-          code + PKCE for Claude/Inspector; client credentials for n8n). Hashed API
-          keys are no longer used as MCP credentials.
+          code + PKCE for Claude/Inspector; client credentials for n8n). Hashed API keys
+          are no longer used as MCP credentials.
         </p>
       </div>
       <ul className="text-muted-foreground list-disc space-y-2 pl-5 text-sm">
         <li>
           Connect docs:{" "}
-          <code className="text-foreground">docs/n8n-candidate-mcp-demo.md</code> in
-          the repo (Claude Always required, n8n client_credentials, Inspector DCR).
+          <code className="text-foreground">docs/n8n-candidate-mcp-demo.md</code> in the
+          repo (Claude Always required, n8n client_credentials, Inspector DCR).
         </li>
         <li>
-          Stack outputs{" "}
-          <code className="text-foreground">ClaudeClientId</code>,{" "}
+          Stack outputs <code className="text-foreground">ClaudeClientId</code>,{" "}
           <code className="text-foreground">TokenEndpoint</code>, and{" "}
           <code className="text-foreground">AuthorizeEndpoint</code> on{" "}
           <code className="text-foreground">Portfolio-CandidateMcp</code>.
@@ -40,8 +39,8 @@ export default async function McpOAuthPage() {
           .
         </li>
         <li>
-          Interactive Hosted UI login needs a Cognito user in the agent pool (create
-          once in the AWS console after deploy).
+          Interactive Hosted UI login needs a Cognito user in the agent pool (create once
+          in the AWS console after deploy).
         </li>
       </ul>
     </div>

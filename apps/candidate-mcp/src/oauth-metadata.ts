@@ -26,11 +26,7 @@ export function buildAuthMetadataOptions(config: Config): AuthMetadataOptions {
         "client_secret_basic",
         "client_secret_post",
       ],
-      scopes_supported: [
-        "openid",
-        "email",
-        profileReadScope(config),
-      ],
+      scopes_supported: ["openid", "email", profileReadScope(config)],
     },
     resourceServerUrl: new URL(config.serverUrl),
     resourceName: "Candidate profile MCP server",

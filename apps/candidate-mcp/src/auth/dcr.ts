@@ -50,7 +50,10 @@ function asStringArray(value: unknown): string[] | null {
 export async function handleDynamicClientRegistration(
   request: Request,
   config: Config,
-  cognito: Pick<CognitoIdentityProviderClient, "send"> = new CognitoIdentityProviderClient({
+  cognito: Pick<
+    CognitoIdentityProviderClient,
+    "send"
+  > = new CognitoIdentityProviderClient({
     region: config.cognitoRegion,
   }),
 ): Promise<DcrResult> {
@@ -61,7 +64,10 @@ export async function handleDynamicClientRegistration(
     return {
       ok: false,
       status: 400,
-      body: { error: "invalid_client_metadata", error_description: "Request body must be JSON" },
+      body: {
+        error: "invalid_client_metadata",
+        error_description: "Request body must be JSON",
+      },
     };
   }
 
@@ -131,7 +137,10 @@ export async function handleDynamicClientRegistration(
       return {
         ok: false,
         status: 500,
-        body: { error: "server_error", error_description: "Cognito did not return a client_id" },
+        body: {
+          error: "server_error",
+          error_description: "Cognito did not return a client_id",
+        },
       };
     }
 
