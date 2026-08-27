@@ -94,18 +94,18 @@ The admin app is `force-dynamic` — it always reads fresh content from DynamoDB
 
 Defined in [`packages/infra`](packages/infra); see [`bin/portfolio.ts`](packages/infra/bin/portfolio.ts).
 
-| Stack                    | Region      | Contents                                                                                                                                                  |
-| ------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Portfolio-Data`         | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                                                                                                        |
-| `Portfolio-Web`          | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache                                                                                     |
-| `Portfolio-Auth`         | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                                                                                                     |
-| `Portfolio-Admin`        | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                                                                                                    |
-| `Portfolio-Shared`       | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget                                                                           |
-| `Portfolio-Storybook`    | `eu-west-1` | Static Storybook: private S3 + CloudFront                                                                                                                 |
-| `Portfolio-Oidc`         | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                                                                                             |
-| `Portfolio-Dns`          | `us-east-1` | Route 53 hosted zone                                                                                                                                      |
-| `Portfolio-Cert`         | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                                                                                       |
-| `Portfolio-CandidateMcp` | `eu-west-1` | Candidate profile MCP server: Cognito M2M pool, Lambda, CloudFront (requires `domainEnabled=true`; see [ADR 0003](docs/adr/0003-candidate-mcp-server.md)) |
+| Stack                    | Region      | Contents                                                                                                                                                                                                   |
+| ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Portfolio-Data`         | `eu-west-1` | DynamoDB tables + S3 media bucket + AI key secrets                                                                                                                                                         |
+| `Portfolio-Web`          | `eu-west-1` | OpenNext web app: server + image Lambdas, CloudFront, S3 assets/cache                                                                                                                                      |
+| `Portfolio-Auth`         | `eu-west-1` | Better Auth secrets (Google OAuth JSON + signing key)                                                                                                                                                      |
+| `Portfolio-Admin`        | `eu-west-1` | OpenNext admin app: server + image Lambdas, CloudFront                                                                                                                                                     |
+| `Portfolio-Shared`       | `eu-west-1` | EventBridge, SNS alerts, SES identity, CloudWatch alarm + dashboard, AWS Budget                                                                                                                            |
+| `Portfolio-Storybook`    | `eu-west-1` | Static Storybook: private S3 + CloudFront                                                                                                                                                                  |
+| `Portfolio-Oidc`         | `eu-west-1` | GitHub Actions OIDC deploy role (opt-in via `-c githubRepo=`)                                                                                                                                              |
+| `Portfolio-Dns`          | `us-east-1` | Route 53 hosted zone                                                                                                                                                                                       |
+| `Portfolio-Cert`         | `us-east-1` | ACM certificate for CloudFront (opt-in via `-c domainEnabled=true`)                                                                                                                                        |
+| `Portfolio-CandidateMcp` | `eu-west-1` | Candidate profile MCP server: API-key auth, Lambda, CloudFront (requires `domainEnabled=true`; see [ADR 0003](docs/adr/0003-candidate-mcp-server.md), [ADR 0005](docs/adr/0005-candidate-mcp-api-keys.md)) |
 
 The custom domain is **deferred by default** (`domainEnabled=false`): both apps run on their default `*.cloudfront.net` URLs until you delegate nameservers and redeploy with `-c domainEnabled=true`.
 
@@ -118,7 +118,7 @@ portfolio-v2/
 ├── apps/
 │   ├── web/                 # Public site — Next.js, route handlers, chat, resume PDF
 │   ├── admin/               # CMS — Better Auth, editors, media uploads
-│   └── candidate-mcp/       # Candidate profile MCP server (Cognito-authenticated, network-facing)
+│   └── candidate-mcp/       # Candidate profile MCP server (API-key auth, network-facing)
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, ports, constants
 │   ├── data/                # DynamoDB adapter + fixtures + seed
@@ -357,24 +357,23 @@ for the full trust-boundary decision; this is a summary.
 - **Transport:** MCP Streamable HTTP, served from a Lambda Function URL
   behind CloudFront on `mcp.<domain>` (only deployed when `domainEnabled=true`
   — see the stacks table above).
-- **Auth:** OAuth 2.1 client-credentials via a dedicated Cognito user pool
-  (no human sign-in). Each consumer gets its own app client and the single
-  `profile.read` scope; the JWT is verified inside the Lambda with
-  `aws-jwt-verify`. Unauthenticated calls get a spec-compliant `401` plus
-  RFC 9728 discovery metadata.
+- **Auth:** Hashed API keys minted in admin (`/api-keys`). Each consumer
+  (Claude.ai, n8n) gets its own key with per-key rate limits. Bearer token in
+  `Authorization`; no OAuth discovery (Claude: Authentication → None + request
+  header). CI smoke test uses a Secrets Manager key.
 - **Tools:** `get_candidate_profile` (full public profile — about, resume,
   experience, skills, projects, testimonials) and `get_candidate_facts` (the
   same compact fact sheet the resume-AI pipeline itself uses). Both are
   read-only, take no arguments, and every free-text field is passed through
   the prompt-injection scrub before leaving the server.
 - **Isolation:** CloudFront origin-verify (the raw Function URL is
-  unusable without the shared header), Cognito client-credentials, and IAM
-  scoped to exactly the five content tables the tools read — not the
-  wildcard grant `apps/web`/`apps/admin` use. Function URL OAC is not used
-  here because it collides with MCP `Authorization: Bearer` (web/admin keep
-  OAC; they authenticate with cookies).
+  unusable without the shared header), API-key verification, per-IP HTTP rate
+  limits, and IAM scoped to exactly the five content tables plus `GetItem` on
+  `mcp-api-key` — not the wildcard grant `apps/web`/`apps/admin` use. Function
+  URL OAC is not used here because it collides with MCP `Authorization: Bearer`
+  (web/admin keep OAC; they authenticate with cookies).
 - **Demo:** [`docs/n8n-candidate-mcp-demo.md`](docs/n8n-candidate-mcp-demo.md)
-  walks through an n8n workflow that authenticates and calls both tools.
+  walks through an n8n workflow that calls both tools with an API key.
 
 Run locally over stdio with `pnpm --filter @portfolio/candidate-mcp dev`; run
 `pnpm --filter @portfolio/candidate-mcp mcp-scan` for a manual, pre-release

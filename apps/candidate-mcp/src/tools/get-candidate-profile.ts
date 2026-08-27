@@ -7,7 +7,7 @@ import {
 } from "../schemas/candidate-profile";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
-import type { Config } from "../config";
+import type { ClientRateLimit } from "../config";
 
 /**
  * Loads every publicly-visible content section and assembles the
@@ -47,7 +47,7 @@ export function registerGetCandidateProfileTool(
   server: McpServer,
   repo: ContentRepository,
   authInfo: AuthInfo | undefined,
-  config: Pick<Config, "rateLimitMax" | "rateLimitWindowSec">,
+  config: ClientRateLimit,
 ): void {
   server.registerTool(
     "get_candidate_profile",

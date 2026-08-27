@@ -2,7 +2,8 @@ import { McpServer, type AuthInfo } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
 import { registerGetCandidateProfileTool } from "./tools/get-candidate-profile";
 import { registerGetCandidateFactsTool } from "./tools/get-candidate-facts";
-import type { Config } from "./config";
+import type { ClientRateLimit, Config } from "./config";
+import { getClientRateLimit } from "./request-context";
 
 /**
  * Builds one `McpServer` instance registering both read-only tools. Called
@@ -13,10 +14,13 @@ import type { Config } from "./config";
 export function createCandidateMcpServer(
   repo: ContentRepository,
   authInfo: AuthInfo | undefined,
-  config: Pick<Config, "rateLimitMax" | "rateLimitWindowSec">,
+  fallbackRateLimit: ClientRateLimit,
 ): McpServer {
   const server = new McpServer({ name: "candidate-profile-mcp", version: "1.0.0" });
-  registerGetCandidateProfileTool(server, repo, authInfo, config);
-  registerGetCandidateFactsTool(server, repo, authInfo, config);
+  const clientRateLimit = getClientRateLimit(fallbackRateLimit);
+  registerGetCandidateProfileTool(server, repo, authInfo, clientRateLimit);
+  registerGetCandidateFactsTool(server, repo, authInfo, clientRateLimit);
   return server;
 }
+
+export type StdioRateLimitDefaults = Pick<Config, "rateLimitMax" | "rateLimitWindowSec">;

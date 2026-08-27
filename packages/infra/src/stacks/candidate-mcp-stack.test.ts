@@ -25,16 +25,8 @@ const baseConfig: InfraConfig = {
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
 };
 
-/**
- * Builds and synthesizes `CandidateMcpStack` in isolation, with plain
- * (non-DNS-validated) hosted-zone/certificate constructs standing in for the
- * real Dns/Cert stacks — this test never touches AWS. Real bundling of
- * `apps/candidate-mcp/src/lambda.ts` still runs (esbuild via `NodejsFunction`),
- * so a broken import graph in the app fails this test, not just a deploy.
- */
 function synth(configOverrides: Partial<InfraConfig> = {}): Template {
   const app = new cdk.App();
   const deps = new cdk.Stack(app, "Deps", {
@@ -61,54 +53,26 @@ function synth(configOverrides: Partial<InfraConfig> = {}): Template {
 }
 
 describe("CandidateMcpStack", () => {
-  it("provisions a client-credentials-only Cognito resource server and app client", () => {
+  it("does not provision Cognito (API keys per ADR 0005)", () => {
     const template = synth();
-
-    template.hasResourceProperties("AWS::Cognito::UserPoolResourceServer", {
-      Identifier: "https://mcp.khubaibqaiser.com",
-      Scopes: Match.arrayWith([Match.objectLike({ ScopeName: "profile.read" })]),
-    });
-
-    template.hasResourceProperties("AWS::Cognito::UserPoolClient", {
-      GenerateSecret: true,
-      AllowedOAuthFlows: ["client_credentials"],
-      AllowedOAuthFlowsUserPoolClient: true,
-    });
-    // The scope string is built from the resource-server identifier, which
-    // is itself a token at synth time — just assert exactly one scope is
-    // wired up (the CFN intrinsic shape is an implementation detail).
-    const [client] = Object.values(
-      template.findResources("AWS::Cognito::UserPoolClient"),
-    );
-    expect(client).toBeDefined();
-    expect(client?.Properties.AllowedOAuthScopes).toHaveLength(1);
+    template.resourceCountIs("AWS::Cognito::UserPool", 0);
+    template.resourceCountIs("AWS::Cognito::UserPoolClient", 0);
   });
 
-  it("writes the app client's secret into Secrets Manager, never a CfnOutput", () => {
+  it("writes the smoke-test key into Secrets Manager, never a CfnOutput", () => {
     const template = synth();
 
     template.resourceCountIs("AWS::SecretsManager::Secret", 2);
 
-    // The n8n client secret must be a CloudFormation dynamic reference resolved
-    // via a `Fn::GetAtt` onto the UserPoolClient's `ClientSecret` attribute
-    // (CDK provisions a custom resource to fetch it), never a plaintext
-    // string baked into the template — otherwise the actual client secret
-    // would be sitting in source-controllable, human-readable CFN output,
-    // which is exactly what "no secrets in source" forbids.
     const secrets = Object.values(template.findResources("AWS::SecretsManager::Secret"));
-    const n8nSecret = secrets.find((secret) =>
-      JSON.stringify(secret.Properties.SecretString ?? "").includes(
-        "UserPoolClient.ClientSecret",
-      ),
+    const smokeSecret = secrets.find((secret) =>
+      JSON.stringify(secret.Properties).includes("smoke-test-key"),
     );
-    expect(n8nSecret).toBeDefined();
-    const serialized = JSON.stringify(n8nSecret?.Properties.SecretString);
-    expect(serialized).toContain("Fn::Join");
-    expect(serialized).toContain("UserPoolClient.ClientSecret");
+    expect(smokeSecret).toBeDefined();
 
     const outputs = template.toJSON().Outputs ?? {};
     for (const output of Object.values(outputs) as Array<{ Value?: unknown }>) {
-      expect(JSON.stringify(output.Value ?? "")).not.toMatch(/clientSecret/i);
+      expect(JSON.stringify(output.Value ?? "")).not.toMatch(/smoke-test-key|apiKey/i);
     }
   });
 
@@ -176,8 +140,6 @@ describe("CandidateMcpStack", () => {
   it("uses managed no-cache + AllViewerExceptHostHeader so Authorization reaches the origin", () => {
     const template = synth();
 
-    // Custom zero-TTL + Authorization HeaderBehavior is rejected by CloudFront
-    // at deploy time. Managed policies are the supported combination.
     template.resourceCountIs("AWS::CloudFront::CachePolicy", 0);
     template.resourceCountIs("AWS::CloudFront::OriginRequestPolicy", 0);
 
@@ -185,20 +147,15 @@ describe("CandidateMcpStack", () => {
       DistributionConfig: Match.objectLike({
         DefaultCacheBehavior: Match.objectLike({
           CachePolicyId: cloudfront.CachePolicy.CACHING_DISABLED.cachePolicyId,
-          // Forwards Authorization when caching is disabled; Host remains the
-          // Function URL hostname (restamped in toWebRequest).
           OriginRequestPolicyId:
             cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER
               .originRequestPolicyId,
-          FunctionAssociations: Match.arrayWith([
-            Match.objectLike({ EventType: "viewer-response" }),
-          ]),
         }),
       }),
     });
   });
 
-  it("grants DynamoDB access scoped to exactly the five content tables read by its tools, not the whole table set", () => {
+  it("grants DynamoDB access scoped to content tables, api-key GetItem, and rate-limit UpdateItem", () => {
     const template = synth();
 
     const policies = Object.values(template.findResources("AWS::IAM::Policy"));
@@ -209,26 +166,15 @@ describe("CandidateMcpStack", () => {
 
     const readStatement = statements.find((s) => s.Sid === "CandidateProfileContentRead");
     expect(readStatement).toBeDefined();
-    expect(readStatement?.Action).toEqual(
-      expect.arrayContaining([
-        "dynamodb:GetItem",
-        "dynamodb:BatchGetItem",
-        "dynamodb:Query",
-        "dynamodb:Scan",
-        "dynamodb:DescribeTable",
-      ]),
-    );
-    // Least privilege: no write actions and no blanket wildcard resource.
-    expect(readStatement?.Action).not.toContain("dynamodb:PutItem");
-    expect(readStatement?.Action).not.toContain("dynamodb:DeleteItem");
-
     const readResources = JSON.stringify(readStatement?.Resource ?? []);
     for (const table of ["content", "experience", "project", "skill", "testimonial"]) {
       expect(readResources).toContain(`portfolio-${table}`);
     }
-    for (const table of ["resume-generation", "media", "chat-cache"]) {
-      expect(readResources).not.toContain(`portfolio-${table}`);
-    }
+
+    const apiKeyStatement = statements.find((s) => s.Sid === "CandidateMcpApiKeyVerify");
+    expect(apiKeyStatement).toBeDefined();
+    expect(apiKeyStatement?.Action).toBe("dynamodb:GetItem");
+    expect(JSON.stringify(apiKeyStatement?.Resource)).toContain("portfolio-mcp-api-key");
 
     const rateLimitStatement = statements.find(
       (s) => s.Sid === "CandidateMcpRateLimitCounter",

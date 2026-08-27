@@ -3,9 +3,9 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context,
 } from "aws-lambda";
-import { getContentRepository } from "@portfolio/data";
+import { getContentRepository, getMcpApiKeyStore } from "@portfolio/data";
 import { loadConfig } from "./config";
-import { createAgentTokenVerifier } from "./auth/verify-agent-token";
+import { loadSmokeKeyConfig } from "./auth/smoke-key";
 import { createHttpHandler } from "./http-handler";
 import { toWebRequest } from "./function-url-to-web-request";
 
@@ -20,10 +20,16 @@ if (!config.originVerifySecret) {
   throw new Error("Missing required environment variable: ORIGIN_VERIFY_SECRET");
 }
 
+const getSmokeKey = loadSmokeKeyConfig(config.smokeTestKeySecretArn ?? undefined, {
+  rateLimitMax: config.smokeTestRateLimitMax,
+  rateLimitWindowSec: config.smokeTestRateLimitWindowSec,
+});
+
 const handler = createHttpHandler({
   config,
   repo: getContentRepository(),
-  verifier: createAgentTokenVerifier(config),
+  keyStore: getMcpApiKeyStore(),
+  getSmokeKey,
 });
 
 async function toApiGatewayResult(

@@ -7,29 +7,32 @@
 export type Config = {
   /** Public URL of this MCP server, e.g. `https://mcp.khubaibqaiser.com/mcp`. */
   serverUrl: string;
-  /** Cognito User Pool ID JWTs must be issued from. */
-  cognitoUserPoolId: string;
-  /** AWS region the user pool lives in (for issuer/JWKS URL construction). */
-  cognitoRegion: string;
-  /** Resource server identifier (also the OAuth scope prefix), e.g. `https://mcp.khubaibqaiser.com`. */
-  resourceServerIdentifier: string;
-  /** Cognito hosted-UI domain prefix used to build the OAuth2 token endpoint for AS metadata. */
-  cognitoDomain: string;
   /**
-   * Kill switch: when explicitly set to `"false"`, every request (including
-   * the well-known routes) is answered `503` regardless of auth. Defaults to
-   * enabled so a missing env var never silently disables the server.
+   * Kill switch: when explicitly set to `"false"`, every request is answered
+   * `503` regardless of auth. Defaults to enabled.
    */
   enabled: boolean;
-  /** Max tool calls a single `client_id` may make per rate-limit window. */
+  /** Max HTTP requests per viewer IP per window (before auth). */
+  ipRateLimitMax: number;
+  ipRateLimitWindowSec: number;
+  /** Default tool rate limits for stdio (no verified HTTP caller). */
   rateLimitMax: number;
-  /** Rate-limit window, in seconds. */
   rateLimitWindowSec: number;
+  /** Smoke-test key limits when the deploy secret matches. */
+  smokeTestRateLimitMax: number;
+  smokeTestRateLimitWindowSec: number;
+  /** Secrets Manager ARN for the CI smoke-test bearer (optional locally). */
+  smokeTestKeySecretArn: string | null;
   /**
    * Shared secret CloudFront injects as `x-origin-verify`. Required on the
    * Lambda HTTP path (fail-closed). Stdio never uses this handler.
    */
   originVerifySecret: string | null;
+};
+
+export type ClientRateLimit = {
+  rateLimitMax: number;
+  rateLimitWindowSec: number;
 };
 
 function requireEnv(name: string): string {
@@ -40,26 +43,26 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw === "") return fallback;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 export function loadConfig(): Config {
   return {
     serverUrl: requireEnv("MCP_SERVER_URL"),
-    cognitoUserPoolId: requireEnv("COGNITO_USER_POOL_ID"),
-    cognitoRegion: requireEnv("COGNITO_REGION"),
-    resourceServerIdentifier: requireEnv("MCP_RESOURCE_SERVER_IDENTIFIER"),
-    cognitoDomain: requireEnv("COGNITO_DOMAIN"),
     enabled: process.env.MCP_ENABLED !== "false",
-    rateLimitMax: Number(process.env.MCP_RATE_LIMIT_MAX ?? 30),
-    rateLimitWindowSec: Number(process.env.MCP_RATE_LIMIT_WINDOW_SEC ?? 60),
-    // Lambda: CloudFormation dynamic reference into ORIGIN_VERIFY_SECRET.
-    // Stdio / unit tests: unset (stdio never uses this handler; tests inject
-    // the field on Config directly).
+    ipRateLimitMax: parsePositiveInt(process.env.MCP_IP_RATE_LIMIT_MAX, 60),
+    ipRateLimitWindowSec: parsePositiveInt(process.env.MCP_IP_RATE_LIMIT_WINDOW_SEC, 60),
+    rateLimitMax: parsePositiveInt(process.env.MCP_RATE_LIMIT_MAX, 30),
+    rateLimitWindowSec: parsePositiveInt(process.env.MCP_RATE_LIMIT_WINDOW_SEC, 60),
+    smokeTestRateLimitMax: parsePositiveInt(process.env.MCP_SMOKE_RATE_LIMIT_MAX, 10),
+    smokeTestRateLimitWindowSec: parsePositiveInt(
+      process.env.MCP_SMOKE_RATE_LIMIT_WINDOW_SEC,
+      60,
+    ),
+    smokeTestKeySecretArn: process.env.MCP_SMOKE_TEST_KEY_SECRET_ARN ?? null,
     originVerifySecret: process.env.ORIGIN_VERIFY_SECRET ?? null,
   };
-}
-
-/** The single OAuth scope this server understands. */
-export function profileReadScope(
-  config: Pick<Config, "resourceServerIdentifier">,
-): string {
-  return `${config.resourceServerIdentifier}/profile.read`;
 }
