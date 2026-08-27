@@ -9,7 +9,7 @@ type Props = {
 
 export function AtsSectionHeading({ first = false, styles, children }: Props) {
   return (
-    <View style={first ? styles.sectionFirst : styles.section}>
+    <View style={first ? styles.sectionFirst : styles.section} wrap={false}>
       <Text style={styles.sectionHeading}>{children}</Text>
       <View style={styles.sectionRule} />
     </View>
