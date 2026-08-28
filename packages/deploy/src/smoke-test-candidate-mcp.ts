@@ -69,6 +69,51 @@ if (!/resource_metadata=/i.test(unauthHeaders)) {
 }
 console.log("Unauthenticated request correctly rejected with 401 + WWW-Authenticate.");
 
+const mcpOrigin = new URL(serverUrl).origin;
+
+// --- 1b. Public PRM + AS metadata (MCP origin is the discovered AS). ---
+const prmJson = execFileSync(
+  "curl",
+  ["-sf", "--max-time", "15", `${mcpOrigin}/.well-known/oauth-protected-resource/mcp`],
+  { encoding: "utf8" },
+).trim();
+const prm = JSON.parse(prmJson) as {
+  resource?: string;
+  authorization_servers?: string[];
+};
+if (prm.resource !== serverUrl) {
+  throw new Error(
+    `PRM resource expected ${serverUrl}, got ${JSON.stringify(prm.resource)}.`,
+  );
+}
+if (!prm.authorization_servers?.includes(mcpOrigin)) {
+  throw new Error(
+    `PRM authorization_servers must include ${mcpOrigin}, got ${JSON.stringify(prm.authorization_servers)}.`,
+  );
+}
+console.log("Protected resource metadata OK (authorization_servers = MCP origin).");
+
+const asJson = execFileSync(
+  "curl",
+  ["-sf", "--max-time", "15", `${mcpOrigin}/.well-known/oauth-authorization-server`],
+  { encoding: "utf8" },
+).trim();
+const asMeta = JSON.parse(asJson) as {
+  issuer?: string;
+  registration_endpoint?: string;
+};
+if (asMeta.issuer !== mcpOrigin) {
+  throw new Error(
+    `AS metadata issuer must be ${mcpOrigin} (RFC 8414), got ${JSON.stringify(asMeta.issuer)}.`,
+  );
+}
+if (asMeta.registration_endpoint !== `${mcpOrigin}/register`) {
+  throw new Error(
+    `AS registration_endpoint must be ${mcpOrigin}/register, got ${JSON.stringify(asMeta.registration_endpoint)}.`,
+  );
+}
+console.log("Authorization server metadata OK (issuer = MCP origin).");
+
 // --- 2. A real client-credentials grant must succeed end-to-end. ---
 const credentials = getSecretJson<ClientCredentials>(secretId, region);
 

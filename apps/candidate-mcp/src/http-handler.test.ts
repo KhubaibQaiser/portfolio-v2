@@ -177,7 +177,8 @@ describe("createHttpHandler", () => {
     expect(body.scopes_supported).toContain(
       `${config.resourceServerIdentifier}/profile.read`,
     );
-    expect(body.authorization_servers).toContain(
+    expect(body.authorization_servers).toContain("https://mcp.example.com");
+    expect(body.authorization_servers).not.toContain(
       `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}`,
     );
   });

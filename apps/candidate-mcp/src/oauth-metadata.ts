@@ -3,21 +3,33 @@ import type { Config } from "./config";
 import { profileReadScope } from "./config";
 
 /**
- * RFC 9728 (Protected Resource) + RFC 8414 (Authorization Server) metadata
- * for this server's `.well-known` discovery routes. Unauthenticated callers
- * follow `401` → `WWW-Authenticate: resource_metadata` → this document →
- * Cognito authorize/token (and optional DCR at `registration_endpoint`).
+ * Discovered OAuth authorization server issuer (RFC 8414): the MCP public
+ * origin. Clients fetch AS metadata from this issuer and require an exact
+ * `issuer` match. Cognito remains the login/token backend; its user-pool URL
+ * is not the discovered AS (access-token `iss` still comes from Cognito).
+ */
+export function discoveredAuthorizationServerIssuer(
+  config: Pick<Config, "serverUrl">,
+): string {
+  return new URL(config.serverUrl).origin;
+}
+
+/**
+ * RFC 9728 (Protected Resource) + RFC 8414 (Authorization Server) metadata.
+ * Unauthenticated callers follow `401` → `WWW-Authenticate: resource_metadata`
+ * → PRM (`authorization_servers` = MCP origin) → this AS document on the MCP
+ * host → DCR at `registration_endpoint` → Cognito authorize/token.
  */
 export function buildAuthMetadataOptions(config: Config): AuthMetadataOptions {
   const cognitoDomainBase = `https://${config.cognitoDomain}.auth.${config.cognitoRegion}.amazoncognito.com`;
-  const resourceOrigin = new URL(config.serverUrl).origin;
+  const issuer = discoveredAuthorizationServerIssuer(config);
 
   return {
     oauthMetadata: {
-      issuer: `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}`,
+      issuer,
       authorization_endpoint: `${cognitoDomainBase}/oauth2/authorize`,
       token_endpoint: `${cognitoDomainBase}/oauth2/token`,
-      registration_endpoint: `${resourceOrigin}/register`,
+      registration_endpoint: `${issuer}/register`,
       response_types_supported: ["code", "token"],
       grant_types_supported: ["authorization_code", "client_credentials"],
       code_challenge_methods_supported: ["S256"],

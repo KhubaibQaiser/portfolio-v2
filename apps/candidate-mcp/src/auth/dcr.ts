@@ -19,11 +19,17 @@ export type DcrRequestBody = {
   response_types?: unknown;
   token_endpoint_auth_method?: unknown;
   client_name?: unknown;
+  /** Extra connector fields (ignored): scope, application_type, client_uri, … */
+  [key: string]: unknown;
 };
 
 export type DcrResult =
   | { ok: true; status: 201; body: Record<string, unknown> }
-  | { ok: false; status: 400 | 500; body: { error: string; error_description?: string } };
+  | {
+      ok: false;
+      status: 400 | 500;
+      body: { error: string; error_description?: string };
+    };
 
 export function isAllowedRedirectUri(uri: string): boolean {
   let parsed: URL;
@@ -46,6 +52,7 @@ function asStringArray(value: unknown): string[] | null {
 /**
  * RFC 7591 Dynamic Client Registration adapter: creates a Cognito public
  * app client (authorization code + PKCE, no secret) with allowlisted redirects.
+ * Unknown body fields from MCP connectors are ignored.
  */
 export async function handleDynamicClientRegistration(
   request: Request,
@@ -104,6 +111,30 @@ export async function handleDynamicClientRegistration(
       body: {
         error: "invalid_client_metadata",
         error_description: "Only token_endpoint_auth_method=none is supported",
+      },
+    };
+  }
+
+  const grantTypes = asStringArray(body.grant_types);
+  if (grantTypes !== null && !grantTypes.includes("authorization_code")) {
+    return {
+      ok: false,
+      status: 400,
+      body: {
+        error: "invalid_client_metadata",
+        error_description: "grant_types must include authorization_code",
+      },
+    };
+  }
+
+  const responseTypes = asStringArray(body.response_types);
+  if (responseTypes !== null && !responseTypes.includes("code")) {
+    return {
+      ok: false,
+      status: 400,
+      body: {
+        error: "invalid_client_metadata",
+        error_description: "response_types must include code",
       },
     };
   }
