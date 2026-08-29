@@ -32,7 +32,8 @@ Constraints carried from pairing:
   needs its own ADR.
 - Same AWS account and CDK app. Account Lambda
   `ConcurrentExecutions` quota is 10 — ingest must be sequential, not a
-  fleet of crawlers.
+  fleet of crawlers. Do not set `reservedConcurrentExecutions` (ADR 0003:
+  AWS keeps a floor of 10 unreserved, so reserving even 1 fails create).
 - No NAT Gateway (ADR 0002). No per-table CloudWatch alarms. No secrets
   in source. No caller-supplied URL fetch (SSRF).
 - AWS stay ~$5/mo. **Paid job-index subscriptions are not worth it for a
@@ -184,7 +185,7 @@ rewrite.
 EventBridge every 4h
         │
         ▼
-Admin sequential ARM Lambda (reservedConcurrency 1)
+Admin sequential ARM Lambda (no reserved concurrency; quota-10 floor)
         │
         ├─ GET Remotive / RemoteOK / Arbeitnow / Muse / WWR RSS
         ├─ (once per UTC day) JobsPipe /v1/jobs/search — tight filters,
@@ -204,9 +205,16 @@ preference filter → hybrid matcher → persist
 
 - Same AWS account, **Admin stack owns** the job table and worker. MCP
   is not in this path.
-- `reservedConcurrency = 1` so we do not compete with the quota-10
-  account. Optional SQS if a source adapter should retry independently;
-  not required for v1 if one Lambda walks the allowlist.
+- **No `reservedConcurrentExecutions`.** Same constraint as
+  [ADR 0003](0003-candidate-mcp-server.md): this account's quota is 10,
+  and AWS will not let unreserved drop below 10. Reserving 1 on ingest
+  (or notify) fails deploy with
+  `UnreservedConcurrentExecution below its minimum value of [10]`.
+  Serialization is EventBridge `rate(4 hours)` plus a 300s timeout (a
+  tick cannot overlap the next) and a single Lambda walking the
+  allowlist — not a crawler fleet. Revisit a reserved cap after a quota
+  increase. Optional SQS if a source adapter should retry independently;
+  not required for v1.
 - Idempotency key: source + source job id, plus a secondary natural key
   `sha256(company_domain + '|' + normalized_title + '|' + location)`.
 - Hydrate full JD only from an **allowlist of ATS hosts** derived from

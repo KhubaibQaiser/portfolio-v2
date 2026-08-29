@@ -68,8 +68,10 @@ with one adapter per allowlisted source:
 
 ### Ingest path
 
-1. EventBridge every 4 hours → sequential ARM Lambda
-   (`reservedConcurrency = 1`).
+1. EventBridge every 4 hours → sequential ARM Lambda. Do not set
+   `reservedConcurrentExecutions` (account quota 10; AWS unreserved
+   floor is 10 — see ADR 0003 / 0007). Overlap is prevented by the 4h
+   schedule plus a 300s timeout.
 2. Walk the allowlisted adapters. JobsPipe Free only if this is the
    day’s single allotted search and credits remain.
 3. Idempotent upsert on `source + source_id` and natural key
@@ -196,7 +198,8 @@ When code exists:
   guardrail, JobsPipe daily-cap logic.
 - Worker: fixture payloads; no live LLM in CI. Live JobsPipe/Remotive
   calls are not unit tests.
-- CDK: ingest Lambda reserved concurrency 1; job table not in
+- CDK: ingest/notify Lambdas have no `reservedConcurrentExecutions`
+  (account unreserved floor); job table not in
   `grantCandidateMcpDataAccess`; JobsPipe secret ARN via SSM, not CFN
   exports.
 - Manual: 4h poll inserts a new Remotive row + 85+ email; duplicate

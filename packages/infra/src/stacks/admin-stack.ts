@@ -275,6 +275,10 @@ export class AdminStack extends cdk.Stack {
       ...(config.contactFromEmail ? { CONTACT_FROM_EMAIL: config.contactFromEmail } : {}),
     };
 
+    // No reservedConcurrentExecutions: this account's ConcurrentExecutions
+    // quota is 10, and AWS will not let unreserved drop below 10 (ADR 0003).
+    // Ingest stays sequential via EventBridge rate(4 hours) + 300s timeout
+    // (a tick cannot overlap the next). Revisit a reserved cap after a quota increase.
     const jobIngestWorkerFn = new nodeLambda.NodejsFunction(this, "JobIngestWorkerFn", {
       entry: props.jobIngestWorkerEntry,
       depsLockFilePath: props.depsLockFilePath,
@@ -282,7 +286,6 @@ export class AdminStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(300),
-      reservedConcurrentExecutions: 1,
       bundling: { externalModules: [] },
       logGroup: new logs.LogGroup(this, "JobIngestWorkerFnLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,
@@ -311,7 +314,6 @@ export class AdminStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
       memorySize: 256,
       timeout: cdk.Duration.seconds(60),
-      reservedConcurrentExecutions: 1,
       bundling: { externalModules: [] },
       logGroup: new logs.LogGroup(this, "JobNotifyWorkerFnLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,

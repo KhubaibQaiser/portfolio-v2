@@ -104,7 +104,7 @@ describe("AdminStack render worker", () => {
     expect(renderWorker?.Properties?.Timeout).toBe(300);
   }, 30_000);
 
-  it("schedules sequential job ingest every 4h with reserved concurrency 1", () => {
+  it("schedules sequential job ingest every 4h without reserved concurrency", () => {
     const template = synth();
     const functions = template.findResources("AWS::Lambda::Function");
     const ingest = Object.values(functions).find(
@@ -112,14 +112,14 @@ describe("AdminStack render worker", () => {
         resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
         "portfolio-admin-job-ingest-worker",
     );
-    expect(ingest?.Properties?.ReservedConcurrentExecutions).toBe(1);
+    expect(ingest?.Properties?.ReservedConcurrentExecutions).toBeUndefined();
     expect(ingest?.Properties?.Runtime).toBe("nodejs22.x");
     template.hasResourceProperties("AWS::Events::Rule", {
       ScheduleExpression: "rate(4 hours)",
     });
   }, 30_000);
 
-  it("schedules the morning digest at 07:00 UTC with reserved concurrency 1", () => {
+  it("schedules the morning digest at 07:00 UTC without reserved concurrency", () => {
     const template = synth();
     const functions = template.findResources("AWS::Lambda::Function");
     const notify = Object.values(functions).find(
@@ -127,9 +127,17 @@ describe("AdminStack render worker", () => {
         resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
         "portfolio-admin-job-notify-worker",
     );
-    expect(notify?.Properties?.ReservedConcurrentExecutions).toBe(1);
+    expect(notify?.Properties?.ReservedConcurrentExecutions).toBeUndefined();
     template.hasResourceProperties("AWS::Events::Rule", {
       ScheduleExpression: "cron(0 7 * * ? *)",
     });
+  }, 30_000);
+
+  it("does not reserve Lambda concurrency (personal-account UnreservedConcurrentExecution floor)", () => {
+    const template = synth();
+    const functions = template.findResources("AWS::Lambda::Function");
+    for (const resource of Object.values(functions)) {
+      expect(resource.Properties?.ReservedConcurrentExecutions).toBeUndefined();
+    }
   }, 30_000);
 });
