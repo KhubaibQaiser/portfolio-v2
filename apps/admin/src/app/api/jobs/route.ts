@@ -3,8 +3,7 @@ import { getContentRepository, getJobBoardRepository } from "@portfolio/data";
 import { jobStatusEnum } from "@portfolio/shared/schemas";
 import type { JobListCursor } from "@portfolio/shared/ports";
 import { requireAdmin } from "@/lib/auth-guard";
-import { logger } from "@/lib/logger";
-import { toError } from "@/lib/to-error";
+import { jsonInternalError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,10 +64,8 @@ export async function GET(request: Request) {
       recommendedJobId: prefs.recommended_job_id,
     });
   } catch (error) {
-    logger.error("GET /api/jobs failed", {
+    return jsonInternalError("GET /api/jobs failed", error, "Failed to list jobs", {
       status: statusParsed.data,
-      error: toError(error),
     });
-    return NextResponse.json({ error: "Failed to list jobs" }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
 import { toNextJsHandler } from "better-auth/next-js";
+import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
+import { logRouteError } from "@/lib/log-route-error";
 
 type Handlers = ReturnType<typeof toNextJsHandler>;
 
@@ -13,11 +15,21 @@ async function handlers(): Promise<Handlers> {
 }
 
 export async function GET(request: Request) {
-  const { GET: handler } = await handlers();
-  return handler(request);
+  try {
+    const { GET: handler } = await handlers();
+    return handler(request);
+  } catch (error) {
+    logRouteError("GET /api/auth failed", error);
+    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const { POST: handler } = await handlers();
-  return handler(request);
+  try {
+    const { POST: handler } = await handlers();
+    return handler(request);
+  } catch (error) {
+    logRouteError("POST /api/auth failed", error);
+    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+  }
 }

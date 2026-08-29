@@ -4,6 +4,7 @@ import { getMediaStore } from "@portfolio/data/media";
 import { altTextFromFilename } from "@portfolio/shared/alt-text";
 import { mediaInsertSchema } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logRouteError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 
@@ -51,9 +52,9 @@ export async function POST(request: Request) {
 
   try {
     await mediaStore.uploadObject(bytes, objectKey, file.type);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Upload to storage failed";
-    return NextResponse.json({ error: message }, { status: 502 });
+  } catch (error) {
+    logRouteError("POST /api/media/upload storage failed", error);
+    return NextResponse.json({ error: "Upload to storage failed" }, { status: 502 });
   }
 
   const publicUrl = mediaStore.buildPublicObjectUrl(objectKey);
@@ -78,8 +79,8 @@ export async function POST(request: Request) {
   try {
     const row = await getContentRepository().insertMedia(parsed.data);
     return NextResponse.json({ media: row });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to save media record";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    logRouteError("POST /api/media/upload persist failed", error);
+    return NextResponse.json({ error: "Failed to save media record" }, { status: 500 });
   }
 }
