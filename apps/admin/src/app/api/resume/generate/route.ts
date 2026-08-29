@@ -11,6 +11,7 @@ import { pickDefaultResumeLayout } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
+import { logRouteError } from "@/lib/log-route-error";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import {
   estimateGenerationReservationUsd,
@@ -127,7 +128,8 @@ export async function POST(request: Request) {
       auth.id,
       estimateGenerationReservationUsd(body.model),
     );
-  } catch {
+  } catch (error) {
+    logRouteError("resume AI usage reservation failed", error, { userId: auth.id });
     return generationError(
       "PROVIDER_UNAVAILABLE",
       "Usage limits could not be verified. Try again shortly.",
@@ -169,7 +171,10 @@ export async function POST(request: Request) {
   }
 
   const repo = getContentRepository();
-  const layouts = await repo.getResumeLayouts().catch(() => null);
+  const layouts = await repo.getResumeLayouts().catch((error: unknown) => {
+    logRouteError("resume layouts load failed", error, { userId: auth.id });
+    return null;
+  });
   if (!layouts) {
     await releaseUsageReservation(auth.id, usageGuard);
     return generationError(

@@ -11,6 +11,9 @@ vi.mock("@portfolio/data", () => ({
 vi.mock("@/lib/auth-guard", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
+vi.mock("@/lib/logger", () => ({
+  logger: { error: vi.fn() },
+}));
 
 import { GET } from "./route";
 
@@ -69,5 +72,11 @@ describe("GET /api/resume/generate/status", () => {
       error: null,
     });
     expect(JSON.stringify(json)).not.toContain("res-secret");
+  });
+
+  it("logs and returns 500 when the store throws", async () => {
+    mocks.getGenerationJob.mockRejectedValue(new Error("Dynamo down"));
+    const res = await GET(request("job-1"));
+    expect(res.status).toBe(500);
   });
 });

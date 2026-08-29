@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getRenderJobStore } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
+import { logRouteError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -24,52 +25,68 @@ export async function GET(request: Request) {
     );
   }
 
-  const job = await getRenderJobStore().get(jobId);
-  if (!job || job.createdBy !== auth.id) {
-    return NextResponse.json(
-      { error: { code: "JOB_NOT_FOUND", message: "Render job not found.", fields: {} } },
-      { status: 404 },
-    );
-  }
-  if (job.status !== "ready" || !job.objectKey) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "JOB_NOT_READY",
-          message: `Render job is ${job.status}, not ready yet.`,
-          fields: {},
+  try {
+    const job = await getRenderJobStore().get(jobId);
+    if (!job || job.createdBy !== auth.id) {
+      return NextResponse.json(
+        {
+          error: { code: "JOB_NOT_FOUND", message: "Render job not found.", fields: {} },
         },
-      },
-      { status: 409 },
-    );
-  }
+        { status: 404 },
+      );
+    }
+    if (job.status !== "ready" || !job.objectKey) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "JOB_NOT_READY",
+            message: `Render job is ${job.status}, not ready yet.`,
+            fields: {},
+          },
+        },
+        { status: 409 },
+      );
+    }
 
-  const { getMediaStore } = await import("@portfolio/data/media");
-  const mediaStore = await getMediaStore();
-  const object = await mediaStore.getObject(job.objectKey);
-  if (!object) {
-    logger.error("render job marked ready but object is missing from media store", {
-      jobId,
-      objectKey: job.objectKey,
+    const { getMediaStore } = await import("@portfolio/data/media");
+    const mediaStore = await getMediaStore();
+    const object = await mediaStore.getObject(job.objectKey);
+    if (!object) {
+      logger.error("render job marked ready but object is missing from media store", {
+        jobId,
+        objectKey: job.objectKey,
+      });
+      return NextResponse.json(
+        {
+          error: {
+            code: "JOB_ARTIFACT_MISSING",
+            message: "The rendered PDF is missing. Please try again.",
+            fields: {},
+          },
+        },
+        { status: 500 },
+      );
+    }
+
+    return new Response(new Uint8Array(object.body), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${job.filename}"`,
+        "Cache-Control": "no-store",
+      },
     });
+  } catch (error) {
+    logRouteError("GET /api/resume/export/download failed", error, { jobId });
     return NextResponse.json(
       {
         error: {
-          code: "JOB_ARTIFACT_MISSING",
-          message: "The rendered PDF is missing. Please try again.",
+          code: "DOWNLOAD_FAILED",
+          message: "The rendered PDF could not be downloaded. Try again shortly.",
           fields: {},
         },
       },
       { status: 500 },
     );
   }
-
-  return new Response(new Uint8Array(object.body), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${job.filename}"`,
-      "Cache-Control": "no-store",
-    },
-  });
 }

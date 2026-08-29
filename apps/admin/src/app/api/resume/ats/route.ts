@@ -30,6 +30,7 @@ import { getContentRepository } from "@portfolio/data";
 import type { ResumeGenerationUsage } from "@portfolio/shared/schemas";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
+import { logRouteError } from "@/lib/log-route-error";
 import { checkResumeAiRateLimit } from "@/lib/resume-ai/rate-limit";
 import { estimateAtsReservationUsd, reserveAiUsage } from "@/lib/resume-ai/cost-cap";
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
@@ -77,7 +78,8 @@ export async function POST(request: Request) {
   let usageGuard: Awaited<ReturnType<typeof reserveAiUsage>>;
   try {
     usageGuard = await reserveAiUsage(auth.id, estimateAtsReservationUsd());
-  } catch {
+  } catch (error) {
+    logRouteError("ATS usage reservation failed", error, { userId: auth.id });
     return NextResponse.json(
       { error: "Unable to verify usage limits right now. Please try again shortly." },
       { status: 503 },
@@ -234,7 +236,15 @@ export async function POST(request: Request) {
         primary: primary.modelId,
         fallback: chosen.modelId,
       });
-      result = await runGen(chosen);
+      try {
+        result = await runGen(chosen);
+      } catch (fallbackErr) {
+        await cleanupReservation();
+        logRouteError("ats fallback scoring failed", fallbackErr, {
+          userId: auth.id,
+        });
+        return NextResponse.json({ error: "ATS failed" }, { status: 500 });
+      }
     } else {
       await cleanupReservation();
       logger.error("ats scoring failed", {

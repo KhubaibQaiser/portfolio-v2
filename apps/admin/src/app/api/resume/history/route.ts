@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getContentRepository } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
+import { jsonInternalError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 
@@ -28,8 +29,11 @@ export async function GET() {
         layoutId: r.layout_id,
       })),
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to load";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    return jsonInternalError(
+      "GET /api/resume/history failed",
+      error,
+      "Failed to load generation history",
+    );
   }
 }

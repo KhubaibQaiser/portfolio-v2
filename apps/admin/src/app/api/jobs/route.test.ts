@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   queryByStatus: vi.fn(),
   getJobPreferences: vi.fn(),
+  loggerError: vi.fn(),
 }));
 
 vi.mock("@/lib/auth-guard", () => ({
@@ -13,11 +14,15 @@ vi.mock("@portfolio/data", () => ({
   getJobBoardRepository: () => ({ queryByStatus: mocks.queryByStatus }),
   getContentRepository: () => ({ getJobPreferences: mocks.getJobPreferences }),
 }));
+vi.mock("@/lib/logger", () => ({
+  logger: { error: mocks.loggerError },
+}));
 
 import { GET } from "./route";
 
 describe("GET /api/jobs", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.requireAdmin.mockResolvedValue({ ok: true, id: "admin" });
     mocks.queryByStatus.mockResolvedValue({ items: [], nextCursor: null });
     mocks.getJobPreferences.mockResolvedValue({ recommended_job_id: null });
@@ -36,6 +41,22 @@ describe("GET /api/jobs", () => {
     expect(response.status).toBe(200);
     expect(mocks.queryByStatus).toHaveBeenCalledWith(
       expect.objectContaining({ status: "applied" }),
+    );
+  });
+
+  it("logs a structured ERROR and returns 500 when the query fails", async () => {
+    mocks.queryByStatus.mockRejectedValue(new Error("Requested resource not found"));
+    const response = await GET(
+      new Request("https://admin.example.com/api/jobs?status=new"),
+    );
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "Failed to list jobs" });
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      "GET /api/jobs failed",
+      expect.objectContaining({
+        status: "new",
+        error: expect.any(Error),
+      }),
     );
   });
 });

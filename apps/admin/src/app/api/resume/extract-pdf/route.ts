@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logRouteError } from "@/lib/log-route-error";
 import { trimJobDescription } from "@portfolio/ai/context/trim-job-description";
 
 export const runtime = "nodejs";
@@ -92,8 +93,8 @@ export async function POST(request: Request) {
       pageCount: extracted.totalPages,
       chars: text.length,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to extract PDF text";
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch (error) {
+    logRouteError("POST /api/resume/extract-pdf failed", error);
+    return NextResponse.json({ error: "Failed to extract PDF text" }, { status: 422 });
   }
 }
