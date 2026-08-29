@@ -30,6 +30,8 @@ import type {
   ResumeLayoutFormData,
   SiteConfig,
   SiteConfigFormData,
+  JobPreferences,
+  JobPreferencesFormData,
   Skill,
   Testimonial,
   TestimonialFormData,
@@ -45,6 +47,7 @@ import {
   skillFixtures,
   testimonialFixtures,
 } from "../fixtures/content";
+import { defaultJobPreferencesRow } from "@portfolio/shared/schemas";
 
 function now(): string {
   return new Date().toISOString();
@@ -63,6 +66,7 @@ export function createFixtureContentRepository(): ContentRepository {
   let hero: Hero = clone(heroFixture);
   let about: About = clone(aboutFixture);
   let siteConfig: SiteConfig = clone(siteConfigFixture);
+  let jobPreferences: JobPreferences = clone(defaultJobPreferencesRow());
   let resume: Resume = clone(resumeFixture);
   const experience: Experience[] = clone(experienceFixtures);
   const projects: Project[] = clone(projectFixtures);
@@ -259,6 +263,22 @@ export function createFixtureContentRepository(): ContentRepository {
         ...values,
         updated_at: now(),
         revision: nextRevision(siteConfig),
+      };
+    },
+
+    async getJobPreferences() {
+      return clone(jobPreferences);
+    },
+    async upsertJobPreferences(
+      values: Partial<JobPreferencesFormData>,
+      expectedRevision?: number,
+    ) {
+      assertRevision(jobPreferences.revision, expectedRevision);
+      jobPreferences = {
+        ...jobPreferences,
+        ...values,
+        updated_at: now(),
+        revision: nextRevision(jobPreferences),
       };
     },
 

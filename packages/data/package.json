@@ -8,7 +8,8 @@
     "./tables": "./src/dynamo/tables.ts",
     "./media": "./src/media.ts",
     "./fixtures": "./src/fixtures/content.ts",
-    "./adapters/fixture": "./src/adapters/fixture-content-repository.ts"
+    "./adapters/fixture": "./src/adapters/fixture-content-repository.ts",
+    "./job-feeds": "./src/job-feeds/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

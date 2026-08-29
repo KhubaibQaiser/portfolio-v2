@@ -16,6 +16,10 @@ and packages `shared`, `data`, `ai`, `infra`, `ui`, `agent-mcp`.
   RS + CloudFront origin-verify, not Function URL OAC; ADR 0005 superseded).
 - `apps/candidate-mcp` tools stay read-only and sanitized (`deepSanitize`);
   any write-capable tool needs a new ADR. See ADR 0003.
+- Job match (ADR 0007, `specs/job-match.md`): free feeds + JobsPipe Free,
+  poll ingest (no paid webhooks); not LinkedIn session scrape; Admin-owned;
+  do not grant the job table to candidate-mcp; do not add a paid job-index
+  plan without amending ADR 0007.
 
 ## Must not
 

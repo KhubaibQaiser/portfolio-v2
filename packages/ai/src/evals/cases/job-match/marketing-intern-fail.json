@@ -1,0 +1,12 @@
+{
+  "id": "marketing-intern-fail",
+  "description": "Unrelated intern role must be hard-filtered",
+  "expect": "fail",
+  "job": {
+    "title": "Marketing Intern",
+    "location": "London",
+    "remote": false,
+    "salaryMin": null,
+    "jdHtmlOrText": "Unpaid intern for social media."
+  }
+}

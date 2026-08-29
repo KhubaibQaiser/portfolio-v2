@@ -18,6 +18,8 @@ import {
   Wand2,
   LayoutTemplate,
   KeyRound,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,8 @@ const navItems = [
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/resume-layouts", label: "Resume layouts", icon: LayoutTemplate },
   { href: "/resume-generator", label: "Resume AI", icon: Wand2 },
+  { href: "/jobs", label: "Jobs", icon: Search },
+  { href: "/job-preferences", label: "Job prefs", icon: SlidersHorizontal },
   { href: "/recommendations", label: "Recommendations", icon: MessageSquare },
   { href: "/site-config", label: "Site Config", icon: Settings },
   { href: "/api-keys", label: "MCP OAuth", icon: KeyRound },

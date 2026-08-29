@@ -52,3 +52,9 @@ export type {
   McpApiKeyCreateResult,
   VerifiedMcpApiKey,
 } from "./mcp-api-key-store";
+export type {
+  JobBoardRepository,
+  JobListCursor,
+  JobQueryByStatusOptions,
+  JobQueryPage,
+} from "./job-board-repository";

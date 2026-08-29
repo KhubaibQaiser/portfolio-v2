@@ -75,6 +75,14 @@ function synth(): Template {
       repoRoot,
       "apps/admin/src/lambda/generation-job-dlq-handler/index.ts",
     ),
+    jobIngestWorkerEntry: path.join(
+      repoRoot,
+      "apps/admin/src/lambda/job-ingest-worker/index.ts",
+    ),
+    jobNotifyWorkerEntry: path.join(
+      repoRoot,
+      "apps/admin/src/lambda/job-notify-worker/index.ts",
+    ),
     depsLockFilePath: path.join(repoRoot, "pnpm-lock.yaml"),
     resumeFontsDir: path.join(repoRoot, "packages/ui/src/resume-pdf/fonts"),
   });
@@ -94,5 +102,34 @@ describe("AdminStack render worker", () => {
     expect(renderWorker?.Properties?.Runtime).toBe("nodejs22.x");
     expect(renderWorker?.Properties?.MemorySize).toBe(2048);
     expect(renderWorker?.Properties?.Timeout).toBe(300);
+  }, 30_000);
+
+  it("schedules sequential job ingest every 4h with reserved concurrency 1", () => {
+    const template = synth();
+    const functions = template.findResources("AWS::Lambda::Function");
+    const ingest = Object.values(functions).find(
+      (resource) =>
+        resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
+        "portfolio-admin-job-ingest-worker",
+    );
+    expect(ingest?.Properties?.ReservedConcurrentExecutions).toBe(1);
+    expect(ingest?.Properties?.Runtime).toBe("nodejs22.x");
+    template.hasResourceProperties("AWS::Events::Rule", {
+      ScheduleExpression: "rate(4 hours)",
+    });
+  }, 30_000);
+
+  it("schedules the morning digest at 07:00 UTC with reserved concurrency 1", () => {
+    const template = synth();
+    const functions = template.findResources("AWS::Lambda::Function");
+    const notify = Object.values(functions).find(
+      (resource) =>
+        resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
+        "portfolio-admin-job-notify-worker",
+    );
+    expect(notify?.Properties?.ReservedConcurrentExecutions).toBe(1);
+    template.hasResourceProperties("AWS::Events::Rule", {
+      ScheduleExpression: "cron(0 7 * * ? *)",
+    });
   }, 30_000);
 });

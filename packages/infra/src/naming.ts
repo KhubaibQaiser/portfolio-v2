@@ -24,6 +24,7 @@ export function secretNames(config: InfraConfig) {
     turnstileSecretKey: `${base}/turnstile-secret-key`,
     googleOAuth: `${base}/google-oauth`,
     betterAuthSecret: `${base}/better-auth-secret`,
+    jobspipeApiKey: `${base}/jobspipe-api-key`,
   } as const;
 }
 

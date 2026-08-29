@@ -9,10 +9,12 @@ import {
   MessageSquare,
   Settings,
   Image,
+  Search,
 } from "lucide-react";
 import { SectionCard } from "@/components/layout/section-card";
 
 const sections = [
+  { href: "/jobs", label: "Jobs", icon: Search, description: "Ingest, match, apply" },
   { href: "/hero", label: "Hero", icon: Type, description: "Title, subtitle, CTAs" },
   { href: "/about", label: "About", icon: User, description: "Bio, photo, stats" },
   { href: "/experience", label: "Experience", icon: Briefcase, description: "6 roles" },
