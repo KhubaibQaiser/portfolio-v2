@@ -163,7 +163,9 @@ async function main(): Promise<void> {
   const mcpOrigin = new URL(serverUrl).origin;
 
   // --- 1b. Public PRM + AS metadata ---
-  const prm = JSON.parse(curlJson(`${mcpOrigin}/.well-known/oauth-protected-resource/mcp`)) as {
+  const prm = JSON.parse(
+    curlJson(`${mcpOrigin}/.well-known/oauth-protected-resource/mcp`),
+  ) as {
     resource?: string;
     authorization_servers?: string[];
   };
@@ -179,7 +181,9 @@ async function main(): Promise<void> {
   }
   console.log("auth_gate_ok: protected resource metadata");
 
-  const asMeta = JSON.parse(curlJson(`${mcpOrigin}/.well-known/oauth-authorization-server`)) as {
+  const asMeta = JSON.parse(
+    curlJson(`${mcpOrigin}/.well-known/oauth-authorization-server`),
+  ) as {
     issuer?: string;
     registration_endpoint?: string;
   };
@@ -228,12 +232,7 @@ async function main(): Promise<void> {
   await assertLiveEra(serverUrl, accessToken, { mode: "legacy" }, "legacy");
   console.log("legacy_era_ok: listTools + profile + facts");
 
-  await assertLiveEra(
-    serverUrl,
-    accessToken,
-    { mode: { pin: "2026-07-28" } },
-    "modern",
-  );
+  await assertLiveEra(serverUrl, accessToken, { mode: { pin: "2026-07-28" } }, "modern");
   console.log("modern_era_ok: listTools + profile + facts");
 
   console.log("Candidate-mcp smoke test passed.");

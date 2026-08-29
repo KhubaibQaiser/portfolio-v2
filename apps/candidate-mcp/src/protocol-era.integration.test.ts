@@ -166,7 +166,9 @@ describe("protocol era dual-serve", () => {
       expect(client.getProtocolEra()).toBe("legacy");
       const result = await client.callTool({ name: "get_candidate_profile" });
       const profileJson = textFromToolResult(result);
-      expect(candidateProfileSchema.safeParse(JSON.parse(profileJson)).success).toBe(true);
+      expect(candidateProfileSchema.safeParse(JSON.parse(profileJson)).success).toBe(
+        true,
+      );
     } finally {
       await client.close();
     }

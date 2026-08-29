@@ -74,6 +74,7 @@ When a client supports RFC 8707, set
 Post-deploy smoke (`pnpm smoke-test:candidate-mcp`) validates OAuth discovery
 plus **both** protocol eras (legacy Client + pinned `2026-07-28`) against the
 live URL after `client_credentials`.
+
 ## Interactive clients (Claude.ai, Inspector, others)
 
 1. Point the client at `https://mcp.khubaibqaiser.com/mcp`.
