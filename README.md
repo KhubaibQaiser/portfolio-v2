@@ -432,7 +432,7 @@ In production, CDK injects these on the Lambda environment; the IAM role supplie
 
 ## Observability & security
 
-- **CloudWatch:** `AppErrors` alarm from structured ERROR logs; dashboard and AWS Budget in `Portfolio-Shared`.
+- **CloudWatch:** `AppErrors` alarm from structured ERROR logs (`{ $.level = "ERROR" }`); dashboard `Portfolio-overview` and AWS Budget in `Portfolio-Shared`. Triage a prod 500 in Logs Insights on the Admin `SiteServerFn` log group (`POWERTOOLS_SERVICE_NAME` = `portfolio-admin`).
 - **PostHog:** product events, pageviews, exception capture with source maps. Client token is baked at OpenNext build; server capture uses Lambda env (`NEXT_PUBLIC_POSTHOG_*` + `POSTHOG_ENVIRONMENT`).
 - **Auth:** Better Auth session verification + allowlist on every mutation.
 - **Resume AI:** prompt-injection stripping, Zod validation, rate limits, daily cost cap.
