@@ -40,12 +40,14 @@ When a client supports RFC 8707, set
    - Body (form): `grant_type=client_credentials`, `scope=<scope from secret>`.
    - Store `access_token` (≈1h). Re-fetch when expired.
 
-2. **MCP initialize** / **tools/call**:
+2. **MCP tools/call** (legacy initialize path — still supported):
    - `POST https://mcp.khubaibqaiser.com/mcp`
    - Headers: `Content-Type: application/json`,
      `Accept: application/json, text/event-stream`,
      `Authorization: Bearer <access_token>`.
-   - Capture `Mcp-Session-Id` from initialize for later calls.
+   - Session headers are optional: the server dual-serves **stateless**
+     legacy initialize and modern `2026-07-28` (no sticky `Mcp-Session-Id`
+     required). Prefer an MCP SDK Client when exercising modern era.
 
 ```json
 {
@@ -69,6 +71,10 @@ When a client supports RFC 8707, set
 }
 ```
 
+Post-deploy smoke (`pnpm smoke-test:candidate-mcp`) validates OAuth discovery
+plus **both** protocol eras (legacy Client + pinned `2026-07-28`) against the
+live URL after `client_credentials`.
+
 ## Interactive clients (Claude.ai, Inspector, others)
 
 1. Point the client at `https://mcp.khubaibqaiser.com/mcp`.
@@ -78,6 +84,8 @@ When a client supports RFC 8707, set
    Hosted UI (auth-code + PKCE).
 4. If DCR fails, Advanced → paste stack output `ClaudeClientId` (fallback).
 5. Sign in with a Cognito user in the agent pool.
+6. Inspector: Protocol Era **legacy** (default) or **modern** both work;
+   use Era=`modern` to exercise `2026-07-28` sessionless handshake.
 
 ## Claude Code
 

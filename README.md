@@ -358,6 +358,7 @@ for the full trust-boundary decision; this is a summary.
   behind CloudFront on `mcp.<domain>` (only deployed when `domainEnabled=true`
   — see the stacks table above).
 - **Auth:** OAuth 2.1 resource server with Cognito as AS ([ADR 0006](docs/adr/0006-candidate-mcp-oauth.md)). Public `/.well-known` PRM + AS metadata; `401` carries RFC 6750 `WWW-Authenticate` with `resource_metadata`. Interactive clients use authorization code + PKCE (Claude Always required / Inspector DCR); n8n and CI smoke use client_credentials (secret in Secrets Manager). Do not use Auth → None + static API keys.
+- **Protocol era:** Dual-serve via `createMcpHandler({ legacy: "stateless" })` — modern `2026-07-28` and legacy initialize. CI + post-deploy smoke assert both eras after Bearer auth.
 - **Tools:** `get_candidate_profile` (full public profile — about, resume,
   experience, skills, projects, testimonials) and `get_candidate_facts` (the
   same compact fact sheet the resume-AI pipeline itself uses). Both are
