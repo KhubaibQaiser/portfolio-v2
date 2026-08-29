@@ -46,12 +46,18 @@ with a **metadata facade** so any MCP client discovers one AS:
 7. **API keys:** retired as HTTP MCP identity (ADR 0005 superseded).
 8. **Network:** origin-verify, Host allowlist, connector Origin CORS
    allowlist, RestoreWwwAuthenticate CloudFront Function.
+9. **Protocol era (orthogonal to OAuth):** HTTP uses SDK
+   `createMcpHandler({ legacy: "stateless" })` — modern `2026-07-28`
+   (sessionless / `server/discover`) is first-class; 2025-era `initialize`
+   remains for Claude/n8n/Inspector defaults. Do not pin `legacy: "reject"`
+   without client-matrix sign-off. CI (`protocol-era.integration.test.ts`)
+   and post-deploy smoke assert both eras after Bearer auth.
 
 ## Consequences
 
 - **Positive:** Spec-conformant discovery/DCR for Inspector, Claude, and
   other OAuth MCP clients; n8n uses short-lived client_credentials; one
-  agent-agnostic ladder.
+  agent-agnostic ladder; dual-era MCP wire proven in CI and deploy smoke.
 - **Negative:** Cognito ops return; Hosted UI needs an operator user; DCR
   creates Cognito app clients (allowlist + rate limit); discovered metadata
   issuer and Cognito JWT `iss` differ (document; revisit if a client enforces
