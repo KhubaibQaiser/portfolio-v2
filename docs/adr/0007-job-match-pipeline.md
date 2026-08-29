@@ -1,7 +1,6 @@
 # ADR 0007 — Job match pipeline: free feeds first, own the matcher
 
-- **Status:** Proposed (docs only). Implementation is gated on an explicit
-  execute go. No ingest Lambda, table, or `/jobs` UI ships in this change.
+- **Status:** Accepted. Implementation follows [`specs/job-match.md`](../../specs/job-match.md).
 - **Date:** 2026-08-29 (amended same day: v1 is free sources, not a paid
   catalog)
 - **Deciders:** Khubaib (with AI pairing)

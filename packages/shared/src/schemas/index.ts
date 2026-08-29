@@ -118,6 +118,34 @@ export {
 export { contactSchema, type ContactFormData } from "./contact";
 export { mediaInsertSchema, mediaRowSchema, type MediaInsert, type Media } from "./media";
 export {
+  jobPreferencesSchema,
+  jobPreferencesRowSchema,
+  DEFAULT_JOB_PREFERENCES,
+  defaultJobPreferencesRow,
+  workArrangementEnum,
+  employmentTypePrefEnum,
+  visaRelocationEnum,
+  type JobPreferencesFormData,
+  type JobPreferences,
+  type WorkArrangement,
+  type EmploymentTypePref,
+  type VisaRelocationPref,
+} from "./job-preferences";
+export {
+  jobPostingRowSchema,
+  jobSourceEnum,
+  jobStatusEnum,
+  jobBandEnum,
+  jobSourceRefSchema,
+  bandForScore,
+  HITL_STATUSES,
+  type JobPosting,
+  type JobSource,
+  type JobStatus,
+  type JobBand,
+  type JobSourceRef,
+} from "./job-posting";
+export {
   mcpApiKeyCreateSchema,
   mcpApiKeyNameSchema,
   mcpApiKeyRowSchema,

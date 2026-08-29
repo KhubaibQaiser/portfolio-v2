@@ -1,0 +1,12 @@
+{
+  "id": "staff-typescript-pass",
+  "description": "Staff TypeScript role overlapping the CMS skill set should score",
+  "expect": "pass",
+  "job": {
+    "title": "Staff Software Engineer",
+    "location": "Remote",
+    "remote": true,
+    "salaryMin": 180000,
+    "jdHtmlOrText": "Build TypeScript React services on AWS and PostgreSQL."
+  }
+}

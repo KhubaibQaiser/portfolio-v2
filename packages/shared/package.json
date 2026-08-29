@@ -12,6 +12,7 @@
     "./ports/*": "./src/ports/*.ts",
     "./constants": "./src/constants.ts",
     "./alt-text": "./src/alt-text.ts",
+    "./job-natural-key": "./src/job-natural-key.ts",
     "./concurrency": "./src/concurrency.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",

@@ -100,6 +100,17 @@ export class DataStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    const jobPostingTable = durableTable("JobPostingTable", TABLE_SUFFIXES.jobPosting, {
+      name: "id",
+      type: STRING,
+    });
+    jobPostingTable.addGlobalSecondaryIndex({
+      indexName: "by-status-posted",
+      partitionKey: { name: "status", type: STRING },
+      sortKey: { name: "posted_at", type: STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     const resumeGenerationTable = durableTable(
       "ResumeGenerationTable",
       TABLE_SUFFIXES.resumeGeneration,
@@ -247,6 +258,12 @@ export class DataStack extends cdk.Stack {
       names.turnstileSecretKey,
       paths.turnstileSecretKeyArn,
       "Cloudflare Turnstile secret key",
+    );
+    aiSecret(
+      "JobspipeApiKeySecret",
+      names.jobspipeApiKey,
+      paths.jobspipeApiKeyArn,
+      "JobsPipe Free API key",
     );
 
     new cdk.CfnOutput(this, "TablePrefix", {

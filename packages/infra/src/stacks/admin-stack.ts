@@ -1,5 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import type * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
@@ -24,6 +26,10 @@ export type AdminStackProps = cdk.StackProps & {
   generationJobWorkerEntry: string;
   /** Absolute path to apps/admin's generation-job DLQ handler Lambda entry (TS). */
   generationJobDlqHandlerEntry: string;
+  /** Absolute path to the job-ingest worker Lambda entry (TS). */
+  jobIngestWorkerEntry: string;
+  /** Absolute path to the job-notify (digest + follow-up) worker Lambda entry (TS). */
+  jobNotifyWorkerEntry: string;
   /** Absolute path to the repo's pnpm-lock.yaml, for esbuild bundling cache-busting. */
   depsLockFilePath: string;
   /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
@@ -73,6 +79,16 @@ export class AdminStack extends cdk.Stack {
       this,
       "AnthropicSecret",
       ssmGet(paths.anthropicApiKeyArn),
+    );
+    const resendSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "ResendSecret",
+      ssmGet(paths.resendApiKeyArn),
+    );
+    const jobspipeSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "JobspipeSecret",
+      ssmGet(paths.jobspipeApiKeyArn),
     );
 
     const googleOAuthSecret = secretsmanager.Secret.fromSecretCompleteArn(
@@ -245,6 +261,77 @@ export class AdminStack extends cdk.Stack {
       new lambdaEventSources.SqsEventSource(generationJobDlq, { batchSize: 1 }),
     );
 
+    const jobWorkerEnv: Record<string, string> = {
+      DATA_BACKEND: "dynamo",
+      DYNAMO_TABLE_PREFIX: config.tablePrefix,
+      POWERTOOLS_LOG_LEVEL: "WARN",
+      GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
+      ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
+      RESEND_API_KEY_SECRET_ARN: resendSecret.secretArn,
+      JOBSPIPE_API_KEY_SECRET_ARN: jobspipeSecret.secretArn,
+      ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
+      ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
+      ...(config.contactEmail ? { CONTACT_TO_EMAIL: config.contactEmail } : {}),
+      ...(config.contactFromEmail ? { CONTACT_FROM_EMAIL: config.contactFromEmail } : {}),
+    };
+
+    const jobIngestWorkerFn = new nodeLambda.NodejsFunction(this, "JobIngestWorkerFn", {
+      entry: props.jobIngestWorkerEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(300),
+      reservedConcurrentExecutions: 1,
+      bundling: { externalModules: [] },
+      logGroup: new logs.LogGroup(this, "JobIngestWorkerFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+      environment: {
+        ...jobWorkerEnv,
+        POWERTOOLS_SERVICE_NAME: "portfolio-admin-job-ingest-worker",
+      },
+    });
+    grantAdminDataAccess(this, jobIngestWorkerFn, config, mediaBucketName);
+    groqSecret.grantRead(jobIngestWorkerFn);
+    anthropicSecret.grantRead(jobIngestWorkerFn);
+    resendSecret.grantRead(jobIngestWorkerFn);
+    jobspipeSecret.grantRead(jobIngestWorkerFn);
+
+    new events.Rule(this, "JobIngestSchedule", {
+      schedule: events.Schedule.rate(cdk.Duration.hours(4)),
+      targets: [new targets.LambdaFunction(jobIngestWorkerFn)],
+    });
+
+    const jobNotifyWorkerFn = new nodeLambda.NodejsFunction(this, "JobNotifyWorkerFn", {
+      entry: props.jobNotifyWorkerEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(60),
+      reservedConcurrentExecutions: 1,
+      bundling: { externalModules: [] },
+      logGroup: new logs.LogGroup(this, "JobNotifyWorkerFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+      environment: {
+        ...jobWorkerEnv,
+        POWERTOOLS_SERVICE_NAME: "portfolio-admin-job-notify-worker",
+      },
+    });
+    grantAdminDataAccess(this, jobNotifyWorkerFn, config, mediaBucketName);
+    resendSecret.grantRead(jobNotifyWorkerFn);
+
+    // 07:00 UTC ≈ 07:00 Europe/London in winter / 08:00 BST. EventBridge rules
+    // are UTC-only; a timezone-aware Scheduler is not worth a new IAM surface.
+    new events.Rule(this, "JobNotifySchedule", {
+      schedule: events.Schedule.cron({ minute: "0", hour: "7" }),
+      targets: [new targets.LambdaFunction(jobNotifyWorkerFn)],
+    });
+
     const site = new NextjsSite(this, "Site", {
       openNextDir: props.openNextDir,
       region: config.region,
@@ -270,8 +357,14 @@ export class AdminStack extends cdk.Stack {
         ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
         GROQ_API_KEY_SECRET_ARN: groqSecret.secretArn,
         ANTHROPIC_API_KEY_SECRET_ARN: anthropicSecret.secretArn,
+        RESEND_API_KEY_SECRET_ARN: resendSecret.secretArn,
+        JOBSPIPE_API_KEY_SECRET_ARN: jobspipeSecret.secretArn,
         RENDER_JOB_QUEUE_URL: renderJobQueue.queueUrl,
         GENERATION_JOB_QUEUE_URL: generationJobQueue.queueUrl,
+        ...(config.contactEmail ? { CONTACT_TO_EMAIL: config.contactEmail } : {}),
+        ...(config.contactFromEmail
+          ? { CONTACT_FROM_EMAIL: config.contactFromEmail }
+          : {}),
       },
       grantServer: (fn) => {
         grantAdminDataAccess(this, fn, config, mediaBucketName);
@@ -279,6 +372,8 @@ export class AdminStack extends cdk.Stack {
         anthropicSecret.grantRead(fn);
         googleOAuthSecret.grantRead(fn);
         betterAuthSecret.grantRead(fn);
+        resendSecret.grantRead(fn);
+        jobspipeSecret.grantRead(fn);
         renderJobQueue.grantSendMessages(fn);
         generationJobQueue.grantSendMessages(fn);
       },
@@ -298,6 +393,8 @@ export class AdminStack extends cdk.Stack {
       ["RenderJobDlqHandlerErrorMetric", renderJobDlqHandlerFn.logGroup],
       ["GenerationJobWorkerErrorMetric", generationJobWorkerFn.logGroup],
       ["GenerationJobDlqHandlerErrorMetric", generationJobDlqHandlerFn.logGroup],
+      ["JobIngestWorkerErrorMetric", jobIngestWorkerFn.logGroup],
+      ["JobNotifyWorkerErrorMetric", jobNotifyWorkerFn.logGroup],
     ] as const) {
       new logs.MetricFilter(this, id, {
         logGroup,

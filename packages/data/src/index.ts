@@ -5,6 +5,7 @@ import type {
   CostCap,
   GenerationJobQueue,
   GenerationJobStore,
+  JobBoardRepository,
   McpApiKeyStore,
   RateLimiter,
   RenderJobQueue,
@@ -27,6 +28,8 @@ import { createMemoryGenerationJobStore } from "./adapters/memory-generation-job
 import { createSqsGenerationJobQueue } from "./adapters/sqs-generation-job-queue";
 import { createDynamoMcpApiKeyStore } from "./adapters/dynamo-mcp-api-key-store";
 import { createMemoryMcpApiKeyStore } from "./adapters/memory-mcp-api-key-store";
+import { createDynamoJobBoardRepository } from "./adapters/dynamo-job-board-repository";
+import { createMemoryJobBoardRepository } from "./adapters/memory-job-board-repository";
 import { createContentCostCap } from "./adapters/content-cost-cap";
 import { createDynamoClient } from "./dynamo/client";
 import { buildTableNames } from "./dynamo/tables";
@@ -54,7 +57,8 @@ export {
   runDummyHashCompare,
   secretsEqual,
 } from "./adapters/mcp-api-key-crypto";
-export { createContentCostCap } from "./adapters/content-cost-cap";
+export { createMemoryJobBoardRepository } from "./adapters/memory-job-board-repository";
+export { createDynamoJobBoardRepository } from "./adapters/dynamo-job-board-repository";
 export { createDynamoClient } from "./dynamo/client";
 export {
   buildTableNames,
@@ -233,4 +237,20 @@ export function getMcpApiKeyStore(): McpApiKeyStore {
         : createMemoryMcpApiKeyStore();
   }
   return cachedMcpApiKeyStore;
+}
+
+let cachedJobBoardRepository: JobBoardRepository | undefined;
+
+/** Canonical job postings for the admin tracker (ADR 0007). */
+export function getJobBoardRepository(): JobBoardRepository {
+  if (!cachedJobBoardRepository) {
+    cachedJobBoardRepository =
+      resolveDataBackend() === "dynamo"
+        ? createDynamoJobBoardRepository(
+            createDynamoClient(),
+            buildTableNames().jobPosting,
+          )
+        : createMemoryJobBoardRepository();
+  }
+  return cachedJobBoardRepository;
 }

@@ -28,6 +28,8 @@ export const TABLE_SUFFIXES = {
   generationJob: "generation-job",
   /** MCP API key hashes for candidate-mcp consumers, keyed by `id`. */
   mcpApiKey: "mcp-api-key",
+  /** Canonical job postings for the admin tracker (ADR 0007). */
+  jobPosting: "job-posting",
 } as const;
 
 export type TableKey = keyof typeof TABLE_SUFFIXES;
@@ -150,6 +152,26 @@ export function buildCreateTableInputs(
         {
           IndexName: "by-name",
           KeySchema: [{ AttributeName: "name", KeyType: "HASH" }],
+          Projection: { ProjectionType: "ALL" },
+        },
+      ],
+    },
+    {
+      TableName: names.jobPosting,
+      BillingMode: PAY_PER_REQUEST,
+      AttributeDefinitions: [
+        { AttributeName: "id", AttributeType: "S" },
+        { AttributeName: "status", AttributeType: "S" },
+        { AttributeName: "posted_at", AttributeType: "S" },
+      ],
+      KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "by-status-posted",
+          KeySchema: [
+            { AttributeName: "status", KeyType: "HASH" },
+            { AttributeName: "posted_at", KeyType: "RANGE" },
+          ],
           Projection: { ProjectionType: "ALL" },
         },
       ],
