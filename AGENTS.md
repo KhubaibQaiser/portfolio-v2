@@ -40,11 +40,13 @@ below as the source of truth, not guesses from training data.
    `deepSanitize`.** Any write-capable tool (job matches, applications,
    "apply" actions) needs its own ADR and a human-review gate before
    implementation. See ADR 0003 and `apps/candidate-mcp/src/sanitize.ts`.
-8. **Job discovery is a paid catalog, not a LinkedIn scrape.** See
-   ADR 0007 and `specs/job-match.md`. No `li_at`/session scrape, no
+8. **Job discovery is free feeds, not a LinkedIn scrape.** See ADR 0007
+   and `specs/job-match.md`. v1 is Remotive/RemoteOK/Arbeitnow/Muse/WWR
+   plus JobsPipe Free (1,000 credits, daily search cap). No paid job-index
+   subscription without amending ADR 0007. No `li_at`/session scrape, no
    auto-apply, no company watchlist as the discovery mechanism, ingest
    concurrency 1, and do not widen `grantCandidateMcpDataAccess` to the
-   job table. Implementation is gated on the 14-day vendor bakeoff.
+   job table.
 
 ## How to change things
 

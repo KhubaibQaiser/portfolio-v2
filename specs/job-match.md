@@ -1,9 +1,9 @@
 # Job match pipeline — acceptance spec
 
-This is the contract for **finding matching public jobs and notifying in
-time to apply early**. Prompt copy, UI chrome, and vendor adapters may
-change; the merge gate is the discovery SLO, the bakeoff, and the HITL
-invariants below.
+This is the contract for **finding matching public jobs on free sources
+and notifying in time to apply early**. Prompt copy, UI chrome, and
+source adapters may change; the merge gate is the discovery SLO and the
+HITL invariants below.
 
 Architecture decision: [`docs/adr/0007-job-match-pipeline.md`](../docs/adr/0007-job-match-pipeline.md).
 Do not implement ingest, tables, or `/jobs` UI until that ADR is Accepted
@@ -13,39 +13,45 @@ work.
 ## Goal
 
 Khubaib spends minutes per day reviewing, tailoring, applying, and
-following up — not hunting. The system must surface **preference-matching
-public roles** and notify **as soon as we have them, with P95 ≤ 24 hours
-of the vendor’s first-seen timestamp**.
+following up — not hunting the contracted boards by hand. The system must
+surface **preference-matching public roles from v1 free sources** and
+notify **as soon as we have them, with P95 ≤ 24 hours of our first persist**.
 
-The dashboard, one-click artifacts, and tracker are worthless if this
-goal fails.
+The dashboard, one-click artifacts, and tracker still depend on this
+working. v1 does **not** claim the Greenhouse/Workday universe.
 
 ## Honest coverage
 
-**Must claim:** public postings on contracted sources that pass
+**Must claim:** public postings on contracted **free** sources that pass
 preferences and the matcher.
 
 **Must not claim:** every job on earth; private/referral roles;
-authenticated ATS portals; LinkedIn Easy Apply posts with no upstream ATS
-unless a bakeoff-winning vendor indexes them.
+authenticated ATS portals; most company career-page roles that never hit
+Remotive / RemoteOK / Arbeitnow / The Muse / WWR / the JobsPipe Free
+daily slice; LinkedIn Easy Apply with no upstream ATS.
 
 ## Discovery (critical path)
 
-### Primary index
+### Primary sources (v1)
 
-A commercial job catalog behind port `JobBoardRepository` (to be added
-under `packages/shared/src/ports`). Default candidate: **JobsPipe Builder
-($49/mo)** using saved **Signals** + HMAC `alert.matched` / `job.created`
-webhooks (deliveries do not consume credits). Swap-able to Fantastic.jobs
-hourly pull or a dual index if the bakeoff says so.
+Port `JobBoardRepository` (to be added under `packages/shared/src/ports`)
+with one adapter per allowlisted source:
 
-### Complements (never the only source)
+| Source            | How                                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Remotive          | public JSON API                                                                                                       |
+| RemoteOK          | public JSON API                                                                                                       |
+| Arbeitnow         | public JSON API                                                                                                       |
+| The Muse          | public JSON API                                                                                                       |
+| We Work Remotely  | RSS only (JSON is Cloudflare 403)                                                                                     |
+| JobsPipe **Free** | `POST /v1/jobs/search`, max once per UTC day, tight filters + `posted_at_gte` last 48h, 1,000 credits/mo, stop on 429 |
+
+### Complements
 
 - First-party hydrate from allowlisted ATS JSON when `apply_url` host is
-  Greenhouse, Lever, or Ashby — full JD beats SERP snippets.
-- Free remote boards (Remotive, RemoteOK, Arbeitnow, The Muse, WWR RSS)
-  as a cheap extra net, same normalize/dedup path.
-- Google-for-Jobs (JSearch) only if single-vendor gold-set recall < 90%.
+  Greenhouse, Lever, or Ashby — full JD when the free feed gave us a URL.
+- JobsPipe Free email Signals (cap 3): human backup inbox. **Not** parsed
+  into Dynamo in v1.
 
 ### Forbidden
 
@@ -54,19 +60,23 @@ hourly pull or a dual index if the bakeoff says so.
 - Caller-supplied URL fetch (SSRF). Hydrate only allowlisted hosts from
   _our_ stored apply URL.
 - Company watchlist as the discovery mechanism.
-- Polling an unfiltered worldwide index on a credit-metered plan.
+- Paid job-index subscriptions (JobsPipe Builder/Scale, Fantastic.jobs,
+  JSearch, SerpAPI, TheirStack) unless ADR 0007 is amended.
+- Polling JobsPipe more than once per UTC day, or without
+  `posted_at_gte` / title filters (will exhaust Free credits).
+- HMAC vendor webhooks (paid JobsPipe feature).
 
 ### Ingest path
 
-1. Vendor webhook → signature verify → SQS.
-2. EventBridge every 4 hours: `posted_at_gte` watchdog for the same
-   preference query (catches webhook silence; must not be the primary
-   JobsPipe credit path).
-3. Worker `reservedConcurrency = 1` (account Lambda quota is 10).
-4. Idempotent upsert on vendor id + natural key
+1. EventBridge every 4 hours → sequential ARM Lambda
+   (`reservedConcurrency = 1`).
+2. Walk the allowlisted adapters. JobsPipe Free only if this is the
+   day’s single allotted search and credits remain.
+3. Idempotent upsert on `source + source_id` and natural key
    `sha256(company_domain|normalized_title|location)`.
-5. Preference hard-filter, then hybrid matcher, then persist.
-6. Failures log `ERROR` (ADR 0002 `AppErrors`). No per-table alarms.
+4. Preference hard-filter, then hybrid matcher, then persist.
+5. Failures log `ERROR` (ADR 0002 `AppErrors`) and continue other
+   sources. No per-table alarms.
 
 ### Notification SLO
 
@@ -74,55 +84,18 @@ hourly pull or a dual index if the bakeoff says so.
 | -------------- | --------------------------------------------- | -------------------------- |
 | Immediate      | New canonical job, score ≥ 85, not yet mailed | Resend (existing domain)   |
 | Morning digest | New score ≥ 70 since last digest              | Resend 07:00 Europe/London |
-| Silence        | No webhook _and_ watchdog miss                | `AppErrors`                |
+| Source failure | Adapter throws after retries                  | `AppErrors`                |
 
 SLOs:
 
-- P50 `(notified_at - vendor_first_seen) ≤ 6h`
-- P95 `(notified_at - vendor_first_seen) ≤ 24h`
+- Poll every 4 hours.
+- P50 `(notified_at - our_first_seen) ≤ 4h`
+- P95 `(notified_at - our_first_seen) ≤ 24h`
 - At-most-once email per canonical id (`notified_at` set in the same
   conditional write as the send, or transactional outbox).
 
-Lag against “hiring manager clicked Publish” is **not** the SLO. Lag
-against vendor first-seen **is**. Vendor lag vs ATS post time is a
-bakeoff metric, not something we can code around.
-
-## Bakeoff (implementation step 0)
-
-Run 14 days before a paid key is wired into CDK.
-
-**Gold set:** 20 roles Khubaib would apply to, logged manually from ATS
-pages and LinkedIn (human browser, not a scraper). Columns:
-
-| Field                  | Meaning                                     |
-| ---------------------- | ------------------------------------------- |
-| `ats_url`              | Canonical apply URL on the company board    |
-| `ats_first_seen`       | When it appeared on that board (human note) |
-| `linkedin_url`         | If listed; else empty                       |
-| `linkedin_first_seen`  | When it appeared on LinkedIn; else empty    |
-| `jobspipe_first_seen`  | Vendor timestamp or “miss”                  |
-| `fantastic_first_seen` | Vendor timestamp or “miss”                  |
-| `jsearch_first_seen`   | Vendor timestamp or “miss”                  |
-| `jd_complete`          | full / snippet / missing                    |
-| `linkedin_only`        | true if no public ATS URL                   |
-
-**Pass (single vendor wins):**
-
-- `gold_set_recall` ≥ 0.90 excluding `linkedin_only`.
-- P95 `(vendor_first_seen - ats_first_seen) ≤ 24h` on hits.
-- P50 of that lag ≤ 6h.
-- ≥ 80% of hits have full JD after hydrate (or natively).
-- Duplicate rate after natural key < 5%.
-
-**LinkedIn-only gap:** if `linkedin_only` rows are > 20% of the gold set
-and the ATS vendor misses them, add JSearch or Fantastic `active-jb` —
-still no personal-account scrape.
-
-**Credit sanity:** projected monthly credits for the chosen access pattern
-(Signals vs hourly poll) must fit the plan with ≥ 2× headroom.
-
-Record the filled table in the execute PR, then put the winning key in
-Secrets Manager.
+Lag against “hiring manager clicked Publish on Greenhouse” is **not**
+the SLO. Lag against **our persist from a free feed** is.
 
 ## Preferences (system of record)
 
@@ -138,6 +111,8 @@ companies. Fields (Zod, `.strict()`, to be added under `packages/shared`):
 - Notify threshold (default 85) and digest threshold (default 70).
 
 Hard filters drop the row before scoring. Soft signals feed the matcher.
+The same preference object is the filter payload for the daily JobsPipe
+Free search so credits are not spent on off-preference rows.
 
 ## Matcher
 
@@ -167,7 +142,7 @@ New Dynamo table suffix (not yet created). Proposed keys:
 - GSI `by-status-posted` (`status` + `posted_at`) for the table UI.
 - GSI `by-score` for Recommended / high-match queries if a query
   pattern needs it; do not add indexes speculatively.
-- Attributes: vendor ids, source, company, title, location, remote,
+- Attributes: source ids, source, company, title, location, remote,
   salary, apply_url, jd_text, score, band, status, `notified_at`,
   `follow_up_at`, timestamps.
 
@@ -193,12 +168,11 @@ tool is a new ADR plus `deepSanitize`.
 
 ## Must
 
-- Meet the notify SLO on contracted sources after the bakeoff vendor is
-  wired.
+- Meet the notify SLO on contracted **free** sources.
 - Dedup across sources onto one canonical row.
-- HMAC-verify webhooks; reject unsigned or stale timestamps.
 - Keep ingest concurrency at 1.
-- Use Secrets Manager for vendor keys and webhook secrets.
+- Cap JobsPipe Free at one search per UTC day; stop on 429.
+- Use Secrets Manager for the JobsPipe Free key (still a secret).
 - Pass JD through `stripPromptInjection` then `wrapUntrusted`.
 
 ## Must not
@@ -208,20 +182,23 @@ tool is a new ADR plus `deepSanitize`.
 - Surface unvalidated model JSON.
 - Widen candidate-mcp IAM.
 - Relax Lighthouse to pay for this feature.
-- Poll credit-metered APIs in a way that exhausts the plan (prefer
-  Signals/webhooks; if polling, match `time_frame` to cadence).
+- Wire a paid job-index plan without amending ADR 0007.
+- Parse vendor alert email as ingest in v1.
 
 ## Verification
 
-Until code exists, verification is the bakeoff table plus this spec
-review.
+Until code exists, verification is this spec plus ADR 0007 review.
 
 When code exists:
 
-- Unit: signature verify, idempotent upsert, matcher evals, status
-  machine, `requireAdmin` guardrail.
-- Worker: SQS fixture messages; no live vendor or live LLM in CI.
+- Unit: adapters against recorded fixtures (no live vendor in CI),
+  idempotent upsert, matcher evals, status machine, `requireAdmin`
+  guardrail, JobsPipe daily-cap logic.
+- Worker: fixture payloads; no live LLM in CI. Live JobsPipe/Remotive
+  calls are not unit tests.
 - CDK: ingest Lambda reserved concurrency 1; job table not in
-  `grantCandidateMcpDataAccess`; secret ARNs via SSM, not CFN exports.
-- Manual: webhook from vendor staging → row + 85+ email; kill webhook →
-  4h watchdog still inserts; duplicate vendor payload does not double-mail.
+  `grantCandidateMcpDataAccess`; JobsPipe secret ARN via SSM, not CFN
+  exports.
+- Manual: 4h poll inserts a new Remotive row + 85+ email; duplicate
+  payload does not double-mail; a second JobsPipe search the same UTC
+  day is skipped.

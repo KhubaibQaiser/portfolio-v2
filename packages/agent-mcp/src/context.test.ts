@@ -32,9 +32,9 @@ describe("portfolio-context MCP readers", () => {
     expect(text).toContain("Cognito");
   });
 
-  it("returns ADR 0007 with the paid-catalog discovery decision", () => {
+  it("returns ADR 0007 with the free-feeds discovery decision", () => {
     const text = readAdr("0007");
-    expect(text).toContain("buy the catalog");
+    expect(text).toContain("free feeds first");
     expect(text).toContain("JobsPipe");
     expect(text).toContain("no `li_at`");
   });

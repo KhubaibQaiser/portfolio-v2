@@ -356,7 +356,7 @@ for the full trust-boundary decision; this is a summary. Job matching
 (discovery, notify SLO, HITL dashboard) is specified in
 [ADR 0007](docs/adr/0007-job-match-pipeline.md) and
 [`specs/job-match.md`](specs/job-match.md): Admin-owned, MCP stays
-read-only, paid catalog rather than LinkedIn session scrape.
+read-only, free feeds + JobsPipe Free rather than LinkedIn session scrape.
 
 - **Transport:** MCP Streamable HTTP, served from a Lambda Function URL
   behind CloudFront on `mcp.<domain>` (only deployed when `domainEnabled=true`
