@@ -52,7 +52,7 @@ hourly pull or a dual index if the bakeoff says so.
 - LinkedIn cookie / session / `li_at` scrape; Apify LinkedIn on the
   personal account; `jobs-guest` HTML despite HTTP 200.
 - Caller-supplied URL fetch (SSRF). Hydrate only allowlisted hosts from
-  *our* stored apply URL.
+  _our_ stored apply URL.
 - Company watchlist as the discovery mechanism.
 - Polling an unfiltered worldwide index on a credit-metered plan.
 
@@ -70,11 +70,11 @@ hourly pull or a dual index if the bakeoff says so.
 
 ### Notification SLO
 
-| Signal            | When                                      | Channel                  |
-| ----------------- | ----------------------------------------- | ------------------------ |
-| Immediate         | New canonical job, score ≥ 85, not yet mailed | Resend (existing domain) |
-| Morning digest    | New score ≥ 70 since last digest          | Resend 07:00 Europe/London |
-| Silence           | No webhook *and* watchdog miss            | `AppErrors`              |
+| Signal         | When                                          | Channel                    |
+| -------------- | --------------------------------------------- | -------------------------- |
+| Immediate      | New canonical job, score ≥ 85, not yet mailed | Resend (existing domain)   |
+| Morning digest | New score ≥ 70 since last digest              | Resend 07:00 Europe/London |
+| Silence        | No webhook _and_ watchdog miss                | `AppErrors`                |
 
 SLOs:
 
@@ -94,17 +94,17 @@ Run 14 days before a paid key is wired into CDK.
 **Gold set:** 20 roles Khubaib would apply to, logged manually from ATS
 pages and LinkedIn (human browser, not a scraper). Columns:
 
-| Field                 | Meaning                                      |
-| --------------------- | -------------------------------------------- |
-| `ats_url`             | Canonical apply URL on the company board     |
-| `ats_first_seen`      | When it appeared on that board (human note)  |
-| `linkedin_url`        | If listed; else empty                        |
-| `linkedin_first_seen` | When it appeared on LinkedIn; else empty     |
-| `jobspipe_first_seen` | Vendor timestamp or “miss”                   |
-| `fantastic_first_seen`| Vendor timestamp or “miss”                   |
-| `jsearch_first_seen`  | Vendor timestamp or “miss”                   |
-| `jd_complete`         | full / snippet / missing                     |
-| `linkedin_only`       | true if no public ATS URL                    |
+| Field                  | Meaning                                     |
+| ---------------------- | ------------------------------------------- |
+| `ats_url`              | Canonical apply URL on the company board    |
+| `ats_first_seen`       | When it appeared on that board (human note) |
+| `linkedin_url`         | If listed; else empty                       |
+| `linkedin_first_seen`  | When it appeared on LinkedIn; else empty    |
+| `jobspipe_first_seen`  | Vendor timestamp or “miss”                  |
+| `fantastic_first_seen` | Vendor timestamp or “miss”                  |
+| `jsearch_first_seen`   | Vendor timestamp or “miss”                  |
+| `jd_complete`          | full / snippet / missing                    |
+| `linkedin_only`        | true if no public ATS URL                   |
 
 **Pass (single vendor wins):**
 

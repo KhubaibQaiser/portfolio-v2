@@ -48,12 +48,12 @@ also work. That is not the hard part.
 
 The hard part is **catalog discovery**:
 
-1. Which of the ~200k public career sites posted a matching role *today*?
+1. Which of the ~200k public career sites posted a matching role _today_?
 2. On which ATS (Greenhouse, Lever, Ashby, Workday, iCIMS, SmartRecruiters,
    Personio, …) does that company live, and what is its slug/tenant?
 3. Can we hear about it in hours, not the 18–72h LinkedIn syndication lag?
 4. Can we do that without maintaining 50k scrapers that break every markup
-  change, and without violating LinkedIn’s ToS on a personal account?
+   change, and without violating LinkedIn’s ToS on a personal account?
 
 A hobby project answers (1)–(3) with a hard-coded slug list and a daily
 cron. It silently misses almost every matching role. A production system
@@ -99,7 +99,7 @@ edge versus people waiting on LinkedIn’s daily digest. It is not omniscience.
   on Easy Apply.
 
 Decision: **never scrape LinkedIn with the personal session.** Optional
-later: human-configured LinkedIn Job Alert emails as a *secondary* catch
+later: human-configured LinkedIn Job Alert emails as a _secondary_ catch
 net (parse inbound mail), not as the primary index. Primary coverage of
 “jobs you would have seen on LinkedIn” is **upstream ATS** plus, if the
 bakeoff shows a LinkedIn-only hole, a vendor that indexes public LinkedIn
@@ -136,11 +136,11 @@ Developer jobs API over 42 named ATS/board sources (Greenhouse, Lever,
 Ashby, Workday, iCIMS, SmartRecruiters, Personio, Indeed, …). Normalized
 schema, cross-source dedup, parsed salary.
 
-| Plan    | Price  | Credits/mo | Freshness     | Webhooks                         |
-| ------- | ------ | ---------- | ------------- | -------------------------------- |
-| Free    | $0     | 1,000      | ≤24h          | no (email Signals only, cap 3)   |
-| Builder | $49    | 25,000     | sub-6h crawl  | yes; **deliveries cost 0 credits** |
-| Scale   | $349   | 300,000    | sub-1h + SLA  | yes                              |
+| Plan    | Price | Credits/mo | Freshness    | Webhooks                           |
+| ------- | ----- | ---------- | ------------ | ---------------------------------- |
+| Free    | $0    | 1,000      | ≤24h         | no (email Signals only, cap 3)     |
+| Builder | $49   | 25,000     | sub-6h crawl | yes; **deliveries cost 0 credits** |
+| Scale   | $349  | 300,000    | sub-1h + SLA | yes                                |
 
 **Signals** (saved searches): re-evaluated every few minutes against
 new-to-corpus postings; first-seen only (reposts do not re-fire). Builder
@@ -245,14 +245,14 @@ Admin ingest Function URL  ──verify signature──► SQS (maxConcurrency 1
 
 **3. Notification SLO (the contract we will page on).**
 
-| Metric                         | Target                                      |
-| ------------------------------ | ------------------------------------------- |
-| P50 `notify_at - source_seen`  | ≤ 6 hours (JobsPipe Builder crawl)          |
-| P95 `notify_at - source_seen`  | ≤ 24 hours                                  |
-| Immediate email                | new rows with matcher score ≥ 85            |
-| Daily digest                   | new rows with score ≥ 70, 07:00 Europe/London |
-| Dedup                          | one email per canonical job id              |
-| Webhook silence                | 4h watchdog poll; AppErrors if both fail    |
+| Metric                        | Target                                        |
+| ----------------------------- | --------------------------------------------- |
+| P50 `notify_at - source_seen` | ≤ 6 hours (JobsPipe Builder crawl)            |
+| P95 `notify_at - source_seen` | ≤ 24 hours                                    |
+| Immediate email               | new rows with matcher score ≥ 85              |
+| Daily digest                  | new rows with score ≥ 70, 07:00 Europe/London |
+| Dedup                         | one email per canonical job id                |
+| Webhook silence               | 4h watchdog poll; AppErrors if both fail      |
 
 `source_seen` is the vendor’s first-seen / `posted_at`, not “when we
 happened to cron.” If the vendor did not see it, we cannot meet an SLO
@@ -281,16 +281,16 @@ follow-up. All mutations `requireAdmin()`. New table suffix under
 
 **6. Budget (production, not hobby).**
 
-| Line                         | Monthly (USD) | Notes                                      |
-| ---------------------------- | ------------- | ------------------------------------------ |
-| JobsPipe Builder (default)   | 49            | Signals/webhooks; 25k credits as headroom  |
-| *or* Fantastic.jobs          | 95            | If bakeoff wins on hourly LinkedIn/ATS     |
-| *optional* JSearch Pro       | 25            | Only if single-vendor recall < 90%         |
-| TheirStack Pro (escape hatch)| ~169          | Only if D+E fail the gold set              |
-| AWS (existing + ingest)      | ~5            | Lambda/SQS/Dynamo; no NAT; ADR 0002        |
-| Resend                       | 0             | Existing domain + contact-form key         |
-| **Recommended start**        | **~54**       | Builder + AWS                              |
-| **Strong coverage**          | **~74–100**   | Builder+JSearch *or* Fantastic             |
+| Line                          | Monthly (USD) | Notes                                     |
+| ----------------------------- | ------------- | ----------------------------------------- |
+| JobsPipe Builder (default)    | 49            | Signals/webhooks; 25k credits as headroom |
+| _or_ Fantastic.jobs           | 95            | If bakeoff wins on hourly LinkedIn/ATS    |
+| _optional_ JSearch Pro        | 25            | Only if single-vendor recall < 90%        |
+| TheirStack Pro (escape hatch) | ~169          | Only if D+E fail the gold set             |
+| AWS (existing + ingest)       | ~5            | Lambda/SQS/Dynamo; no NAT; ADR 0002       |
+| Resend                        | 0             | Existing domain + contact-form key        |
+| **Recommended start**         | **~54**       | Builder + AWS                             |
+| **Strong coverage**           | **~74–100**   | Builder+JSearch _or_ Fantastic            |
 
 JobsPipe Scale ($349) is not justified for one HITL user. Credit math:
 preference-shaped staff/senior remote roles are tens per day, not 25k per
@@ -298,7 +298,7 @@ month. **Polling the full index would blow Builder; Signals/webhooks will
 not.** If we ever poll Fantastic hourly, title filters are mandatory.
 
 ADR 0002’s AWS `monthlyBudgetUsd` alarm stays a runaway backstop for
-*AWS*. Vendor cards are billed to the vendor; treat them as an explicit
+_AWS_. Vendor cards are billed to the vendor; treat them as an explicit
 product cost, not as something to hide inside the $5 AWS target.
 
 ## Bakeoff (required before wiring a paid key)
