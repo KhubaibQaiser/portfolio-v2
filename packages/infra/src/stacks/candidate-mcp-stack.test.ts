@@ -189,6 +189,7 @@ describe("CandidateMcpStack", () => {
     for (const table of ["content", "experience", "project", "skill", "testimonial"]) {
       expect(readResources).toContain(`portfolio-${table}`);
     }
+    expect(readResources).not.toContain("portfolio-job-posting");
 
     expect(statements.find((s) => s.Sid === "CandidateMcpApiKeyVerify")).toBeUndefined();
 

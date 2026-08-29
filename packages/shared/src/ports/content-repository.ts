@@ -13,6 +13,8 @@ import type {
   TestimonialFormData,
   SiteConfig,
   SiteConfigFormData,
+  JobPreferences,
+  JobPreferencesFormData,
   Resume,
   ResumeFormData,
   ResumeVariant,
@@ -102,6 +104,13 @@ export type ContentRepository = {
   getSiteConfig(): Promise<SiteConfig>;
   upsertSiteConfig(
     values: Partial<SiteConfigFormData>,
+    expectedRevision?: number,
+  ): Promise<void>;
+
+  // Job preferences (singleton)
+  getJobPreferences(): Promise<JobPreferences>;
+  upsertJobPreferences(
+    values: Partial<JobPreferencesFormData>,
     expectedRevision?: number,
   ): Promise<void>;
 

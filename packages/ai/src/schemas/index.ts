@@ -4,3 +4,4 @@ export * from "./ats-score";
 export * from "./combined";
 export * from "./resume-generation-response";
 export * from "./resume-export";
+export * from "./recruiter-message";

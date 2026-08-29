@@ -21,6 +21,7 @@ export function ssmPaths(appName: string = DEFAULT_APP_NAME) {
     anthropicApiKeyArn: `${base}/ai/anthropic-api-key-arn`,
     resendApiKeyArn: `${base}/email/resend-api-key-arn`,
     turnstileSecretKeyArn: `${base}/auth/turnstile-secret-key-arn`,
+    jobspipeApiKeyArn: `${base}/jobs/jobspipe-api-key-arn`,
   } as const;
 }
 

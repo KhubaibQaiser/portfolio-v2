@@ -36,6 +36,8 @@ import type {
   ResumeLayoutFormData,
   SiteConfig,
   SiteConfigFormData,
+  JobPreferences,
+  JobPreferencesFormData,
   Skill,
   Testimonial,
   TestimonialFormData,
@@ -53,6 +55,8 @@ import {
   resumeRowSchema,
   resumeVariantRowSchema,
   siteConfigRowSchema,
+  jobPreferencesRowSchema,
+  defaultJobPreferencesRow,
   skillRowSchema,
   testimonialRowSchema,
 } from "@portfolio/shared/schemas";
@@ -67,6 +71,7 @@ const SECTION = {
   hero: "hero",
   about: "about",
   siteConfig: "site-config",
+  jobPreferences: "job-preferences",
   resume: "resume",
 } as const;
 
@@ -129,6 +134,14 @@ function toSiteConfig(item: Item): SiteConfig {
   const { section: _section, ...rest } = item;
   return parseRow(siteConfigRowSchema, "site config", {
     id: SECTION.siteConfig,
+    ...rest,
+  });
+}
+
+function toJobPreferences(item: Item): JobPreferences {
+  const { section: _section, ...rest } = item;
+  return parseRow(jobPreferencesRowSchema, "job preferences", {
+    id: SECTION.jobPreferences,
     ...rest,
   });
 }
@@ -565,6 +578,24 @@ export function createMultiTableContentRepository(
       expectedRevision?: number,
     ) {
       await upsertSingleton(SECTION.siteConfig, values, expectedRevision);
+    },
+
+    async getJobPreferences() {
+      const item = await getItem(tables.content, { section: SECTION.jobPreferences });
+      if (!item) return defaultJobPreferencesRow();
+      return toJobPreferences(item);
+    },
+    async upsertJobPreferences(
+      values: Partial<JobPreferencesFormData>,
+      expectedRevision?: number,
+    ) {
+      const current = await getItem(tables.content, { section: SECTION.jobPreferences });
+      const base = current ? toJobPreferences(current) : defaultJobPreferencesRow();
+      await upsertSingleton(
+        SECTION.jobPreferences,
+        { ...base, ...values, id: SECTION.jobPreferences },
+        expectedRevision,
+      );
     },
 
     // Resume
