@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGenerationJobStore } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logRouteError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -26,23 +27,37 @@ export async function GET(request: Request) {
     );
   }
 
-  const job = await getGenerationJobStore().get(jobId);
-  if (!job || job.createdBy !== auth.id) {
+  try {
+    const job = await getGenerationJobStore().get(jobId);
+    if (!job || job.createdBy !== auth.id) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "JOB_NOT_FOUND",
+            message: "Generation job not found.",
+            retryable: false,
+          },
+        },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      status: job.status,
+      result: job.result,
+      error: job.error,
+    });
+  } catch (error) {
+    logRouteError("GET /api/resume/generate/status failed", error, { jobId });
     return NextResponse.json(
       {
         error: {
-          code: "JOB_NOT_FOUND",
-          message: "Generation job not found.",
-          retryable: false,
+          code: "STATUS_LOOKUP_FAILED",
+          message: "Generation status could not be loaded. Try again shortly.",
+          retryable: true,
         },
       },
-      { status: 404 },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({
-    status: job.status,
-    result: job.result,
-    error: job.error,
-  });
 }

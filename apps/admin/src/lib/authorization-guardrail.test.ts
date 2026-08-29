@@ -72,4 +72,16 @@ describe("admin authorization guardrail", () => {
     ]);
     expectGuarded(files);
   });
+
+  it("logs unexpected failures on every API route", () => {
+    const files = sourceFiles("src/app/api/**/route.{ts,tsx}");
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const source = readFileSync(resolve(ADMIN_ROOT, file), "utf8");
+      expect(
+        source,
+        `${file} must logger.error, logRouteError, or jsonInternalError`,
+      ).toMatch(/logger\.error|logRouteError|jsonInternalError/);
+    }
+  });
 });

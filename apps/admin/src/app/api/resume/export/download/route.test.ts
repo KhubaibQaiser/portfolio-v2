@@ -77,4 +77,10 @@ describe("GET /api/resume/export/download", () => {
     const bytes = new Uint8Array(await res.arrayBuffer());
     expect([...bytes]).toEqual([1, 2, 3]);
   });
+
+  it("logs and returns 500 when the store throws", async () => {
+    mocks.getRenderJob.mockRejectedValue(new Error("Dynamo down"));
+    const res = await GET(request("job-1"));
+    expect(res.status).toBe(500);
+  });
 });

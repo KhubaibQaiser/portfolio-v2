@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRenderJobStore } from "@portfolio/data";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logRouteError } from "@/lib/log-route-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -22,17 +23,33 @@ export async function GET(request: Request) {
     );
   }
 
-  const job = await getRenderJobStore().get(jobId);
-  if (!job || job.createdBy !== auth.id) {
+  try {
+    const job = await getRenderJobStore().get(jobId);
+    if (!job || job.createdBy !== auth.id) {
+      return NextResponse.json(
+        {
+          error: { code: "JOB_NOT_FOUND", message: "Render job not found.", fields: {} },
+        },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      status: job.status,
+      error: job.error,
+      fitReport: job.fitReport,
+    });
+  } catch (error) {
+    logRouteError("GET /api/resume/export/status failed", error, { jobId });
     return NextResponse.json(
-      { error: { code: "JOB_NOT_FOUND", message: "Render job not found.", fields: {} } },
-      { status: 404 },
+      {
+        error: {
+          code: "STATUS_LOOKUP_FAILED",
+          message: "Render status could not be loaded. Try again shortly.",
+          fields: {},
+        },
+      },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({
-    status: job.status,
-    error: job.error,
-    fitReport: job.fitReport,
-  });
 }

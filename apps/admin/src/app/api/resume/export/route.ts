@@ -13,6 +13,7 @@ import type { RenderJobKind } from "@portfolio/shared/ports";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
+import { logRouteError } from "@/lib/log-route-error";
 import { createGenerationSnapshot } from "@/lib/resume-ai/generation-snapshot";
 import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
 import { buildResumeExportFilename } from "@/lib/resume-ai/export-filename";
@@ -284,29 +285,40 @@ export async function POST(request: Request) {
     );
   }
 
-  const job = await getRenderJobStore().create({
-    jobId: crypto.randomUUID(),
-    createdBy: auth.id,
-    generationId: body.generationId,
-    kind,
-    payload,
-    filename,
-  });
-
-  const queue = getRenderJobQueue();
-  if (queue) {
-    await queue.enqueue({ jobId: job.jobId });
-  } else {
-    // Fixture/local dev: no worker Lambda consumes a real queue, so process
-    // inline instead. Off the response path (not awaited) to mirror the
-    // production enqueue-then-poll shape as closely as possible.
-    void processRenderJob(job.jobId).catch((error: unknown) => {
-      logger.error("inline render-job processing failed", {
-        jobId: job.jobId,
-        error: toError(error),
-      });
+  try {
+    const job = await getRenderJobStore().create({
+      jobId: crypto.randomUUID(),
+      createdBy: auth.id,
+      generationId: body.generationId,
+      kind,
+      payload,
+      filename,
     });
-  }
 
-  return NextResponse.json({ jobId: job.jobId, filename }, { status: 202 });
+    const queue = getRenderJobQueue();
+    if (queue) {
+      await queue.enqueue({ jobId: job.jobId });
+    } else {
+      void processRenderJob(job.jobId).catch((error: unknown) => {
+        logger.error("inline render-job processing failed", {
+          jobId: job.jobId,
+          error: toError(error),
+        });
+      });
+    }
+
+    return NextResponse.json({ jobId: job.jobId, filename }, { status: 202 });
+  } catch (error) {
+    logRouteError("resume pdf export enqueue failed", error, { userId: auth.id });
+    return NextResponse.json(
+      {
+        error: {
+          code: "PERSISTENCE_FAILED",
+          message: "The export job could not be started. Try again shortly.",
+          fields: {},
+        },
+      },
+      { status: 500 },
+    );
+  }
 }
