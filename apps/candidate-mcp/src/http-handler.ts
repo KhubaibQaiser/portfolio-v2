@@ -51,8 +51,12 @@ export function createHttpHandler(
     resourceMetadataUrl,
   });
 
-  const mcpHandler = createMcpHandler((ctx) =>
-    createCandidateMcpServer(repo, ctx.authInfo, clientRateLimit),
+  // Dual-serve: modern 2026-07-28 is first-class; legacy initialize remains
+  // intentional compat for Claude/n8n/Inspector defaults. Do not set
+  // legacy: "reject" without client-matrix sign-off (ADR 0006).
+  const mcpHandler = createMcpHandler(
+    (ctx) => createCandidateMcpServer(repo, ctx.authInfo, clientRateLimit),
+    { legacy: "stateless" },
   );
 
   return async function fetch(request: Request): Promise<Response> {
