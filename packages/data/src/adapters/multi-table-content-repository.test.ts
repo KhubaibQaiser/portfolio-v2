@@ -151,4 +151,19 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
 
     expect(await repo.getResumeGenerations({ limit: 1 })).toHaveLength(1);
   });
+
+  it("reads job preferences after Dynamo omitted null attributes", async () => {
+    await repo.upsertJobPreferences({
+      recommended_job_id: null,
+      jobspipe_last_search_date: null,
+      default_layout_id: null,
+      salary_floor: null,
+    });
+    const prefs = await repo.getJobPreferences();
+    expect(prefs.recommended_job_id).toBeNull();
+    expect(prefs.jobspipe_last_search_date).toBeNull();
+    expect(prefs.default_layout_id).toBeNull();
+    expect(prefs.salary_floor).toBeNull();
+    expect(prefs.title_families.length).toBeGreaterThan(0);
+  });
 });
