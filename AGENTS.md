@@ -14,6 +14,7 @@ below as the source of truth, not guesses from training data.
 - `packages/data` — DynamoDB / fixture adapters.
 - `packages/ai` — model factory, prompts, schemas, guardrails, resume policy.
 - `packages/infra` — AWS CDK. See `docs/adr/` before changing stacks.
+  Job-match ingest (ADR 0007) is Admin-owned; do not put it in MCP.
 - `packages/agent-mcp` — local, unauthenticated, read-only MCP tools that
   return ADRs and AI contracts (dev-only; not the same trust boundary as
   `apps/candidate-mcp`).
@@ -39,6 +40,11 @@ below as the source of truth, not guesses from training data.
    `deepSanitize`.** Any write-capable tool (job matches, applications,
    "apply" actions) needs its own ADR and a human-review gate before
    implementation. See ADR 0003 and `apps/candidate-mcp/src/sanitize.ts`.
+8. **Job discovery is a paid catalog, not a LinkedIn scrape.** See
+   ADR 0007 and `specs/job-match.md`. No `li_at`/session scrape, no
+   auto-apply, no company watchlist as the discovery mechanism, ingest
+   concurrency 1, and do not widen `grantCandidateMcpDataAccess` to the
+   job table. Implementation is gated on the 14-day vendor bakeoff.
 
 ## How to change things
 
@@ -46,6 +52,8 @@ below as the source of truth, not guesses from training data.
    `packages/shared` or `packages/ai/src/schemas`.
 2. For Resume AI, update `specs/resume-ai.md` and add an offline eval case
    under `packages/ai/src/evals/cases/` before changing prompts or policy.
+   For job matching, update `specs/job-match.md` and ADR 0007 before
+   changing ingest, vendors, matcher weights, or notify SLOs.
 3. Implement the smallest change. Do not add packages unless the task is a
    new bounded concern.
 4. Run:
@@ -72,3 +80,5 @@ rate-limit tests plus `candidate-mcp-stack.test.ts`'s CDK assertions).
 - Widen `apps/candidate-mcp`'s DynamoDB IAM grant
   (`grantCandidateMcpDataAccess`) beyond the five content tables, or add a
   tool that fetches a caller-supplied URL (SSRF surface) — see ADR 0003.
+- Scrape LinkedIn with a personal session or `li_at` cookie, auto-apply, or
+  treat a company watchlist as job discovery (ADR 0007).

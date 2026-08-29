@@ -32,6 +32,13 @@ describe("portfolio-context MCP readers", () => {
     expect(text).toContain("Cognito");
   });
 
+  it("returns ADR 0007 with the paid-catalog discovery decision", () => {
+    const text = readAdr("0007");
+    expect(text).toContain("buy the catalog");
+    expect(text).toContain("JobsPipe");
+    expect(text).toContain("no `li_at`");
+  });
+
   it("returns the resume schema and shared prompt rules", () => {
     const text = readAiContract("resume");
     expect(text).toContain("tailoredResumeSchema");

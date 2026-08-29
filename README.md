@@ -352,7 +352,11 @@ that external automation (an n8n workflow today, Apify actors in a later
 phase) can pull the same candidate profile data already public on
 `khubaibqaiser.com` — the foundation for the roadmap's job-matching/tailored-
 application pipeline. See [ADR 0003](docs/adr/0003-candidate-mcp-server.md)
-for the full trust-boundary decision; this is a summary.
+for the full trust-boundary decision; this is a summary. Job matching
+(discovery, notify SLO, HITL dashboard) is specified in
+[ADR 0007](docs/adr/0007-job-match-pipeline.md) and
+[`specs/job-match.md`](specs/job-match.md): Admin-owned, MCP stays
+read-only, paid catalog rather than LinkedIn session scrape.
 
 - **Transport:** MCP Streamable HTTP, served from a Lambda Function URL
   behind CloudFront on `mcp.<domain>` (only deployed when `domainEnabled=true`
