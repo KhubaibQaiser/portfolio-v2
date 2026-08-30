@@ -7,20 +7,28 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type {
   JobBoardRepository,
-  JobListCursor,
   JobQueryByStatusOptions,
   JobQueryPage,
+  JobStatusCounts,
 } from "@portfolio/shared/ports";
 import {
   HITL_STATUSES,
   jobPostingRowSchema,
+  jobStatusEnum,
   type JobPosting,
+  type JobStatus,
 } from "@portfolio/shared/schemas";
 
 const GSI = "by-status-posted";
 
 function parseRow(item: Record<string, unknown>): JobPosting {
   return jobPostingRowSchema.parse(item);
+}
+
+function emptyCounts(): JobStatusCounts {
+  return Object.fromEntries(
+    jobStatusEnum.options.map((status) => [status, 0]),
+  ) as JobStatusCounts;
 }
 
 async function claimUnsetTimestamp(
@@ -152,39 +160,82 @@ export function createDynamoJobBoardRepository(
 
     async queryByStatus(options: JobQueryByStatusOptions): Promise<JobQueryPage> {
       const limit = options.limit ?? 50;
-      const exclusiveStartKey = options.cursor
+      const items: JobPosting[] = [];
+      let exclusiveStartKey: Record<string, unknown> | undefined = options.cursor
         ? {
             id: options.cursor.id,
             status: options.cursor.status,
             posted_at: options.cursor.posted_at,
           }
         : undefined;
-      const result = await client.send(
-        new QueryCommand({
-          TableName: table,
-          IndexName: GSI,
-          KeyConditionExpression: "#status = :status",
-          ExpressionAttributeNames: { "#status": "status" },
-          ExpressionAttributeValues: { ":status": options.status },
-          ScanIndexForward: false,
-          Limit: limit,
-          ExclusiveStartKey: exclusiveStartKey,
+
+      // Band is a FilterExpression, so keep paging until the page is full or
+      // the status partition is exhausted (personal job volume is small).
+      while (items.length < limit) {
+        const result = await client.send(
+          new QueryCommand({
+            TableName: table,
+            IndexName: GSI,
+            KeyConditionExpression: "#status = :status",
+            ExpressionAttributeNames: options.band
+              ? { "#status": "status", "#band": "band" }
+              : { "#status": "status" },
+            ExpressionAttributeValues: options.band
+              ? { ":status": options.status, ":band": options.band }
+              : { ":status": options.status },
+            FilterExpression: options.band ? "#band = :band" : undefined,
+            ScanIndexForward: false,
+            Limit: Math.max(limit - items.length, 1) * (options.band ? 4 : 1),
+            ExclusiveStartKey: exclusiveStartKey,
+          }),
+        );
+        for (const item of result.Items ?? []) {
+          items.push(parseRow(item as Record<string, unknown>));
+          if (items.length >= limit) break;
+        }
+        exclusiveStartKey = result.LastEvaluatedKey as
+          | Record<string, unknown>
+          | undefined;
+        if (!exclusiveStartKey) break;
+      }
+
+      const last = items.at(-1);
+      return {
+        items: items.slice(0, limit),
+        nextCursor:
+          items.length >= limit && last
+            ? { status: last.status, posted_at: last.posted_at, id: last.id }
+            : null,
+      };
+    },
+
+    async countByStatus(): Promise<JobStatusCounts> {
+      const counts = emptyCounts();
+      await Promise.all(
+        jobStatusEnum.options.map(async (status: JobStatus) => {
+          let total = 0;
+          let exclusiveStartKey: Record<string, unknown> | undefined;
+          do {
+            const result = await client.send(
+              new QueryCommand({
+                TableName: table,
+                IndexName: GSI,
+                KeyConditionExpression: "#status = :status",
+                ExpressionAttributeNames: { "#status": "status" },
+                ExpressionAttributeValues: { ":status": status },
+                Select: "COUNT",
+                ExclusiveStartKey: exclusiveStartKey,
+              }),
+            );
+            total += result.Count ?? 0;
+            exclusiveStartKey = result.LastEvaluatedKey as
+              | Record<string, unknown>
+              | undefined;
+          } while (exclusiveStartKey);
+          counts[status] = total;
         }),
       );
-      const items = (result.Items ?? []).map((item) =>
-        parseRow(item as Record<string, unknown>),
-      );
-      const last = result.LastEvaluatedKey as JobListCursor | undefined;
-      return {
-        items,
-        nextCursor: last
-          ? {
-              status: String(last.status),
-              posted_at: String(last.posted_at),
-              id: String(last.id),
-            }
-          : null,
-      };
+      return counts;
     },
   };
 }
