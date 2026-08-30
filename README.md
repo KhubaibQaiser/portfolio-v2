@@ -70,7 +70,9 @@ flowchart LR
 ```
 
 Deeper routing, cache headers, and deploy ordering:
-[docs/architecture.md](docs/architecture.md).
+[docs/architecture.md](docs/architecture.md). Runtime maps (job ingest,
+notify, tracker, resume AI, chat, MCP, CMS) with debug files and log
+queries: [docs/flows/](docs/flows/README.md).
 
 ### OpenNext caching
 

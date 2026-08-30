@@ -6,6 +6,7 @@ source adapters may change; the merge gate is the discovery SLO and the
 HITL invariants below.
 
 Architecture decision: [`docs/adr/0007-job-match-pipeline.md`](../docs/adr/0007-job-match-pipeline.md).
+Runtime map when ingest is broken: [`docs/flows/job-ingest.md`](../docs/flows/job-ingest.md).
 Do not implement ingest, tables, or `/jobs` UI until that ADR is Accepted
 and an execute go is recorded. This spec is the acceptance bar for that
 work.

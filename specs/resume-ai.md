@@ -2,7 +2,8 @@
 
 This is the contract for tailored resume generation. Prompt copy in
 `packages/ai/src/prompts/` may change; the merge gate is the deterministic
-pipeline below, not the model.
+pipeline below, not the model. Runtime map:
+[`docs/flows/resume-generation.md`](../docs/flows/resume-generation.md).
 
 ## Pipeline
 
