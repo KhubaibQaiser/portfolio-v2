@@ -2,11 +2,14 @@ import type {
   JobBoardRepository,
   JobQueryByStatusOptions,
   JobQueryPage,
+  JobStatusCounts,
 } from "@portfolio/shared/ports";
 import {
   HITL_STATUSES,
   jobPostingRowSchema,
+  jobStatusEnum,
   type JobPosting,
+  type JobStatus,
 } from "@portfolio/shared/schemas";
 
 function clone(row: JobPosting): JobPosting {
@@ -24,6 +27,10 @@ function mergeSources(existing: JobPosting, incoming: JobPosting): JobPosting["s
     }
   }
   return merged.slice(0, 12);
+}
+
+function emptyCounts(): JobStatusCounts {
+  return Object.fromEntries(jobStatusEnum.options.map((status) => [status, 0])) as JobStatusCounts;
 }
 
 export function createMemoryJobBoardRepository(): JobBoardRepository {
@@ -111,6 +118,7 @@ export function createMemoryJobBoardRepository(): JobBoardRepository {
       const limit = options.limit ?? 50;
       const sorted = [...rows.values()]
         .filter((row) => row.status === options.status)
+        .filter((row) => (options.band ? row.band === options.band : true))
         .sort(
           (a, b) => b.posted_at.localeCompare(a.posted_at) || b.id.localeCompare(a.id),
         );
@@ -133,6 +141,14 @@ export function createMemoryJobBoardRepository(): JobBoardRepository {
             ? { status: last.status, posted_at: last.posted_at, id: last.id }
             : null,
       };
+    },
+
+    async countByStatus(): Promise<JobStatusCounts> {
+      const counts = emptyCounts();
+      for (const row of rows.values()) {
+        counts[row.status as JobStatus] += 1;
+      }
+      return counts;
     },
   };
 }

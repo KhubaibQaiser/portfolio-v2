@@ -1,206 +1,298 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import Link from "next/link";
 import {
+  jobBandEnum,
   jobStatusEnum,
+  type JobBand,
   type JobPosting,
   type JobStatus,
 } from "@portfolio/shared/schemas";
-import { cn } from "@/lib/utils";
-import { runIngestNow } from "@/lib/job-actions";
+import type { JobStatusCounts } from "@portfolio/shared/ports";
+import { runIngestNow, setJobStatus, snoozeJob } from "@/lib/job-actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
-
-const STATUSES = jobStatusEnum.options;
+import { cn } from "@/lib/utils";
+import { JobStatusPills } from "./job-status-pills";
+import { JobRecommendedBanner } from "./job-recommended-banner";
+import { JOB_QUEUE_GRID, JobQueueRow } from "./job-queue-row";
 
 type JobsPageResponse = {
   items: JobPosting[];
   nextCursor: string | null;
   recommendedJobId: string | null;
+  recommended: JobPosting | null;
+  counts: JobStatusCounts;
 };
 
-const columnHelper = createColumnHelper<JobPosting>();
+const EMPTY_COUNTS: JobStatusCounts = {
+  new: 0,
+  reviewing: 0,
+  applied: 0,
+  discarded: 0,
+  snoozed: 0,
+  closed: 0,
+};
+
+function parseStatus(raw: string | null): JobStatus {
+  const parsed = jobStatusEnum.safeParse(raw ?? "new");
+  return parsed.success ? parsed.data : "new";
+}
+
+function parseBand(raw: string | null): JobBand | "" {
+  if (!raw) return "";
+  const parsed = jobBandEnum.safeParse(raw);
+  return parsed.success ? parsed.data : "";
+}
 
 export function JobsTable() {
   const toast = useToast();
-  const [status, setStatus] = useState<JobStatus>("new");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const status = parseStatus(searchParams.get("status"));
+  const band = parseBand(searchParams.get("band"));
+
   const [items, setItems] = useState<JobPosting[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [recommended, setRecommended] = useState<JobPosting | null>(null);
   const [recommendedJobId, setRecommendedJobId] = useState<string | null>(null);
+  const [counts, setCounts] = useState<JobStatusCounts>(EMPTY_COUNTS);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [ingesting, setIngesting] = useState(false);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const setFilters = useCallback(
+    (nextStatus: JobStatus, nextBand: JobBand | "") => {
+      const params = new URLSearchParams();
+      params.set("status", nextStatus);
+      if (nextBand) params.set("band", nextBand);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router],
+  );
 
   const loadPage = useCallback(
     async (cursor: string | null, replace: boolean) => {
-      setLoading(true);
-      const params = new URLSearchParams({ status });
-      if (cursor) params.set("cursor", cursor);
-      const response = await fetch(`/api/jobs?${params.toString()}`);
-      if (!response.ok) {
-        setLoading(false);
-        toast.error("Could not load jobs");
-        return;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      if (replace) {
+        setLoading(true);
+        setItems([]);
+        setNextCursor(null);
+      } else {
+        setLoadingMore(true);
       }
-      const body = (await response.json()) as JobsPageResponse;
-      setRecommendedJobId(body.recommendedJobId);
-      setNextCursor(body.nextCursor);
-      setItems((current) => (replace ? body.items : [...current, ...body.items]));
-      setLoading(false);
+
+      const params = new URLSearchParams({ status });
+      if (band) params.set("band", band);
+      if (cursor) params.set("cursor", cursor);
+
+      try {
+        const response = await fetch(`/api/jobs?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          toast.error("Could not load jobs");
+          return;
+        }
+        const body = (await response.json()) as JobsPageResponse;
+        if (controller.signal.aborted) return;
+        setRecommendedJobId(body.recommendedJobId);
+        setRecommended(body.recommended);
+        setCounts(body.counts ?? EMPTY_COUNTS);
+        setNextCursor(body.nextCursor);
+        setItems((current) => (replace ? body.items : [...current, ...body.items]));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        toast.error("Could not load jobs");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
     },
-    [status, toast],
+    [status, band, toast],
   );
 
   useEffect(() => {
     void loadPage(null, true);
+    return () => abortRef.current?.abort();
   }, [loadPage]);
 
-  const columns = useMemo(
-    () => [
-      columnHelper.accessor("company", { header: "Company" }),
-      columnHelper.accessor("title", { header: "Title" }),
-      columnHelper.accessor("location", { header: "Location" }),
-      columnHelper.accessor((row) => row.sources[0]?.source ?? "", {
-        id: "source",
-        header: "Source",
-      }),
-      columnHelper.accessor("posted_at", {
-        header: "Posted",
-        cell: (info) => info.getValue().slice(0, 10),
-      }),
-      columnHelper.accessor("score", { header: "Score" }),
-      columnHelper.accessor("band", { header: "Band" }),
-      columnHelper.display({
-        id: "recommended",
-        header: "Rec",
-        cell: (info) => (info.row.original.id === recommendedJobId ? "Yes" : ""),
-      }),
-      columnHelper.accessor("status", { header: "Status" }),
-      columnHelper.display({
-        id: "open",
-        header: "",
-        cell: (info) => (
-          <Link
-            className="text-accent hover:underline"
-            href={`/jobs/${info.row.original.id}`}
-          >
-            Open
-          </Link>
-        ),
-      }),
-    ],
-    [recommendedJobId],
+  const displayItems = useMemo(() => {
+    if (!recommended || recommended.status !== status) return items;
+    if (band && recommended.band !== band) return items;
+    const without = items.filter((item) => item.id !== recommended.id);
+    return [recommended, ...without];
+  }, [items, recommended, status, band]);
+
+  const showRecommendedBanner = Boolean(
+    recommended && recommended.status !== status,
   );
 
-  const table = useReactTable({
-    data: items,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => row.id,
-  });
-
-  const rows = table.getRowModel().rows;
   const virtualizer = useVirtualizer({
-    count: rows.length,
+    count: displayItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 44,
-    overscan: 12,
+    estimateSize: () => 64,
+    overscan: 10,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
   const lastVirtual = virtualItems.at(-1);
   useEffect(() => {
-    if (!lastVirtual || loading || !nextCursor) return;
-    if (lastVirtual.index >= rows.length - 8) {
+    if (!lastVirtual || loading || loadingMore || !nextCursor) return;
+    if (lastVirtual.index >= displayItems.length - 8) {
       void loadPage(nextCursor, false);
     }
-  }, [lastVirtual, loading, nextCursor, rows.length, loadPage]);
+  }, [
+    lastVirtual,
+    loading,
+    loadingMore,
+    nextCursor,
+    displayItems.length,
+    loadPage,
+  ]);
 
   async function onIngest() {
     setIngesting(true);
-    const result = await runServerAction(() => runIngestNow(), toast);
+    const result = await runServerAction(() => runIngestNow(), toast, {
+      successMessage: "Ingest finished",
+    });
     setIngesting(false);
     if (result.success) void loadPage(null, true);
   }
 
+  async function onDiscard(id: string) {
+    setRowBusyId(id);
+    const previous = items;
+    setItems((current) => current.filter((item) => item.id !== id));
+    const result = await runServerAction(
+      () => setJobStatus(id, "discarded"),
+      toast,
+      { successMessage: "Discarded" },
+    );
+    setRowBusyId(null);
+    if (!result.success) {
+      setItems(previous);
+      return;
+    }
+    setCounts((current) => ({
+      ...current,
+      [status]: Math.max(0, current[status] - 1),
+      discarded: current.discarded + (status === "discarded" ? 0 : 1),
+    }));
+  }
+
+  async function onSnooze(id: string) {
+    setRowBusyId(id);
+    const previous = items;
+    const shouldRemove = status !== "snoozed";
+    if (shouldRemove) {
+      setItems((current) => current.filter((item) => item.id !== id));
+    }
+    const result = await runServerAction(() => snoozeJob(id), toast, {
+      successMessage: "Snoozed +7 days",
+    });
+    setRowBusyId(null);
+    if (!result.success) {
+      setItems(previous);
+      return;
+    }
+    if (shouldRemove) {
+      setCounts((current) => ({
+        ...current,
+        [status]: Math.max(0, current[status] - 1),
+        snoozed: current.snoozed + 1,
+      }));
+    }
+    if (!shouldRemove) void loadPage(null, true);
+  }
+
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {STATUSES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setStatus(value)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium capitalize",
-              status === value
-                ? "border-accent bg-accent/10 text-accent"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {value}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-start gap-3">
+        <JobStatusPills
+          status={status}
+          band={band}
+          counts={counts}
+          onStatusChange={(next) => setFilters(next, band)}
+          onBandChange={(next) => setFilters(status, next)}
+        />
         <button
           type="button"
           onClick={() => void onIngest()}
           disabled={ingesting}
-          className="bg-accent text-accent-foreground ml-auto rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          className="border-border text-muted-foreground hover:text-foreground ml-auto rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
         >
           {ingesting ? "Ingesting…" : "Run ingest now"}
         </button>
       </div>
 
+      {showRecommendedBanner && recommended ? (
+        <JobRecommendedBanner job={recommended} />
+      ) : null}
+
       <div
         ref={parentRef}
         className="border-border max-h-[70vh] overflow-auto rounded-lg border"
       >
-        <table className="w-full text-left text-sm">
-          <thead className="bg-background sticky top-0 z-10">
-            {table.getHeaderGroups().map((group) => (
-              <tr key={group.id} className="border-border border-b">
-                {group.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="text-muted-foreground px-3 py-2 font-medium"
-                  >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody style={{ height: virtualizer.getTotalSize() }} className="relative">
+        <div
+          className={cn(
+            JOB_QUEUE_GRID,
+            "border-border bg-background text-muted-foreground sticky top-0 z-10 hidden border-b px-3 py-2 text-xs font-medium md:grid",
+          )}
+        >
+          <div>Role</div>
+          <div>Location</div>
+          <div>{status === "applied" || status === "snoozed" ? "Follow-up" : "Posted"}</div>
+          <div>Match</div>
+          <div className="text-right">Actions</div>
+        </div>
+
+        {loading ? (
+          <p className="text-muted-foreground p-6 text-center text-sm">Loading jobs…</p>
+        ) : displayItems.length === 0 ? (
+          <p className="text-muted-foreground p-6 text-center text-sm">
+            No jobs in {status}
+            {band ? ` · ${band}` : ""}.
+          </p>
+        ) : (
+          <div
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() } satisfies CSSProperties}
+          >
             {virtualItems.map((virtualRow) => {
-              const row = rows[virtualRow.index];
-              if (!row) return null;
+              const job = displayItems[virtualRow.index];
+              if (!job) return null;
               return (
-                <tr
-                  key={row.id}
-                  className="border-border/60 absolute w-full border-b"
-                  style={{ transform: `translateY(${virtualRow.start}px)` }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-3 py-2 whitespace-nowrap">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
+                <JobQueueRow
+                  key={job.id}
+                  job={job}
+                  recommended={job.id === recommendedJobId}
+                  busy={rowBusyId === job.id}
+                  onDiscard={(id) => void onDiscard(id)}
+                  onSnooze={(id) => void onSnooze(id)}
+                  style={{
+                    height: virtualRow.size,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                />
               );
             })}
-          </tbody>
-        </table>
-        {items.length === 0 && !loading ? (
-          <p className="text-muted-foreground p-6 text-center text-sm">
-            No jobs in this status.
+          </div>
+        )}
+        {loadingMore ? (
+          <p className="text-muted-foreground border-border border-t px-3 py-2 text-center text-xs">
+            Loading more…
           </p>
         ) : null}
       </div>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
 import { requireAdmin } from "@/lib/auth-guard";
@@ -19,7 +20,13 @@ export default async function JobsPage() {
         Free-board ingest scored against your preferences and CMS facts. Apply stays
         human-in-the-loop.
       </p>
-      <JobsTable />
+      <Suspense
+        fallback={
+          <p className="text-muted-foreground mt-6 text-sm">Loading jobs…</p>
+        }
+      >
+        <JobsTable />
+      </Suspense>
     </>
   );
 }
