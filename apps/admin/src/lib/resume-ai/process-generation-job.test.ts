@@ -61,7 +61,7 @@ vi.mock("./generation-snapshot", () => ({
     guidelineHash: "guideline-hash",
   }),
 }));
-vi.mock("./load-candidate-facts", () => ({
+vi.mock("./load-candidate-facts-uncached", () => ({
   loadCandidateFactsUncached: mocks.loadCandidateFacts,
 }));
 

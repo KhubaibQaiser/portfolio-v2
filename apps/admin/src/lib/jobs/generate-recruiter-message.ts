@@ -8,7 +8,7 @@ import {
   buildRecruiterMessageUserPrompt,
 } from "@portfolio/ai/prompts/recruiter-message";
 import { recruiterMessageSchema, type RecruiterMessage } from "@portfolio/ai/schemas";
-import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
+import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts-uncached";
 import { prepareJobText } from "@portfolio/ai/matcher/score-job";
 
 function numericClaims(value: string): string[] {

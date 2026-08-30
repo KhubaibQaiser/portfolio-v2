@@ -17,7 +17,7 @@ import {
 } from "./generate-validated-content";
 import { createGenerationSnapshot } from "./generation-snapshot";
 import { generationJobPayloadSchema } from "./generation-job-payload";
-import { loadCandidateFactsUncached } from "./load-candidate-facts";
+import { loadCandidateFactsUncached } from "./load-candidate-facts-uncached";
 
 /**
  * The worker runs off any CloudFront/HTTP request path (SQS-triggered), so it
