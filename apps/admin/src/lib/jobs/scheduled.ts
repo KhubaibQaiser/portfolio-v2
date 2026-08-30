@@ -1,5 +1,5 @@
 import { getContentRepository, getJobBoardRepository } from "@portfolio/data";
-import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts";
+import { loadCandidateFactsUncached } from "@/lib/resume-ai/load-candidate-facts-uncached";
 import { logger } from "@/lib/logger";
 import { runJobIngest } from "./run-ingest";
 import { runJobNotify } from "./run-notify";
