@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -135,9 +142,7 @@ export function JobsTable() {
     return [recommended, ...without];
   }, [items, recommended, status, band]);
 
-  const showRecommendedBanner = Boolean(
-    recommended && recommended.status !== status,
-  );
+  const showRecommendedBanner = Boolean(recommended && recommended.status !== status);
 
   const virtualizer = useVirtualizer({
     count: displayItems.length,
@@ -153,14 +158,7 @@ export function JobsTable() {
     if (lastVirtual.index >= displayItems.length - 8) {
       void loadPage(nextCursor, false);
     }
-  }, [
-    lastVirtual,
-    loading,
-    loadingMore,
-    nextCursor,
-    displayItems.length,
-    loadPage,
-  ]);
+  }, [lastVirtual, loading, loadingMore, nextCursor, displayItems.length, loadPage]);
 
   async function onIngest() {
     setIngesting(true);
@@ -175,11 +173,9 @@ export function JobsTable() {
     setRowBusyId(id);
     const previous = items;
     setItems((current) => current.filter((item) => item.id !== id));
-    const result = await runServerAction(
-      () => setJobStatus(id, "discarded"),
-      toast,
-      { successMessage: "Discarded" },
-    );
+    const result = await runServerAction(() => setJobStatus(id, "discarded"), toast, {
+      successMessage: "Discarded",
+    });
     setRowBusyId(null);
     if (!result.success) {
       setItems(previous);
@@ -253,7 +249,9 @@ export function JobsTable() {
         >
           <div>Role</div>
           <div>Location</div>
-          <div>{status === "applied" || status === "snoozed" ? "Follow-up" : "Posted"}</div>
+          <div>
+            {status === "applied" || status === "snoozed" ? "Follow-up" : "Posted"}
+          </div>
           <div>Match</div>
           <div className="text-right">Actions</div>
         </div>

@@ -26,7 +26,9 @@ function parseRow(item: Record<string, unknown>): JobPosting {
 }
 
 function emptyCounts(): JobStatusCounts {
-  return Object.fromEntries(jobStatusEnum.options.map((status) => [status, 0])) as JobStatusCounts;
+  return Object.fromEntries(
+    jobStatusEnum.options.map((status) => [status, 0]),
+  ) as JobStatusCounts;
 }
 
 async function claimUnsetTimestamp(
@@ -191,7 +193,9 @@ export function createDynamoJobBoardRepository(
           items.push(parseRow(item as Record<string, unknown>));
           if (items.length >= limit) break;
         }
-        exclusiveStartKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+        exclusiveStartKey = result.LastEvaluatedKey as
+          | Record<string, unknown>
+          | undefined;
         if (!exclusiveStartKey) break;
       }
 

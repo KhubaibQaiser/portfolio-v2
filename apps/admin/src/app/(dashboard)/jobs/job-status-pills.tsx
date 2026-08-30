@@ -53,7 +53,12 @@ export function JobStatusPills({
             )}
           >
             {value}
-            <span className={cn("ml-1.5 tabular-nums", selected ? "opacity-90" : "opacity-60")}>
+            <span
+              className={cn(
+                "ml-1.5 tabular-nums",
+                selected ? "opacity-90" : "opacity-60",
+              )}
+            >
               {counts[value] ?? 0}
             </span>
           </button>

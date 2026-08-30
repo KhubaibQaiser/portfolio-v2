@@ -84,9 +84,7 @@ export function JobDetailActions({ job }: JobDetailActionsProps) {
               }
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50",
-                isPrimary
-                  ? "bg-accent text-accent-foreground"
-                  : "border-border border",
+                isPrimary ? "bg-accent text-accent-foreground" : "border-border border",
               )}
             >
               {busy === item.label ? "…" : item.label}
@@ -98,9 +96,7 @@ export function JobDetailActions({ job }: JobDetailActionsProps) {
           <button
             type="button"
             disabled={busy !== null}
-            onClick={() =>
-              void run("Snooze", () => snoozeJob(job.id), "Snoozed +7 days")
-            }
+            onClick={() => void run("Snooze", () => snoozeJob(job.id), "Snoozed +7 days")}
             className="border-border rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
           >
             {busy === "Snooze" ? "…" : "Snooze +7d"}

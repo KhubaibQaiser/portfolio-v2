@@ -30,7 +30,9 @@ function mergeSources(existing: JobPosting, incoming: JobPosting): JobPosting["s
 }
 
 function emptyCounts(): JobStatusCounts {
-  return Object.fromEntries(jobStatusEnum.options.map((status) => [status, 0])) as JobStatusCounts;
+  return Object.fromEntries(
+    jobStatusEnum.options.map((status) => [status, 0]),
+  ) as JobStatusCounts;
 }
 
 export function createMemoryJobBoardRepository(): JobBoardRepository {

@@ -21,9 +21,7 @@ export default async function JobsPage() {
         human-in-the-loop.
       </p>
       <Suspense
-        fallback={
-          <p className="text-muted-foreground mt-6 text-sm">Loading jobs…</p>
-        }
+        fallback={<p className="text-muted-foreground mt-6 text-sm">Loading jobs…</p>}
       >
         <JobsTable />
       </Suspense>

@@ -12,7 +12,10 @@ export function JobRecommendedBanner({ job }: JobRecommendedBannerProps) {
         Recommended
       </span>
       <span className="text-muted-foreground">{job.company}</span>
-      <Link href={`/jobs/${job.id}`} className="text-foreground font-medium hover:underline">
+      <Link
+        href={`/jobs/${job.id}`}
+        className="text-foreground font-medium hover:underline"
+      >
         {job.title}
       </Link>
       <span className="text-muted-foreground text-xs">
