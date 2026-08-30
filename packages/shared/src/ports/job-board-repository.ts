@@ -1,4 +1,4 @@
-import type { JobPosting, JobStatus } from "../schemas/job-posting";
+import type { JobBand, JobPosting, JobStatus } from "../schemas/job-posting";
 
 export type JobListCursor = {
   status: string;
@@ -10,12 +10,16 @@ export type JobQueryByStatusOptions = {
   status: JobStatus;
   limit?: number;
   cursor?: JobListCursor;
+  /** Soft client filter; applied after the status GSI query. */
+  band?: JobBand;
 };
 
 export type JobQueryPage = {
   items: JobPosting[];
   nextCursor: JobListCursor | null;
 };
+
+export type JobStatusCounts = Record<JobStatus, number>;
 
 /**
  * Persistence for canonical job postings. Preferences live on
@@ -36,4 +40,6 @@ export type JobBoardRepository = {
    */
   claimDigest(id: string, digestedAt: string): Promise<boolean>;
   queryByStatus(options: JobQueryByStatusOptions): Promise<JobQueryPage>;
+  /** Per-status counts via the status GSI (no band filter). */
+  countByStatus(): Promise<JobStatusCounts>;
 };

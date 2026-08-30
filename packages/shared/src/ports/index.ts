@@ -57,4 +57,5 @@ export type {
   JobListCursor,
   JobQueryByStatusOptions,
   JobQueryPage,
+  JobStatusCounts,
 } from "./job-board-repository";

@@ -70,4 +70,39 @@ describe("memory job board repository", () => {
     expect(await repo.claimDigest("abc123", "2026-08-02T00:00:00.000Z")).toBe(true);
     expect(await repo.claimDigest("abc123", "2026-08-03T00:00:00.000Z")).toBe(false);
   });
+
+  it("counts by status and filters by band", async () => {
+    const repo = createMemoryJobBoardRepository();
+    await repo.upsertCanonical(sample({ id: "a", natural_key: "a", score: 88 }));
+    await repo.upsertCanonical(
+      sample({
+        id: "b",
+        natural_key: "b",
+        score: 40,
+        band: bandForScore(40),
+        status: "reviewing",
+      }),
+    );
+    await repo.upsertCanonical(
+      sample({
+        id: "c",
+        natural_key: "c",
+        score: 91,
+        band: bandForScore(91),
+        posted_at: "2026-08-02T00:00:00.000Z",
+      }),
+    );
+
+    expect(await repo.countByStatus()).toEqual({
+      new: 2,
+      reviewing: 1,
+      applied: 0,
+      discarded: 0,
+      snoozed: 0,
+      closed: 0,
+    });
+
+    const page = await repo.queryByStatus({ status: "new", band: "excellent" });
+    expect(page.items.map((row) => row.id)).toEqual(["c"]);
+  });
 });
