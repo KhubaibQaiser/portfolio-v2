@@ -140,9 +140,14 @@ function toSiteConfig(item: Item): SiteConfig {
 
 function toJobPreferences(item: Item): JobPreferences {
   const { section: _section, ...rest } = item;
+  const p = rest as Partial<JobPreferences>;
   return parseRow(jobPreferencesRowSchema, "job preferences", {
     id: SECTION.jobPreferences,
-    ...rest,
+    ...p,
+    salary_floor: p.salary_floor ?? null,
+    recommended_job_id: p.recommended_job_id ?? null,
+    jobspipe_last_search_date: p.jobspipe_last_search_date ?? null,
+    default_layout_id: p.default_layout_id ?? null,
   });
 }
 

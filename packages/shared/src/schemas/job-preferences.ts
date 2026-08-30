@@ -21,7 +21,7 @@ export const jobPreferencesSchema = z
     work_arrangements: z.array(workArrangementEnum).min(1).max(3),
     location_allow: z.array(z.string().min(1).max(80)).max(20),
     location_deny: z.array(z.string().min(1).max(80)).max(20),
-    salary_floor: z.number().int().nonnegative().nullable(),
+    salary_floor: z.number().int().nonnegative().nullable().default(null),
     salary_currency: z.string().min(1).max(8),
     employment_types: z.array(employmentTypePrefEnum).min(1).max(4),
     visa_relocation: visaRelocationEnum,
@@ -30,12 +30,15 @@ export const jobPreferencesSchema = z
     recency_days: z.number().int().min(1).max(30),
     notify_threshold: z.number().int().min(0).max(100),
     digest_threshold: z.number().int().min(0).max(100),
-    recommended_job_id: z.string().min(1).max(64).nullable(),
+    // Dynamo `writable()` omits nulls, so these come back as missing attributes
+    // (`undefined`), not JSON `null`. `.default(null)` maps that to the domain.
+    recommended_job_id: z.string().min(1).max(64).nullable().default(null),
     jobspipe_last_search_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .nullable(),
-    default_layout_id: z.string().min(1).max(80).nullable(),
+      .nullable()
+      .default(null),
+    default_layout_id: z.string().min(1).max(80).nullable().default(null),
   })
   .strict();
 
