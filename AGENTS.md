@@ -51,7 +51,9 @@ below as the source of truth, not guesses from training data.
 ## How to change things
 
 1. Read the relevant ADR in `docs/adr/` and the Zod schema in
-   `packages/shared` or `packages/ai/src/schemas`.
+   `packages/shared` or `packages/ai/src/schemas`. When a runtime path is
+   broken, start from [docs/flows/](docs/flows/README.md) (module diagrams,
+   files to debug, CloudWatch `service` names).
 2. For Resume AI, update `specs/resume-ai.md` and add an offline eval case
    under `packages/ai/src/evals/cases/` before changing prompts or policy.
    For job matching, update `specs/job-match.md` and ADR 0007 before

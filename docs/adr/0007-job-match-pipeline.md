@@ -1,6 +1,7 @@
 # ADR 0007 — Job match pipeline: free feeds first, own the matcher
 
 - **Status:** Accepted. Implementation follows [`specs/job-match.md`](../../specs/job-match.md).
+  Runtime maps (ingest / notify / tracker): [`docs/flows/job-ingest.md`](../flows/job-ingest.md).
 - **Date:** 2026-08-29 (amended same day: v1 is free sources, not a paid
   catalog)
 - **Deciders:** Khubaib (with AI pairing)

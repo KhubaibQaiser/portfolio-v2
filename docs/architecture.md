@@ -94,6 +94,15 @@ sequenceDiagram
 Distribution custom error responses for 403/404 use TTL 0 and do **not** map
 to `index.html` (that SPA fallback is Storybook-only).
 
+## Runtime flows (apps and packages)
+
+The diagrams above are **hosting**: CloudFront origins, cache headers, deploy
+order. For how a request or scheduled job moves between `apps/*` and
+`packages/*` — including **files to open when it is broken** and **which
+CloudWatch log group / `service` field to query** — start at
+[docs/flows/](flows/README.md). Job ingest is
+[docs/flows/job-ingest.md](flows/job-ingest.md).
+
 ## Why hard refresh used to be required
 
 The previous `AssetsDeployment` used `prune: true` and invalidated `/*` on
