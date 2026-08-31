@@ -1,9 +1,15 @@
 # Flow — job ingest (feeds → match → persist → 85+ mail)
 
-EventBridge every **4 hours**, or **Run ingest** in admin. One sequential
-walk of free boards + optional JobsPipe Free, scored against CMS prefs +
-portfolio facts, upserted into `portfolio-job-posting`. New rows at or
-above `notify_threshold` (default 85) email immediately.
+**Scheduled ingest is currently DISABLED** (`JobIngestSchedule.enabled =
+false` in `admin-stack.ts`) while scraping/matcher behavior is under
+review. Use **Run ingest** in admin to exercise the same path manually.
+Re-enable the EventBridge rule when matching is fixed.
+
+When enabled: EventBridge every **4 hours**, or **Run ingest** in admin.
+One sequential walk of free boards + optional JobsPipe Free, scored
+against CMS prefs + portfolio facts, upserted into
+`portfolio-job-posting`. New rows at or above `notify_threshold`
+(default 85) email immediately.
 
 This is **not** the job table HTTP API. `GET /api/jobs` is the tracker
 ([job-tracker.md](job-tracker.md)). Spec:

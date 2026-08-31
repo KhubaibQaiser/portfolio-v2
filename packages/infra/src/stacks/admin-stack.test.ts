@@ -104,7 +104,7 @@ describe("AdminStack render worker", () => {
     expect(renderWorker?.Properties?.Timeout).toBe(300);
   }, 30_000);
 
-  it("schedules sequential job ingest every 4h without reserved concurrency", () => {
+  it("keeps the 4h job ingest rule disabled (manual ingest only) without reserved concurrency", () => {
     const template = synth();
     const functions = template.findResources("AWS::Lambda::Function");
     const ingest = Object.values(functions).find(
@@ -116,6 +116,7 @@ describe("AdminStack render worker", () => {
     expect(ingest?.Properties?.Runtime).toBe("nodejs22.x");
     template.hasResourceProperties("AWS::Events::Rule", {
       ScheduleExpression: "rate(4 hours)",
+      State: "DISABLED",
     });
   }, 30_000);
 
