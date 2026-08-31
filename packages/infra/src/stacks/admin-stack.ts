@@ -302,9 +302,13 @@ export class AdminStack extends cdk.Stack {
     resendSecret.grantRead(jobIngestWorkerFn);
     jobspipeSecret.grantRead(jobIngestWorkerFn);
 
+    // Paused while scraping/matcher behavior is under review. Manual
+    // "Run ingest now" still invokes the same Lambda code path via the
+    // Admin server action. Flip enabled back to true when matching is fixed.
     new events.Rule(this, "JobIngestSchedule", {
       schedule: events.Schedule.rate(cdk.Duration.hours(4)),
       targets: [new targets.LambdaFunction(jobIngestWorkerFn)],
+      enabled: false,
     });
 
     const jobNotifyWorkerFn = new nodeLambda.NodejsFunction(this, "JobNotifyWorkerFn", {
