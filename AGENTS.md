@@ -99,4 +99,3 @@ rate-limit tests plus `candidate-mcp-stack.test.ts`'s CDK assertions).
   `graphify hook install` (and keep `git config core.hooksPath .githooks`
   so the committed hooks run). Code commits refresh the graph via
   `.githooks/post-commit`.
-
