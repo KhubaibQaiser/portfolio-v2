@@ -3,10 +3,16 @@ description: Keep the Archify system map current when topology changes
 globs: docs/archify/**,packages/infra/**,docs/adr/**,docs/flows/**,apps/**,packages/data/**,packages/shared/src/ports/**
 ---
 
-Live system map: `docs/archify/portfolio-system.html` (source: `docs/archify/portfolio-system.architecture.json`).
+Source: `docs/archify/portfolio-system.architecture.json`
+Viewer: `docs/archify/portfolio-system.html`
 
-When you add, remove, or rewire an app, CDK stack, port, trust boundary, or runtime flow:
+On app/stack/port/trust-boundary changes: update the JSON (`meta.quality_profile: "showcase"`, real `sources`), then:
 
-1. Update the Archify JSON (`meta.quality_profile: "showcase"`, real `components[].sources`).
-2. Deliver: `node .agents/skills/archify/bin/archify.mjs deliver architecture docs/archify/portfolio-system.architecture.json docs/archify/portfolio-system.html --quality showcase --repo-root .`
-3. Do not invent nodes or IAM grants. MCP stays read-only / five content tables (ADR 0003). Job discovery stays free feeds (ADR 0007).
+```bash
+node .agents/skills/archify/bin/archify.mjs deliver architecture \
+  docs/archify/portfolio-system.architecture.json \
+  docs/archify/portfolio-system.html \
+  --quality showcase --repo-root .
+```
+
+Do not invent nodes or IAM grants. MCP stays read-only / five content tables. Job discovery stays free feeds (ADR 0007).

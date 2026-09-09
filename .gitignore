@@ -64,5 +64,6 @@ graphify-out/graph.html
 graphify-out/.graphify_labels.json
 graphify-out/.graphify_labels.json.sig
 graphify-out/.graphify_analysis.json
+graphify-out/GRAPH_REPORT.md
 # Archify visual-check sidecars
 docs/archify/*.visual-check.*
