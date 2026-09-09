@@ -1,7 +1,7 @@
 # Architecture — OpenNext on Lambda + CloudFront
 
 How the public site (`apps/web`) and admin (`apps/admin`) are hosted. Stack
-inventory lives in the [README](../README.md#aws-infrastructure-cdk-stacks);
+inventory lives in the [README](../README.md#cdk-stacks);
 this doc covers request routing, cache headers, and deploy ordering.
 
 Both apps use the shared CDK construct
