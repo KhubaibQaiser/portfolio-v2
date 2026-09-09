@@ -1,0 +1,11 @@
+---
+description: Prefer Graphify for codebase orientation; keep the graph current
+alwaysApply: true
+---
+
+This repo has a Graphify knowledge graph at `graphify-out/`.
+
+- For architecture / “how does X relate to Y” questions, prefer `graphify query`, `graphify path`, and `graphify explain` before broad Grep.
+- After meaningful code changes, run `graphify update .` (AST-only) or rely on the post-commit hook.
+- Rebuild with the graphify skill / `graphify extract . --code-only` if `graphify-out/graph.json` is missing.
+- `.graphifyignore` excludes `.agents/` skill packages.

@@ -55,3 +55,14 @@ blob-report/
 # misc
 *.tsbuildinfo
 next-env.d.ts
+
+# graphify local interpreter paths / cache (regenerated locally)
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/.graphify_labels.json
+graphify-out/.graphify_labels.json.sig
+graphify-out/.graphify_analysis.json
+# Archify visual-check sidecars
+docs/archify/*.visual-check.*

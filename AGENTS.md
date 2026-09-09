@@ -53,7 +53,8 @@ below as the source of truth, not guesses from training data.
 1. Read the relevant ADR in `docs/adr/` and the Zod schema in
    `packages/shared` or `packages/ai/src/schemas`. When a runtime path is
    broken, start from [docs/flows/](docs/flows/README.md) (module diagrams,
-   files to debug, CloudWatch `service` names).
+   files to debug, CloudWatch `service` names). System map:
+   [docs/archify/portfolio-system.html](docs/archify/portfolio-system.html).
 2. For Resume AI, update `specs/resume-ai.md` and add an offline eval case
    under `packages/ai/src/evals/cases/` before changing prompts or policy.
    For job matching, update `specs/job-match.md` and ADR 0007 before
@@ -86,3 +87,16 @@ rate-limit tests plus `candidate-mcp-stack.test.ts`'s CDK assertions).
   tool that fetches a caller-supplied URL (SSRF surface) — see ADR 0003.
 - Scrape LinkedIn with a personal session or `li_at` cookie, auto-apply, or
   treat a company watchlist as job discovery (ADR 0007).
+
+## Architecture maps
+
+- **Archify** — `docs/archify/portfolio-system.html` from
+  `docs/archify/portfolio-system.architecture.json`. After topology changes,
+  edit the JSON and deliver with
+  `node .agents/skills/archify/bin/archify.mjs deliver architecture …`.
+- **Graphify** — `graphify-out/graph.json`. Prefer `graphify query` /
+  `path` / `explain` for orientation. After clone, run
+  `graphify hook install` (and keep `git config core.hooksPath .githooks`
+  so the committed hooks run). Code commits refresh the graph via
+  `.githooks/post-commit`.
+

@@ -3,3 +3,7 @@ node_modules
 .turbo
 dist
 pnpm-lock.yaml
+.agents
+graphify-out
+docs/archify/*.html
+docs/archify/*.json

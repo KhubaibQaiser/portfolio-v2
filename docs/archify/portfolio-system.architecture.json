@@ -1,0 +1,483 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Portfolio runtime",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/KhubaibQaiser/portfolio-v2",
+      "revision": "cb836fbc095c022be6c0ecdaeb29f3736bec9320"
+    },
+    "views": [
+      {
+        "id": "public-request",
+        "label": "Public request path",
+        "focus": [
+          "visitors",
+          "cloudfront",
+          "web",
+          "data",
+          "dynamodb"
+        ],
+        "note": "Visitor traffic through CloudFront to apps/web, then ContentRepository into DynamoDB."
+      },
+      {
+        "id": "admin-cms",
+        "label": "Admin CMS and jobs",
+        "focus": [
+          "cloudfront",
+          "admin",
+          "data",
+          "sqs",
+          "admin-workers"
+        ],
+        "note": "requireAdmin mutations, SQS generation/render, EventBridge ingest/notify workers."
+      },
+      {
+        "id": "candidate-mcp",
+        "label": "Candidate MCP",
+        "focus": [
+          "visitors",
+          "cognito",
+          "candidate-mcp",
+          "data"
+        ],
+        "note": "OAuth 2.1 resource server; read-only tools; five content tables only."
+      },
+      {
+        "id": "job-discovery",
+        "label": "Job discovery",
+        "focus": [
+          "job-feeds",
+          "admin-workers",
+          "data",
+          "dynamodb"
+        ],
+        "note": "Free feeds polled by Admin-owned ingest. Not LinkedIn. Not MCP."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "cognito",
+      "type": "security",
+      "label": "Cognito",
+      "sublabel": "OAuth 2.1",
+      "tag": "ADR 0006",
+      "pos": [
+        40,
+        72
+      ],
+      "size": [
+        128,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/candidate-mcp-stack.ts",
+          "line": 48,
+          "label": "AgentPool"
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "apps/admin",
+      "sublabel": "CMS + requireAdmin",
+      "pos": [
+        780,
+        72
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/admin-stack.ts",
+          "line": 52,
+          "label": "AdminStack"
+        }
+      ]
+    },
+    {
+      "id": "sqs",
+      "type": "messagebus",
+      "label": "SQS",
+      "sublabel": "gen + render",
+      "pos": [
+        980,
+        72
+      ],
+      "size": [
+        128,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/admin-stack.ts",
+          "line": 109,
+          "end_line": 117,
+          "label": "RenderJobQueue"
+        }
+      ]
+    },
+    {
+      "id": "admin-workers",
+      "type": "backend",
+      "label": "Admin workers",
+      "sublabel": "ingest / notify / gen",
+      "pos": [
+        1160,
+        72
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/admin-stack.ts",
+          "line": 282,
+          "label": "JobIngestWorkerFn"
+        }
+      ]
+    },
+    {
+      "id": "job-feeds",
+      "type": "external",
+      "label": "Free job feeds",
+      "sublabel": "Remotive / JobsPipe",
+      "tag": "ADR 0007",
+      "pos": [
+        1160,
+        540
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "docs/adr/0007-job-match-pipeline.md",
+          "line": 1,
+          "label": "ADR 0007"
+        }
+      ]
+    },
+    {
+      "id": "visitors",
+      "type": "external",
+      "label": "Visitors",
+      "sublabel": "Browsers and agents",
+      "pos": [
+        180,
+        340
+      ],
+      "size": [
+        128,
+        56
+      ]
+    },
+    {
+      "id": "cloudfront",
+      "type": "cloud",
+      "label": "CloudFront",
+      "sublabel": "NextjsSite",
+      "pos": [
+        380,
+        340
+      ],
+      "size": [
+        140,
+        56
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/constructs/nextjs-site.ts",
+          "line": 47,
+          "end_line": 50,
+          "label": "OpenNext origins"
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "apps/web",
+      "sublabel": "SiteServerFn",
+      "tag": "eu-west-1",
+      "pos": [
+        580,
+        340
+      ],
+      "size": [
+        140,
+        56
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/web-stack.ts",
+          "line": 45,
+          "label": "WebStack"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "type": "backend",
+      "label": "packages/data",
+      "sublabel": "port adapters",
+      "pos": [
+        780,
+        340
+      ],
+      "size": [
+        150,
+        56
+      ],
+      "sources": [
+        {
+          "path": "packages/data/src/index.ts",
+          "line": 100,
+          "label": "getContentRepository"
+        }
+      ]
+    },
+    {
+      "id": "dynamodb",
+      "type": "database",
+      "label": "DynamoDB",
+      "sublabel": "tablePrefix-*",
+      "tag": "ADR 0001",
+      "pos": [
+        980,
+        340
+      ],
+      "size": [
+        140,
+        56
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/data-stack.ts",
+          "line": 38,
+          "label": "DataStack"
+        }
+      ]
+    },
+    {
+      "id": "candidate-mcp",
+      "type": "backend",
+      "label": "apps/candidate-mcp",
+      "sublabel": "read-only tools",
+      "tag": "ADR 0003",
+      "pos": [
+        40,
+        540
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/naming.ts",
+          "line": 180,
+          "label": "grantCandidateMcpDataAccess"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "type": "cloud",
+      "label": "S3 media",
+      "sublabel": "SSM registry",
+      "pos": [
+        980,
+        540
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/infra/src/stacks/data-stack.ts",
+          "line": 174,
+          "label": "MediaBucket"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "OpenNext sites",
+      "wraps": [
+        "cloudfront",
+        "web",
+        "admin"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "MCP trust boundary",
+      "wraps": [
+        "cognito",
+        "candidate-mcp"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Data plane",
+      "wraps": [
+        "data",
+        "dynamodb",
+        "s3"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "visitors-to-cloudfront",
+      "from": "visitors",
+      "to": "cloudfront",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cloudfront-to-web",
+      "from": "cloudfront",
+      "to": "web",
+      "label": "HTML / RSC",
+      "variant": "emphasis",
+      "labelDy": 22
+    },
+    {
+      "id": "cloudfront-to-admin",
+      "from": "cloudfront",
+      "to": "admin",
+      "label": "CMS origin"
+    },
+    {
+      "id": "web-to-data",
+      "from": "web",
+      "to": "data",
+      "label": "ContentRepository",
+      "labelAt": [
+        700,
+        300
+      ]
+    },
+    {
+      "id": "admin-to-data",
+      "from": "admin",
+      "to": "data",
+      "label": "requireAdmin",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "data-to-dynamodb",
+      "from": "data",
+      "to": "dynamodb",
+      "label": "tablePrefix-*",
+      "labelAt": [
+        955,
+        336
+      ]
+    },
+    {
+      "id": "data-to-s3",
+      "from": "data",
+      "to": "s3",
+      "label": "MediaStore",
+      "labelAt": [
+        1065,
+        430
+      ]
+    },
+    {
+      "id": "cognito-to-mcp",
+      "from": "cognito",
+      "to": "candidate-mcp",
+      "label": "JWT + PKCE",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mcp-to-data",
+      "from": "candidate-mcp",
+      "to": "data",
+      "label": "5 content tables"
+    },
+    {
+      "id": "admin-to-sqs",
+      "from": "admin",
+      "to": "sqs",
+      "label": "enqueue",
+      "variant": "dashed"
+    },
+    {
+      "id": "sqs-to-workers",
+      "from": "sqs",
+      "to": "admin-workers",
+      "label": "drain"
+    },
+    {
+      "id": "feeds-to-workers",
+      "from": "job-feeds",
+      "to": "admin-workers",
+      "label": "poll conc. 1",
+      "variant": "dashed"
+    },
+    {
+      "id": "workers-to-data",
+      "from": "admin-workers",
+      "to": "data",
+      "label": "ingest + notify",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          1235,
+          470
+        ],
+        [
+          855,
+          470
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Edge",
+      "items": [
+        "NextjsSite: CloudFront in front of server Lambda, image Lambda, and hashed S3 assets",
+        "eu-west-1 app stacks; ACM for CloudFront stays in us-east-1"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Apps depend on ports",
+      "items": [
+        "getContentRepository() is the CMS/public persistence boundary",
+        "Admin mutations call requireAdmin(); candidate-mcp stays read-only"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust and discovery",
+      "items": [
+        "MCP IAM is five content tables, not tablePrefix-*",
+        "Job discovery is free feeds owned by Admin, not a LinkedIn scrape"
+      ]
+    }
+  ]
+}
