@@ -101,12 +101,52 @@
     }
   ],
   "flows": [
-    { "id": "boards-ingest", "from": "boards", "to": "ingest", "label": "normalized jobs", "classification": "public postings", "variant": "emphasis" },
-    { "id": "jobspipe-ingest", "from": "jobspipe", "to": "ingest", "label": "search slice", "classification": "credited" },
-    { "id": "ingest-matcher", "from": "ingest", "to": "matcher", "label": "hydrate + score", "classification": "JD text", "variant": "emphasis" },
-    { "id": "matcher-postings", "from": "matcher", "to": "postings", "label": "upsertCanonical", "classification": "filtered rows", "variant": "emphasis" },
-    { "id": "postings-hitl", "from": "postings", "to": "hitl", "label": "queryByStatus", "classification": "HITL inbox" },
-    { "id": "postings-mail", "from": "postings", "to": "mail", "label": "claimNotify", "classification": "new 85+", "variant": "dashed" }
+    {
+      "id": "boards-ingest",
+      "from": "boards",
+      "to": "ingest",
+      "label": "normalized jobs",
+      "classification": "public postings",
+      "variant": "emphasis"
+    },
+    {
+      "id": "jobspipe-ingest",
+      "from": "jobspipe",
+      "to": "ingest",
+      "label": "search slice",
+      "classification": "credited"
+    },
+    {
+      "id": "ingest-matcher",
+      "from": "ingest",
+      "to": "matcher",
+      "label": "hydrate + score",
+      "classification": "JD text",
+      "variant": "emphasis"
+    },
+    {
+      "id": "matcher-postings",
+      "from": "matcher",
+      "to": "postings",
+      "label": "upsertCanonical",
+      "classification": "filtered rows",
+      "variant": "emphasis"
+    },
+    {
+      "id": "postings-hitl",
+      "from": "postings",
+      "to": "hitl",
+      "label": "queryByStatus",
+      "classification": "HITL inbox"
+    },
+    {
+      "id": "postings-mail",
+      "from": "postings",
+      "to": "mail",
+      "label": "claimNotify",
+      "classification": "new 85+",
+      "variant": "dashed"
+    }
   ],
   "cards": [
     {

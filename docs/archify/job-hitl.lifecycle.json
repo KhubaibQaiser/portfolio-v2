@@ -95,9 +95,26 @@
     }
   ],
   "transitions": [
-    { "id": "applied-snooze", "from": "applied", "to": "snoozed", "variant": "default", "fromSide": "bottom", "toSide": "top" },
-    { "id": "review-discard", "from": "reviewing", "to": "discarded", "variant": "security" },
-    { "id": "discard-review", "from": "discarded", "to": "reviewing", "variant": "emphasis" }
+    {
+      "id": "applied-snooze",
+      "from": "applied",
+      "to": "snoozed",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "review-discard",
+      "from": "reviewing",
+      "to": "discarded",
+      "variant": "security"
+    },
+    {
+      "id": "discard-review",
+      "from": "discarded",
+      "to": "reviewing",
+      "variant": "emphasis"
+    }
   ],
   "cards": [
     {

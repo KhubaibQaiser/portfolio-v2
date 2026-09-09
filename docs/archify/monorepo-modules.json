@@ -29,24 +29,121 @@
     ]
   },
   "components": [
-    { "id": "web", "type": "frontend", "label": "apps/web", "sublabel": "site, chat, PDF", "pos": [70, 50], "size": [140, 56], "brand": "next-js" },
-    { "id": "admin", "type": "backend", "label": "apps/admin", "sublabel": "CMS + HITL jobs", "pos": [320, 50], "size": [140, 56] },
-    { "id": "mcp", "type": "backend", "label": "apps/candidate-mcp", "sublabel": "OAuth MCP", "pos": [570, 50], "size": [150, 56], "tag": "read-only" },
-    { "id": "shared", "type": "backend", "label": "packages/shared", "sublabel": "Zod + ports", "pos": [320, 190], "size": [140, 56], "tag": "contracts" },
-    { "id": "data", "type": "database", "label": "packages/data", "sublabel": "Dynamo + fixtures", "pos": [70, 330], "size": [140, 56] },
-    { "id": "ai", "type": "backend", "label": "packages/ai", "sublabel": "models, policy, matcher", "pos": [320, 330], "size": [140, 56], "brand": "anthropic" },
-    { "id": "infra", "type": "cloud", "label": "packages/infra", "sublabel": "AWS CDK stacks", "pos": [570, 330], "size": [150, 56] }
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "apps/web",
+      "sublabel": "site, chat, PDF",
+      "pos": [70, 50],
+      "size": [140, 56],
+      "brand": "next-js"
+    },
+    {
+      "id": "admin",
+      "type": "backend",
+      "label": "apps/admin",
+      "sublabel": "CMS + HITL jobs",
+      "pos": [320, 50],
+      "size": [140, 56]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "apps/candidate-mcp",
+      "sublabel": "OAuth MCP",
+      "pos": [570, 50],
+      "size": [150, 56],
+      "tag": "read-only"
+    },
+    {
+      "id": "shared",
+      "type": "backend",
+      "label": "packages/shared",
+      "sublabel": "Zod + ports",
+      "pos": [320, 190],
+      "size": [140, 56],
+      "tag": "contracts"
+    },
+    {
+      "id": "data",
+      "type": "database",
+      "label": "packages/data",
+      "sublabel": "Dynamo + fixtures",
+      "pos": [70, 330],
+      "size": [140, 56]
+    },
+    {
+      "id": "ai",
+      "type": "backend",
+      "label": "packages/ai",
+      "sublabel": "models, policy, matcher",
+      "pos": [320, 330],
+      "size": [140, 56],
+      "brand": "anthropic"
+    },
+    {
+      "id": "infra",
+      "type": "cloud",
+      "label": "packages/infra",
+      "sublabel": "AWS CDK stacks",
+      "pos": [570, 330],
+      "size": [150, 56]
+    }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Turborepo workspace", "wraps": ["web", "admin", "mcp", "shared", "data", "ai", "infra"], "pad": 22 },
-    { "kind": "security-group", "label": "Network trust boundary", "wraps": ["mcp"], "pad": 12 }
+    {
+      "kind": "region",
+      "label": "Turborepo workspace",
+      "wraps": ["web", "admin", "mcp", "shared", "data", "ai", "infra"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Network trust boundary",
+      "wraps": ["mcp"],
+      "pad": 12
+    }
   ],
   "connections": [
-    { "id": "web-shared", "from": "web", "to": "shared", "fromSide": "bottom", "toSide": "top" },
-    { "id": "admin-shared", "from": "admin", "to": "shared", "label": "schemas + ports", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 36 },
-    { "id": "mcp-shared", "from": "mcp", "to": "shared", "fromSide": "bottom", "toSide": "top" },
-    { "id": "data-shared", "from": "data", "to": "shared", "label": "implements ports", "fromSide": "top", "toSide": "bottom" },
-    { "id": "ai-shared", "from": "ai", "to": "shared", "fromSide": "top", "toSide": "bottom" }
+    {
+      "id": "web-shared",
+      "from": "web",
+      "to": "shared",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "admin-shared",
+      "from": "admin",
+      "to": "shared",
+      "label": "schemas + ports",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 36
+    },
+    {
+      "id": "mcp-shared",
+      "from": "mcp",
+      "to": "shared",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "data-shared",
+      "from": "data",
+      "to": "shared",
+      "label": "implements ports",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ai-shared",
+      "from": "ai",
+      "to": "shared",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
   ],
   "cards": [
     {

@@ -44,16 +44,72 @@
     { "from": 440, "to": 477, "label": "Ready" }
   ],
   "messages": [
-    { "id": "submit", "from": "editor", "to": "api", "y": 160, "label": "POST /api/resume/generate", "variant": "emphasis" },
+    {
+      "id": "submit",
+      "from": "editor",
+      "to": "api",
+      "y": 160,
+      "label": "POST /api/resume/generate",
+      "variant": "emphasis"
+    },
     { "id": "enqueue", "from": "api", "to": "sqs", "y": 196, "label": "queue job" },
-    { "id": "accepted", "from": "api", "to": "editor", "y": 232, "label": "202 job id", "variant": "return" },
-    { "id": "receive", "from": "sqs", "to": "worker", "y": 276, "label": "ReceiveMessage", "variant": "emphasis" },
-    { "id": "generate", "from": "worker", "to": "models", "y": 312, "label": "generateObject", "variant": "emphasis" },
-    { "id": "json", "from": "models", "to": "worker", "y": 348, "label": "tailored JSON", "variant": "return" },
-    { "id": "policy-check", "from": "worker", "to": "policy", "y": 384, "label": "enforce + validate", "variant": "security" },
-    { "id": "policy-ok", "from": "policy", "to": "worker", "y": 420, "label": "accepted", "variant": "return" },
+    {
+      "id": "accepted",
+      "from": "api",
+      "to": "editor",
+      "y": 232,
+      "label": "202 job id",
+      "variant": "return"
+    },
+    {
+      "id": "receive",
+      "from": "sqs",
+      "to": "worker",
+      "y": 276,
+      "label": "ReceiveMessage",
+      "variant": "emphasis"
+    },
+    {
+      "id": "generate",
+      "from": "worker",
+      "to": "models",
+      "y": 312,
+      "label": "generateObject",
+      "variant": "emphasis"
+    },
+    {
+      "id": "json",
+      "from": "models",
+      "to": "worker",
+      "y": 348,
+      "label": "tailored JSON",
+      "variant": "return"
+    },
+    {
+      "id": "policy-check",
+      "from": "worker",
+      "to": "policy",
+      "y": 384,
+      "label": "enforce + validate",
+      "variant": "security"
+    },
+    {
+      "id": "policy-ok",
+      "from": "policy",
+      "to": "worker",
+      "y": 420,
+      "label": "accepted",
+      "variant": "return"
+    },
     { "id": "ready", "from": "worker", "to": "jobs", "y": 438, "label": "status=ready" },
-    { "id": "done", "from": "api", "to": "editor", "y": 470, "label": "validated content", "variant": "return" }
+    {
+      "id": "done",
+      "from": "api",
+      "to": "editor",
+      "y": 470,
+      "label": "validated content",
+      "variant": "return"
+    }
   ],
   "activations": [
     { "participant": "api", "from": 155, "to": 238, "type": "backend" },
@@ -66,7 +122,9 @@
     {
       "dot": "emerald",
       "title": "Never skip the guards",
-      "items": ["Policy and fabrication checks run before store; the UI never sees raw model JSON"]
+      "items": [
+        "Policy and fabrication checks run before store; the UI never sees raw model JSON"
+      ]
     },
     {
       "dot": "rose",

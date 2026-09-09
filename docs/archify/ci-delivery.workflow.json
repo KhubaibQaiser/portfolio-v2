@@ -34,21 +34,92 @@
   ],
   "phases": [
     { "id": "change", "label": "Change", "fromCol": 0, "toCol": 1 },
-    { "id": "verify", "label": "Verify", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    {
+      "id": "verify",
+      "label": "Verify",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
     { "id": "promote", "label": "Promote", "fromCol": 5, "toCol": 5, "variant": "dashed" }
   ],
   "groups": [
-    { "id": "quality", "label": "Blocking checks", "lane": "ci", "fromCol": 2, "toCol": 4, "variant": "emphasis" }
+    {
+      "id": "quality",
+      "label": "Blocking checks",
+      "lane": "ci",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    }
   ],
   "mainPath": ["commit", "pr", "lint", "tests", "evals", "build", "deploy"],
   "nodes": [
-    { "id": "commit", "lane": "dev", "col": 0, "type": "frontend", "label": "Commit", "sublabel": "feature branch", "width": 132 },
-    { "id": "pr", "lane": "dev", "col": 1, "type": "frontend", "label": "Pull request", "sublabel": "reviewed diff", "width": 132 },
-    { "id": "lint", "lane": "ci", "col": 2, "type": "backend", "label": "Lint + types", "sublabel": "pnpm lint", "width": 132 },
-    { "id": "tests", "lane": "ci", "col": 3, "type": "backend", "label": "Tests", "sublabel": "unit + Dynamo Local", "width": 132 },
-    { "id": "evals", "lane": "ci", "col": 4, "type": "security", "label": "Gates", "sublabel": "evals e2e mcp-security", "tag": "offline", "width": 148 },
-    { "id": "build", "lane": "ci", "col": 5, "type": "backend", "label": "Build", "sublabel": "Lighthouse >= 0.90", "width": 132 },
-    { "id": "deploy", "lane": "aws", "col": 5, "type": "cloud", "label": "cdk deploy", "sublabel": "OIDC + OpenNext", "tag": "eu-west-1", "width": 132 }
+    {
+      "id": "commit",
+      "lane": "dev",
+      "col": 0,
+      "type": "frontend",
+      "label": "Commit",
+      "sublabel": "feature branch",
+      "width": 132
+    },
+    {
+      "id": "pr",
+      "lane": "dev",
+      "col": 1,
+      "type": "frontend",
+      "label": "Pull request",
+      "sublabel": "reviewed diff",
+      "width": 132
+    },
+    {
+      "id": "lint",
+      "lane": "ci",
+      "col": 2,
+      "type": "backend",
+      "label": "Lint + types",
+      "sublabel": "pnpm lint",
+      "width": 132
+    },
+    {
+      "id": "tests",
+      "lane": "ci",
+      "col": 3,
+      "type": "backend",
+      "label": "Tests",
+      "sublabel": "unit + Dynamo Local",
+      "width": 132
+    },
+    {
+      "id": "evals",
+      "lane": "ci",
+      "col": 4,
+      "type": "security",
+      "label": "Gates",
+      "sublabel": "evals e2e mcp-security",
+      "tag": "offline",
+      "width": 148
+    },
+    {
+      "id": "build",
+      "lane": "ci",
+      "col": 5,
+      "type": "backend",
+      "label": "Build",
+      "sublabel": "Lighthouse >= 0.90",
+      "width": 132
+    },
+    {
+      "id": "deploy",
+      "lane": "aws",
+      "col": 5,
+      "type": "cloud",
+      "label": "cdk deploy",
+      "sublabel": "OIDC + OpenNext",
+      "tag": "eu-west-1",
+      "width": 132
+    }
   ],
   "edges": [
     { "id": "commit-pr", "from": "commit", "to": "pr" },
@@ -56,7 +127,13 @@
     { "id": "lint-tests", "from": "lint", "to": "tests" },
     { "id": "tests-evals", "from": "tests", "to": "evals" },
     { "id": "evals-build", "from": "evals", "to": "build", "variant": "emphasis" },
-    { "id": "build-deploy", "from": "build", "to": "deploy", "label": "OIDC", "variant": "emphasis" }
+    {
+      "id": "build-deploy",
+      "from": "build",
+      "to": "deploy",
+      "label": "OIDC",
+      "variant": "emphasis"
+    }
   ],
   "cards": [
     {
