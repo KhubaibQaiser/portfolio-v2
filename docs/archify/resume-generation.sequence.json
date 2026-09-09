@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Resume generation",
+    "locale": "en",
+    "output": "resume-generation.html",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1040, 560],
+    "views": [
+      {
+        "id": "enqueue",
+        "label": "Enqueue",
+        "focus": ["editor", "api", "sqs"],
+        "note": "The admin UI posts a generation job. requireAdmin, rate limit, and the daily USD cap run before SQS."
+      },
+      {
+        "id": "model-and-policy",
+        "label": "Model and policy",
+        "focus": ["worker", "models", "policy"],
+        "note": "The worker calls the model, then enforceResumeGenerationPolicy and validateFabrication before anything is stored."
+      },
+      {
+        "id": "poll-ready",
+        "label": "Ready in the UI",
+        "focus": ["editor", "api", "jobs"],
+        "note": "The UI polls job status. Raw model JSON is never returned."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "editor", "type": "frontend", "label": "Admin UI", "sublabel": "generator" },
+    { "id": "api", "type": "backend", "label": "Admin API", "sublabel": "requireAdmin" },
+    { "id": "jobs", "type": "database", "label": "Job store", "sublabel": "DynamoDB" },
+    { "id": "sqs", "type": "messagebus", "label": "SQS", "sublabel": "queue" },
+    { "id": "worker", "type": "backend", "label": "Worker", "sublabel": "Lambda" },
+    { "id": "models", "type": "external", "label": "Models", "sublabel": "Groq" },
+    { "id": "policy", "type": "security", "label": "Policy", "sublabel": "packages/ai" }
+  ],
+  "segments": [
+    { "from": 145, "to": 250, "label": "Enqueue" },
+    { "from": 260, "to": 448, "label": "Generate + guard" },
+    { "from": 440, "to": 477, "label": "Ready" }
+  ],
+  "messages": [
+    { "id": "submit", "from": "editor", "to": "api", "y": 160, "label": "POST /api/resume/generate", "variant": "emphasis" },
+    { "id": "enqueue", "from": "api", "to": "sqs", "y": 196, "label": "queue job" },
+    { "id": "accepted", "from": "api", "to": "editor", "y": 232, "label": "202 job id", "variant": "return" },
+    { "id": "receive", "from": "sqs", "to": "worker", "y": 276, "label": "ReceiveMessage", "variant": "emphasis" },
+    { "id": "generate", "from": "worker", "to": "models", "y": 312, "label": "generateObject", "variant": "emphasis" },
+    { "id": "json", "from": "models", "to": "worker", "y": 348, "label": "tailored JSON", "variant": "return" },
+    { "id": "policy-check", "from": "worker", "to": "policy", "y": 384, "label": "enforce + validate", "variant": "security" },
+    { "id": "policy-ok", "from": "policy", "to": "worker", "y": 420, "label": "accepted", "variant": "return" },
+    { "id": "ready", "from": "worker", "to": "jobs", "y": 438, "label": "status=ready" },
+    { "id": "done", "from": "api", "to": "editor", "y": 470, "label": "validated content", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "api", "from": 155, "to": 238, "type": "backend" },
+    { "participant": "worker", "from": 271, "to": 462, "type": "backend" },
+    { "participant": "models", "from": 307, "to": 354, "type": "external" },
+    { "participant": "policy", "from": 379, "to": 426, "type": "security" },
+    { "participant": "api", "from": 465, "to": 476, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Never skip the guards",
+      "items": ["Policy and fabrication checks run before store; the UI never sees raw model JSON"]
+    },
+    {
+      "dot": "rose",
+      "title": "Failure paths",
+      "items": ["401 / 429 / 402 on enqueue; FACT_VALIDATION_FAILED on policy miss"]
+    }
+  ]
+}

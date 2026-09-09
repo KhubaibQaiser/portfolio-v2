@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Job ingest data flow",
+    "locale": "en",
+    "output": "job-ingest.html",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 520],
+    "views": [
+      {
+        "id": "sources",
+        "label": "Free sources",
+        "focus": ["boards", "jobspipe", "ingest"],
+        "note": "v1 contracted sources are Remotive, RemoteOK, Arbeitnow, The Muse, We Work Remotely, and JobsPipe Free. Not a LinkedIn scrape."
+      },
+      {
+        "id": "match",
+        "label": "Match and persist",
+        "focus": ["ingest", "matcher", "postings"],
+        "note": "Hard filters then scoreJob against CMS preferences and portfolio facts. Canonical rows upsert into portfolio-job-posting."
+      },
+      {
+        "id": "hitl",
+        "label": "Human in the loop",
+        "focus": ["postings", "hitl", "mail"],
+        "note": "New rows at or above notify_threshold email immediately. Review, tailor, and apply stay in the admin job table."
+      }
+    ]
+  },
+  "stages": [
+    { "label": "Sources" },
+    { "label": "Ingest" },
+    { "label": "Match" },
+    { "label": "Store" },
+    { "label": "Act" }
+  ],
+  "nodes": [
+    {
+      "id": "boards",
+      "type": "external",
+      "label": "Free boards",
+      "sublabel": "public JSON / RSS",
+      "stage": 0,
+      "row": 0,
+      "tag": "public GET"
+    },
+    {
+      "id": "jobspipe",
+      "type": "external",
+      "label": "JobsPipe Free",
+      "sublabel": "1k credits / mo",
+      "stage": 0,
+      "row": 2,
+      "tag": "daily cap"
+    },
+    {
+      "id": "ingest",
+      "type": "backend",
+      "label": "JobIngestWorkerFn",
+      "sublabel": "concurrency 1",
+      "stage": 1,
+      "row": 1,
+      "tag": "Admin-owned"
+    },
+    {
+      "id": "matcher",
+      "type": "backend",
+      "label": "scoreJob",
+      "sublabel": "packages/ai matcher",
+      "stage": 2,
+      "row": 1,
+      "tag": "prefs + facts"
+    },
+    {
+      "id": "postings",
+      "type": "database",
+      "label": "job-posting table",
+      "sublabel": "canonical upsert",
+      "stage": 3,
+      "row": 1,
+      "tag": "DynamoDB"
+    },
+    {
+      "id": "hitl",
+      "type": "frontend",
+      "label": "Admin /jobs",
+      "sublabel": "HITL tracker",
+      "stage": 4,
+      "row": 0,
+      "tag": "no auto-apply"
+    },
+    {
+      "id": "mail",
+      "type": "external",
+      "label": "Resend",
+      "sublabel": "score >= 85 mail",
+      "stage": 4,
+      "row": 2,
+      "tag": "P95 <= 24h"
+    }
+  ],
+  "flows": [
+    { "id": "boards-ingest", "from": "boards", "to": "ingest", "label": "normalized jobs", "classification": "public postings", "variant": "emphasis" },
+    { "id": "jobspipe-ingest", "from": "jobspipe", "to": "ingest", "label": "search slice", "classification": "credited" },
+    { "id": "ingest-matcher", "from": "ingest", "to": "matcher", "label": "hydrate + score", "classification": "JD text", "variant": "emphasis" },
+    { "id": "matcher-postings", "from": "matcher", "to": "postings", "label": "upsertCanonical", "classification": "filtered rows", "variant": "emphasis" },
+    { "id": "postings-hitl", "from": "postings", "to": "hitl", "label": "queryByStatus", "classification": "HITL inbox" },
+    { "id": "postings-mail", "from": "postings", "to": "mail", "label": "claimNotify", "classification": "new 85+", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Discovery is free feeds",
+      "items": [
+        "ADR 0007: Remotive, RemoteOK, Arbeitnow, Muse, WWR, plus JobsPipe Free",
+        "No li_at cookie, no auto-apply, no company watchlist as discovery"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "MCP stays out",
+      "items": [
+        "Ingest is Admin-owned; candidate-mcp is not granted the job table",
+        "Scheduled ingest may be paused; Run ingest in admin uses the same orchestrator"
+      ]
+    }
+  ]
+}

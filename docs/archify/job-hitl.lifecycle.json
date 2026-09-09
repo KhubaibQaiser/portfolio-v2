@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Job HITL lifecycle",
+    "locale": "en",
+    "output": "job-hitl.html",
+    "quality_profile": "showcase",
+    "viewBox": [1030, 580],
+    "views": [
+      {
+        "id": "apply-path",
+        "label": "Apply path",
+        "focus": ["new", "reviewing", "applied", "closed"],
+        "note": "A matched posting is reviewed, applied to by hand, then closed when the process ends."
+      },
+      {
+        "id": "waits",
+        "label": "Snooze wait",
+        "focus": ["applied", "snoozed", "reviewing"],
+        "note": "Snooze pushes follow-up by seven days without leaving the tracker."
+      },
+      {
+        "id": "discard",
+        "label": "Discard and recover",
+        "focus": ["reviewing", "discarded", "new"],
+        "note": "Discarded is recoverable: a posting can return to reviewing or new. Auto-apply does not exist."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "HITL phases" },
+    { "id": "waiting", "label": "Follow-up wait" },
+    { "id": "exceptions", "label": "Recoverable stop" }
+  ],
+  "states": [
+    {
+      "id": "new",
+      "type": "start",
+      "label": "New",
+      "sublabel": "ingested match",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "inbox"
+    },
+    {
+      "id": "reviewing",
+      "type": "active",
+      "label": "Reviewing",
+      "sublabel": "read JD + score",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "human"
+    },
+    {
+      "id": "applied",
+      "type": "active",
+      "label": "Applied",
+      "sublabel": "human submitted",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "+7d follow-up"
+    },
+    {
+      "id": "closed",
+      "type": "success",
+      "label": "Closed",
+      "sublabel": "process done",
+      "lane": "main",
+      "col": 3,
+      "step": "04",
+      "tag": "done"
+    },
+    {
+      "id": "snoozed",
+      "type": "waiting",
+      "label": "Snoozed",
+      "sublabel": "follow-up later",
+      "lane": "waiting",
+      "col": 0,
+      "tag": "pause"
+    },
+    {
+      "id": "discarded",
+      "type": "failure",
+      "label": "Discarded",
+      "sublabel": "not a fit",
+      "lane": "exceptions",
+      "col": 0,
+      "yOffset": 86,
+      "tag": "recoverable"
+    }
+  ],
+  "transitions": [
+    { "id": "applied-snooze", "from": "applied", "to": "snoozed", "variant": "default", "fromSide": "bottom", "toSide": "top" },
+    { "id": "review-discard", "from": "reviewing", "to": "discarded", "variant": "security" },
+    { "id": "discard-review", "from": "discarded", "to": "reviewing", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Human applies",
+      "items": ["new → reviewing → applied → closed; one-click resume, manual apply"]
+    },
+    {
+      "dot": "rose",
+      "title": "Nothing auto-applies",
+      "items": ["Discarded can return to reviewing; canTransition is the allow-list"]
+    }
+  ]
+}
