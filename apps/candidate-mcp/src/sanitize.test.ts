@@ -18,7 +18,7 @@ describe("deepSanitize", () => {
   });
 
   it("leaves clean data, numbers, booleans, and nulls untouched", () => {
-    const input = { name: "Khubaib", years: 8, active: true, note: null };
+    const input = { name: "Alex", years: 8, active: true, note: null };
 
     expect(deepSanitize(input)).toEqual(input);
   });

@@ -14,6 +14,7 @@ import type {
 } from "@portfolio/shared/ports";
 import { createFixtureContentRepository } from "./adapters/fixture-content-repository";
 import { createMultiTableContentRepository } from "./adapters/multi-table-content-repository";
+import { tryLoadLocalSeedBundle } from "./fixtures/load-seed";
 import { createDynamoRateLimiter } from "./adapters/dynamo-rate-limiter";
 import { createNoopRateLimiter } from "./adapters/noop-rate-limiter";
 import { createDynamoUsageReservation } from "./adapters/dynamo-usage-reservation";
@@ -83,8 +84,11 @@ export function resolveDataBackend(): DataBackend {
 function createContentRepository(): ContentRepository {
   const backend = resolveDataBackend();
   switch (backend) {
-    case "fixture":
-      return createFixtureContentRepository();
+    case "fixture": {
+      // Vitest/CI always get the committed demo (tryLoadLocalSeedBundle returns null).
+      const local = tryLoadLocalSeedBundle();
+      return createFixtureContentRepository(local ?? undefined);
+    }
     case "dynamo":
       return createMultiTableContentRepository(createDynamoClient(), buildTableNames());
   }

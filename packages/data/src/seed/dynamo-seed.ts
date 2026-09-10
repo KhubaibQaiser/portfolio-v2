@@ -18,6 +18,7 @@ import {
   siteConfigFixture,
   skillFixtures,
   testimonialFixtures,
+  type ContentFixtureBundle,
 } from "../fixtures/content";
 
 type Meta = "id" | "created_at" | "updated_at";
@@ -87,49 +88,66 @@ function timestampedSeedRow<
   return writable({ ...row });
 }
 
+const defaultBundle: ContentFixtureBundle = {
+  heroFixture,
+  aboutFixture,
+  siteConfigFixture,
+  resumeFixture,
+  experienceFixtures,
+  projectFixtures,
+  skillFixtures,
+  testimonialFixtures,
+  mediaFixtures,
+  resumeLayoutFixtures,
+};
+
 /**
- * Seeds DynamoDB from static fixtures with **stable IDs** from `seed/content.json`.
+ * Seeds DynamoDB from static fixtures with **stable IDs** from seed JSON.
  * Singletons are upserted via the repository; list tables are cleared then
  * written with explicit ids so re-runs converge without UUID churn.
+ *
+ * WARNING: clears experience/project/skill/testimonial/media/layout tables.
+ * Never run against production with the committed demo seed.
  */
 export async function seedDynamoFromFixtures(
   client: DynamoDBDocumentClient,
   tables: TableNames,
+  bundle: ContentFixtureBundle = defaultBundle,
 ): Promise<void> {
   const repo: ContentRepository = createMultiTableContentRepository(client, tables);
 
-  await repo.upsertHero(toForm(heroFixture));
-  await repo.upsertAbout(toForm(aboutFixture));
-  await repo.upsertSiteConfig(toForm(siteConfigFixture));
-  await repo.upsertResume(toForm(resumeFixture));
+  await repo.upsertHero(toForm(bundle.heroFixture));
+  await repo.upsertAbout(toForm(bundle.aboutFixture));
+  await repo.upsertSiteConfig(toForm(bundle.siteConfigFixture));
+  await repo.upsertResume(toForm(bundle.resumeFixture));
 
   await clearTable(client, tables.experience);
-  for (const row of experienceFixtures) {
+  for (const row of bundle.experienceFixtures) {
     await putSeedRow(client, tables.experience, timestampedSeedRow(row));
   }
 
   await clearTable(client, tables.project);
-  for (const row of projectFixtures) {
+  for (const row of bundle.projectFixtures) {
     await putSeedRow(client, tables.project, timestampedSeedRow(row));
   }
 
   await clearTable(client, tables.skill);
-  for (const row of skillFixtures) {
+  for (const row of bundle.skillFixtures) {
     await putSeedRow(client, tables.skill, timestampedSeedRow(row));
   }
 
   await clearTable(client, tables.testimonial);
-  for (const row of testimonialFixtures) {
+  for (const row of bundle.testimonialFixtures) {
     await putSeedRow(client, tables.testimonial, timestampedSeedRow(row));
   }
 
   await clearTable(client, tables.media);
-  for (const row of mediaFixtures) {
+  for (const row of bundle.mediaFixtures) {
     await putSeedRow(client, tables.media, writable({ ...row }));
   }
 
   await clearTable(client, tables.resumeLayout);
-  for (const row of resumeLayoutFixtures) {
+  for (const row of bundle.resumeLayoutFixtures) {
     await putSeedRow(client, tables.resumeLayout, timestampedSeedRow(row));
   }
 }

@@ -15,7 +15,7 @@ test("sitemap lists core urls with CMS lastModified and omits analytics", async 
   const res = await request.get("/sitemap.xml");
   expect(res.ok()).toBeTruthy();
   const xml = await res.text();
-  expect(xml).toContain("/projects/achieve-web-platform");
+  expect(xml).toContain("/projects/contoso-analytics");
   expect(xml).toContain("/resume");
   expect(xml).not.toContain("/analytics");
   expect(xml).toContain("2024-01-01");
@@ -50,7 +50,7 @@ test("analytics is noindex", async ({ page }) => {
 test("project slug has breadcrumbs, related links, and og type website", async ({
   page,
 }) => {
-  await page.goto("/projects/achieve-web-platform");
+  await page.goto("/projects/contoso-analytics");
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toBeVisible();
   const ogType = await page.locator('meta[property="og:type"]').getAttribute("content");

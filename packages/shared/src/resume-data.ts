@@ -179,7 +179,7 @@ export async function getResumeData(
     email: siteConfig.email,
     phone: phoneEntry?.url,
     location: siteConfig.location,
-    website: opts.websiteHost ?? "khubaibqaiser.com",
+    website: opts.websiteHost ?? "localhost:3000",
     socialLinks,
     summary: opts.summaryOverride ?? resume.default_summary,
     keywords,

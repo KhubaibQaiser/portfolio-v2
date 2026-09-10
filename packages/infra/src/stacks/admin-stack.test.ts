@@ -15,14 +15,14 @@ const repoRoot = path.resolve(
 const baseConfig: InfraConfig = {
   region: "eu-west-1",
   appName: "Portfolio",
-  domainName: "khubaibqaiser.com",
+  domainName: "example.com",
   domainEnabled: false,
   tablePrefix: "portfolio",
   mediaCorsOrigins: [],
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
+  mcpCognitoDomainPrefix: "example-com-candidate-mcp",
 };
 
 function writeMinimalOpenNext(openNextDir: string): void {

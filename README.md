@@ -1,8 +1,8 @@
-# Portfolio — [khubaibqaiser.com](https://khubaibqaiser.com)
+# Portfolio — open-source personal site starter
 
-Personal portfolio platform: a public Next.js site, a private CMS, a read-only MCP server for external agents, and a human-in-the-loop job tracker — running serverless on AWS, defined end-to-end as CDK.
+White-label Turborepo portfolio: a public Next.js site, a private CMS, a read-only MCP server for external agents, and a human-in-the-loop job tracker — running serverless on AWS, defined end-to-end as CDK.
 
-This is the source behind **[khubaibqaiser.com](https://khubaibqaiser.com)**. Admin and Storybook are deployed privately. The license is source-available (view for reference; see [License](#license)).
+Clone it, set your domain and admin email, replace the demo seed (or edit via admin), and deploy. Committed fixtures use a fictional demo person (`Alex Rivera`); keep your real CV in gitignored `packages/data/seed/content.local.json`.
 
 <p>
   <img alt="Node.js 22+" src="https://img.shields.io/badge/node-22%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" />
@@ -10,6 +10,7 @@ This is the source behind **[khubaibqaiser.com](https://khubaibqaiser.com)**. Ad
   <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs" />
   <img alt="AWS CDK" src="https://img.shields.io/badge/AWS-CDK-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white" />
   <img alt="Turborepo" src="https://img.shields.io/badge/Turborepo-monorepo-EF4444?style=flat-square&logo=turborepo&logoColor=white" />
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
 </p>
 
 **Interactive architecture maps** (open the HTML in a browser): [runtime](docs/archify/runtime-architecture.html) · [modules](docs/archify/monorepo-modules.html) · [CI](docs/archify/ci-delivery.html) · [resume AI](docs/archify/resume-generation.html) · [job ingest](docs/archify/job-ingest.html) · [HITL](docs/archify/job-hitl.html) · [index](docs/archify/README.md)
@@ -206,14 +207,15 @@ OAuth 2.1 client credentials (n8n) or authorization code + PKCE (Claude). Tools:
 **Prerequisites:** Node.js ≥ 22, pnpm 10 (`corepack enable`). Docker only if you use `DATA_BACKEND=dynamo`.
 
 ```bash
-git clone https://github.com/khubaibqaiser/portfolio-v2.git
+git clone <your-fork-or-upstream-url>
 cd portfolio-v2
 pnpm install
 cp apps/web/.env.example apps/web/.env.local
 cp apps/admin/.env.example apps/admin/.env.local
+# Optional: keep your real CV private for local fixture mode
+# cp packages/data/seed/content.local.example.json packages/data/seed/content.local.json
 pnpm dev:web    # http://localhost:3000  (DATA_BACKEND=fixture by default)
 ```
-
 `pnpm dev:admin` is http://localhost:3001. Fixture mode needs no AWS.
 
 ---
@@ -278,23 +280,41 @@ CDK creates empty secret shells and publishes ARNs to SSM. Put values with `aws 
 
 Google OAuth redirect: `https://<admin-origin>/api/auth/callback/google` (and `http://localhost:3001/api/auth/callback/google`). Authorized JavaScript origin = admin origin.
 
-GitHub variables for deploy include `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, PostHog `NEXT_PUBLIC_POSTHOG_*`, and `DOMAIN_ENABLED`. `POSTHOG_API_KEY` is a GitHub **secret** (source-map upload).
+GitHub variables for deploy include `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, PostHog `NEXT_PUBLIC_POSTHOG_*`, `DOMAIN_ENABLED`, and **`DOMAIN_NAME`** (apex domain, e.g. `example.com` — **required** when `DOMAIN_ENABLED=true`). `POSTHOG_API_KEY` is a GitHub **secret** (source-map upload).
+
+CI passes `-c domainName=${{ vars.DOMAIN_NAME }}` into every CDK deploy and injects `NEXT_PUBLIC_SITE_URL` into the OpenNext build so canonical URLs are not baked from a personal fallback.
 
 ### Custom domain
 
-1. `cdk deploy Portfolio-Dns` — delegate nameservers.
-2. `cdk deploy Portfolio-Cert -c domainEnabled=true` — wait for ACM.
-3. `cdk deploy --all -c domainEnabled=true`.
+1. Set GitHub variable `DOMAIN_NAME` to your apex (e.g. `example.com`) and `NEXT_PUBLIC_SITE_URL` to `https://<apex>`.
+2. `cdk deploy Portfolio-Dns -c domainName=<apex>` — delegate nameservers.
+3. `cdk deploy Portfolio-Cert -c domainEnabled=true -c domainName=<apex>` — wait for ACM.
+4. `cdk deploy --all -c domainEnabled=true -c domainName=<apex>`.
 
 Search Console Domain verification is a Route 53 apex TXT record via GitHub variable `GOOGLE_DNS_SITE_VERIFICATION` (`google-site-verification=…`). Do not put that string in a page meta tag.
 
-### Seed production content
+### Seed content (do not wipe production by accident)
+
+Committed demo: [`packages/data/seed/content.json`](packages/data/seed/content.json) (fictional **Alex Rivera**).
+
+Private CV for local fixture mode: copy to `packages/data/seed/content.local.json` (gitignored). See `content.local.example.json`.
 
 ```bash
-DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
-  pnpm --filter @portfolio/data seed
+# Seeds the committed demo — refuses table prefix "portfolio" unless you pass the wipe flag.
+DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio-dev AWS_REGION=eu-west-1 \
+  pnpm --filter @portfolio/data seed -- --file packages/data/seed/content.json
+
+# Your private CV into a non-prod prefix:
+DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio-dev AWS_REGION=eu-west-1 \
+  pnpm --filter @portfolio/data seed -- --file packages/data/seed/content.local.json
+
+# Production prefix requires an explicit acknowledgement (clears list tables):
+# DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio AWS_REGION=eu-west-1 \
+#   pnpm --filter @portfolio/data seed -- --file packages/data/seed/content.local.json \
+#   --i-understand-this-wipes-tables
 ```
 
+**Git history note:** older commits may still contain personal PII. Replacing files does not scrub history. If you publish a public fork, treat history rewrite / a fresh orphan branch as a separate ops task.
 ---
 
 ## Candidate Profile MCP server
@@ -368,14 +388,10 @@ Copy **`apps/web/.env.example`** and **`apps/admin/.env.example`** to **`.env.lo
 
 ## Author
 
-**Khubaib Qaiser** — Senior Software Engineer
-
-- [khubaibqaiser.com](https://khubaibqaiser.com)
-- [github.com/khubaibqaiser](https://github.com/khubaibqaiser)
-- [linkedin.com/in/khubaib-qaiser](https://linkedin.com/in/khubaib-qaiser)
+Originally built by **Khubaib Qaiser**. Forks should substitute their own identity via admin CMS / `content.local.json`, not by editing application code.
 
 ---
 
 ## License
 
-Source-available, all rights reserved. You may **view** this source for educational or reference purposes. You may **not** copy, modify, publish, or run it except on infrastructure operated for Khubaib Qaiser. See [LICENSE](./LICENSE).
+[MIT](./LICENSE). Copyright (c) 2024-present Khubaib Qaiser.

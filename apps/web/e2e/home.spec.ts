@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { siteConfigFixture } from "@portfolio/data/fixtures";
+
+const chatFirstName = siteConfigFixture.name.trim().split(/\s+/)[0] || "there";
 
 test("home page renders the hero", async ({ page }) => {
   await page.goto("/");
@@ -17,7 +20,9 @@ test("chat launcher opens the dialog", async ({ page }) => {
     })
     .toBe(true);
   await launcher.dispatchEvent("click");
-  await expect(page.getByRole("dialog", { name: "Ask Khubaib" })).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: `Ask ${chatFirstName}` }),
+  ).toBeVisible();
   await expect(page.getByText(/Ask me anything about my experience/i)).toBeVisible();
 });
 
