@@ -17,10 +17,7 @@ import { resolve } from "node:path";
 import { createDynamoClient } from "../src/dynamo/client";
 import { buildTableNames, resolveTablePrefix } from "../src/dynamo/tables";
 import { seedDynamoFromFixtures } from "../src/seed/dynamo-seed";
-import {
-  committedSeedPath,
-  loadSeedBundle,
-} from "../src/fixtures/load-seed";
+import { committedSeedPath, loadSeedBundle } from "../src/fixtures/load-seed";
 
 function parseArgs(argv: string[]): {
   file: string;
@@ -62,7 +59,7 @@ async function main(): Promise<void> {
 
   if (prefix === "portfolio" && !wipeConfirmed) {
     console.error(
-      "Refusing to seed table prefix \"portfolio\" (typical production).\n" +
+      'Refusing to seed table prefix "portfolio" (typical production).\n' +
         "This command CLEARS list tables then rewrites them from the seed file.\n" +
         "If you really intend to wipe those tables, re-run with:\n" +
         "  --i-understand-this-wipes-tables\n" +

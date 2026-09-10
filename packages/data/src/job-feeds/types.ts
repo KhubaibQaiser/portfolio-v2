@@ -26,8 +26,7 @@ export type FeedFetch = (
  * domain is enabled). Product token is intentionally generic for white-label.
  */
 export function buildJobFeedUserAgent(
-  siteUrl =
-    process.env.PUBLIC_SITE_URL ??
+  siteUrl = process.env.PUBLIC_SITE_URL ??
     process.env.NEXT_PUBLIC_SITE_URL ??
     "https://example.com",
 ): string {

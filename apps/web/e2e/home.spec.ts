@@ -20,9 +20,7 @@ test("chat launcher opens the dialog", async ({ page }) => {
     })
     .toBe(true);
   await launcher.dispatchEvent("click");
-  await expect(
-    page.getByRole("dialog", { name: `Ask ${chatFirstName}` }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: `Ask ${chatFirstName}` })).toBeVisible();
   await expect(page.getByText(/Ask me anything about my experience/i)).toBeVisible();
 });
 

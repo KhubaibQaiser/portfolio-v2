@@ -197,7 +197,7 @@ export const atsResumeReferenceData: ResumeData = {
   ],
   languages: [
     { name: "English", level: "C1" },
-    { name: "Urdu", level: "Native" },
+    { name: "Spanish", level: "B1" },
   ],
   remoteWorkLine: null,
   referencesLine: null,

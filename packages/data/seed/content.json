@@ -20,14 +20,8 @@
     "countries_count": 3,
     "projects_count": 12,
     "users_impacted": "100K+",
-    "industries": [
-      "SaaS",
-      "E-Commerce",
-      "EdTech"
-    ],
-    "languages": [
-      "English"
-    ],
+    "industries": ["SaaS", "E-Commerce", "EdTech"],
+    "languages": ["English"],
     "highlights": [
       {
         "title": "I Ship End-to-End",
@@ -132,8 +126,8 @@
         "level": "Fluent"
       },
       {
-        "name": "Urdu",
-        "level": "Native"
+        "name": "Spanish",
+        "level": "Conversational"
       }
     ],
     "remote_work_line": "10 years fully remote across US and EU teams. Comfortable across PST, CST, EST, and CET timezones.",
@@ -225,11 +219,7 @@
       "description": "AI-assisted content-to-commerce embeds for publisher sites.",
       "summary": "Serverless embed platform with per-publisher branding and analytics.",
       "cover_url": null,
-      "tech_tags": [
-        "TypeScript",
-        "React",
-        "AWS"
-      ],
+      "tech_tags": ["TypeScript", "React", "AWS"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -249,11 +239,7 @@
       "description": "Internal analytics dashboard for retail operators.",
       "summary": "Real-time retail analytics with role-based access.",
       "cover_url": null,
-      "tech_tags": [
-        "TypeScript",
-        "React",
-        "AWS"
-      ],
+      "tech_tags": ["TypeScript", "React", "AWS"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -273,11 +259,7 @@
       "description": "Non-featured prototype kept for catalog completeness.",
       "summary": "Prototype only.",
       "cover_url": null,
-      "tech_tags": [
-        "TypeScript",
-        "React",
-        "AWS"
-      ],
+      "tech_tags": ["TypeScript", "React", "AWS"],
       "role": "Senior Software Engineer",
       "type": "web",
       "github_url": null,
@@ -297,10 +279,7 @@
       "description": "Educational math game for K6-K9 students.",
       "summary": "Cross-platform learning game with offline-first progress.",
       "cover_url": null,
-      "tech_tags": [
-        "React Native",
-        "TypeScript"
-      ],
+      "tech_tags": ["React Native", "TypeScript"],
       "role": "Senior Software Engineer",
       "type": "mobile",
       "github_url": null,
@@ -320,11 +299,7 @@
       "description": "This open-source portfolio starter running on AWS serverless.",
       "summary": "Turborepo monorepo with Next.js, admin CMS, and MCP.",
       "cover_url": null,
-      "tech_tags": [
-        "TypeScript",
-        "React",
-        "AWS"
-      ],
+      "tech_tags": ["TypeScript", "React", "AWS"],
       "role": "Senior Software Engineer",
       "type": "open-source",
       "github_url": "https://github.com/example/portfolio",

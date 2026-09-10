@@ -194,7 +194,9 @@ describe("ATS React-PDF rendering", () => {
       { mode: "canonical" },
     );
     const text = await extractPdfText(result.buffer);
-    expect(text.indexOf("Portfolio Site")).toBeGreaterThan(text.indexOf("Northwind Labs"));
+    expect(text.indexOf("Portfolio Site")).toBeGreaterThan(
+      text.indexOf("Northwind Labs"),
+    );
     expect(text.indexOf("Bachelor of Computer Science")).toBeGreaterThan(
       text.indexOf("Portfolio Site"),
     );

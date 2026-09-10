@@ -216,6 +216,7 @@ cp apps/admin/.env.example apps/admin/.env.local
 # cp packages/data/seed/content.local.example.json packages/data/seed/content.local.json
 pnpm dev:web    # http://localhost:3000  (DATA_BACKEND=fixture by default)
 ```
+
 `pnpm dev:admin` is http://localhost:3001. Fixture mode needs no AWS.
 
 ---
@@ -314,8 +315,7 @@ DATA_BACKEND=dynamo DYNAMO_TABLE_PREFIX=portfolio-dev AWS_REGION=eu-west-1 \
 #   --i-understand-this-wipes-tables
 ```
 
-**Git history note:** older commits may still contain personal PII. Replacing files does not scrub history. If you publish a public fork, treat history rewrite / a fresh orphan branch as a separate ops task.
----
+## **Git history note:** older commits may still contain personal PII. Replacing files does not scrub history. If you publish a public fork, treat history rewrite / a fresh orphan branch as a separate ops task.
 
 ## Candidate Profile MCP server
 

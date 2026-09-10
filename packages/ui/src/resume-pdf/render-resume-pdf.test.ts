@@ -320,7 +320,8 @@ describe("Modern Blue PDF rendering", () => {
 
     expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
     expect(result.fitReport?.pageCount).toBeGreaterThanOrEqual(1);
-  }, 30_000);
+    // PDF layout + font load is slow under CI parallelism; local ~13s, CI can exceed 30s.
+  }, 60_000);
 
   it("records tailored rendering mode explicitly", async () => {
     const layout = layoutFromForm("modern-blue-tailored", modernBlueLayoutForm());
