@@ -11,7 +11,7 @@ export type InfraConfig = {
   region: string;
   /** Prefix for stack names and resource tags. */
   appName: string;
-  /** Apex domain the site is served from. */
+  /** Apex domain the site is served from. Required via `-c domainName` when domainEnabled. */
   domainName: string;
   /**
    * When false, sites deploy on their default `*.cloudfront.net` URLs and the
@@ -32,8 +32,7 @@ export type InfraConfig = {
   /**
    * Emails granted admin dashboard access, injected into the admin Lambda as
    * `ADMIN_ALLOWED_EMAILS`. Pass via `-c adminAllowedEmails=a@x.com,b@y.com`
-   * (csv, typically from a GitHub variable). When empty the app falls back to
-   * the in-repo default allowlist.
+   * (csv, typically from a GitHub variable). Required at admin runtime when empty.
    */
   adminAllowedEmails: string[];
   /**
@@ -97,7 +96,8 @@ export type InfraConfig = {
 const DEFAULTS = {
   region: "eu-west-1",
   appName: "Portfolio",
-  domainName: "khubaibqaiser.com",
+  /** Placeholder only when `domainEnabled=false` (CloudFront default URLs). */
+  domainNamePlaceholder: "example.com",
   tablePrefix: "portfolio",
   adminDevUrl: "http://localhost:3001",
   monthlyBudgetUsd: 25,
@@ -118,8 +118,15 @@ export function resolveConfig(app: App): InfraConfig {
           .filter(Boolean)
       : [];
 
-  const domainName = ctx("domainName") ?? DEFAULTS.domainName;
   const domainEnabled = ctx("domainEnabled") === "true";
+  const domainNameFromCtx = ctx("domainName");
+  if (domainEnabled && !domainNameFromCtx) {
+    throw new Error(
+      "CDK context domainName is required when domainEnabled=true. " +
+        "Pass -c domainName=your.domain (CI: vars.DOMAIN_NAME).",
+    );
+  }
+  const domainName = domainNameFromCtx ?? DEFAULTS.domainNamePlaceholder;
 
   // localhost for dev + the custom admin subdomain once delegated + any extra
   // deployed origins (e.g. the CloudFront URL) supplied via context.

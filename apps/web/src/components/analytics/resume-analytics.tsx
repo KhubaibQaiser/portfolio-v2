@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useSiteConfig } from "@/components/layout/site-config-provider";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
 
@@ -12,6 +13,14 @@ export function ResumeViewTracker() {
   return null;
 }
 
+function fallbackResumeFilename(name: string): string {
+  const slug = name
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `${slug}-Resume.pdf` : "Resume.pdf";
+}
+
 export function ResumePdfDownloadLink({
   className,
   children,
@@ -19,6 +28,7 @@ export function ResumePdfDownloadLink({
   className?: string;
   children: ReactNode;
 }) {
+  const { name } = useSiteConfig();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +47,7 @@ export function ResumePdfDownloadLink({
       const blob = await response.blob();
       const disposition = response.headers.get("content-disposition");
       const filename =
-        disposition?.match(/filename="([^"]+)"/i)?.[1] ?? "Khubaib-Qaiser-Resume.pdf";
+        disposition?.match(/filename="([^"]+)"/i)?.[1] ?? fallbackResumeFilename(name);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;

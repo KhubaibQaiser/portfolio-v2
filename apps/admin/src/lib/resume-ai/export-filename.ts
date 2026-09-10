@@ -1,6 +1,6 @@
 import type { ResumeLayout } from "@portfolio/shared/schemas";
 
-/** Section 8 naming: Khubaib_Qaiser_Resume_{Company}.pdf for ATS exports. */
+/** ATS exports: `{Name}_Resume_{Company}.pdf` (spaces → underscores). */
 export function buildResumeExportFilename(
   name: string,
   layout: ResumeLayout,
@@ -14,7 +14,7 @@ export function buildResumeExportFilename(
       .replace(/^_+|_+$/g, "");
 
   if (layout.component_key === "ats-resume" && company?.trim()) {
-    return `Khubaib_Qaiser_Resume_${slug(company)}.pdf`;
+    return `${slug(name)}_Resume_${slug(company)}.pdf`;
   }
 
   const parts = [name, fallbackTitle ?? "Resume"]

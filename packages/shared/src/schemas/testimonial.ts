@@ -25,9 +25,27 @@ export const testimonialRowSchema = testimonialSchema.extend({
 
 export type Testimonial = z.infer<typeof testimonialRowSchema>;
 
-/** Default verify URL pre-filled in admin for new recommendations. */
-export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL =
-  "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0";
+const LINKEDIN_RECOMMENDATIONS_SUFFIX =
+  "/details/recommendations/?detailScreenTabIndex=0";
+
+/**
+ * Builds the LinkedIn "recommendations" verify URL from a profile URL
+ * (`https://linkedin.com/in/<handle>` or `www.` / trailing slash variants).
+ * Returns empty string when no usable profile URL is provided.
+ * Avoids DOM `URL` — shared pkg is ES-only.
+ */
+export function linkedInRecommendationsUrlFromProfile(
+  profileUrl: string | null | undefined,
+): string {
+  const raw = profileUrl?.trim();
+  if (!raw) return "";
+  const match = raw.match(/^https?:\/\/(?:www\.)?linkedin\.com\/in\/([^/?#]+)\/?/i);
+  if (!match?.[1]) return "";
+  return `https://www.linkedin.com/in/${match[1]}${LINKEDIN_RECOMMENDATIONS_SUFFIX}`;
+}
+
+/** @deprecated Prefer {@link linkedInRecommendationsUrlFromProfile} with SiteConfig. */
+export const DEFAULT_LINKEDIN_RECOMMENDATIONS_URL = "";
 
 /** Card preview length on the public site; seed recommendations are ~186–208 chars. */
 export const RECOMMENDATION_DESCRIPTION_PREVIEW_MAX = 300;

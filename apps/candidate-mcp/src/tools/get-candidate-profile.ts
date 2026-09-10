@@ -53,7 +53,7 @@ export function registerGetCandidateProfileTool(
     "get_candidate_profile",
     {
       description:
-        "Read the candidate's full public profile: site info, about, resume, work experience, skills, projects, and testimonials. Same content published on khubaibqaiser.com. Read-only.",
+        "Read the candidate's full public profile: site info, about, resume, work experience, skills, projects, and testimonials. Same content published on the candidate's public portfolio site. Read-only.",
       inputSchema: z.object({}),
     },
     withGuardrails("get_candidate_profile", authInfo, config, async () => {

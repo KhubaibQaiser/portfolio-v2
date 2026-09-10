@@ -20,7 +20,7 @@ export const coverLetterSchema = z.object({
     .string()
     .min(2)
     .max(60)
-    .describe("Sign-off + name, e.g. 'Best regards,\\nKhubaib Qaiser'."),
+    .describe("Sign-off + name, e.g. 'Best regards,\\n{Full Name}'."),
 });
 
 export type CoverLetter = z.infer<typeof coverLetterSchema>;

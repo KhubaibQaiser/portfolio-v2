@@ -195,9 +195,20 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      # Custom domain requires an explicit apex. Without DOMAIN_NAME, CDK would
+      # fall back to an in-repo default (or fail once that default is removed).
+      - name: Require DOMAIN_NAME when domain is enabled
+        if: vars.DOMAIN_ENABLED == 'true'
+        run: |
+          if [ -z "${{ vars.DOMAIN_NAME }}" ]; then
+            echo "::error::DOMAIN_NAME must be set in the production environment when DOMAIN_ENABLED=true (e.g. khubaibqaiser.com)."
+            exit 1
+          fi
+
       - name: Build deploy artifacts (OpenNext bundles + Storybook)
         env:
           APP_ORIGIN: ${{ vars.APP_ORIGIN }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
@@ -219,6 +230,7 @@ jobs:
           pnpm exec cdk deploy Portfolio-Dns Portfolio-Cert
           --require-approval never
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c domainName=${{ vars.DOMAIN_NAME }}
           -c googleDnsSiteVerification="${{ vars.GOOGLE_DNS_SITE_VERIFICATION }}"
 
       - name: CDK deploy
@@ -227,6 +239,7 @@ jobs:
           pnpm exec cdk deploy --all
           --require-approval never --concurrency 4
           -c domainEnabled=${{ vars.DOMAIN_ENABLED }}
+          -c domainName=${{ vars.DOMAIN_NAME }}
           -c adminUrls=${{ vars.ADMIN_URLS }}
           -c adminAllowedEmails=${{ vars.ADMIN_ALLOWED_EMAILS }}
           -c alertEmail=${{ vars.ALERT_EMAIL }}

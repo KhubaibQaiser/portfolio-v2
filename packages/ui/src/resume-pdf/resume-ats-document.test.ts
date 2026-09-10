@@ -58,15 +58,15 @@ describe("ATS React-PDF rendering", () => {
     expect(result.fitReport?.droppedBullets).toBeLessThanOrEqual(1);
 
     const text = await extractPdfText(result.buffer);
-    expect(text).toContain("Khubaib Qaiser");
+    expect(text).toContain("Alex Rivera");
     expect(text.toUpperCase()).toContain("PROFESSIONAL SUMMARY");
     expect(text.toUpperCase()).toContain("TECHNICAL SKILLS");
     expect(text.toUpperCase()).toContain("PROFESSIONAL EXPERIENCE");
     expect(text.toUpperCase()).toContain("EDUCATION");
     expect(text.toUpperCase()).toContain("LANGUAGES");
-    expect(text).toContain("Shopsense AI");
-    expect(text).toContain("github.com/khubaibqaiser");
-    expect(text).toContain("linkedin.com/in/khubaib-qaiser");
+    expect(text).toContain("Northwind Labs");
+    expect(text).toContain("github.com/example");
+    expect(text).toContain("linkedin.com/in/example");
     expect(text).toContain("08/2024 - 07/2026");
     expect(text).not.toMatch(/tel:/i);
     expect(text).not.toMatch(/Jan(?:uary)?\s+2024/);
@@ -75,15 +75,15 @@ describe("ATS React-PDF rendering", () => {
     expect(text.indexOf("Frontend:")).toBeGreaterThan(
       text.indexOf("Fullstack Engineer with 11 years"),
     );
-    expect(text.indexOf("Shopsense AI")).toBeGreaterThan(text.indexOf("Frontend:"));
+    expect(text.indexOf("Northwind Labs")).toBeGreaterThan(text.indexOf("Frontend:"));
     expect(text.indexOf("Bachelor of Computer Science")).toBeGreaterThan(
-      text.indexOf("Shopsense AI"),
+      text.indexOf("Northwind Labs"),
     );
     expect(text.indexOf("English (C1)")).toBeGreaterThan(
       text.indexOf("Bachelor of Computer Science"),
     );
 
-    const companyAt = text.indexOf("Shopsense AI");
+    const companyAt = text.indexOf("Northwind Labs");
     const roleAt = text.indexOf("Senior Software Engineer");
     expect(companyAt).toBeGreaterThan(-1);
     expect(roleAt).toBeGreaterThan(companyAt);
@@ -93,16 +93,16 @@ describe("ATS React-PDF rendering", () => {
     const result = await renderResumePdfBuffer(
       {
         ...atsResumeReferenceData,
-        phone: "tel:+923365532933",
+        phone: "tel:+15555550100",
         socialLinks: [
           {
             platform: "github",
-            url: "https://github.com/khubaibqaiser",
+            url: "https://github.com/example",
             label: "GitHub",
           },
           {
             platform: "linkedin",
-            url: "https://linkedin.com/in/khubaib-qaiser",
+            url: "https://linkedin.com/in/example",
             label: "LinkedIn",
           },
         ],
@@ -111,12 +111,12 @@ describe("ATS React-PDF rendering", () => {
       { mode: "canonical" },
     );
     const text = await extractPdfText(result.buffer);
-    expect(text.replace(/\s+/g, "")).toContain("+923365532933");
-    expect(text).toContain("Islamabad, Pakistan");
-    expect(text).toContain("khubaibqaiser.com");
+    expect(text.replace(/\s+/g, "")).toContain("+15555550100");
+    expect(text).toContain("Remote");
+    expect(text).toContain("example.dev");
     expect(text).not.toMatch(/tel:/i);
-    expect(text).toContain("github.com/khubaibqaiser");
-    expect(text).toContain("linkedin.com/in/khubaib-qaiser");
+    expect(text).toContain("github.com/example");
+    expect(text).toContain("linkedin.com/in/example");
     expect(text).not.toMatch(/\|\s*GitHub\s*\|/);
     expect(text).not.toMatch(/\|\s*LinkedIn\s*\|/);
   }, 30_000);
@@ -125,9 +125,9 @@ describe("ATS React-PDF rendering", () => {
     const result = await renderResumePdfBuffer(atsResumeReferenceData, layout(), {
       mode: "canonical",
     });
-    const nameSize = await renderedFontSize(result.buffer, "Khubaib Qaiser");
+    const nameSize = await renderedFontSize(result.buffer, "Alex Rivera");
     const titleSize = await renderedFontSize(result.buffer, "Senior Fullstack Engineer");
-    const contactSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
+    const contactSize = await renderedFontSize(result.buffer, "Remote");
     expect(nameSize).toBeCloseTo(22, 1);
     expect(titleSize).toBeCloseTo(11, 1);
     expect(contactSize).toBeCloseTo(9, 1);
@@ -194,7 +194,9 @@ describe("ATS React-PDF rendering", () => {
       { mode: "canonical" },
     );
     const text = await extractPdfText(result.buffer);
-    expect(text.indexOf("Portfolio Site")).toBeGreaterThan(text.indexOf("Shopsense AI"));
+    expect(text.indexOf("Portfolio Site")).toBeGreaterThan(
+      text.indexOf("Northwind Labs"),
+    );
     expect(text.indexOf("Bachelor of Computer Science")).toBeGreaterThan(
       text.indexOf("Portfolio Site"),
     );

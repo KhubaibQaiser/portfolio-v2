@@ -6,23 +6,23 @@ describe("sameAsProfileUrls", () => {
     expect(
       sameAsProfileUrls(
         [
-          { url: "https://github.com/khubaib" },
+          { url: "https://github.com/example" },
           { url: "tel:+123" },
           { url: "mailto:me@x.com" },
-          { url: "https://khubaibqaiser.com" },
-          { url: "https://github.com/khubaib" },
+          { url: "https://example.dev" },
+          { url: "https://github.com/example" },
         ],
-        "https://khubaibqaiser.com",
+        "https://example.dev",
       ),
-    ).toEqual(["https://github.com/khubaib"]);
+    ).toEqual(["https://github.com/example"]);
   });
 });
 
 describe("twitterCreatorHandle", () => {
   it("extracts a handle from an x.com URL", () => {
     expect(
-      twitterCreatorHandle([{ platform: "x", url: "https://x.com/khubaib_dev" }]),
-    ).toBe("@khubaib_dev");
+      twitterCreatorHandle([{ platform: "x", url: "https://x.com/example_dev" }]),
+    ).toBe("@example_dev");
   });
 
   it("returns undefined when no twitter profile exists", () => {

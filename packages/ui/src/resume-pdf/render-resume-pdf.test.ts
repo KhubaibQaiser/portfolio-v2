@@ -84,7 +84,7 @@ describe("Modern Blue PDF rendering", () => {
     expect(result.fitReport?.acceptedBulletCounts[0]).toBeGreaterThanOrEqual(4);
     expect(result.fitReport?.acceptedBulletCounts[1]).toBeGreaterThanOrEqual(2);
     const text = await extractPdfText(result.buffer);
-    expect(text).toContain("Knowledge Platform");
+    expect(text).toContain("Fabrikam Education");
     expect(text).not.toContain("**");
     expect(result.fitReport?.mode).toBe("canonical");
   }, 30_000);
@@ -102,14 +102,14 @@ describe("Modern Blue PDF rendering", () => {
     const projection = projectModernBlueResume(modernBlueReferenceResume, guidelines);
 
     expect(projection.data.experience.map((item) => item.company)).toEqual([
-      "Shopsense AI",
-      "Powerful Web Design",
+      "Northwind Labs",
+      "Adventure Works",
       "Achieve",
       "Tradeblock",
       "GudangAda",
       "Nordic Tech Clients",
       "STOQO",
-      "Knowledge Platform",
+      "Fabrikam Education",
     ]);
     expect(projection.projectedBulletBudgets).toEqual([5, 4, 2, 2, 2, 2, 2, 2]);
     expect(projection.data.experience.map((item) => item.bullets.length)).toEqual([
@@ -320,7 +320,8 @@ describe("Modern Blue PDF rendering", () => {
 
     expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
     expect(result.fitReport?.pageCount).toBeGreaterThanOrEqual(1);
-  }, 30_000);
+    // PDF layout + font load is slow under CI parallelism; local ~13s, CI can exceed 30s.
+  }, 60_000);
 
   it("records tailored rendering mode explicitly", async () => {
     const layout = layoutFromForm("modern-blue-tailored", modernBlueLayoutForm());
@@ -340,9 +341,9 @@ describe("Modern Blue PDF rendering", () => {
 
     expect(result.buffer.subarray(0, 5).toString()).toBe("%PDF-");
     expect(result.fitReport).toBeNull();
-    expect(text).toContain("khubaibqaiser.com");
-    expect(text).toContain("linkedin.com/in/khubaib-qaiser");
-    expect(text).toContain("github.com/khubaibqaiser");
+    expect(text).toContain("example.dev");
+    expect(text).toContain("linkedin.com/in/example");
+    expect(text).toContain("github.com/example");
     expect(text).not.toContain("Portfolio");
     expect(text).toContain("• Led Embeds");
     expect(text.indexOf("Frontend & UI:")).toBeLessThan(text.indexOf("• Led Embeds"));
@@ -356,8 +357,8 @@ describe("Modern Blue PDF rendering", () => {
     const expected = classic.guidelines.formatting.typography.bodySizes.contact;
     const result = await renderResumePdfBuffer(modernBlueReferenceResume, classic);
 
-    const locationSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
-    const emailSize = await renderedFontSize(result.buffer, "khubaib.dev@gmail.com");
+    const locationSize = await renderedFontSize(result.buffer, "Remote");
+    const emailSize = await renderedFontSize(result.buffer, "hello@example.com");
 
     expect(locationSize).toBeCloseTo(expected, 1);
     expect(emailSize).toBeCloseTo(expected, 1);
@@ -387,8 +388,8 @@ describe("Modern Blue PDF rendering", () => {
     const expected = modern.guidelines.formatting.typography.bodySizes.contact;
     const result = await renderResumePdfBuffer(modernBlueReferenceResume, modern);
 
-    const locationSize = await renderedFontSize(result.buffer, "Islamabad, Pakistan");
-    const emailSize = await renderedFontSize(result.buffer, "khubaib.dev@gmail.com");
+    const locationSize = await renderedFontSize(result.buffer, "Remote");
+    const emailSize = await renderedFontSize(result.buffer, "hello@example.com");
 
     expect(locationSize).toBeCloseTo(expected, 1);
     expect(emailSize).toBeCloseTo(expected, 1);

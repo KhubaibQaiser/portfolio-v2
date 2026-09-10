@@ -9,25 +9,32 @@ import { saveTestimonial, deleteTestimonialAction } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import {
-  DEFAULT_LINKEDIN_RECOMMENDATIONS_URL,
+  linkedInRecommendationsUrlFromProfile,
   type Testimonial,
 } from "@portfolio/shared/schemas";
 
 type RecommendationsListProps = {
   initialData: Testimonial[];
+  /** Prefill for new recommendation "LinkedIn verify URL" from SiteConfig. */
+  defaultLinkedInUrl?: string;
 };
 
-const EMPTY: Omit<Testimonial, "id" | "created_at" | "updated_at" | "revision"> = {
+const EMPTY_BASE: Omit<
+  Testimonial,
+  "id" | "created_at" | "updated_at" | "revision" | "linkedin_url"
+> = {
   full_name: "",
   profile_url: "",
   role_title: "",
   recommended_at: "",
   description: "",
-  linkedin_url: DEFAULT_LINKEDIN_RECOMMENDATIONS_URL,
   avatar_url: null,
 };
 
-type RecommendationEditForm = typeof EMPTY & { id?: string; revision?: number };
+type RecommendationEditForm = Omit<
+  Testimonial,
+  "id" | "created_at" | "updated_at" | "revision"
+> & { id?: string; revision?: number; linkedin_url: string };
 type ListFormValues = { items: Testimonial[] };
 
 const FORM_FIELDS = [
@@ -43,21 +50,36 @@ const FORM_FIELDS = [
   { key: "avatar_url" as const, label: "Avatar URL (optional)", placeholder: undefined },
 ];
 
-export function RecommendationsList({ initialData }: RecommendationsListProps) {
+export function RecommendationsList({
+  initialData,
+  defaultLinkedInUrl = "",
+}: RecommendationsListProps) {
+  const emptyEntry: RecommendationEditForm = {
+    ...EMPTY_BASE,
+    linkedin_url: defaultLinkedInUrl || linkedInRecommendationsUrlFromProfile(undefined),
+  };
   const [editing, setEditing] = useState<RecommendationEditForm | null>(null);
 
   if (editing) {
     return <RecommendationEditPanel entry={editing} onClose={() => setEditing(null)} />;
   }
 
-  return <RecommendationsListPanel initialData={initialData} onEdit={setEditing} />;
+  return (
+    <RecommendationsListPanel
+      initialData={initialData}
+      emptyEntry={emptyEntry}
+      onEdit={setEditing}
+    />
+  );
 }
 
 function RecommendationsListPanel({
   initialData,
+  emptyEntry,
   onEdit,
 }: {
   initialData: Testimonial[];
+  emptyEntry: RecommendationEditForm;
   onEdit: (entry: RecommendationEditForm) => void;
 }) {
   const toast = useToast();
@@ -100,7 +122,7 @@ function RecommendationsListPanel({
       <div className="mt-6">
         <button
           type="button"
-          onClick={() => openEdit({ ...EMPTY })}
+          onClick={() => openEdit({ ...emptyEntry })}
           className="bg-accent text-accent-foreground mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
         >
           <Plus className="h-4 w-4" /> Add Recommendation

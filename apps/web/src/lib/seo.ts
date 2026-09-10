@@ -2,7 +2,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { env } from "@/lib/env";
 
 /** Canonical production origin, used for canonical URLs, OG/Twitter images, and JSON-LD. */
-export const SITE_URL = env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com";
+export const SITE_URL = env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 type PageMetadataInput = {
   title: string;

@@ -3,10 +3,10 @@ import { wwwRedirectFunctionCode } from "./www-redirect";
 
 describe("wwwRedirectFunctionCode", () => {
   it("bakes the apex host into a CloudFront Function handler", () => {
-    const code = wwwRedirectFunctionCode("khubaibqaiser.com");
+    const code = wwwRedirectFunctionCode("example.com");
     expect(code).toContain("function handler(event)");
-    expect(code).toContain('var needle = "www.khubaibqaiser.com"');
-    expect(code).toContain('var location = "https://khubaibqaiser.com" + request.uri');
+    expect(code).toContain('var needle = "www.example.com"');
+    expect(code).toContain('var location = "https://example.com" + request.uri');
     expect(code).toContain("statusCode: 301");
   });
 

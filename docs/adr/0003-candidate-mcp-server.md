@@ -5,6 +5,8 @@
   replaces Function URL OAC so MCP Bearer can pass through)
 - **Deciders:** Khubaib (with AI pairing)
 
+> **White-label note:** Hostnames like `mcp.khubaibqaiser.com` below describe the original deployment. Forks substitute their own apex via CDK `-c domainName` / `vars.DOMAIN_NAME`.
+
 ## Context
 
 > **2026-08-27 (auth):** HTTP identity is OAuth 2.1 with Cognito as AS per
