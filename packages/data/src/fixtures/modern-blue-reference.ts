@@ -205,7 +205,7 @@ export const modernBlueReferenceResume: ResumeData = {
   ],
   languages: [
     { name: "English", level: "Fluent" },
-    { name: "Spanish", level: "Conversational" },
+    { name: "Spanish", level: "Intermediate" },
   ],
   remoteWorkLine:
     "7 years fully remote across US and EU teams. Comfortable across PST, CST, EST, and SGT timezones.",
