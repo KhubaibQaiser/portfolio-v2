@@ -1,0 +1,150 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "CI to production",
+    "locale": "en",
+    "output": "ci-delivery.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "pr-gates",
+        "label": "Pull request gates",
+        "focus": ["commit", "lint", "tests", "evals", "build"],
+        "note": "Every PR must pass format, types, unit tests, DynamoDB Local, and offline Resume AI evals."
+      },
+      {
+        "id": "ship",
+        "label": "Ship to AWS",
+        "focus": ["build", "deploy"],
+        "note": "Main waits on Lighthouse, e2e, secret scan, and mcp-security, then OIDC deploys CDK."
+      },
+      {
+        "id": "local",
+        "label": "Local loop",
+        "focus": ["commit", "lint", "tests", "evals"],
+        "note": "pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume before you open a PR."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "dev", "label": "Contributor" },
+    { "id": "ci", "label": "GitHub Actions" },
+    { "id": "aws", "label": "AWS production" }
+  ],
+  "phases": [
+    { "id": "change", "label": "Change", "fromCol": 0, "toCol": 1 },
+    {
+      "id": "verify",
+      "label": "Verify",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    { "id": "promote", "label": "Promote", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    {
+      "id": "quality",
+      "label": "Blocking checks",
+      "lane": "ci",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": ["commit", "pr", "lint", "tests", "evals", "build", "deploy"],
+  "nodes": [
+    {
+      "id": "commit",
+      "lane": "dev",
+      "col": 0,
+      "type": "frontend",
+      "label": "Commit",
+      "sublabel": "feature branch",
+      "width": 132
+    },
+    {
+      "id": "pr",
+      "lane": "dev",
+      "col": 1,
+      "type": "frontend",
+      "label": "Pull request",
+      "sublabel": "reviewed diff",
+      "width": 132
+    },
+    {
+      "id": "lint",
+      "lane": "ci",
+      "col": 2,
+      "type": "backend",
+      "label": "Lint + types",
+      "sublabel": "pnpm lint",
+      "width": 132
+    },
+    {
+      "id": "tests",
+      "lane": "ci",
+      "col": 3,
+      "type": "backend",
+      "label": "Tests",
+      "sublabel": "unit + Dynamo Local",
+      "width": 132
+    },
+    {
+      "id": "evals",
+      "lane": "ci",
+      "col": 4,
+      "type": "security",
+      "label": "Gates",
+      "sublabel": "evals e2e mcp-security",
+      "tag": "offline",
+      "width": 148
+    },
+    {
+      "id": "build",
+      "lane": "ci",
+      "col": 5,
+      "type": "backend",
+      "label": "Build",
+      "sublabel": "Lighthouse >= 0.90",
+      "width": 132
+    },
+    {
+      "id": "deploy",
+      "lane": "aws",
+      "col": 5,
+      "type": "cloud",
+      "label": "cdk deploy",
+      "sublabel": "OIDC + OpenNext",
+      "tag": "eu-west-1",
+      "width": 132
+    }
+  ],
+  "edges": [
+    { "id": "commit-pr", "from": "commit", "to": "pr" },
+    { "id": "pr-lint", "from": "pr", "to": "lint", "label": "CI", "variant": "emphasis" },
+    { "id": "lint-tests", "from": "lint", "to": "tests" },
+    { "id": "tests-evals", "from": "tests", "to": "evals" },
+    { "id": "evals-build", "from": "evals", "to": "build", "variant": "emphasis" },
+    {
+      "id": "build-deploy",
+      "from": "build",
+      "to": "deploy",
+      "label": "OIDC",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Local loop",
+      "items": ["pnpm lint && pnpm typecheck && pnpm test && pnpm eval:resume"]
+    },
+    {
+      "dot": "rose",
+      "title": "CI will not ship a regression",
+      "items": ["Lighthouse >= 0.90; mcp-security and the secret scan must stay green"]
+    }
+  ]
+}

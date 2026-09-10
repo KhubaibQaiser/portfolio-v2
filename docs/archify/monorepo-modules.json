@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Monorepo modules",
+    "locale": "en",
+    "output": "monorepo-modules.html",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 500],
+    "views": [
+      {
+        "id": "apps",
+        "label": "Deployable apps",
+        "focus": ["web", "admin", "mcp"],
+        "note": "Three runtime surfaces: public site, CMS, and the network-facing MCP server."
+      },
+      {
+        "id": "contracts",
+        "label": "Shared contracts",
+        "focus": ["web", "admin", "mcp", "shared"],
+        "note": "Zod schemas and ports live in shared. Apps depend on ports, never on AWS SDKs."
+      },
+      {
+        "id": "implementations",
+        "label": "Implementations",
+        "focus": ["shared", "data", "ai", "infra"],
+        "note": "data and ai implement the ports. infra is AWS CDK for every stack."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "apps/web",
+      "sublabel": "site, chat, PDF",
+      "pos": [70, 50],
+      "size": [140, 56],
+      "brand": "next-js"
+    },
+    {
+      "id": "admin",
+      "type": "backend",
+      "label": "apps/admin",
+      "sublabel": "CMS + HITL jobs",
+      "pos": [320, 50],
+      "size": [140, 56]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "apps/candidate-mcp",
+      "sublabel": "OAuth MCP",
+      "pos": [570, 50],
+      "size": [150, 56],
+      "tag": "read-only"
+    },
+    {
+      "id": "shared",
+      "type": "backend",
+      "label": "packages/shared",
+      "sublabel": "Zod + ports",
+      "pos": [320, 190],
+      "size": [140, 56],
+      "tag": "contracts"
+    },
+    {
+      "id": "data",
+      "type": "database",
+      "label": "packages/data",
+      "sublabel": "Dynamo + fixtures",
+      "pos": [70, 330],
+      "size": [140, 56]
+    },
+    {
+      "id": "ai",
+      "type": "backend",
+      "label": "packages/ai",
+      "sublabel": "models, policy, matcher",
+      "pos": [320, 330],
+      "size": [140, 56],
+      "brand": "anthropic"
+    },
+    {
+      "id": "infra",
+      "type": "cloud",
+      "label": "packages/infra",
+      "sublabel": "AWS CDK stacks",
+      "pos": [570, 330],
+      "size": [150, 56]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Turborepo workspace",
+      "wraps": ["web", "admin", "mcp", "shared", "data", "ai", "infra"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Network trust boundary",
+      "wraps": ["mcp"],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "web-shared",
+      "from": "web",
+      "to": "shared",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "admin-shared",
+      "from": "admin",
+      "to": "shared",
+      "label": "schemas + ports",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 36
+    },
+    {
+      "id": "mcp-shared",
+      "from": "mcp",
+      "to": "shared",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "data-shared",
+      "from": "data",
+      "to": "shared",
+      "label": "implements ports",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ai-shared",
+      "from": "ai",
+      "to": "shared",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Apps",
+      "items": ["web is public; admin is CMS + HITL; candidate-mcp is the network MCP"]
+    },
+    {
+      "dot": "emerald",
+      "title": "Packages",
+      "items": ["shared owns Zod ports; data and ai implement them"]
+    },
+    {
+      "dot": "rose",
+      "title": "Do not invert",
+      "items": ["Apps never import AWS SDKs; job ingest stays Admin-owned"]
+    }
+  ]
+}

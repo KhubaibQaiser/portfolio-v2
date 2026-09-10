@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Portfolio runtime architecture",
+    "locale": "en",
+    "output": "runtime-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1100, 560],
+    "views": [
+      {
+        "id": "public-request",
+        "label": "Public site",
+        "focus": ["visitors", "cloudfront", "web", "dynamo"],
+        "note": "Visitor traffic terminates at CloudFront, then the OpenNext web Lambda reads CMS content through ContentRepository."
+      },
+      {
+        "id": "admin-cms",
+        "label": "Admin CMS",
+        "focus": ["admin-user", "admin", "google", "dynamo", "s3", "models"],
+        "note": "Google OAuth and requireAdmin() gate every mutation. Saves go to DynamoDB; media uses presigned S3."
+      },
+      {
+        "id": "mcp-agents",
+        "label": "Candidate MCP",
+        "focus": ["mcp-clients", "mcp", "cognito", "dynamo"],
+        "note": "External agents call the read-only MCP over OAuth 2.1. IAM is limited to the five public content tables."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "google",
+      "type": "security",
+      "label": "Google OAuth",
+      "sublabel": "admin allowlist",
+      "pos": [40, 36],
+      "size": [128, 52],
+      "tag": "IdP"
+    },
+    {
+      "id": "admin-user",
+      "type": "external",
+      "label": "Admin",
+      "sublabel": "browser",
+      "pos": [40, 140],
+      "size": [128, 52]
+    },
+    {
+      "id": "visitors",
+      "type": "external",
+      "label": "Visitors",
+      "sublabel": "khubaibqaiser.com",
+      "pos": [40, 270],
+      "size": [128, 52]
+    },
+    {
+      "id": "mcp-clients",
+      "type": "external",
+      "label": "MCP clients",
+      "sublabel": "n8n / Claude",
+      "pos": [40, 400],
+      "size": [128, 52]
+    },
+    {
+      "id": "cloudfront",
+      "type": "cloud",
+      "label": "CloudFront",
+      "sublabel": "CDN + origin-verify",
+      "pos": [280, 270],
+      "size": [150, 52]
+    },
+    {
+      "id": "admin",
+      "type": "backend",
+      "label": "apps/admin",
+      "sublabel": "OpenNext Lambda",
+      "pos": [530, 140],
+      "size": [150, 52],
+      "tag": "requireAdmin"
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "apps/web",
+      "sublabel": "OpenNext Lambda",
+      "pos": [530, 270],
+      "size": [150, 52],
+      "tag": "ISR 10s",
+      "brand": "next-js"
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "apps/candidate-mcp",
+      "sublabel": "Streamable HTTP",
+      "pos": [530, 400],
+      "size": [150, 52],
+      "tag": "read-only"
+    },
+    {
+      "id": "s3",
+      "type": "cloud",
+      "label": "S3 media",
+      "sublabel": "presigned uploads",
+      "pos": [800, 36],
+      "size": [136, 52]
+    },
+    {
+      "id": "models",
+      "type": "external",
+      "label": "Groq + Anthropic",
+      "sublabel": "Vercel AI SDK",
+      "pos": [800, 140],
+      "size": [136, 52],
+      "brand": "anthropic"
+    },
+    {
+      "id": "dynamo",
+      "type": "database",
+      "label": "DynamoDB",
+      "sublabel": "table per aggregate",
+      "pos": [800, 270],
+      "size": [136, 52]
+    },
+    {
+      "id": "cognito",
+      "type": "security",
+      "label": "Cognito",
+      "sublabel": "OAuth 2.1 AS",
+      "pos": [800, 400],
+      "size": [136, 52],
+      "tag": "profile.read"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "AWS eu-west-1",
+      "wraps": ["cloudfront", "admin", "web", "mcp", "s3", "dynamo", "cognito"],
+      "pad": 20
+    },
+    {
+      "kind": "security-group",
+      "label": "MCP trust boundary",
+      "wraps": ["mcp", "cognito"],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "visitors-cf",
+      "from": "visitors",
+      "to": "cloudfront",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    { "id": "admin-user-admin", "from": "admin-user", "to": "admin" },
+    { "id": "mcp-clients-mcp", "from": "mcp-clients", "to": "mcp" },
+    {
+      "id": "cf-web",
+      "from": "cloudfront",
+      "to": "web",
+      "label": "RSC / ISR",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cf-admin",
+      "from": "cloudfront",
+      "to": "admin",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "cf-mcp",
+      "from": "cloudfront",
+      "to": "mcp",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "web-dynamo",
+      "from": "web",
+      "to": "dynamo",
+      "label": "ContentRepository",
+      "variant": "emphasis"
+    },
+    {
+      "id": "admin-google",
+      "from": "admin",
+      "to": "google",
+      "label": "OAuth",
+      "variant": "security",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "admin-s3",
+      "from": "admin",
+      "to": "s3",
+      "label": "presigned PUT",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    { "id": "admin-models", "from": "admin", "to": "models", "label": "Resume AI" },
+    {
+      "id": "admin-dynamo",
+      "from": "admin",
+      "to": "dynamo",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "mcp-cognito",
+      "from": "mcp",
+      "to": "cognito",
+      "label": "verify JWT",
+      "variant": "security"
+    },
+    {
+      "id": "mcp-dynamo",
+      "from": "mcp",
+      "to": "dynamo",
+      "fromSide": "right",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Three apps, one edge",
+      "items": ["CloudFront fronts web, admin, and candidate MCP on OpenNext Lambda"]
+    },
+    {
+      "dot": "emerald",
+      "title": "Ports, not SDKs",
+      "items": ["Apps use ContentRepository / MediaStore; packages/data talks to AWS"]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust boundaries",
+      "items": ["requireAdmin() on mutations; MCP is OAuth 2.1, read-only, five tables"]
+    }
+  ]
+}
