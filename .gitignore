@@ -55,3 +55,6 @@ blob-report/
 # misc
 *.tsbuildinfo
 next-env.d.ts
+
+# Archify visual-check sidecars (README uses *.light.png / *.dark.png)
+docs/archify/*.visual-check.*

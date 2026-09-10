@@ -3,3 +3,5 @@ node_modules
 .turbo
 dist
 pnpm-lock.yaml
+docs/archify/*.html
+.agents/skills/archify
