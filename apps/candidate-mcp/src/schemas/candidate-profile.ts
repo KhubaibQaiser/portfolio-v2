@@ -15,8 +15,8 @@ import { testimonialSchema } from "@portfolio/shared/schemas/testimonial";
  * change in `packages/shared` is caught here — and in any test asserting
  * against this shape — instead of silently drifting.
  *
- * Scope matches ADR 0003's decision: everything already public on
- * `khubaibqaiser.com` (site info, about, resume, experience, skills,
+ * Scope matches ADR 0003's decision: everything already public on the
+ * candidate's portfolio site (site info, about, resume, experience, skills,
  * projects, testimonials) and nothing else — no admin-only or draft content.
  */
 export const candidateProfileSchema = z.object({

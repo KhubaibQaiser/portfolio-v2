@@ -98,6 +98,7 @@ export {
 export {
   testimonialSchema,
   testimonialRowSchema,
+  linkedInRecommendationsUrlFromProfile,
   DEFAULT_LINKEDIN_RECOMMENDATIONS_URL,
   RECOMMENDATION_DESCRIPTION_PREVIEW_MAX,
   RECOMMENDATIONS_SECTION_MAX,

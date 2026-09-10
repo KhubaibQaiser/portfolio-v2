@@ -1,15 +1,23 @@
 import type { Metadata, ResolvingMetadata } from "next";
 import { BarChart3, Users, Eye, Globe, MonitorSmartphone, Zap } from "lucide-react";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildPageMetadata, SITE_URL } from "@/lib/seo";
+
+function siteHostLabel(siteUrl: string): string {
+  try {
+    return new URL(siteUrl).host;
+  } catch {
+    return siteUrl.replace(/^https?:\/\//, "");
+  }
+}
 
 export async function generateMetadata(
   _props: object,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
+  const host = siteHostLabel(SITE_URL);
   const metadata = await buildPageMetadata(parent, {
     title: "Analytics",
-    description:
-      "Public analytics dashboard for khubaibqaiser.com — real-time visitor metrics, traffic sources, and performance data.",
+    description: `Public analytics dashboard for ${host} — real-time visitor metrics, traffic sources, and performance data.`,
     path: "/analytics",
   });
 
@@ -29,13 +37,15 @@ const placeholderStats = [
 ];
 
 export default function AnalyticsPage() {
+  const host = siteHostLabel(SITE_URL);
+
   return (
     <div className="py-32">
       <div className="max-w-container mx-auto px-(--container-padding)">
         <h1 className="text-h1 font-bold tracking-tight">Site Analytics</h1>
         <p className="text-body-lg text-muted-foreground mt-3 max-w-xl">
-          Real-time metrics for khubaibqaiser.com — demonstrating data visualization and
-          analytics pipeline skills.
+          Real-time metrics for {host} — demonstrating data visualization and analytics
+          pipeline skills.
         </p>
 
         {/* Stats grid */}

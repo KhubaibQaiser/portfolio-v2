@@ -13,7 +13,7 @@ work.
 
 ## Goal
 
-Khubaib spends minutes per day reviewing, tailoring, applying, and
+The site owner spends minutes per day reviewing, tailoring, applying, and
 following up — not hunting the contracted boards by hand. The system must
 surface **preference-matching public roles from v1 free sources** and
 notify **as soon as we have them, with P95 ≤ 24 hours of our first persist**.

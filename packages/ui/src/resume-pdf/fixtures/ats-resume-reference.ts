@@ -2,22 +2,22 @@ import type { ResumeData } from "@portfolio/shared/resume-data";
 
 /** ResumeData matching the ATS React-PDF reference layout. */
 export const atsResumeReferenceData: ResumeData = {
-  name: "Khubaib Qaiser",
+  name: "Alex Rivera",
   title: "Senior Fullstack Engineer",
-  location: "Islamabad, Pakistan",
-  phone: "+92 336 5532933",
-  email: "khubaib.dev@gmail.com",
-  website: "khubaibqaiser.com",
+  location: "Remote",
+  phone: "+1 555 555 0100",
+  email: "hello@example.com",
+  website: "example.dev",
   socialLinks: [
     {
       platform: "github",
-      url: "https://github.com/khubaibqaiser",
-      label: "github.com/khubaibqaiser",
+      url: "https://github.com/example",
+      label: "github.com/example",
     },
     {
       platform: "linkedin",
-      url: "https://linkedin.com/in/khubaib-qaiser",
-      label: "linkedin.com/in/khubaib-qaiser",
+      url: "https://linkedin.com/in/example",
+      label: "linkedin.com/in/example",
     },
   ],
   summary:
@@ -27,7 +27,7 @@ export const atsResumeReferenceData: ResumeData = {
   experience: [
     {
       role: "Senior Software Engineer",
-      company: "Shopsense AI",
+      company: "Northwind Labs",
       startDate: "08/2024",
       endDate: "07/2026",
       period: "08/2024 - 07/2026",
@@ -37,8 +37,8 @@ export const atsResumeReferenceData: ResumeData = {
         "Set technical direction for the migration from a monolithic backend to microservices, designing four independently deployable services (Products, Link, AI, Ads) for improved scalability and engineering team autonomy companywide.",
         "Proposed and led companywide adoption of an event driven webhook architecture across 3 teams as lead architect, replacing fixed interval polling to cut infrastructure costs and shorten the ad generation feedback loop.",
         "Owned the AWS serverless backend architecture (CDK, Lambda, API Gateway) on Infrastructure as Code, powering AI generated content across five embed types.",
-        "Directed Embeds, Shopsense's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5% CTR.",
-        "Designed and launched Shopsense's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.",
+        "Directed Embeds, Northwind's AI powered Content-to-Commerce platform, from concept to large scale production across 10+ publisher sites, scaling it to 150K+ daily impressions at a 0.5% CTR.",
+        "Designed and launched Northwind's first A/B testing platform (experiment tracking, analytics, feature flags), giving product teams a framework to validate decisions using real user data.",
       ],
       tech: "",
     },
@@ -87,7 +87,7 @@ export const atsResumeReferenceData: ResumeData = {
       startDate: "05/2020",
       endDate: "12/2020",
       period: "05/2020 - 12/2020",
-      location: "Islamabad, Pakistan (Remote, Freelance)",
+      location: "Remote (Remote, Freelance)",
       contractType: "Freelance",
       bullets: [
         "Delivered React Native mobile apps for international clients, integrating native APIs and partnering directly with backend engineers and designers to ship Android and iOS releases.",
@@ -109,14 +109,14 @@ export const atsResumeReferenceData: ResumeData = {
     },
     {
       role: "Mobile App Developer",
-      company: "Knowledge Platform",
+      company: "Fabrikam Education",
       startDate: "09/2015",
       endDate: "02/2019",
       period: "09/2015 - 02/2019",
-      location: "Islamabad, Pakistan (Onsite)",
+      location: "Remote (Onsite)",
       contractType: "Full-time",
       bullets: [
-        "Reached 500K+ K6-K9 students across Pakistan by developing cross platform educational games and mobile apps integrated with the LSP and Ultrabot learning platforms.",
+        "Reached 500K+ K6-K9 students worldwide by developing cross platform educational games and mobile apps integrated with the LSP and Ultrabot learning platforms.",
       ],
       tech: "",
     },
@@ -125,7 +125,7 @@ export const atsResumeReferenceData: ResumeData = {
   education: [
     {
       degree: "Bachelor of Computer Science",
-      institution: "Quaid-i-Azam University, Islamabad",
+      institution: "Example State University",
       year: "2015",
     },
   ],
@@ -197,7 +197,7 @@ export const atsResumeReferenceData: ResumeData = {
   ],
   languages: [
     { name: "English", level: "C1" },
-    { name: "Urdu", level: "Native" },
+    { name: "Spanish", level: "B1" },
   ],
   remoteWorkLine: null,
   referencesLine: null,

@@ -42,7 +42,7 @@ export function isCanonicalResumeCacheFresh(
  * spurious content-hash miss and re-render for no reason.
  */
 export function resolveWebsiteHost(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://khubaibqaiser.com").replace(
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(
     /^https?:\/\//,
     "",
   );

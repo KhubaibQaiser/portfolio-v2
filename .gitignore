@@ -17,6 +17,10 @@ out/
 .env*.local
 !.env.example
 
+# Private portfolio seed (real CV). Committed demo is seed/content.json.
+packages/data/seed/content.local.json
+packages/data/seed/export/
+
 # build
 dist/
 build/

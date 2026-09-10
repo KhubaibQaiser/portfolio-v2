@@ -271,6 +271,9 @@ export class AdminStack extends cdk.Stack {
       JOBSPIPE_API_KEY_SECRET_ARN: jobspipeSecret.secretArn,
       ADMIN_ALLOWED_EMAILS: config.adminAllowedEmails.join(","),
       ...(appOrigin ? { APP_ORIGIN: appOrigin } : {}),
+      ...(config.domainEnabled
+        ? { PUBLIC_SITE_URL: `https://${config.domainName}` }
+        : {}),
       ...(config.contactEmail ? { CONTACT_TO_EMAIL: config.contactEmail } : {}),
       ...(config.contactFromEmail ? { CONTACT_FROM_EMAIL: config.contactFromEmail } : {}),
     };

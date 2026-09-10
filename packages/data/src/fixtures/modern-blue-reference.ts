@@ -1,22 +1,22 @@
 import type { ResumeData } from "@portfolio/shared/resume-data";
 
 export const modernBlueReferenceResume: ResumeData = {
-  name: "Khubaib Qaiser",
+  name: "Alex Rivera",
   title: "Senior Software Engineer",
-  location: "Islamabad, Pakistan",
-  phone: "+92 336 553 2933",
-  email: "khubaib.dev@gmail.com",
-  website: "khubaibqaiser.com",
+  location: "Remote",
+  phone: "+1 555 555 0100",
+  email: "hello@example.com",
+  website: "example.dev",
   socialLinks: [
     {
       platform: "linkedin",
-      url: "https://linkedin.com/in/khubaib-qaiser",
-      label: "linkedin.com/in/khubaib-qaiser",
+      url: "https://linkedin.com/in/example",
+      label: "linkedin.com/in/example",
     },
     {
       platform: "github",
-      url: "https://github.com/khubaibqaiser",
-      label: "github.com/khubaibqaiser",
+      url: "https://github.com/example",
+      label: "github.com/example",
     },
   ],
   summary:
@@ -24,7 +24,7 @@ export const modernBlueReferenceResume: ResumeData = {
   experience: [
     {
       role: "Senior Software Engineer",
-      company: "Shopsense AI",
+      company: "Northwind Labs",
       startDate: "Aug 2024",
       endDate: "Jul 2026",
       period: "Aug 2024 – Jul 2026",
@@ -34,14 +34,14 @@ export const modernBlueReferenceResume: ResumeData = {
         "Led **Embeds**, an AI-powered content-to-commerce platform, from concept to production across 10+ publisher sites with 150K+ daily impressions and 0.5% CTR, owning the full frontend including component architecture, animations, and per-publisher branding.",
         "Architected the AWS serverless platform using CDK and Infrastructure as Code, designing REST APIs that powered five embed types deployed across partner websites.",
         "Led the shift from a monolithic backend to microservices, splitting the system into independently deployable services communicating over internal APIs.",
-        "Designed and launched Shopsense's first **A/B testing platform** with experiment tracking, analytics, and feature flags so product teams could validate decisions with real user data.",
+        "Designed and launched Northwind's first **A/B testing platform** with experiment tracking, analytics, and feature flags so product teams could validate decisions with real user data.",
         "Introduced unit testing, smoke testing, and code review practices that raised release confidence. Mentored engineers through pair programming.",
       ],
       tech: "",
     },
     {
       role: "Senior Frontend Engineer",
-      company: "Powerful Web Design",
+      company: "Adventure Works",
       startDate: "Oct 2023",
       endDate: "Jul 2026",
       period: "Oct 2023 – Jul 2026",
@@ -102,7 +102,7 @@ export const modernBlueReferenceResume: ResumeData = {
       startDate: "May 2020",
       endDate: "Dec 2020",
       period: "May 2020 – Dec 2020",
-      location: "Islamabad · Remote",
+      location: "Remote",
       contractType: "Freelance",
       bullets: [
         "Built and maintained React Native mobile apps for international clients, integrating native APIs and collaborating with backend engineers and designers.",
@@ -124,14 +124,14 @@ export const modernBlueReferenceResume: ResumeData = {
     },
     {
       role: "Mobile App and Game Developer",
-      company: "Knowledge Platform",
+      company: "Fabrikam Education",
       startDate: "Sep 2015",
       endDate: "Feb 2019",
       period: "Sep 2015 – Feb 2019",
-      location: "Islamabad · Onsite",
+      location: "Onsite",
       contractType: "Full-time",
       bullets: [
-        "Developed cross-platform educational games and mobile apps reaching 500K+ students across Pakistan. Built an offline-first survey app for CERP.",
+        "Developed cross-platform educational games and mobile apps reaching 500K+ students worldwide. Built an offline-first survey app for CERP.",
       ],
       tech: "",
     },
@@ -140,7 +140,7 @@ export const modernBlueReferenceResume: ResumeData = {
   education: [
     {
       degree: "Bachelor's Computer Science",
-      institution: "Quaid-i-Azam University, Islamabad, Pakistan",
+      institution: "Example State University",
       year: "2015",
     },
   ],
@@ -205,11 +205,10 @@ export const modernBlueReferenceResume: ResumeData = {
   ],
   languages: [
     { name: "English", level: "Fluent" },
-    { name: "Urdu", level: "Native" },
-    { name: "Punjabi", level: "Native" },
+    { name: "Spanish", level: "Intermediate" },
   ],
   remoteWorkLine:
-    "7 years fully remote across US, Indonesian, and Pakistani teams. Comfortable across PST, CST, EST, and SGT timezones.",
+    "7 years fully remote across US and EU teams. Comfortable across PST, CST, EST, and SGT timezones.",
   referencesLine: null,
   keywords: "React, TypeScript, Next.js, Design Systems, AWS",
   visibleSections: [

@@ -12,8 +12,8 @@ describe("FixtureContentRepository", () => {
 
   it("returns the seeded singletons", async () => {
     expect((await repo.getHero()).greeting).toBe("Hi, my name is");
-    expect((await repo.getSiteConfig()).email).toBe("khubaib.dev@gmail.com");
-    expect((await repo.getSiteConfig()).name).toBe("Khubaib Qaiser");
+    expect((await repo.getSiteConfig()).email).toBe("hello@example.com");
+    expect((await repo.getSiteConfig()).name).toBe("Alex Rivera");
     expect((await repo.getResume()).education).toHaveLength(1);
   });
 
@@ -26,14 +26,14 @@ describe("FixtureContentRepository", () => {
 
   it("returns experience sorted by recency (most recent first)", async () => {
     const rows = await repo.getExperience();
-    expect(rows[0]?.company).toBe("Shopsense AI");
-    expect(rows.at(-1)?.company).toBe("Knowledge Platform");
+    expect(rows[0]?.company).toBe("Northwind Labs");
+    expect(rows.at(-1)?.company).toBe("Fabrikam Education");
   });
 
   it("returns only featured projects, ordered by sort_order", async () => {
     const featured = await repo.getFeaturedProjects();
     expect(featured.every((p) => p.is_featured)).toBe(true);
-    // Achieve Web Platform (sort_order 2) is not featured in seed/content.json.
+    // Contoso Analytics Dashboard (sort_order 2) is not featured in seed/content.json.
     expect(featured.map((p) => p.sort_order)).toEqual([0, 1, 3, 4]);
   });
 
@@ -48,8 +48,8 @@ describe("FixtureContentRepository", () => {
   });
 
   it("looks up a project by slug", async () => {
-    const project = await repo.getProjectBySlug("achieve-web-platform");
-    expect(project?.title).toBe("Achieve Web Platform");
+    const project = await repo.getProjectBySlug("contoso-analytics");
+    expect(project?.title).toBe("Contoso Analytics Dashboard");
     expect(await repo.getProjectBySlug("does-not-exist")).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe("FixtureContentRepository", () => {
       recommended_at: "01-01-2025",
       description: "Great engineer.",
       linkedin_url:
-        "https://www.linkedin.com/in/khubaib-qaiser/details/recommendations/?detailScreenTabIndex=0",
+        "https://www.linkedin.com/in/example/details/recommendations/?detailScreenTabIndex=0",
       avatar_url: null,
     });
     expect(await repo.getTestimonials()).toHaveLength(4);
@@ -85,8 +85,8 @@ describe("FixtureContentRepository", () => {
 
   it("returns testimonials sorted by recommended_at descending", async () => {
     const rows = await repo.getTestimonials();
-    expect(rows[0]?.full_name).toBe("Alex Rivera");
-    expect(rows.at(-1)?.full_name).toBe("Adi Prasetyo");
+    expect(rows[0]?.full_name).toBe("Jordan Lee");
+    expect(rows.at(-1)?.full_name).toBe("Riley Chen");
   });
 
   it("creates, updates, and deletes an experience row", async () => {

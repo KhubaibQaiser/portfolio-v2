@@ -18,14 +18,14 @@ const entry = path.join(repoRoot, "apps/candidate-mcp/src/lambda.ts");
 const baseConfig: InfraConfig = {
   region: "eu-west-1",
   appName: "Portfolio",
-  domainName: "khubaibqaiser.com",
+  domainName: "example.com",
   domainEnabled: true,
   tablePrefix: "portfolio",
   mediaCorsOrigins: [],
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
+  mcpCognitoDomainPrefix: "example-com-candidate-mcp",
 };
 
 function synth(configOverrides: Partial<InfraConfig> = {}): Template {
@@ -150,7 +150,7 @@ describe("CandidateMcpStack", () => {
 
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: Match.objectLike({
-        Aliases: ["mcp.khubaibqaiser.com"],
+        Aliases: ["mcp.example.com"],
       }),
     });
     template.resourceCountIs("AWS::Route53::RecordSet", 1);
@@ -212,8 +212,8 @@ describe("CandidateMcpStack", () => {
           COGNITO_USER_POOL_ID: Match.anyValue(),
           COGNITO_REGION: "eu-west-1",
           COGNITO_DOMAIN: Match.anyValue(),
-          MCP_RESOURCE_SERVER_IDENTIFIER: "https://mcp.khubaibqaiser.com",
-          MCP_SERVER_URL: "https://mcp.khubaibqaiser.com/mcp",
+          MCP_RESOURCE_SERVER_IDENTIFIER: "https://mcp.example.com",
+          MCP_SERVER_URL: "https://mcp.example.com/mcp",
         }),
       }),
     });

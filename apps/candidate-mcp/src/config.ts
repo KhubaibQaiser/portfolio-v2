@@ -5,7 +5,7 @@
  * `process.env` ad hoc.
  */
 export type Config = {
-  /** Public URL of this MCP server, e.g. `https://mcp.khubaibqaiser.com/mcp`. */
+  /** Public URL of this MCP server, e.g. `https://mcp.example.com/mcp`. */
   serverUrl: string;
   /** Cognito User Pool ID JWTs must be issued from. */
   cognitoUserPoolId: string;

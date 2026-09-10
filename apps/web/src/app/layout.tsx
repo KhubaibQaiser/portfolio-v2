@@ -161,12 +161,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <a href="#main" className="skip-to-content">
                 Skip to content
               </a>
-              <Navbar name={config.name} navLinks={MAIN_NAV_LINKS} />
-              <main id="main" className="relative">
-                {children}
-              </main>
-              <Footer name={config.name} socialLinks={socialLinks} />
-              <SiteConfigProvider email={config.email} socialLinks={socialLinks}>
+              <SiteConfigProvider
+                name={config.name}
+                email={config.email}
+                socialLinks={socialLinks}
+              >
+                <Navbar name={config.name} navLinks={MAIN_NAV_LINKS} />
+                <main id="main" className="relative">
+                  {children}
+                </main>
+                <Footer name={config.name} socialLinks={socialLinks} />
                 <DeferredWidgets />
               </SiteConfigProvider>
             </SmoothScroll>

@@ -8,14 +8,14 @@ import { CertStack } from "./cert-stack";
 const baseConfig: InfraConfig = {
   region: "eu-west-1",
   appName: "Portfolio",
-  domainName: "khubaibqaiser.com",
+  domainName: "example.com",
   domainEnabled: true,
   tablePrefix: "portfolio",
   mediaCorsOrigins: [],
   adminUrls: [],
   adminAllowedEmails: [],
   monthlyBudgetUsd: 25,
-  mcpCognitoDomainPrefix: "khubaibqaiser-com-candidate-mcp",
+  mcpCognitoDomainPrefix: "example-com-candidate-mcp",
 };
 
 function synth(): Template {

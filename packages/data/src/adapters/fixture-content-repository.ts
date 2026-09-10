@@ -46,6 +46,7 @@ import {
   siteConfigFixture,
   skillFixtures,
   testimonialFixtures,
+  type ContentFixtureBundle,
 } from "../fixtures/content";
 import { defaultJobPreferencesRow } from "@portfolio/shared/schemas";
 
@@ -57,23 +58,40 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+const defaultBundle: ContentFixtureBundle = {
+  heroFixture,
+  aboutFixture,
+  siteConfigFixture,
+  resumeFixture,
+  experienceFixtures,
+  projectFixtures,
+  skillFixtures,
+  testimonialFixtures,
+  mediaFixtures: [],
+  resumeLayoutFixtures,
+};
+
 /**
  * In-memory {@link ContentRepository} seeded from the static fixtures. Mutations
  * affect a private clone so each instance is isolated and tests stay
  * deterministic. Used for local dev (no cloud), e2e, and unit tests.
+ * Pass an optional bundle (e.g. from gitignored `content.local.json`) for a
+ * private local site; unit tests must keep using the default committed demo.
  */
-export function createFixtureContentRepository(): ContentRepository {
-  let hero: Hero = clone(heroFixture);
-  let about: About = clone(aboutFixture);
-  let siteConfig: SiteConfig = clone(siteConfigFixture);
+export function createFixtureContentRepository(
+  seed: ContentFixtureBundle = defaultBundle,
+): ContentRepository {
+  let hero: Hero = clone(seed.heroFixture);
+  let about: About = clone(seed.aboutFixture);
+  let siteConfig: SiteConfig = clone(seed.siteConfigFixture);
   let jobPreferences: JobPreferences = clone(defaultJobPreferencesRow());
-  let resume: Resume = clone(resumeFixture);
-  const experience: Experience[] = clone(experienceFixtures);
-  const projects: Project[] = clone(projectFixtures);
-  const skills: Skill[] = clone(skillFixtures);
-  const testimonials: Testimonial[] = clone(testimonialFixtures);
+  let resume: Resume = clone(seed.resumeFixture);
+  const experience: Experience[] = clone(seed.experienceFixtures);
+  const projects: Project[] = clone(seed.projectFixtures);
+  const skills: Skill[] = clone(seed.skillFixtures);
+  const testimonials: Testimonial[] = clone(seed.testimonialFixtures);
   const resumeVariants: ResumeVariant[] = [];
-  const resumeLayouts: ResumeLayout[] = clone(resumeLayoutFixtures);
+  const resumeLayouts: ResumeLayout[] = clone(seed.resumeLayoutFixtures);
   const media: Media[] = [];
   const resumeGenerations: ResumeGeneration[] = [];
 

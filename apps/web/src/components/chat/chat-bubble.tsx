@@ -7,6 +7,10 @@ import { MessageCircle, X, Send, Loader2, Bot, User, AlertCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import { capturePortfolioEvent } from "@/lib/analytics/capture-client";
 import { PortfolioEvents } from "@/lib/analytics/events";
+import {
+  firstNameFromDisplayName,
+  useSiteConfig,
+} from "@/components/layout/site-config-provider";
 import { AssistantMarkdown } from "./assistant-markdown";
 import { chatTransport, ChatRateLimitError } from "./chat-transport";
 
@@ -16,9 +20,6 @@ const SUGGESTED_QUESTIONS = [
   "Tell me about a challenging project you worked on",
   "Why should we hire you?",
 ];
-
-const GREETING =
-  "Hi! I'm Khubaib. Ask me anything about my experience, projects, or skills.";
 
 const CHAT_TITLE_ID = "chat-dialog-title";
 const CHAT_INPUT_ID = "chat-message";
@@ -96,6 +97,12 @@ const iconSwap = {
 };
 
 export function ChatBubble() {
+  const { name } = useSiteConfig();
+  const firstName = firstNameFromDisplayName(name);
+  const greeting = `Hi! I'm ${firstName}. Ask me anything about my experience, projects, or skills.`;
+  const chatTitle = `Ask ${firstName}`;
+  const inputPlaceholder = `Ask about ${firstName}'s experience...`;
+
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [cooldownSecondsLeft, setCooldownSecondsLeft] = useState(0);
@@ -307,7 +314,7 @@ export function ChatBubble() {
                     id={CHAT_TITLE_ID}
                     className="text-sm leading-tight font-semibold"
                   >
-                    Ask Khubaib
+                    {chatTitle}
                   </span>
                   <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -334,7 +341,7 @@ export function ChatBubble() {
               className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain px-4 py-3"
             >
               <div className="space-y-4">
-                <MessageRow role="assistant" content={GREETING} />
+                <MessageRow role="assistant" content={greeting} />
 
                 {chatMessages.map((msg) => (
                   <MessageRow
@@ -403,7 +410,7 @@ export function ChatBubble() {
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask about Khubaib's experience..."
+                  placeholder={inputPlaceholder}
                   className={cn(
                     "border-border bg-background flex-1 rounded-xl border px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground/50",

@@ -20,8 +20,22 @@ export type FeedFetch = (
   init?: { method?: string; headers?: Record<string, string>; body?: string },
 ) => Promise<{ status: number; text: string }>;
 
-export const JOB_FEED_USER_AGENT =
-  "Mozilla/5.0 (compatible; KhubaibPortfolioJobIngest/1.0; +https://khubaibqaiser.com)";
+/**
+ * Outbound User-Agent for free job-feed fetches. Contact URL comes from
+ * `PUBLIC_SITE_URL` / `NEXT_PUBLIC_SITE_URL` (set by CDK from domainName when
+ * domain is enabled). Product token is intentionally generic for white-label.
+ */
+export function buildJobFeedUserAgent(
+  siteUrl = process.env.PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://example.com",
+): string {
+  const origin = siteUrl.trim().replace(/\/+$/, "") || "https://example.com";
+  return `Mozilla/5.0 (compatible; PortfolioJobIngest/1.0; +${origin})`;
+}
+
+/** Evaluated once at module load; prefer {@link buildJobFeedUserAgent} in new code. */
+export const JOB_FEED_USER_AGENT = buildJobFeedUserAgent();
 
 const MAX_BYTES = 1_000_000;
 
@@ -35,7 +49,7 @@ export async function defaultFeedFetch(
     const response = await fetch(url, {
       method: init?.method ?? "GET",
       headers: {
-        "user-agent": JOB_FEED_USER_AGENT,
+        "user-agent": buildJobFeedUserAgent(),
         accept: "application/json, application/rss+xml, text/xml, */*",
         ...init?.headers,
       },

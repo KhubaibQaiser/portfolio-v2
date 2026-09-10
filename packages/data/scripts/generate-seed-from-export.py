@@ -9,7 +9,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPORT_DIR = ROOT / "seed" / "export"
-OUT_PATH = ROOT / "seed" / "content.json"
+# Default to gitignored private seed so regenerating from personal CSV exports
+# cannot accidentally overwrite the committed demo content.json.
+OUT_PATH = ROOT / "seed" / "content.local.json"
 
 
 def read_csv(name: str) -> list[dict[str, str]]:
@@ -44,6 +46,18 @@ def normalize_timestamp(val: str) -> str:
 
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=OUT_PATH,
+        help="Output path (default: seed/content.local.json). Use --out seed/content.json to regenerate the committed demo.",
+    )
+    args = parser.parse_args()
+    out_path: Path = args.out
+
     hero = read_csv("hero_rows.csv")[0]
     about = read_csv("about_rows.csv")[0]
     site = read_csv("site_config_rows.csv")[0]
@@ -222,8 +236,8 @@ def main() -> None:
     )
     content["skills"].sort(key=lambda r: (r["category"], r["sort_order"]))
 
-    OUT_PATH.write_text(json.dumps(content, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Wrote {OUT_PATH} ({len(content['experience'])} experience rows)")
+    out_path.write_text(json.dumps(content, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Wrote {out_path} ({len(content['experience'])} experience rows)")
 
 
 if __name__ == "__main__":

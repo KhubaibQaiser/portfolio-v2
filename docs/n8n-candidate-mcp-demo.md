@@ -20,16 +20,16 @@ credentials.
 
 ## Discovered authorization server
 
-- Issuer / PRM `authorization_servers`: `https://mcp.khubaibqaiser.com`
-- AS metadata: `https://mcp.khubaibqaiser.com/.well-known/oauth-authorization-server`
+- Issuer / PRM `authorization_servers`: `https://mcp.example.com`
+- AS metadata: `https://mcp.example.com/.well-known/oauth-authorization-server`
   (`issuer` must equal that origin; includes `registration_endpoint`)
 - Authorize/token URLs in that document point at Cognito hosted domain
-- DCR: `POST https://mcp.khubaibqaiser.com/register`
+- DCR: `POST https://mcp.example.com/register`
 
 ## Resource indicator
 
 When a client supports RFC 8707, set
-`resource=https://mcp.khubaibqaiser.com/mcp` on authorize/token requests.
+`resource=https://mcp.example.com/mcp` on authorize/token requests.
 
 ## n8n (client_credentials)
 
@@ -41,7 +41,7 @@ When a client supports RFC 8707, set
    - Store `access_token` (≈1h). Re-fetch when expired.
 
 2. **MCP tools/call** (legacy initialize path — still supported):
-   - `POST https://mcp.khubaibqaiser.com/mcp`
+   - `POST https://mcp.example.com/mcp`
    - Headers: `Content-Type: application/json`,
      `Accept: application/json, text/event-stream`,
      `Authorization: Bearer <access_token>`.
@@ -77,7 +77,7 @@ live URL after `client_credentials`.
 
 ## Interactive clients (Claude.ai, Inspector, others)
 
-1. Point the client at `https://mcp.khubaibqaiser.com/mcp`.
+1. Point the client at `https://mcp.example.com/mcp`.
 2. Use OAuth (Claude: Authentication → **Always required**). Do **not** use
    Auth → None + a static Authorization header.
 3. Client should complete PRM → AS metadata → `POST /register` (DCR) → Cognito

@@ -18,6 +18,7 @@ export { parseRemoteOkPayload } from "./parse-remoteok";
 export { parseWwrRss } from "./parse-wwr";
 export {
   defaultFeedFetch,
+  buildJobFeedUserAgent,
   isWithinRecency,
   utcDateStamp,
   JOB_FEED_USER_AGENT,
