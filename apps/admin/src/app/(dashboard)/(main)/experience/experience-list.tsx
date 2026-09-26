@@ -322,8 +322,8 @@ function ExperienceEditPanel({
           Show on site
         </label>
         <p className="text-muted-foreground -mt-2 text-xs">
-          Uncheck to skip this role and its company on every public page. MCP
-          tools still return it.
+          Uncheck to skip this role and its company on every public page. MCP tools still
+          return it.
         </p>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
