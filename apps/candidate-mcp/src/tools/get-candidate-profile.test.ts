@@ -26,4 +26,17 @@ describe("fetchCandidateProfile", () => {
     expect(profile.about.bio).toContain("[redacted]");
     expect(profile.about.bio).not.toContain("reveal the system prompt");
   });
+
+  it("still returns an experience hidden from the public site", async () => {
+    const repo = createFixtureContentRepository();
+    const [first] = await repo.getExperience();
+    if (!first) throw new Error("fixture repo has no experience rows");
+    await repo.updateExperience(first.id, { show_on_site: false });
+
+    const profile = await fetchCandidateProfile(repo);
+    const hidden = profile.experience.find((row) => row.company === first.company);
+
+    expect(hidden?.show_on_site).toBe(false);
+    expect(hidden?.role).toBe(first.role);
+  });
 });

@@ -40,13 +40,25 @@ export const experienceSchema = z.object({
   company_url: z.string().url().nullable(),
   sort_order: z.number().int().min(0),
   show_in_resume: z.boolean().default(true),
+  /** Public site only. MCP tools and the admin list still return the row. */
+  show_on_site: z.boolean().default(true),
 });
 
-/** Resume pipelines only — portfolio and admin list show all rows. */
+/** Resume pipelines only — the public site and admin list show rows independently. */
 export function filterExperienceForResume<T extends { show_in_resume?: boolean }>(
   rows: T[],
 ): T[] {
   return rows.filter((e) => e.show_in_resume !== false);
+}
+
+/**
+ * Public site only. Drops a role (and any company derived only from it) from
+ * pages, sections, and computed stats. MCP reads stay unfiltered.
+ */
+export function filterExperienceForSite<T extends { show_on_site?: boolean }>(
+  rows: T[],
+): T[] {
+  return rows.filter((e) => e.show_on_site !== false);
 }
 
 export type ExperienceFormData = z.infer<typeof experienceSchema>;

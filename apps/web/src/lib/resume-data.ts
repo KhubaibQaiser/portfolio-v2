@@ -14,7 +14,10 @@ export type { ResumeData } from "@portfolio/shared/resume-data";
  */
 export const getResumeData = cache(
   async (): Promise<ResumeData> =>
-    sharedGetResumeData(getContentRepository(), { websiteHost: resolveWebsiteHost() }),
+    sharedGetResumeData(getContentRepository(), {
+      websiteHost: resolveWebsiteHost(),
+      forPublicSite: true,
+    }),
   ["resume-data"],
   { revalidate: 10 },
 );

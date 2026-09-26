@@ -4,7 +4,11 @@ import {
   sortDatedExperiencesByRecency,
 } from "./experience-bullet-budget";
 import type { ContentRepository } from "./ports/content-repository";
-import { getContractTypeLabel, filterExperienceForResume } from "./schemas/experience";
+import {
+  getContractTypeLabel,
+  filterExperienceForResume,
+  filterExperienceForSite,
+} from "./schemas/experience";
 import { filterProjectsForResume } from "./schemas/project";
 import type { VariantGuidelines } from "./schemas/resume-layout";
 
@@ -86,6 +90,12 @@ export type GetResumeDataOptions = {
   titleOverride?: string | null;
   /** Max skill items rendered per category on the PDF (default 10). */
   maxSkillItemsPerCategory?: number;
+  /**
+   * Public site resume (HTML page and canonical PDF). Also drops roles with
+   * `show_on_site: false`. Admin resume generation leaves this unset so a
+   * site-hidden role can still appear on a tailored resume.
+   */
+  forPublicSite?: boolean;
 };
 
 const DEFAULT_MAX_SKILL_ITEMS = 10;
@@ -184,7 +194,10 @@ export async function getResumeData(
     summary: opts.summaryOverride ?? resume.default_summary,
     keywords,
     visibleSections,
-    experience: filterExperienceForResume(experience).map((exp) => ({
+    experience: (opts.forPublicSite
+      ? filterExperienceForSite(filterExperienceForResume(experience))
+      : filterExperienceForResume(experience)
+    ).map((exp) => ({
       sourceId: exp.id,
       company: exp.company,
       role: exp.role,

@@ -118,6 +118,7 @@ export function buildContentFixturesFromRaw(doc: SeedDocument): ContentFixtureBu
     experienceFixtures: doc.experience.map((row) => ({
       ...row,
       show_in_resume: (row as { show_in_resume?: boolean }).show_in_resume ?? true,
+      show_on_site: (row as { show_on_site?: boolean }).show_on_site ?? true,
       created_at: TS,
       updated_at: TS,
       revision: 1,

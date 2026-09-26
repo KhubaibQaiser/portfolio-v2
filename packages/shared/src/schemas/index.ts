@@ -17,6 +17,7 @@ export {
   CONTRACT_TYPE_LABELS,
   getContractTypeLabel,
   filterExperienceForResume,
+  filterExperienceForSite,
   type ContractType,
   type ExperienceFormData,
   type Experience,

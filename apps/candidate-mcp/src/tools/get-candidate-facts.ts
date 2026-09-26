@@ -52,7 +52,7 @@ export function registerGetCandidateFactsTool(
     "get_candidate_facts",
     {
       description:
-        "Read a compact, LLM-ready fact sheet summarizing the candidate's experience, skills, education, and voice sample. The same context the resume-AI pipeline uses. Read-only.",
+        "Read a compact, LLM-ready fact sheet summarizing the candidate's experience, skills, education, and voice sample. Includes experience hidden from the public site. Read-only.",
       inputSchema: z.object({}),
     },
     withGuardrails("get_candidate_facts", authInfo, config, async () => {

@@ -104,6 +104,7 @@ describe("FixtureContentRepository", () => {
       company_url: null,
       sort_order: 0,
       show_in_resume: true,
+      show_on_site: true,
     });
     expect(created.id).toBeTruthy();
 

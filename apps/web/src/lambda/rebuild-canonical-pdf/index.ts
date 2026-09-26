@@ -29,7 +29,7 @@ const RENDER_DEADLINE_MS = 90_000;
 export async function handler(): Promise<void> {
   const repo = getContentRepository();
   const [raw, layouts] = await Promise.all([
-    getResumeData(repo, { websiteHost: resolveWebsiteHost() }),
+    getResumeData(repo, { websiteHost: resolveWebsiteHost(), forPublicSite: true }),
     repo.getResumeLayouts().catch(() => []),
   ]);
   const layout = pickDefaultResumeLayout(layouts);

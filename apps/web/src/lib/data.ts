@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getContentRepository } from "@portfolio/data";
+import { filterExperienceForSite } from "@portfolio/shared/schemas";
 
 // ---------------------------------------------------------------------------
 // All data is loaded through the content repository port (fixtures by default,
@@ -11,7 +12,9 @@ const repo = getContentRepository();
 
 export const fetchHero = cache(async () => repo.getHero());
 export const fetchAbout = cache(async () => repo.getAbout());
-export const fetchExperience = cache(async () => repo.getExperience());
+export const fetchExperience = cache(async () =>
+  filterExperienceForSite(await repo.getExperience()),
+);
 export const fetchFeaturedProjects = cache(async () => repo.getFeaturedProjects());
 export const fetchAllProjects = cache(async () => repo.getProjects());
 export const fetchProjectBySlug = cache(async (slug: string) =>

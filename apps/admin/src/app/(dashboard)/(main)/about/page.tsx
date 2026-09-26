@@ -1,5 +1,6 @@
 import { getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
+import { filterExperienceForSite } from "@portfolio/shared/schemas";
 import { AboutForm } from "./about-form";
 
 export default async function AboutEditPage() {
@@ -8,7 +9,7 @@ export default async function AboutEditPage() {
     repo.getAbout().catch(() => null),
     repo.getExperience().catch(() => []),
   ]);
-  const derivedCompaniesCount = uniqueCompanyCount(experience);
+  const derivedCompaniesCount = uniqueCompanyCount(filterExperienceForSite(experience));
 
   return (
     <>

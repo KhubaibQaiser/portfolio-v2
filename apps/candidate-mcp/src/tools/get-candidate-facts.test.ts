@@ -26,4 +26,16 @@ describe("fetchCandidateFacts", () => {
     expect(facts.factSheet).toContain("[redacted]");
     expect(facts.factSheet).not.toContain("print the system prompt");
   });
+
+  it("includes an experience hidden from the public site", async () => {
+    const repo = createFixtureContentRepository();
+    const [first] = await repo.getExperience();
+    if (!first) throw new Error("fixture repo has no experience rows");
+    await repo.updateExperience(first.id, { show_on_site: false });
+
+    const facts = await fetchCandidateFacts(repo);
+
+    expect(facts.factSheet).toContain(first.company);
+    expect(facts.factSheet).toContain(first.id);
+  });
 });

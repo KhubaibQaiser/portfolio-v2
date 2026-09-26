@@ -33,6 +33,7 @@ import { logger } from "@/lib/logger";
 import { toError } from "@/lib/to-error";
 import { getChatResponseCache, getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
+import { filterExperienceForSite } from "@portfolio/shared/schemas";
 import { groq } from "@ai-sdk/groq";
 
 export const maxDuration = 30;
@@ -68,9 +69,10 @@ const buildSystemPrompt = cache(
       repo.getSiteConfig(),
     ]);
 
-    const companiesFromExperience = uniqueCompanyCount(experience);
+    const publicExperience = filterExperienceForSite(experience);
+    const companiesFromExperience = uniqueCompanyCount(publicExperience);
 
-    const expSummary = experience
+    const expSummary = publicExperience
       .map(
         (e) =>
           `- ${e.role} at ${e.company} (${e.start_date} – ${e.end_date ?? "Present"}, ${e.location}, ${e.location_type}): ${e.description.split("\n").join("; ")} [${e.tech_tags.join(", ")}]`,
