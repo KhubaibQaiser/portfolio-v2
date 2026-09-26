@@ -174,6 +174,7 @@ function toExperience(item: Item): Experience {
     logo_url: e.logo_url ?? null,
     company_url: e.company_url ?? null,
     show_in_resume: e.show_in_resume ?? true,
+    show_on_site: e.show_on_site ?? true,
   });
 }
 

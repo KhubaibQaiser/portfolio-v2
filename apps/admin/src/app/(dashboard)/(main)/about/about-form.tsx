@@ -97,7 +97,7 @@ export function AboutForm({ initialData, derivedCompaniesCount }: AboutFormProps
             >
               {derivedCompaniesCount}{" "}
               <span className="ml-1.5 text-xs">
-                (unique employers from Experience — updates when you edit that list)
+                (unique employers shown on the site — updates when you edit Experience)
               </span>
             </div>
           </div>

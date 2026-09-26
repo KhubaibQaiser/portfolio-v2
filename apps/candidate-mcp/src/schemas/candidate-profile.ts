@@ -15,9 +15,9 @@ import { testimonialSchema } from "@portfolio/shared/schemas/testimonial";
  * change in `packages/shared` is caught here — and in any test asserting
  * against this shape — instead of silently drifting.
  *
- * Scope matches ADR 0003's decision: everything already public on the
- * candidate's portfolio site (site info, about, resume, experience, skills,
- * projects, testimonials) and nothing else — no admin-only or draft content.
+ * Scope matches ADR 0003: site info, about, resume, experience, skills,
+ * projects, and testimonials. Experience rows with `show_on_site: false`
+ * are omitted from the public site and still included here.
  */
 export const candidateProfileSchema = z.object({
   site: siteConfigSchema,

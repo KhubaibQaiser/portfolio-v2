@@ -37,6 +37,7 @@ const EMPTY: ExperienceFormData = {
   company_url: null,
   sort_order: 0,
   show_in_resume: true,
+  show_on_site: true,
 };
 
 type ExperienceEditForm = ExperienceFormData & {
@@ -145,6 +146,11 @@ function ExperienceListPanel({
                   {exp.show_in_resume === false && (
                     <p className="text-muted-foreground mt-1 text-xs">
                       Hidden from resume
+                    </p>
+                  )}
+                  {exp.show_on_site === false && (
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Hidden from site — still returned by MCP
                     </p>
                   )}
                 </div>
@@ -311,6 +317,14 @@ function ExperienceEditPanel({
           <input type="checkbox" {...register("show_in_resume")} />
           Show in Resume
         </label>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" {...register("show_on_site")} />
+          Show on site
+        </label>
+        <p className="text-muted-foreground -mt-2 text-xs">
+          Uncheck to skip this role and its company on every public page. MCP tools still
+          return it.
+        </p>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
     </Form>

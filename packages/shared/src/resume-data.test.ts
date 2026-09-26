@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterExperienceForResume } from "./schemas/experience";
+import { filterExperienceForResume, filterExperienceForSite } from "./schemas/experience";
 import { filterProjectsForResume } from "./schemas/project";
 import { classicGuidelines } from "./schemas/resume-layout-defaults";
 import {
@@ -122,6 +122,7 @@ function emptyProjectsRepo(
         company_url: null,
         sort_order: 0,
         show_in_resume: true,
+        show_on_site: true,
         created_at: "",
         updated_at: "",
         revision: 1,
@@ -141,6 +142,17 @@ describe("filterExperienceForResume", () => {
       { company: "C", show_in_resume: false },
     ];
     expect(filterExperienceForResume(rows).map((r) => r.company)).toEqual(["A", "B"]);
+  });
+});
+
+describe("filterExperienceForSite", () => {
+  it("includes rows with show_on_site true or undefined and drops hidden ones", () => {
+    const rows = [
+      { company: "A", show_on_site: true },
+      { company: "B" },
+      { company: "C", show_on_site: false },
+    ];
+    expect(filterExperienceForSite(rows).map((r) => r.company)).toEqual(["A", "B"]);
   });
 });
 
@@ -174,6 +186,7 @@ describe("getResumeData", () => {
           company_url: null,
           sort_order: 0,
           show_in_resume: true,
+          show_on_site: true,
           created_at: "",
           updated_at: "",
           revision: 1,
@@ -193,6 +206,7 @@ describe("getResumeData", () => {
           company_url: null,
           sort_order: 1,
           show_in_resume: false,
+          show_on_site: true,
           created_at: "",
           updated_at: "",
           revision: 1,
@@ -205,6 +219,62 @@ describe("getResumeData", () => {
     expect(data.experience[0]!.company).toBe("Visible Co");
     expect(data.experience[0]!.sourceId).toBe("1");
     expect(data.experience[0]!.period).toBe("Jan 2024 - Present");
+  });
+
+  it("drops show_on_site false from the public resume and keeps it for resume generation", async () => {
+    const repo = emptyProjectsRepo({
+      getExperience: async () => [
+        {
+          id: "1",
+          company: "Public Co",
+          role: "Engineer",
+          location: "Remote",
+          location_type: "remote",
+          contract_type: "full_time",
+          start_date: "Jan 2024",
+          end_date: null,
+          description: "Public work.",
+          tech_tags: ["React"],
+          logo_url: null,
+          company_url: null,
+          sort_order: 0,
+          show_in_resume: true,
+          show_on_site: true,
+          created_at: "",
+          updated_at: "",
+          revision: 1,
+        },
+        {
+          id: "2",
+          company: "Mcp Only Co",
+          role: "Advisor",
+          location: "Remote",
+          location_type: "remote",
+          contract_type: "consultant",
+          start_date: "Jan 2023",
+          end_date: null,
+          description: "Kept for agents.",
+          tech_tags: ["TypeScript"],
+          logo_url: null,
+          company_url: null,
+          sort_order: 1,
+          show_in_resume: true,
+          show_on_site: false,
+          created_at: "",
+          updated_at: "",
+          revision: 1,
+        },
+      ],
+    });
+
+    const generated = await getResumeData(repo);
+    expect(generated.experience.map((exp) => exp.company)).toEqual([
+      "Public Co",
+      "Mcp Only Co",
+    ]);
+
+    const publicResume = await getResumeData(repo, { forPublicSite: true });
+    expect(publicResume.experience.map((exp) => exp.company)).toEqual(["Public Co"]);
   });
 
   it("maps resume projects and skips hidden ones", async () => {

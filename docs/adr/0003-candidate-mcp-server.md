@@ -12,6 +12,13 @@
 > **2026-08-27 (auth):** HTTP identity is OAuth 2.1 with Cognito as AS per
 > [ADR 0006](0006-candidate-mcp-oauth.md). [ADR 0005](0005-candidate-mcp-api-keys.md)
 > (hashed API keys) is superseded.
+>
+> **2026-09-26 (experience visibility):** An experience row may set
+> `show_on_site: false`. The public site then skips that role and any company
+> derived only from it (pages, sections, counts, chat, `llms.txt`, and the
+> public resume/PDF). `get_candidate_profile` and `get_candidate_facts` still
+> return the row. That is the one intentional divergence from "the same
+> content already public."
 
 `packages/agent-mcp` is a local, unauthenticated, stdio-only MCP server that
 gives coding agents read-only access to ADRs and AI module contracts. It has
