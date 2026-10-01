@@ -11,7 +11,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "^2.33.1"
+    "@aws-lambda-powertools/logger": "^2.35.0"
   },
   "devDependencies": {
     "typescript": "^6.0.2"

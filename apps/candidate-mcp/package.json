@@ -10,7 +10,7 @@
     "mcp-scan": "npx --yes mcp-scan@latest scan mcp-scan.config.json"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "^2.33.1",
+    "@aws-lambda-powertools/logger": "^2.35.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.1075.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@portfolio/ai": "workspace:*",
