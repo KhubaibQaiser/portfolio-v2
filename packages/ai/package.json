@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@portfolio/shared": "workspace:*",
-    "@aws-sdk/client-secrets-manager": "^3.1075.0",
+    "@aws-sdk/client-secrets-manager": "^3.1141.0",
     "@ai-sdk/anthropic": "^2.0.55",
     "@ai-sdk/groq": "^3.0.35",
     "ai": "^6.0.158",
