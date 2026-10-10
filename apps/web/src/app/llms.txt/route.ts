@@ -5,11 +5,10 @@ import {
   fetchSiteConfig,
   fetchSkills,
 } from "@/lib/data";
-import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { SITE_URL } from "@/lib/seo";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 
-export const revalidate = PAGE_REVALIDATE_SECONDS;
+export const revalidate = 172800;
 
 /** Keeps AI-crawler-facing bullets terse even when a CMS description is long. */
 function firstSentence(text: string, maxLength = 140): string {

@@ -11,11 +11,10 @@ import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
 import { breadcrumbListJsonLd, creativeWorkJsonLd } from "@/lib/json-ld";
 import { splitPlainTextParagraphs } from "@/lib/plain-text";
 import { pickRelatedProjects } from "@/lib/related-projects";
-import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 import type { Project } from "@portfolio/shared/schemas";
 
-export const revalidate = PAGE_REVALIDATE_SECONDS;
+export const revalidate = 172800;
 
 export async function generateStaticParams() {
   const projects = await fetchAllProjects();

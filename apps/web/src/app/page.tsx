@@ -19,10 +19,9 @@ import {
   fetchSiteConfig,
 } from "@/lib/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
-import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = PAGE_REVALIDATE_SECONDS;
+export const revalidate = 172800;
 
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },

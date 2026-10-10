@@ -1,6 +1,9 @@
 /**
  * ISR freshness for every public page. CMS writes show up on the next
  * regeneration; deploys still invalidate CloudFront `/*` immediately.
+ *
+ * Page `export const revalidate` must be this value as a numeric literal.
+ * Next.js extracts segment config statically and rejects an imported binding.
  */
 export const PAGE_REVALIDATE_SECONDS = 48 * 60 * 60;
 
