@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
 import { fetchSiteConfig } from "@/lib/data";
 import { renderMonogram } from "@/lib/og-image";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
+
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";

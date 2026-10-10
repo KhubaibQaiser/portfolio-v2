@@ -40,7 +40,7 @@ Three runtime surfaces share one data plane:
 
 | Surface                  | Who uses it                   | What it does                                                                        |
 | ------------------------ | ----------------------------- | ----------------------------------------------------------------------------------- |
-| **`apps/web`**           | Visitors                      | Portfolio, chat (Groq), contact form, resume PDF. Time-based ISR (~10s).            |
+| **`apps/web`**           | Visitors                      | Portfolio, chat (Groq), contact form, resume PDF. Time-based ISR (48h).             |
 | **`apps/admin`**         | Site owner                    | CMS, media uploads, Resume AI, job ingest + HITL tracker. `force-dynamic`.          |
 | **`apps/candidate-mcp`** | External agents (n8n, Claude) | Read-only MCP tools over OAuth 2.1 + Cognito. Same public profile data as the site. |
 
@@ -64,7 +64,7 @@ CloudFront is the edge for all three apps. Apps never import AWS SDKs — they c
 ### Why these pieces
 
 - **OpenNext + Lambda + CloudFront** — Next.js 16 (SSR, ISR, RSC streaming, image optimization) on serverless AWS. Scale-to-zero, pay-per-request.
-- **Time-based ISR (10s)** — Admin writes DynamoDB; the public site revalidates within the window. No on-demand invalidation, tag cache, SQS, or revalidation Lambda.
+- **Time-based ISR (48h)** — Admin writes DynamoDB; the public site revalidates within the window. No on-demand invalidation, tag cache, SQS, or revalidation Lambda.
 - **DynamoDB (table-per-entity)** — On-demand billing, PITR on durable tables, TTL on the rate-limit table.
 - **Better Auth (stateless)** — Google OAuth, encrypted cookie sessions, email allowlist on every mutation.
 - **Ports and adapters** — The same app code runs against fixtures, DynamoDB Local, or AWS.
@@ -150,7 +150,7 @@ portfolio-v2/
 ### Visitor — public site
 
 1. Hit CloudFront → OpenNext web Lambda (HTML/RSC) or hashed `_next` assets on S3.
-2. Content pages use `revalidate = 10` against `ContentRepository`.
+2. Content pages use `revalidate` of 48 hours against `ContentRepository`.
 3. Chat: `POST /api/chat` → rate limit → system prompt from CMS → Groq stream.
 4. Contact: Turnstile + Resend. Resume PDF: `@react-pdf/renderer` on a route handler.
 

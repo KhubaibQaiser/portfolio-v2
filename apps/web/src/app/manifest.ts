@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { fetchAbout, fetchSiteConfig } from "@/lib/data";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 
-export const revalidate = 10;
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const [config, about] = await Promise.all([fetchSiteConfig(), fetchAbout()]);

@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { fetchAllProjects, fetchResume, fetchSiteConfig } from "@/lib/data";
 import { latestUpdatedAt } from "@/lib/latest-updated-at";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { SITE_URL } from "@/lib/seo";
+
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [projects, siteConfig, resume] = await Promise.all([

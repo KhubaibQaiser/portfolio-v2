@@ -5,10 +5,11 @@ import {
   fetchSiteConfig,
   fetchSkills,
 } from "@/lib/data";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { SITE_URL } from "@/lib/seo";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
 
-export const revalidate = 3600;
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export async function GET() {
   const [config, about, skills, experience, projects] = await Promise.all([

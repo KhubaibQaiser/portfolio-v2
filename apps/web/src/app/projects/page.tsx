@@ -3,6 +3,7 @@ import { ProjectsGrid } from "@/components/sections/projects-grid";
 import { PageBreadcrumbs } from "@/components/layout/page-breadcrumbs";
 import { fetchAllProjects, fetchSiteConfig } from "@/lib/data";
 import { itemListJsonLd } from "@/lib/json-ld";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 
 export async function generateMetadata(
@@ -17,7 +18,7 @@ export async function generateMetadata(
   });
 }
 
-export const revalidate = 10;
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export default async function ProjectsPage() {
   const [projects, config] = await Promise.all([fetchAllProjects(), fetchSiteConfig()]);

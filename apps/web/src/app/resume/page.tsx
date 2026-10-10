@@ -8,6 +8,7 @@ import {
 import { getResumeData } from "@/lib/resume-data";
 import { fetchAbout } from "@/lib/data";
 import { PageBreadcrumbs } from "@/components/layout/page-breadcrumbs";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { buildPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(
@@ -22,7 +23,7 @@ export async function generateMetadata(
   });
 }
 
-export const revalidate = 10;
+export const revalidate = PAGE_REVALIDATE_SECONDS;
 
 export default async function ResumePage() {
   const resume = await getResumeData();

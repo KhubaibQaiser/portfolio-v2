@@ -1,6 +1,6 @@
 # Flow — CMS save to public site
 
-Admin writes Dynamo via ports. Public site is time-based ISR (~10s), not
+Admin writes Dynamo via ports. Public site is time-based ISR (48h), not
 tag revalidation.
 
 ## Diagram
@@ -13,7 +13,7 @@ flowchart TD
   repo[ContentRepository]
   ddb[(Dynamo content / experience / …)]
   web[apps/web RSC pages]
-  isr[ISR ~10s]
+  isr[ISR 48h]
 
   form --> action --> guard --> repo --> ddb
   web --> isr --> repo
@@ -33,7 +33,7 @@ flowchart TD
 
 1. Save 401 — [admin-auth.md](admin-auth.md).
 2. Conflict toast — `ContentConflictError` / revision.
-3. Public page stale > ~10s — ISR `expireTime`, not a missing SNS invalidation.
+3. Public page stale > ~48h — page `revalidate`, not a missing SNS invalidation.
 4. Parse errors after deploy — Dynamo omitted nulls vs Zod `.nullable()`
    (same class as job preferences).
 
