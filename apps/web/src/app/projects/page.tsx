@@ -17,7 +17,7 @@ export async function generateMetadata(
   });
 }
 
-export const revalidate = 10;
+export const revalidate = 172800;
 
 export default async function ProjectsPage() {
   const [projects, config] = await Promise.all([fetchAllProjects(), fetchSiteConfig()]);

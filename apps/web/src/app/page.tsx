@@ -21,7 +21,7 @@ import {
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = 10;
+export const revalidate = 172800;
 
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },

@@ -47,21 +47,23 @@ flowchart LR
 OpenNext’s fingerprinted-asset model: HTML may be briefly stale; hashed CSS/JS
 must never 404.
 
-| Object                                    | Cache-Control                                                     | S3 prune               | CloudFront invalidate                     |
-| ----------------------------------------- | ----------------------------------------------------------------- | ---------------------- | ----------------------------------------- |
-| `_assets/_next/**` (hashed CSS/JS)        | `public,max-age=31536000,immutable`                               | never (`prune: false`) | never (hashed upload has no distribution) |
-| `_assets/*` except `_next` (public files) | `public,max-age=0,s-maxage=31536000,must-revalidate`              | never (`prune: false`) | `/*` on public upload                     |
-| HTML / RSC (Lambda)                       | `s-maxage=10, stale-while-revalidate=50` via web `expireTime: 60` | n/a                    | covered by public `/*` invalidation       |
-| `_cache/**` (ISR seed)                    | not on the CDN                                                    | yes (`prune: true`)    | none                                      |
+| Object                                    | Cache-Control                                        | S3 prune               | CloudFront invalidate                     |
+| ----------------------------------------- | ---------------------------------------------------- | ---------------------- | ----------------------------------------- |
+| `_assets/_next/**` (hashed CSS/JS)        | `public,max-age=31536000,immutable`                  | never (`prune: false`) | never (hashed upload has no distribution) |
+| `_assets/*` except `_next` (public files) | `public,max-age=0,s-maxage=31536000,must-revalidate` | never (`prune: false`) | `/*` on public upload                     |
+| HTML / RSC (Lambda)                       | `s-maxage=172800, stale-while-revalidate=50`         | n/a                    | covered by public `/*` invalidation       |
+| `_cache/**` (ISR seed)                    | not on the CDN                                       | yes (`prune: true`)    | none                                      |
 
 Both asset uploads use `prune: false` because a second deploy to the shared
 `_assets` prefix with `prune: true` would delete `_next/**`. Unused hashed
 objects under `_assets/_next/` expire via a 30-day S3 lifecycle rule (re-PUT
 on each deploy refreshes `LastModified` for the current build).
 
-The web app sets `expireTime: 60` in [`apps/web/next.config.ts`](../apps/web/next.config.ts)
-so Next does not default to ~1 year of `stale-while-revalidate` on ISR
-documents. Admin is `force-dynamic` and does not need that knob.
+The web app sets `expireTime` in [`apps/web/next.config.ts`](../apps/web/next.config.ts)
+to the 48-hour page `revalidate` plus 50 seconds
+([`page-revalidate.ts`](../apps/web/src/lib/page-revalidate.ts)), so Next does
+not default to ~1 year of `stale-while-revalidate` on ISR documents. Admin is
+`force-dynamic` and does not need that knob.
 
 ## Deploy sequence
 
