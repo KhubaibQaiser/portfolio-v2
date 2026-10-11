@@ -17,8 +17,10 @@ const GITHUB_OIDC_AUD = "sts.amazonaws.com";
  * (no long-lived keys) and assumes this role to run `cdk deploy`.
  *
  * Least privilege for deploy: the role assumes CDK bootstrap roles (`cdk-*`) for
- * `cdk deploy`, plus scoped read access for the OpenNext build and post-deploy
- * smoke test (SSM registry, Web stack output, media bucket listing).
+ * `cdk deploy`, reads content tables so the web OpenNext build can prerender
+ * from Dynamo instead of the demo seed, plus scoped read access for the
+ * OpenNext build and post-deploy smoke test (SSM registry, Web stack output,
+ * media bucket listing).
  *
  * The trust policy is pinned to the configured repo's `main` branch and a
  * `production` GitHub Environment so PR/fork runs cannot assume it.
@@ -105,6 +107,24 @@ export class OidcStack extends cdk.Stack {
         resources: [
           `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/${config.appName.toLowerCase()}/candidate-mcp/n8n-workflow-client-*`,
         ],
+      }),
+    );
+
+    // Read-only. The web OpenNext build prerenders public pages from these
+    // tables; writes stay on the runtime Lambda roles.
+    const tablePrefix = config.tablePrefix;
+    const tableArn = `arn:aws:dynamodb:${this.region}:${this.account}:table/${tablePrefix}-*`;
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "ReadContentTablesForWebPrerender",
+        actions: [
+          "dynamodb:GetItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:DescribeTable",
+        ],
+        resources: [tableArn, `${tableArn}/index/*`],
       }),
     );
 
