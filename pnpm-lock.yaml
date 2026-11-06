@@ -209,6 +209,52 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  apps/project-mcp:
+    dependencies:
+      '@aws-lambda-powertools/logger':
+        specifier: ^2.33.1
+        version: 2.33.1
+      '@aws-sdk/client-cognito-identity-provider':
+        specifier: ^3.1075.0
+        version: 3.1116.0
+      '@modelcontextprotocol/server':
+        specifier: ^2.0.0
+        version: 2.0.0
+      '@portfolio/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@portfolio/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@portfolio/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      '@portfolio/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      aws-jwt-verify:
+        specifier: ^5.2.1
+        version: 5.2.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@modelcontextprotocol/client':
+        specifier: 2.0.0
+        version: 2.0.0
+      '@types/aws-lambda':
+        specifier: ^8.10.162
+        version: 8.10.162
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      tsx:
+        specifier: ^4.20.0
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   apps/web:
     dependencies:
       '@ai-sdk/groq':

@@ -13,6 +13,7 @@ import { SharedStack } from "../src/stacks/shared-stack";
 import { StorybookStack } from "../src/stacks/storybook-stack";
 import { OidcStack } from "../src/stacks/oidc-stack";
 import { CandidateMcpStack } from "../src/stacks/candidate-mcp-stack";
+import { ProjectMcpStack } from "../src/stacks/project-mcp-stack";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -170,6 +171,18 @@ if (config.domainEnabled && cert) {
     description: "Candidate profile MCP server (API-key auth Lambda + CloudFront)",
   });
   candidateMcp.addDependency(data);
+
+  // Write-capable (drafts only) MCP: separate pool/scope/stack, ADR 0008.
+  const projectMcp = new ProjectMcpStack(app, `${config.appName}-ProjectMcp`, {
+    env: primaryEnv,
+    config,
+    crossRegionReferences: true,
+    entry: path.join(repoRoot, "apps/project-mcp/src/lambda.ts"),
+    hostedZone: dns.hostedZone,
+    certificate: cert.certificate,
+    description: "Project write MCP server (draft proposals; OAuth Lambda + CloudFront)",
+  });
+  projectMcp.addDependency(data);
 }
 
 // CI deploy role. Opt-in: only when the GitHub repo is configured.
