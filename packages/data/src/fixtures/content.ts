@@ -134,6 +134,7 @@ export function buildContentFixturesFromRaw(doc: SeedDocument): ContentFixtureBu
         show_in_resume: r.show_in_resume ?? false,
         resume_status: r.resume_status ?? null,
         resume_description: r.resume_description ?? "",
+        status: "published",
         created_at: TS,
         updated_at: TS,
         revision: 1,

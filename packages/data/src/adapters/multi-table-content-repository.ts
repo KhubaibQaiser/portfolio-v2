@@ -50,6 +50,7 @@ import {
   heroRowSchema,
   mediaRowSchema,
   normalizeResumeLayoutGuidelines,
+  isPublishedProject,
   projectRowSchema,
   resumeLayoutRowSchema,
   resumeRowSchema,
@@ -484,13 +485,20 @@ export function createMultiTableContentRepository(
     // Projects
     async getProjects() {
       const items = await listItems(tables.project);
+      return items
+        .map(toProject)
+        .filter(isPublishedProject)
+        .sort((a, b) => a.sort_order - b.sort_order);
+    },
+    async getAllProjects() {
+      const items = await listItems(tables.project);
       return items.map(toProject).sort((a, b) => a.sort_order - b.sort_order);
     },
     async getFeaturedProjects() {
       const items = await listItems(tables.project);
       return items
         .map(toProject)
-        .filter((p) => p.is_featured)
+        .filter((p) => isPublishedProject(p) && p.is_featured)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getProjectById(id: string) {
@@ -507,8 +515,8 @@ export function createMultiTableContentRepository(
           ExpressionAttributeValues: { ":slug": slug },
         }),
       );
-      const first = items?.[0];
-      return first ? toProject(first) : null;
+      const first = items?.map(toProject).find(isPublishedProject);
+      return first ?? null;
     },
     async insertProject(values: ProjectFormData) {
       const row = insertRow(values);

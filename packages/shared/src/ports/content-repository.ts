@@ -71,8 +71,11 @@ export type ContentRepository = {
   ): Promise<void>;
   deleteExperience(id: string): Promise<void>;
 
-  // Projects
+  // Projects. Public reads (`getProjects`, `getFeaturedProjects`,
+  // `getProjectBySlug`) return published rows only; `getAllProjects` includes
+  // drafts and is for Admin and slug-uniqueness checks.
   getProjects(): Promise<Project[]>;
+  getAllProjects(): Promise<Project[]>;
   getFeaturedProjects(): Promise<Project[]>;
   getProjectById(id: string): Promise<Project>;
   getProjectBySlug(slug: string): Promise<Project | null>;

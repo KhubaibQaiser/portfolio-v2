@@ -26,10 +26,13 @@ export {
   projectSchema,
   projectRowSchema,
   projectTypeEnum,
+  projectStatusEnum,
   filterProjectsForResume,
+  isPublishedProject,
   type ProjectFormData,
   type Project,
   type ProjectType,
+  type ProjectStatus,
 } from "./project";
 export {
   skillSchema,

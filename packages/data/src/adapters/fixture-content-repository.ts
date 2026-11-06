@@ -48,7 +48,7 @@ import {
   testimonialFixtures,
   type ContentFixtureBundle,
 } from "../fixtures/content";
-import { defaultJobPreferencesRow } from "@portfolio/shared/schemas";
+import { defaultJobPreferencesRow, isPublishedProject } from "@portfolio/shared/schemas";
 
 function now(): string {
   return new Date().toISOString();
@@ -168,18 +168,23 @@ export function createFixtureContentRepository(
 
     // Projects
     async getProjects() {
+      return clone(projects)
+        .filter(isPublishedProject)
+        .sort((a, b) => a.sort_order - b.sort_order);
+    },
+    async getAllProjects() {
       return clone(projects).sort((a, b) => a.sort_order - b.sort_order);
     },
     async getFeaturedProjects() {
       return clone(projects)
-        .filter((p) => p.is_featured)
+        .filter((p) => isPublishedProject(p) && p.is_featured)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getProjectById(id: string) {
       return clone(requireById(projects, id, "Project"));
     },
     async getProjectBySlug(slug: string) {
-      const row = projects.find((p) => p.slug === slug);
+      const row = projects.find((p) => p.slug === slug && isPublishedProject(p));
       return row ? clone(row) : null;
     },
     async insertProject(values: ProjectFormData) {
