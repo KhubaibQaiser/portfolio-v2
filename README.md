@@ -266,6 +266,8 @@ pnpm exec cdk deploy \
 
 On first deploy, run `Portfolio-Admin` once to get the CloudFront URL, then re-run with `-c adminUrls=<that URL>` so `APP_ORIGIN` and Google OAuth redirects match. Optional: `pnpm smoke-test:images`.
 
+`pnpm build:open-next` prerenders the public site from DynamoDB (`DATA_BACKEND=dynamo`, table prefix `portfolio` unless `DYNAMO_TABLE_PREFIX` is set). It fails if that HTML still contains the demo seed (Alex Rivera / Northwind Labs), so a fixture prerender cannot be uploaded as the ISR cache. PR and local `pnpm build` stay on fixtures. The deploy role needs read access to the content tables; CI updates `Portfolio-Oidc` before this build.
+
 ### Secrets (inject out-of-band)
 
 CDK creates empty secret shells and publishes ARNs to SSM. Put values with `aws secretsmanager put-secret-value`.
