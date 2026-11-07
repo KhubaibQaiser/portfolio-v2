@@ -205,6 +205,21 @@ jobs:
             exit 1
           fi
 
+      # The web prerender reads Dynamo. This role update has to land first:
+      # the full CDK app cannot synth until OpenNext output exists, so the
+      # OIDC stack is deployed from its own entry. IAM can take a few seconds
+      # to apply to the session already assumed above.
+      - name: Update deploy role before web prerender
+        working-directory: packages/infra
+        run: >
+          pnpm exec cdk deploy Portfolio-Oidc
+          --app "tsx bin/oidc.ts"
+          --require-approval never
+          -c githubRepo=${{ github.repository }}
+
+      - name: Wait for deploy-role policy
+        run: sleep 15
+
       - name: Build deploy artifacts (OpenNext bundles + Storybook)
         env:
           APP_ORIGIN: ${{ vars.APP_ORIGIN }}

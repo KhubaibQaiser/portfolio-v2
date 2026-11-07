@@ -14,7 +14,7 @@ import { pickRelatedProjects } from "@/lib/related-projects";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 import type { Project } from "@portfolio/shared/schemas";
 
-export const revalidate = 10;
+export const revalidate = 172800;
 
 export async function generateStaticParams() {
   const projects = await fetchAllProjects();

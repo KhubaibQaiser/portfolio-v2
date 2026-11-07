@@ -3,6 +3,8 @@ import { fetchAllProjects, fetchResume, fetchSiteConfig } from "@/lib/data";
 import { latestUpdatedAt } from "@/lib/latest-updated-at";
 import { SITE_URL } from "@/lib/seo";
 
+export const revalidate = 172800;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [projects, siteConfig, resume] = await Promise.all([
     fetchAllProjects(),

@@ -8,7 +8,7 @@ import {
 import { SITE_URL } from "@/lib/seo";
 import { SKILL_CATEGORIES } from "@portfolio/shared/constants";
 
-export const revalidate = 3600;
+export const revalidate = 172800;
 
 export async function GET() {
   const [config, about, skills, experience, projects] = await Promise.all([
