@@ -24,7 +24,7 @@
     "@aws-sdk/lib-dynamodb": "^3.1141.0",
     "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "@portfolio/shared": "workspace:*",
-    "zod": "^4.3.6"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
