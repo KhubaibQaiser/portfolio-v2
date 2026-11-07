@@ -8,7 +8,7 @@ import {
 import { SITE_URL } from "@/lib/seo";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
 
-export const revalidate = 3600;
+export const revalidate = 172800;
 
 /** Keeps AI-crawler-facing bullets terse even when a CMS description is long. */
 function firstSentence(text: string, maxLength = 140): string {

@@ -4,6 +4,7 @@ import {
   getResumeData as sharedGetResumeData,
   type ResumeData,
 } from "@portfolio/shared/resume-data";
+import { PAGE_REVALIDATE_SECONDS } from "./page-revalidate";
 import { resolveWebsiteHost } from "./resume-pdf-cache";
 
 export type { ResumeData } from "@portfolio/shared/resume-data";
@@ -19,5 +20,5 @@ export const getResumeData = cache(
       forPublicSite: true,
     }),
   ["resume-data"],
-  { revalidate: 10 },
+  { revalidate: PAGE_REVALIDATE_SECONDS },
 );

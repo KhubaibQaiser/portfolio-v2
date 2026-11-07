@@ -2,6 +2,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { BarChart3, Users, Eye, Globe, MonitorSmartphone, Zap } from "lucide-react";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 
+export const revalidate = 172800;
+
 function siteHostLabel(siteUrl: string): string {
   try {
     return new URL(siteUrl).host;
