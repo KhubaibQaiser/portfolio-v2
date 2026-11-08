@@ -49,7 +49,7 @@ function parseRetryAfterSeconds(res: Response, data: unknown): number {
 
 export const chatTransport = new DefaultChatTransport({
   api: "/api/chat",
-  fetch: async (input, init) => {
+  fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
     if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) {
       const id = posthog.get_distinct_id();

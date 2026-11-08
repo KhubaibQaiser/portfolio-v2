@@ -11,8 +11,8 @@
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^3.0.35",
-    "@ai-sdk/react": "^3.0.160",
+    "@ai-sdk/groq": "^4.0.77",
+    "@ai-sdk/react": "^4.0.168",
     "@gsap/react": "^2.1.2",
     "@marsidev/react-turnstile": "^1.5.3",
     "@portfolio/ai": "workspace:*",
@@ -24,7 +24,7 @@
     "@posthog/react": "^1.9.0",
     "@react-pdf/renderer": "^4.9.0",
     "@t3-oss/env-nextjs": "^0.13.11",
-    "ai": "^6.0.158",
+    "ai": "^7.0.164",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "framer-motion": "^12.38.0",
