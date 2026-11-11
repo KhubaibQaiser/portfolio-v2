@@ -9,7 +9,7 @@ import * as sns from "aws-cdk-lib/aws-sns";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import type { Construct } from "constructs";
 import type { InfraConfig } from "../config";
-import { appErrorMetric } from "../naming";
+import { appErrorMetric, eventBusName } from "../naming";
 
 export type SharedStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -18,7 +18,8 @@ export type SharedStackProps = cdk.StackProps & {
 /**
  * Shared platform services that cut across the apps and share the same
  * lifecycle, region, and owner:
- *  - an EventBridge bus for domain events (decoupled revalidation/automation)
+ *  - an EventBridge bus for domain events (e.g. admin `ContentChanged` →
+ *    web cache purge, ADR 0008)
  *  - an SNS alerts topic (CloudWatch alarms + AWS Budgets fan out to email)
  *  - a SES email identity for the contact form (when configured)
  *  - a monthly cost budget, a single application-error alarm, and a dashboard
@@ -38,7 +39,7 @@ export class SharedStack extends cdk.Stack {
 
     // --- Messaging ---
     this.eventBus = new events.EventBus(this, "EventBus", {
-      eventBusName: `${config.appName}-bus`,
+      eventBusName: eventBusName(config),
     });
 
     this.alertsTopic = new sns.Topic(this, "AlertsTopic", {

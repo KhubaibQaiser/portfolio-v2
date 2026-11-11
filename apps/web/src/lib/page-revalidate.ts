@@ -1,6 +1,7 @@
 /**
- * ISR freshness for every public page. CMS writes show up on the next
- * regeneration; deploys still invalidate CloudFront `/*` immediately.
+ * ISR backstop for every public page. CMS saves purge the ISR cache and
+ * CloudFront on demand (ADR 0008); this window only matters if that purge is
+ * lost. Deploys also invalidate CloudFront `/*`.
  *
  * Page `export const revalidate` must be this value as a numeric literal.
  * Next.js extracts segment config statically and rejects an imported binding.

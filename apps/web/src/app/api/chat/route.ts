@@ -30,6 +30,7 @@ import {
   shouldStoreChatResponse,
 } from "@/lib/chat-response-cache";
 import { logger } from "@/lib/logger";
+import { PAGE_REVALIDATE_SECONDS } from "@/lib/page-revalidate";
 import { toError } from "@/lib/to-error";
 import { getChatResponseCache, getContentRepository } from "@portfolio/data";
 import { uniqueCompanyCount } from "@portfolio/shared/experience-stats";
@@ -127,7 +128,7 @@ Guidelines:
 - Never make up information not included in the context above`;
   },
   ["chat-system-prompt"],
-  { revalidate: 10 },
+  { revalidate: PAGE_REVALIDATE_SECONDS },
 );
 
 function cachedAssistantResponse(
