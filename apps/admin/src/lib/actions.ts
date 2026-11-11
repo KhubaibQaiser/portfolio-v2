@@ -19,6 +19,7 @@ import {
 } from "@portfolio/shared/schemas";
 import type { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
+import { publishContentChanged } from "@/lib/content-publish";
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
@@ -53,6 +54,7 @@ export async function saveHero(
 
   try {
     await repo.upsertHero(parsed.data, expectedRevision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -75,6 +77,7 @@ export async function saveAbout(
 
   try {
     await repo.upsertAbout(parsed.data, expectedRevision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -102,6 +105,7 @@ export async function saveExperience(
     } else {
       await repo.insertExperience(parsed.data);
     }
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -114,6 +118,7 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteExperience(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -141,6 +146,7 @@ export async function saveProject(
     } else {
       await repo.insertProject(parsed.data);
     }
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -153,6 +159,7 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteProject(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -184,6 +191,7 @@ export async function saveSkills(
     for (const id of deletedIds) {
       await repo.deleteSkill(id);
     }
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -196,6 +204,7 @@ export async function deleteSkill(id: string): Promise<ActionResult> {
 
   try {
     await repo.deleteSkill(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -223,6 +232,7 @@ export async function saveTestimonial(
     } else {
       await repo.insertTestimonial(parsed.data);
     }
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -235,6 +245,7 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
 
   try {
     await repo.deleteTestimonial(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -257,6 +268,7 @@ export async function saveSiteConfig(
 
   try {
     await repo.upsertSiteConfig(parsed.data, expectedRevision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -291,6 +303,7 @@ export async function saveResume(
 
   try {
     await repo.upsertResume(parsed.data, expectedRevision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -338,6 +351,7 @@ export async function saveResumeLayout(
       });
       if (parsed.data.is_default) await ensureSingleDefaultLayout(created.id);
     }
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -374,6 +388,7 @@ export async function setDefaultResumeLayout(id: string): Promise<ActionResult> 
     const current = await repo.getResumeLayoutById(id);
     if (!current) return { success: false, error: "Layout not found" };
     await ensureSingleDefaultLayout(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -395,6 +410,7 @@ export async function deleteResumeLayout(id: string): Promise<ActionResult> {
       return { success: false, error: "Keep at least one layout." };
     }
     await repo.deleteResumeLayout(id);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
@@ -419,6 +435,7 @@ export async function applyTailoredSummary(summary: string): Promise<ActionResul
   try {
     const current = await repo.getResume();
     await repo.upsertResume({ default_summary: trimmed }, current.revision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);
