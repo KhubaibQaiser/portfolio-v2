@@ -31,6 +31,12 @@ function serverActionAllowedOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
+  // Defence in depth: admin never needs the other apps or their build output.
+  // Without this, a dynamic path in shared code can pull them into the Lambda
+  // and push it over the 250 MB unzipped limit.
+  outputFileTracingExcludes: {
+    "*": ["apps/web/**", "apps/candidate-mcp/**", "**/.open-next/**"],
+  },
   skipTrailingSlashRedirect: true,
   // Bundle server deps into traced Lambda artifacts. Turbopack production builds
   // externalize packages into .next/node_modules with hashed names and omit

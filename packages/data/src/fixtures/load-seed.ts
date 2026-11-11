@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import {
   buildContentFixturesFromRaw,
   type ContentFixtureBundle,
@@ -14,17 +14,18 @@ function resolveSeedDir(): string {
   const fromEnv = process.env.PORTFOLIO_SEED_DIR;
   if (fromEnv) return fromEnv;
 
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    const candidate = join(dir, "packages/data/seed");
-    if (existsSync(join(candidate, "content.json"))) return candidate;
-    const nested = join(dir, "seed");
-    if (existsSync(join(nested, "content.json"))) return nested;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return join(process.cwd(), "packages/data/seed");
+  // Fixed candidates only. A loop that walks up with dirname() makes Next's
+  // file tracer (@vercel/nft) treat the base as a wildcard and pull the whole
+  // repo (apps/web, apps/admin, node_modules/.pnpm) into the Lambda bundle.
+  const cwd = process.cwd();
+  const candidates = [
+    join(cwd, "packages/data/seed"), // repo root
+    join(cwd, "../../packages/data/seed"), // apps/<name>
+    join(cwd, "seed"), // packages/data
+  ];
+  return (
+    candidates.find((dir) => existsSync(join(dir, "content.json"))) ?? candidates[0]!
+  );
 }
 
 export function committedSeedPath(): string {
