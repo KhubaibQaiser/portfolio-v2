@@ -51,8 +51,8 @@ must never 404.
 | ----------------------------------------- | ---------------------------------------------------- | ---------------------- | ----------------------------------------- |
 | `_assets/_next/**` (hashed CSS/JS)        | `public,max-age=31536000,immutable`                  | never (`prune: false`) | never (hashed upload has no distribution) |
 | `_assets/*` except `_next` (public files) | `public,max-age=0,s-maxage=31536000,must-revalidate` | never (`prune: false`) | `/*` on public upload                     |
-| HTML / RSC (Lambda)                       | `s-maxage=172800, stale-while-revalidate=50`         | n/a                    | covered by public `/*` invalidation       |
-| `_cache/**` (ISR seed)                    | not on the CDN                                       | yes (`prune: true`)    | none                                      |
+| HTML / RSC (Lambda)                       | `s-maxage=172800, stale-while-revalidate=50`         | n/a                    | `/*` on deploy and on CMS save (ADR 0008) |
+| `_cache/**` (ISR seed)                    | not on the CDN                                       | yes (`prune: true`)    | prefix deleted on CMS save (ADR 0008)     |
 
 Both asset uploads use `prune: false` because a second deploy to the shared
 `_assets` prefix with `prune: true` would delete `_next/**`. Unused hashed
