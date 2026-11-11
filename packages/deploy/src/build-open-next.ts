@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from "node:child_process";
+import { assertServerFunctionFits } from "./lambda-size.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSsmParameter } from "./aws-cli.js";
@@ -47,6 +48,7 @@ for (const { app, filter, dir } of openNextApps) {
     stdio: "inherit",
     env: buildEnv,
   });
+  assertServerFunctionFits(app, dir);
   verifyImageRemotePatterns(dir, mediaHostname);
   console.log(`Verified image remotePatterns include ${mediaHostname} for ${filter}`);
   if (app === "web") {
