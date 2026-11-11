@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { ResumeData } from "@portfolio/shared/resume-data";
 import type { ResumeLayout } from "@portfolio/shared/schemas";
+import { PAGE_REVALIDATE_SECONDS } from "./page-revalidate";
 
 /**
  * Fixed object key for the public canonical resume PDF cache in the media
@@ -17,11 +18,20 @@ export const CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY = "content-hash";
 /** ISO timestamp written on each cache write-through. */
 export const CANONICAL_RESUME_CACHED_AT_METADATA_KEY = "cached-at";
 
-/** Origin + CDN freshness ceiling for the public PDF. */
-export const CANONICAL_RESUME_PDF_TTL_SECONDS = 3600;
+/**
+ * Origin + CDN freshness ceiling for the public PDF, matching the page ISR
+ * window. CMS saves rebuild the PDF and invalidate the CDN on demand (ADR 0008).
+ */
+export const CANONICAL_RESUME_PDF_TTL_SECONDS = PAGE_REVALIDATE_SECONDS;
 
-export const CANONICAL_RESUME_PDF_CACHE_CONTROL =
-  "public, max-age=60, s-maxage=3600, stale-while-revalidate=60";
+/**
+ * Backstop sweep cadence of the rebuild Lambda. Must match its EventBridge
+ * schedule in WebStack and stay below the TTL so the sweep renews the cache
+ * before `/api/pdf` would see it as stale.
+ */
+export const CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS = 24 * 60 * 60;
+
+export const CANONICAL_RESUME_PDF_CACHE_CONTROL = `public, max-age=60, s-maxage=${CANONICAL_RESUME_PDF_TTL_SECONDS}, stale-while-revalidate=60`;
 
 export function isCanonicalResumeCacheFresh(
   metadata: Record<string, string> | undefined,

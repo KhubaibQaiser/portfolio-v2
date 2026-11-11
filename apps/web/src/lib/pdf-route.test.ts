@@ -83,7 +83,7 @@ describe("public PDF route", () => {
       fit: "guidelines-only",
       deadlineAt: expect.any(Number),
     });
-    expect(response.headers.get("cache-control")).toContain("s-maxage=3600");
+    expect(response.headers.get("cache-control")).toContain("s-maxage=172800");
   });
 
   it("serves the cached PDF without rendering when hash and age are fresh", async () => {
@@ -103,10 +103,10 @@ describe("public PDF route", () => {
     expect(response.status).toBe(200);
     expect(renderResumePdfBuffer).not.toHaveBeenCalled();
     expect(uploadObject).not.toHaveBeenCalled();
-    expect(response.headers.get("cache-control")).toContain("s-maxage=3600");
+    expect(response.headers.get("cache-control")).toContain("s-maxage=172800");
   });
 
-  it("re-renders when the cached object is older than 1h even if the hash matches", async () => {
+  it("re-renders when the cached object is older than the 48h TTL even if the hash matches", async () => {
     vi.mocked(checkResumePdfRateLimit).mockResolvedValue({ ok: true });
     vi.mocked(renderResumePdfBuffer).mockResolvedValue({
       buffer: Buffer.from("%PDF-fresh"),
@@ -118,7 +118,7 @@ describe("public PDF route", () => {
       body: new Uint8Array([1, 2, 3]),
       metadata: {
         "content-hash": contentHash,
-        "cached-at": new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        "cached-at": new Date(Date.now() - 49 * 60 * 60 * 1000).toISOString(),
       },
     });
 

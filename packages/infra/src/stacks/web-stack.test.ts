@@ -99,6 +99,16 @@ describe("WebStack on-demand content purge", () => {
       expect(target.RetryPolicy?.MaximumRetryAttempts).toBe(2);
     }
 
+    // On-demand rebuild makes the 5-minute sweep unnecessary; daily is the backstop.
+    template.hasResourceProperties("AWS::Events::Rule", {
+      ScheduleExpression: "rate(1 day)",
+    });
+    expect(
+      Object.values(template.findResources("AWS::Events::Rule")).some(
+        (r) => r.Properties?.ScheduleExpression === "rate(5 minutes)",
+      ),
+    ).toBe(false);
+
     const purgeFn = template.findResources("AWS::Lambda::Function")[purgeId];
     const env = purgeFn?.Properties?.Environment?.Variables;
     expect(env?.CACHE_BUCKET_KEY_PREFIX).toBe("_cache");

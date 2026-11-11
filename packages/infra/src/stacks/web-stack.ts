@@ -195,8 +195,10 @@ export class WebStack extends cdk.Stack {
     grantWebDataAccess(this, rebuildFn, config, mediaBucketName);
     grantCanonicalResumePdfCacheWrite(rebuildFn, mediaBucketName);
 
+    // Backstop only: ContentChanged (below) rebuilds on save. Daily keeps the
+    // 48h-TTL copy renewed; must match CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS.
     new events.Rule(this, "RebuildCanonicalPdfSchedule", {
-      schedule: events.Schedule.rate(cdk.Duration.minutes(5)),
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
       targets: [new targets.LambdaFunction(rebuildFn)],
     });
 

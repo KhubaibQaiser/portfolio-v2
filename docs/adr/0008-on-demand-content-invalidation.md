@@ -35,6 +35,11 @@ We considered three on-demand options:
    - `RebuildCanonicalPdfFn`, so the public PDF is rebuilt immediately.
 3. Page `revalidate` (48h) stays as the safety net if an event is lost.
    Both targets keep EventBridge retries (2 attempts, 1h max event age).
+4. The canonical PDF uses the same 48h window: S3 TTL and CDN `s-maxage`.
+   Its rebuild sweep drops from every 5 minutes to daily, and it renews the
+   copy whenever the copy would expire before the next sweep. That way
+   `/api/pdf` never renders on a visitor's request just because the TTL
+   lapsed.
 
 No public endpoint, shared secret, tag table, or queue is added. Admin gets
 only `events:PutEvents` on the bus. The purge Lambda can only list/delete
@@ -46,7 +51,8 @@ At CMS-edit volume (tens per month): EventBridge custom events are $1/M,
 Lambda and S3 requests fall within the free tier, and CloudFront allows
 1,000 free invalidation paths per month (`/*` counts as one). Effectively
 $0. Raising the chat system-prompt cache from 10s to the page window also
-removes repeated DynamoDB reads.
+removes repeated DynamoDB reads. The daily PDF sweep cuts the rebuild
+Lambda (1.5GB) from ~8,640 to ~30 scheduled invocations a month.
 
 ## Consequences
 
