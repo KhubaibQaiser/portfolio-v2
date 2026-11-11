@@ -14,7 +14,13 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
-import { appErrorMetric, grantAdminDataAccess, ssmPaths } from "../naming";
+import {
+  appErrorMetric,
+  eventBusName,
+  grantAdminDataAccess,
+  grantContentChangedPublish,
+  ssmPaths,
+} from "../naming";
 
 export type AdminStackProps = cdk.StackProps & {
   config: InfraConfig;
@@ -370,6 +376,7 @@ export class AdminStack extends cdk.Stack {
         JOBSPIPE_API_KEY_SECRET_ARN: jobspipeSecret.secretArn,
         RENDER_JOB_QUEUE_URL: renderJobQueue.queueUrl,
         GENERATION_JOB_QUEUE_URL: generationJobQueue.queueUrl,
+        CONTENT_EVENT_BUS_NAME: eventBusName(config),
         ...(config.contactEmail ? { CONTACT_TO_EMAIL: config.contactEmail } : {}),
         ...(config.contactFromEmail
           ? { CONTACT_FROM_EMAIL: config.contactFromEmail }
@@ -385,6 +392,7 @@ export class AdminStack extends cdk.Stack {
         jobspipeSecret.grantRead(fn);
         renderJobQueue.grantSendMessages(fn);
         generationJobQueue.grantSendMessages(fn);
+        grantContentChangedPublish(this, fn, config);
       },
     });
 

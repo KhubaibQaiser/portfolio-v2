@@ -8,6 +8,7 @@ import {
   CANONICAL_RESUME_CACHED_AT_METADATA_KEY,
   CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY,
   CANONICAL_RESUME_PDF_KEY,
+  CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS,
   hashCanonicalResumeContent,
   isCanonicalResumeCacheFresh,
   resolveWebsiteHost,
@@ -22,9 +23,9 @@ const logger = createLogger({ serviceName: "portfolio-web-rebuild-canonical-pdf"
 const RENDER_DEADLINE_MS = 90_000;
 
 /**
- * Scheduled handler: re-renders the canonical resume PDF and overwrites the
- * cached object in the media bucket only when the content actually changed
- * since the last cached render (compared by content hash, not a timestamp).
+ * Runs on admin `ContentChanged` (immediate rebuild) and on a daily backstop
+ * sweep. Re-renders the canonical resume PDF only when the content hash
+ * changed or the cached copy would go stale before the next sweep.
  */
 export async function handler(): Promise<void> {
   const repo = getContentRepository();
@@ -45,9 +46,12 @@ export async function handler(): Promise<void> {
       });
       return null;
     });
+  // Renew when the copy would expire before the next sweep, so /api/pdf never
+  // has to render on a visitor's request just because the TTL lapsed.
+  const nextSweepAt = Date.now() + CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS * 1000;
   if (
     cached?.metadata?.[CANONICAL_RESUME_CONTENT_HASH_METADATA_KEY] === contentHash &&
-    isCanonicalResumeCacheFresh(cached.metadata)
+    isCanonicalResumeCacheFresh(cached.metadata, nextSweepAt)
   ) {
     logger.info("canonical resume pdf cache already warm, skipping rebuild", {
       contentHash,

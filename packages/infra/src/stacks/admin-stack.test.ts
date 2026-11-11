@@ -134,6 +134,35 @@ describe("AdminStack render worker", () => {
     });
   }, 30_000);
 
+  it("lets only the server function publish ContentChanged to the shared bus", () => {
+    const template = synth();
+    const functions = template.findResources("AWS::Lambda::Function");
+    const server = Object.values(functions).find(
+      (resource) =>
+        resource.Properties?.Environment?.Variables?.POWERTOOLS_SERVICE_NAME ===
+        "portfolio-admin",
+    );
+    expect(server?.Properties?.Environment?.Variables?.CONTENT_EVENT_BUS_NAME).toBe(
+      "Portfolio-bus",
+    );
+
+    const publishStatements = Object.values(template.findResources("AWS::IAM::Policy"))
+      .flatMap(
+        (policy) =>
+          (policy.Properties?.PolicyDocument?.Statement ?? []) as Array<{
+            Sid?: string;
+            Action?: unknown;
+            Resource?: unknown;
+          }>,
+      )
+      .filter((statement) => statement.Sid === "PublishContentChanged");
+    expect(publishStatements).toHaveLength(1);
+    expect(publishStatements[0]?.Action).toBe("events:PutEvents");
+    expect(JSON.stringify(publishStatements[0]?.Resource)).toContain(
+      ":event-bus/Portfolio-bus",
+    );
+  }, 30_000);
+
   it("does not reserve Lambda concurrency (personal-account UnreservedConcurrentExecution floor)", () => {
     const template = synth();
     const functions = template.findResources("AWS::Lambda::Function");

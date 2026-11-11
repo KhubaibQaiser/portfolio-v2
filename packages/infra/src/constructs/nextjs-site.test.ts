@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import { Match, Template } from "aws-cdk-lib/assertions";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import { describe, expect, it } from "vitest";
 import { NextjsSite } from "./nextjs-site";
 
@@ -166,6 +167,44 @@ describe("NextjsSite asset deploy", () => {
           (cacheLogicalId !== undefined && dep.includes(cacheLogicalId)),
       ),
     ).toBe(true);
+  }, 60_000);
+
+  it("scopes the cache purge grant to the ISR prefix and this distribution", () => {
+    const { siteStack } = synthApp();
+    const site = siteStack.node.findChild("Site") as NextjsSite;
+    const purgeFn = new lambda.Function(siteStack, "PurgeFn", {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: "index.handler",
+      code: lambda.Code.fromInline("exports.handler = async () => {};"),
+    });
+    site.grantCachePurge(purgeFn);
+    expect(site.purgeEnvironment.CACHE_BUCKET_KEY_PREFIX).toBe("_cache");
+
+    const template = Template.fromStack(siteStack);
+    const statements = Object.values(template.findResources("AWS::IAM::Policy"))
+      .flatMap(
+        (policy) =>
+          (policy.Properties?.PolicyDocument?.Statement ?? []) as Array<{
+            Sid?: string;
+            Action?: unknown;
+            Resource?: unknown;
+            Condition?: unknown;
+          }>,
+      )
+      .filter((s) =>
+        ["ListIsrCache", "DeleteIsrCache", "InvalidateDistribution"].includes(
+          s.Sid ?? "",
+        ),
+      );
+
+    const bySid = Object.fromEntries(statements.map((s) => [s.Sid, s]));
+    expect(bySid.ListIsrCache?.Condition).toEqual({
+      StringLike: { "s3:prefix": ["_cache/*"] },
+    });
+    expect(bySid.DeleteIsrCache?.Action).toBe("s3:DeleteObject");
+    expect(JSON.stringify(bySid.DeleteIsrCache?.Resource)).toContain("/_cache/*");
+    expect(JSON.stringify(bySid.DeleteIsrCache?.Resource)).not.toContain("_assets");
+    expect(bySid.InvalidateDistribution?.Action).toBe("cloudfront:CreateInvalidation");
   }, 60_000);
 
   it("deploys SignPostBodyFn Lambda@Edge on nodejs22.x", () => {

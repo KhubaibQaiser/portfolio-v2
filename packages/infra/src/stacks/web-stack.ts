@@ -12,8 +12,10 @@ import type { Construct } from "constructs";
 import { NextjsSite } from "../constructs/nextjs-site";
 import type { InfraConfig } from "../config";
 import { aliasToCloudFront } from "../domain";
+import { CONTENT_CHANGED_EVENT } from "@portfolio/data/content-events";
 import {
   appErrorMetric,
+  eventBusName,
   grantCanonicalResumePdfCacheWrite,
   grantWebDataAccess,
   ssmPaths,
@@ -25,6 +27,8 @@ export type WebStackProps = cdk.StackProps & {
   openNextDir: string;
   /** Absolute path to apps/web's canonical-PDF rebuild Lambda entry (TS). */
   rebuildCanonicalPdfEntry: string;
+  /** Absolute path to apps/web's on-demand site-cache purge Lambda entry (TS). */
+  purgeSiteCacheEntry: string;
   /** Absolute path to the repo's pnpm-lock.yaml, for esbuild bundling cache-busting. */
   depsLockFilePath: string;
   /** Absolute path to packages/ui's resume-pdf font files (@react-pdf/renderer assets). */
@@ -191,18 +195,63 @@ export class WebStack extends cdk.Stack {
     grantWebDataAccess(this, rebuildFn, config, mediaBucketName);
     grantCanonicalResumePdfCacheWrite(rebuildFn, mediaBucketName);
 
+    // Backstop only: ContentChanged (below) rebuilds on save. Daily keeps the
+    // 48h-TTL copy renewed; must match CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS.
     new events.Rule(this, "RebuildCanonicalPdfSchedule", {
-      schedule: events.Schedule.rate(cdk.Duration.minutes(5)),
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
       targets: [new targets.LambdaFunction(rebuildFn)],
     });
 
-    new logs.MetricFilter(this, "RebuildCanonicalPdfErrorMetric", {
-      logGroup: rebuildFn.logGroup,
-      metricNamespace: errorMetric.namespace,
-      metricName: errorMetric.metricName,
-      filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
-      metricValue: "1",
-      defaultValue: 0,
+    // --- On-demand content freshness (ADR 0008) ---
+    // Admin publishes ContentChanged after a committed CMS write; this purges
+    // the ISR cache + CloudFront so the next visit renders fresh, and rebuilds
+    // the canonical PDF right away. Page `revalidate` stays as the backstop.
+    const purgeFn = new nodeLambda.NodejsFunction(this, "PurgeSiteCacheFn", {
+      entry: props.purgeSiteCacheEntry,
+      depsLockFilePath: props.depsLockFilePath,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(60),
+      bundling: { externalModules: [] },
+      logGroup: new logs.LogGroup(this, "PurgeSiteCacheFnLogs", {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+      environment: {
+        ...site.purgeEnvironment,
+        POWERTOOLS_SERVICE_NAME: "portfolio-web-purge-site-cache",
+        POWERTOOLS_LOG_LEVEL: "INFO",
+      },
     });
+    site.grantCachePurge(purgeFn);
+
+    const contentChangedTarget = (fn: lambda.IFunction) =>
+      new targets.LambdaFunction(fn, {
+        retryAttempts: 2,
+        maxEventAge: cdk.Duration.hours(1),
+      });
+    new events.Rule(this, "ContentChangedRule", {
+      eventBus: events.EventBus.fromEventBusName(this, "SharedBus", eventBusName(config)),
+      eventPattern: {
+        source: [CONTENT_CHANGED_EVENT.source],
+        detailType: [CONTENT_CHANGED_EVENT.detailType],
+      },
+      targets: [contentChangedTarget(purgeFn), contentChangedTarget(rebuildFn)],
+    });
+
+    for (const [id, logGroup] of [
+      ["RebuildCanonicalPdfErrorMetric", rebuildFn.logGroup],
+      ["PurgeSiteCacheErrorMetric", purgeFn.logGroup],
+    ] as const) {
+      new logs.MetricFilter(this, id, {
+        logGroup,
+        metricNamespace: errorMetric.namespace,
+        metricName: errorMetric.metricName,
+        filterPattern: logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+        metricValue: "1",
+        defaultValue: 0,
+      });
+    }
   }
 }

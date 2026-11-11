@@ -52,6 +52,8 @@ export type {
   McpApiKeyCreateResult,
   VerifiedMcpApiKey,
 } from "./mcp-api-key-store";
+export type { ContentPublisher } from "./content-publisher";
+export type { SiteCachePurger, SiteCachePurgeResult } from "./site-cache-purger";
 export type {
   JobBoardRepository,
   JobListCursor,

@@ -5,7 +5,8 @@ import { filterExperienceForSite } from "@portfolio/shared/schemas";
 // ---------------------------------------------------------------------------
 // All data is loaded through the content repository port (fixtures by default,
 // DynamoDB when DATA_BACKEND=dynamo). React cache() deduplicates within a
-// request; page-level `revalidate` (48h, see page-revalidate.ts) owns cross-request ISR.
+// request; page-level `revalidate` (48h, see page-revalidate.ts) owns cross-request
+// ISR, and CMS saves purge it on demand (ADR 0008).
 // ---------------------------------------------------------------------------
 
 const repo = getContentRepository();

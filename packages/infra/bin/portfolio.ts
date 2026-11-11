@@ -76,6 +76,10 @@ const web = new WebStack(app, `${config.appName}-Web`, {
     repoRoot,
     "apps/web/src/lambda/rebuild-canonical-pdf/index.ts",
   ),
+  purgeSiteCacheEntry: path.join(
+    repoRoot,
+    "apps/web/src/lambda/purge-site-cache/index.ts",
+  ),
   depsLockFilePath: path.join(repoRoot, "pnpm-lock.yaml"),
   resumeFontsDir: path.join(repoRoot, "packages/ui/src/resume-pdf/fonts"),
   ...domainProps,
@@ -141,6 +145,8 @@ web.addDependency(data);
 admin.addDependency(data);
 admin.addDependency(auth);
 shared.addDependency(data);
+// Web's ContentChanged rule attaches to the shared bus by name (ADR 0008).
+web.addDependency(shared);
 
 const storybook = new StorybookStack(app, `${config.appName}-Storybook`, {
   env: primaryEnv,

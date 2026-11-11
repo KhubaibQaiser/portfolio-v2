@@ -1,7 +1,8 @@
 # Flow — tailored PDF export and public canonical PDF
 
 Two pipelines: **admin async render** (SQS worker, React-PDF) and **public
-`GET /api/pdf`** (cache in S3, optional scheduled rebuild).
+`GET /api/pdf`** (cache in S3 for 48h, rebuilt on admin `ContentChanged` plus
+a daily backstop sweep, ADR 0008).
 
 ## Diagram
 
@@ -24,8 +25,9 @@ flowchart TD
     get[GET /api/pdf]
     cache[(S3 canonical key)]
     rebuild[RebuildCanonicalPdfFn]
+    trigger["ContentChanged or daily schedule"]
     get --> cache
-    rebuild --> cache
+    trigger --> rebuild --> cache
   end
 ```
 

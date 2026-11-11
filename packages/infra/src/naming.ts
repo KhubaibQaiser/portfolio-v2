@@ -28,6 +28,32 @@ export function secretNames(config: InfraConfig) {
   } as const;
 }
 
+/** Domain-event bus (SharedStack). Consumers find it by name, not export (ADR 0001). */
+export function eventBusName(config: InfraConfig): string {
+  return `${config.appName}-bus`;
+}
+
+/**
+ * Lets an admin function publish `ContentChanged` to the shared bus so the web
+ * stack purges its ISR + CDN caches (ADR 0008).
+ */
+export function grantContentChangedPublish(
+  scope: Construct,
+  fn: lambda.Function,
+  config: InfraConfig,
+): void {
+  const { account, region } = Stack.of(scope);
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "PublishContentChanged",
+      actions: ["events:PutEvents"],
+      resources: [
+        `arn:aws:events:${region}:${account}:event-bus/${eventBusName(config)}`,
+      ],
+    }),
+  );
+}
+
 /**
  * Shared definition of the application-error metric. The app stacks publish to
  * it via a Logs metric filter (one per app, no dimensions, so both apps roll up

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   CANONICAL_RESUME_CACHED_AT_METADATA_KEY,
+  CANONICAL_RESUME_PDF_CACHE_CONTROL,
+  CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS,
   CANONICAL_RESUME_PDF_TTL_SECONDS,
   hashCanonicalResumeContent,
   isCanonicalResumeCacheFresh,
 } from "./resume-pdf-cache";
+import { PAGE_REVALIDATE_SECONDS } from "./page-revalidate";
 
 const data = { name: "Test" };
 const classic = { id: "a", component_key: "classic", version: 1, guidelines: { a: 1 } };
@@ -25,13 +28,23 @@ describe("isCanonicalResumeCacheFresh", () => {
     expect(isCanonicalResumeCacheFresh({}, now)).toBe(false);
     expect(
       isCanonicalResumeCacheFresh(
-        { [CANONICAL_RESUME_CACHED_AT_METADATA_KEY]: "2026-08-23T10:59:00.000Z" },
+        { [CANONICAL_RESUME_CACHED_AT_METADATA_KEY]: "2026-08-21T11:59:00.000Z" },
         now,
       ),
     ).toBe(false);
   });
 
-  it("accepts a cached-at within the 1h TTL", () => {
+  it("keeps the PDF on the page ISR window, renewed by a sweep inside it", () => {
+    expect(CANONICAL_RESUME_PDF_TTL_SECONDS).toBe(PAGE_REVALIDATE_SECONDS);
+    expect(CANONICAL_RESUME_PDF_REBUILD_INTERVAL_SECONDS).toBeLessThan(
+      CANONICAL_RESUME_PDF_TTL_SECONDS,
+    );
+    expect(CANONICAL_RESUME_PDF_CACHE_CONTROL).toContain(
+      `s-maxage=${PAGE_REVALIDATE_SECONDS}`,
+    );
+  });
+
+  it("accepts a cached-at within the TTL", () => {
     const now = Date.parse("2026-08-23T12:00:00.000Z");
     const cachedAt = new Date(now - (CANONICAL_RESUME_PDF_TTL_SECONDS - 1) * 1000);
     expect(

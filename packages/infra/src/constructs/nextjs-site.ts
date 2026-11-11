@@ -59,9 +59,10 @@ export type NextjsSiteProps = {
  *  - ISR seed `_cache/**` — replaced each deploy (`prune: true`).
  *
  * Server Lambda depends on hashed assets + cache seed so new HTML never
- * references CSS that is not yet on S3. Time-based ISR uses the S3
- * incremental cache and the direct queue (self HEAD on stale pages). No
- * DynamoDB tag cache, SQS, or revalidation Lambda.
+ * references CSS that is not yet on S3. ISR uses the S3 incremental cache and
+ * the direct queue (self HEAD on stale pages); no DynamoDB tag cache or SQS.
+ * On-demand freshness is a whole-cache purge via {@link grantCachePurge}
+ * (ADR 0008).
  */
 export class NextjsSite extends Construct {
   readonly distribution: cloudfront.Distribution;
@@ -345,5 +346,43 @@ export class NextjsSite extends Construct {
     new cdk.CfnOutput(this, "SiteUrl", {
       value: `https://${this.distribution.distributionDomainName}`,
     });
+  }
+
+  /** Env a purge function needs to drop this site's ISR cache and CDN copy. */
+  get purgeEnvironment(): Record<string, string> {
+    return {
+      CACHE_BUCKET_NAME: this.bucket.bucketName,
+      CACHE_BUCKET_KEY_PREFIX: CACHE_PREFIX,
+      DISTRIBUTION_ID: this.distribution.distributionId,
+    };
+  }
+
+  /**
+   * Least privilege for an on-demand purge: list/delete only under the ISR
+   * cache prefix (never `_assets`), and invalidate only this distribution.
+   */
+  grantCachePurge(fn: lambda.Function): void {
+    fn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: "ListIsrCache",
+        actions: ["s3:ListBucket"],
+        resources: [this.bucket.bucketArn],
+        conditions: { StringLike: { "s3:prefix": [`${CACHE_PREFIX}/*`] } },
+      }),
+    );
+    fn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: "DeleteIsrCache",
+        actions: ["s3:DeleteObject"],
+        resources: [this.bucket.arnForObjects(`${CACHE_PREFIX}/*`)],
+      }),
+    );
+    fn.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: "InvalidateDistribution",
+        actions: ["cloudfront:CreateInvalidation"],
+        resources: [this.distribution.distributionArn],
+      }),
+    );
   }
 }
