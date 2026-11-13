@@ -14,13 +14,13 @@ as the purge completes. Proposing a draft publishes nothing (it is hidden anyway
 
 ## Decisions
 
-| Topic         | Decision                                                                                                            |
-| ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Location      | New app + CDK stack (working name `apps/project-mcp`). `apps/candidate-mcp` stays read-only; do not touch its IAM. |
-| Review gate   | Tool creates a **draft**. Only an Admin action publishes it.                                                        |
-| Auth          | OAuth 2.1 + Cognito as in ADR 0006, new scope `projects.write`, separate user pool/clients from candidate-mcp.     |
-| Callers       | Interactive (auth code + PKCE) first; M2M allowed later by adding an app client, no code change.                   |
-| Invalidation  | `approveProject` calls `publishContentChanged()` (ADR 0008). Proposals do not.                                      |
+| Topic        | Decision                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Location     | New app + CDK stack (working name `apps/project-mcp`). `apps/candidate-mcp` stays read-only; do not touch its IAM. |
+| Review gate  | Tool creates a **draft**. Only an Admin action publishes it.                                                       |
+| Auth         | OAuth 2.1 + Cognito as in ADR 0006, new scope `projects.write`, separate user pool/clients from candidate-mcp.     |
+| Callers      | Interactive (auth code + PKCE) first; M2M allowed later by adding an app client, no code change.                   |
+| Invalidation | `approveProject` calls `publishContentChanged()` (ADR 0008). Proposals do not.                                     |
 
 ## Schema change (packages/shared)
 
@@ -44,7 +44,7 @@ as the purge completes. Proposing a draft publishes nothing (it is hidden anyway
   caller-supplied URL (ADR 0003 SSRF rule).
 - Free-text inputs pass the prompt-injection scrub; outputs pass `deepSanitize`.
 - Writes via `ContentRepository.insertProject` only. Returns `{ id, slug,
-  status: "draft", reviewUrl }`. No update, delete, publish, or feature tool.
+status: "draft", reviewUrl }`. No update, delete, publish, or feature tool.
 - Rate limited per `client_id` (same pattern as candidate-mcp), audit-logged
   without PII.
 

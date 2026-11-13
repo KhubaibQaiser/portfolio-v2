@@ -22,14 +22,14 @@ flowchart TD
 
 ## Modules
 
-| Step                  | File                                                       |
-| --------------------- | ---------------------------------------------------------- |
-| Stack                 | `packages/infra/src/stacks/project-mcp-stack.ts`           |
+| Step                  | File                                                          |
+| --------------------- | ------------------------------------------------------------- |
+| Stack                 | `packages/infra/src/stacks/project-mcp-stack.ts`              |
 | IAM (PutItem project) | `grantProjectMcpDataAccess` in `packages/infra/src/naming.ts` |
-| Handler               | `apps/project-mcp/src/lambda.ts`                           |
-| Tool                  | `apps/project-mcp/src/tools/propose-project.ts`            |
-| Draft filtering       | `ContentRepository` adapters in `packages/data`            |
-| Approve               | `approveProject` in `apps/admin/src/lib/actions.ts`        |
+| Handler               | `apps/project-mcp/src/lambda.ts`                              |
+| Tool                  | `apps/project-mcp/src/tools/propose-project.ts`               |
+| Draft filtering       | `ContentRepository` adapters in `packages/data`               |
+| Approve               | `approveProject` in `apps/admin/src/lib/actions.ts`           |
 
 ## Debug
 

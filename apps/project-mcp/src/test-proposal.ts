@@ -1,7 +1,9 @@
 import type { ProposeProjectInput } from "./tools/propose-project";
 
 /** Minimal valid `propose_project` arguments with a unique slug (fixture repo is process-shared). */
-export function proposal(slug = `p-${crypto.randomUUID().slice(0, 8)}`): ProposeProjectInput {
+export function proposal(
+  slug = `p-${crypto.randomUUID().slice(0, 8)}`,
+): ProposeProjectInput {
   return {
     title: "Test project",
     slug,

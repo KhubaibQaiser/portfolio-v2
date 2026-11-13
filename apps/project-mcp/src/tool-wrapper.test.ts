@@ -20,12 +20,7 @@ describe("withGuardrails", () => {
       .fn()
       .mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
 
-    const result = await withGuardrails(
-      "propose_project",
-      authInfo,
-      config,
-      handler,
-    )({});
+    const result = await withGuardrails("propose_project", authInfo, config, handler)({});
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ content: [{ type: "text", text: "ok" }] });
@@ -41,12 +36,7 @@ describe("withGuardrails", () => {
     vi.mocked(checkRateLimit).mockResolvedValue({ ok: false, retryAfterSeconds: 12 });
     const handler = vi.fn();
 
-    const result = await withGuardrails(
-      "propose_project",
-      authInfo,
-      config,
-      handler,
-    )({});
+    const result = await withGuardrails("propose_project", authInfo, config, handler)({});
 
     expect(handler).not.toHaveBeenCalled();
     expect(result.isError).toBe(true);

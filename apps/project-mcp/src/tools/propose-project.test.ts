@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { createFixtureContentRepository } from "@portfolio/data";
 import { proposal } from "../test-proposal";
-import { isAllowedCoverUrl, proposeProject, proposeProjectInput } from "./propose-project";
+import {
+  isAllowedCoverUrl,
+  proposeProject,
+  proposeProjectInput,
+} from "./propose-project";
 
-const env = { mediaBaseUrl: "https://media.example.com", adminUrl: "https://admin.example.com/" };
+const env = {
+  mediaBaseUrl: "https://media.example.com",
+  adminUrl: "https://admin.example.com/",
+};
 
 describe("proposeProject", () => {
   it("saves a hidden draft with server-owned fields", async () => {
@@ -44,8 +51,13 @@ describe("proposeProject", () => {
     ]);
 
     expect(results.filter((r) => r.ok)).toHaveLength(1);
-    expect(results.find((r) => !r.ok)).toEqual({ ok: false, error: "slug already exists: race" });
-    expect((await repo.getAllProjects()).filter((p) => p.slug === "race")).toHaveLength(1);
+    expect(results.find((r) => !r.ok)).toEqual({
+      ok: false,
+      error: "slug already exists: race",
+    });
+    expect((await repo.getAllProjects()).filter((p) => p.slug === "race")).toHaveLength(
+      1,
+    );
   });
 
   it("rejects a cover_url outside the media host", async () => {
@@ -67,7 +79,9 @@ describe("proposeProject", () => {
     );
     expect(result.ok).toBe(true);
     const row = (await repo.getAllProjects()).find((p) => p.slug === "inj");
-    expect(row?.description.toLowerCase()).not.toContain("ignore all previous instructions");
+    expect(row?.description.toLowerCase()).not.toContain(
+      "ignore all previous instructions",
+    );
   });
 });
 
@@ -79,16 +93,24 @@ describe("proposeProjectInput", () => {
       { sort_order: 0 },
       { show_in_resume: true },
     ]) {
-      expect(proposeProjectInput.safeParse({ ...proposal(), ...extra }).success).toBe(false);
+      expect(proposeProjectInput.safeParse({ ...proposal(), ...extra }).success).toBe(
+        false,
+      );
     }
   });
 });
 
 describe("isAllowedCoverUrl", () => {
   it("only accepts https on the media host", () => {
-    expect(isAllowedCoverUrl("https://media.example.com/a.png", env.mediaBaseUrl)).toBe(true);
-    expect(isAllowedCoverUrl("http://media.example.com/a.png", env.mediaBaseUrl)).toBe(false);
-    expect(isAllowedCoverUrl("https://media.example.com.evil.io/a.png", env.mediaBaseUrl)).toBe(false);
+    expect(isAllowedCoverUrl("https://media.example.com/a.png", env.mediaBaseUrl)).toBe(
+      true,
+    );
+    expect(isAllowedCoverUrl("http://media.example.com/a.png", env.mediaBaseUrl)).toBe(
+      false,
+    );
+    expect(
+      isAllowedCoverUrl("https://media.example.com.evil.io/a.png", env.mediaBaseUrl),
+    ).toBe(false);
     expect(isAllowedCoverUrl("https://media.example.com/a.png", null)).toBe(false);
     expect(isAllowedCoverUrl("not a url", env.mediaBaseUrl)).toBe(false);
   });

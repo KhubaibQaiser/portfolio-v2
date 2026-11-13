@@ -8,7 +8,10 @@ import { describe, expect, it } from "vitest";
 import type { InfraConfig } from "../config";
 import { ProjectMcpStack } from "./project-mcp-stack";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../..",
+);
 const entry = path.join(repoRoot, "apps/project-mcp/src/lambda.ts");
 
 const config: InfraConfig = {
@@ -29,7 +32,9 @@ function synth(): Template {
   const deps = new cdk.Stack(app, "Deps", {
     env: { account: "123456789012", region: "eu-west-1" },
   });
-  const hostedZone = new route53.HostedZone(deps, "Zone", { zoneName: config.domainName });
+  const hostedZone = new route53.HostedZone(deps, "Zone", {
+    zoneName: config.domainName,
+  });
   const certificate = new acm.Certificate(deps, "Cert", {
     domainName: config.domainName,
     subjectAlternativeNames: [`mcp-write.${config.domainName}`],
@@ -47,7 +52,8 @@ function synth(): Template {
 
 function statements(template: Template): Array<Record<string, unknown>> {
   return Object.values(template.findResources("AWS::IAM::Policy")).flatMap(
-    (policy) => policy.Properties.PolicyDocument.Statement as Array<Record<string, unknown>>,
+    (policy) =>
+      policy.Properties.PolicyDocument.Statement as Array<Record<string, unknown>>,
   );
 }
 
@@ -60,9 +66,9 @@ describe("ProjectMcpStack", () => {
       Identifier: "https://mcp-write.example.com",
       Scopes: [Match.objectLike({ ScopeName: "projects.write" })],
     });
-    expect(JSON.stringify(template.findResources("AWS::Cognito::UserPoolClient"))).not.toContain(
-      "client_credentials",
-    );
+    expect(
+      JSON.stringify(template.findResources("AWS::Cognito::UserPoolClient")),
+    ).not.toContain("client_credentials");
     template.resourceCountIs("AWS::SecretsManager::Secret", 1); // origin-verify only
   });
 
@@ -74,7 +80,14 @@ describe("ProjectMcpStack", () => {
     expect(write?.Action).toContain("dynamodb:PutItem");
     const resources = JSON.stringify(write?.Resource);
     expect(resources).toContain("portfolio-project");
-    for (const other of ["content", "experience", "skill", "testimonial", "job-posting", "media"]) {
+    for (const other of [
+      "content",
+      "experience",
+      "skill",
+      "testimonial",
+      "job-posting",
+      "media",
+    ]) {
       expect(resources).not.toContain(`portfolio-${other}`);
     }
     expect(resources).not.toContain("portfolio-*");

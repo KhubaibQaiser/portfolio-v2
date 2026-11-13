@@ -519,7 +519,9 @@ export function createMultiTableContentRepository(
       return first ?? null;
     },
     async insertProject(values: ProjectFormData, options?: { id?: string }) {
-      const row = options?.id ? { ...insertRow(values), id: options.id } : insertRow(values);
+      const row = options?.id
+        ? { ...insertRow(values), id: options.id }
+        : insertRow(values);
       if (options?.id) await putWithRevision(tables.project, "id", row);
       else await putItem(tables.project, row);
       return toProject(row);

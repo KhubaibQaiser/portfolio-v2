@@ -1,6 +1,10 @@
 import { McpServer, type AuthInfo } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
-import { registerProposeProjectTool, readToolEnv, type ToolEnv } from "./tools/propose-project";
+import {
+  registerProposeProjectTool,
+  readToolEnv,
+  type ToolEnv,
+} from "./tools/propose-project";
 import type { ClientRateLimit } from "./config";
 
 /**

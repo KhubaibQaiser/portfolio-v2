@@ -38,7 +38,9 @@ export function isAllowedCoverUrl(url: string, mediaBaseUrl: string | null): boo
   if (!mediaBaseUrl) return false;
   try {
     const cover = new URL(url);
-    return cover.protocol === "https:" && cover.hostname === new URL(mediaBaseUrl).hostname;
+    return (
+      cover.protocol === "https:" && cover.hostname === new URL(mediaBaseUrl).hostname
+    );
   } catch {
     return false;
   }
@@ -121,12 +123,17 @@ export function registerProposeProjectTool(
         "Propose a new portfolio project. It is saved as a DRAFT and stays hidden from the public site until the owner approves it in the Admin panel. Cannot publish, edit, delete, or feature projects.",
       inputSchema: proposeProjectInput,
     },
-    withGuardrails("propose_project", authInfo, rateLimit, async (args: ProposeProjectInput) => {
-      const result = await proposeProject(repo, args, env);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-        isError: !result.ok,
-      };
-    }),
+    withGuardrails(
+      "propose_project",
+      authInfo,
+      rateLimit,
+      async (args: ProposeProjectInput) => {
+        const result = await proposeProject(repo, args, env);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result) }],
+          isError: !result.ok,
+        };
+      },
+    ),
   );
 }

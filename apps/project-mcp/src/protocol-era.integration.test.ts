@@ -120,7 +120,10 @@ async function assertEraTools(client: Client, expectedEra: ProtocolEra): Promise
     annotations: { readOnlyHint: false, destructiveHint: false },
   });
 
-  const result = await client.callTool({ name: "propose_project", arguments: proposal() });
+  const result = await client.callTool({
+    name: "propose_project",
+    arguments: proposal(),
+  });
   expect(JSON.parse(textFromToolResult(result))).toMatchObject({
     ok: true,
     status: "draft",
