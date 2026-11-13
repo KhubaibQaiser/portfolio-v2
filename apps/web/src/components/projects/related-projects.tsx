@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { Project } from "@portfolio/shared/schemas";
+import { ProjectCard } from "./project-card";
 
 export function RelatedProjects({ projects }: { projects: Project[] }) {
   if (projects.length === 0) return null;
@@ -12,15 +12,7 @@ export function RelatedProjects({ projects }: { projects: Project[] }) {
       <ul className="mt-4 grid gap-4 sm:grid-cols-3">
         {projects.map((project) => (
           <li key={project.id}>
-            <Link
-              href={`/projects/${project.slug}`}
-              className="border-border/50 bg-muted/20 hover:border-accent/30 block rounded-xl border p-4 transition-colors"
-            >
-              <p className="font-semibold tracking-tight">{project.title}</p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {project.summary}
-              </p>
-            </Link>
+            <ProjectCard project={project} className="h-full" />
           </li>
         ))}
       </ul>
