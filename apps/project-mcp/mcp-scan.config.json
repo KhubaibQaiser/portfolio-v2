@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "project-write": {
+      "command": "pnpm",
+      "args": ["--filter", "@portfolio/project-mcp", "dev"]
+    }
+  }
+}

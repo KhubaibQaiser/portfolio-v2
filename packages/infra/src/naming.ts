@@ -186,6 +186,46 @@ export function grantAdminDataAccess(
   );
 }
 
+/**
+ * Project-mcp permissions (ADR 0009): the only write-capable network Lambda.
+ * `PutItem` on the project table (and its GSIs for the slug check read) and
+ * nothing else; plus the same scoped rate-limit counter as candidate-mcp. It
+ * can create rows but not update or delete them.
+ */
+export function grantProjectMcpDataAccess(
+  scope: Construct,
+  fn: lambda.Function,
+  config: InfraConfig,
+): void {
+  const { account, region } = Stack.of(scope);
+  const tableArn = (suffix: string) =>
+    `arn:aws:dynamodb:${region}:${account}:table/${config.tablePrefix}-${suffix}`;
+
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "ProjectMcpProjectWrite",
+      actions: [
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+      ],
+      resources: [
+        tableArn(TABLE_SUFFIXES.project),
+        `${tableArn(TABLE_SUFFIXES.project)}/index/*`,
+      ],
+    }),
+  );
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: "ProjectMcpRateLimitCounter",
+      actions: ["dynamodb:UpdateItem"],
+      resources: [tableArn(TABLE_SUFFIXES.rateLimit)],
+    }),
+  );
+}
+
 /** The content tables `get_candidate_profile`/`get_candidate_facts` actually read. */
 const CANDIDATE_MCP_READ_SUFFIXES = [
   TABLE_SUFFIXES.content,

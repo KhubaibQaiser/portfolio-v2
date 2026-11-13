@@ -105,10 +105,13 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm --filter @portfolio/candidate-mcp typecheck
+      - run: pnpm --filter @portfolio/project-mcp typecheck
       - run: >
           pnpm exec vitest run
           apps/candidate-mcp
+          apps/project-mcp
           packages/infra/src/stacks/candidate-mcp-stack.test.ts
+          packages/infra/src/stacks/project-mcp-stack.test.ts
 
   e2e:
     name: Playwright e2e

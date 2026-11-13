@@ -4,6 +4,10 @@ export const projectTypeEnum = z.enum(["web", "mobile", "game", "open-source", "
 
 export type ProjectType = z.infer<typeof projectTypeEnum>;
 
+export const projectStatusEnum = z.enum(["draft", "published"]);
+
+export type ProjectStatus = z.infer<typeof projectStatusEnum>;
+
 export const projectSchema = z.object({
   title: z.string().min(1).max(150),
   slug: z
@@ -27,7 +31,14 @@ export const projectSchema = z.object({
   resume_status: z.string().max(80).nullable().default(null),
   /** Newline-separated bullets for the resume PDF (portfolio description stays separate). */
   resume_description: z.string().max(2000).default(""),
+  /** `draft` rows (created via the project MCP) are hidden from every public read until approved in Admin. */
+  status: projectStatusEnum.default("published"),
 });
+
+/** Rows saved before `status` existed have none; treat them as published. */
+export function isPublishedProject(p: { status?: ProjectStatus }): boolean {
+  return p.status !== "draft";
+}
 
 /** Resume pipelines only — portfolio and admin list show all rows. */
 export function filterProjectsForResume<T extends { show_in_resume?: boolean }>(

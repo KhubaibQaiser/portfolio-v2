@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { beforeAll, describe, expect, it } from "vitest";
+import { ContentConflictError } from "@portfolio/shared/concurrency";
 import type { ContentRepository } from "@portfolio/shared/ports";
 import type { ResumeGenerationInsert } from "@portfolio/shared/types";
 import { createMultiTableContentRepository } from "./multi-table-content-repository";
@@ -76,6 +77,21 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
     expect(bySlug?.id).toBe(created.id);
     expect(bySlug?.cover_url).toBeNull();
     expect(await repo.getProjectBySlug("missing-slug")).toBeNull();
+  });
+
+  it("inserts a project with a caller-chosen id only once (atomic uniqueness)", async () => {
+    const id = `slug-race-${Date.now()}`;
+    const attempts = await Promise.allSettled(
+      Array.from({ length: 5 }, () =>
+        repo.insertProject({ ...projectForm, slug: id }, { id }),
+      ),
+    );
+
+    expect(attempts.filter((a) => a.status === "fulfilled")).toHaveLength(1);
+    for (const a of attempts.filter((a) => a.status === "rejected")) {
+      expect((a as PromiseRejectedResult).reason).toBeInstanceOf(ContentConflictError);
+    }
+    expect((await repo.getProjectById(id)).id).toBe(id);
   });
 
   it("sums daily usage from resume generations via the by-user GSI", async () => {

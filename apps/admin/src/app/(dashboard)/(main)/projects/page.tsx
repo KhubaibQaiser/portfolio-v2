@@ -3,7 +3,7 @@ import { ProjectsList } from "./projects-list";
 
 export default async function ProjectsListPage() {
   const projects = await getContentRepository()
-    .getProjects()
+    .getAllProjects()
     .catch(() => []);
 
   return (

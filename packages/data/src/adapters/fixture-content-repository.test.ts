@@ -53,6 +53,27 @@ describe("FixtureContentRepository", () => {
     expect(await repo.getProjectBySlug("does-not-exist")).toBeNull();
   });
 
+  it("hides draft projects from public reads until published", async () => {
+    const [seed] = await repo.getProjects();
+    const { id: _id, created_at: _c, updated_at: _u, revision: _r, ...values } = seed!;
+    const draft = await repo.insertProject({
+      ...values,
+      slug: "draft-only",
+      is_featured: true,
+      status: "draft",
+    });
+
+    expect((await repo.getProjects()).some((p) => p.slug === "draft-only")).toBe(false);
+    expect((await repo.getFeaturedProjects()).some((p) => p.slug === "draft-only")).toBe(
+      false,
+    );
+    expect(await repo.getProjectBySlug("draft-only")).toBeNull();
+    expect((await repo.getAllProjects()).some((p) => p.slug === "draft-only")).toBe(true);
+
+    await repo.updateProject(draft.id, { status: "published" }, draft.revision);
+    expect((await repo.getProjectBySlug("draft-only"))?.slug).toBe("draft-only");
+  });
+
   it("stores and updates media alt text", async () => {
     const row = await repo.insertMedia({
       filename: "hero-background.webp",
@@ -151,5 +172,15 @@ describe("FixtureContentRepository", () => {
       totalUsd: 0,
       count: 0,
     });
+  });
+
+  it("rejects a second project insert with the same explicit id", async () => {
+    const [seed] = await repo.getProjects();
+    const { id: _id, created_at: _c, updated_at: _u, revision: _r, ...form } = seed!;
+    await repo.insertProject({ ...form, slug: "dup-id" }, { id: "slug-dup-id" });
+
+    await expect(
+      repo.insertProject({ ...form, slug: "dup-id" }, { id: "slug-dup-id" }),
+    ).rejects.toBeInstanceOf(ContentConflictError);
   });
 });

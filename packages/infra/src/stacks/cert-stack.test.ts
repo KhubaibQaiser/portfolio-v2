@@ -43,6 +43,13 @@ describe("CertStack", () => {
     });
   });
 
+  it("covers mcp-write subdomain for project-mcp CloudFront", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::CertificateManager::Certificate", {
+      SubjectAlternativeNames: Match.arrayWith([`mcp-write.${baseConfig.domainName}`]),
+    });
+  });
+
   it("covers mcp subdomain for candidate-mcp CloudFront", () => {
     const template = synth();
     template.hasResourceProperties("AWS::CertificateManager::Certificate", {

@@ -7,7 +7,7 @@ import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { Form, FormSaveButton, confirmLeave } from "@/components/form";
 import { getDeletedIds, tryLeaveForm } from "@/components/form/list-form-utils";
-import { saveProject, deleteProject } from "@/lib/actions";
+import { saveProject, deleteProject, approveProject } from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import {
@@ -38,6 +38,7 @@ const EMPTY: ProjectFormData = {
   show_in_resume: false,
   resume_status: null,
   resume_description: "",
+  status: "published",
 };
 
 type ProjectEditForm = ProjectFormData & { id?: string; revision?: number };
@@ -135,6 +136,11 @@ function ProjectsListPanel({
                     <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
                       {project.type}
                     </span>
+                    {project.status === "draft" && (
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-600">
+                        Draft
+                      </span>
+                    )}
                     {project.show_in_resume === false && (
                       <span className="text-muted-foreground text-xs">
                         Hidden from resume
@@ -142,6 +148,19 @@ function ProjectsListPanel({
                     )}
                   </div>
                 </div>
+                {project.status === "draft" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      runServerAction(() => approveProject(project.id), toast, {
+                        onSuccess: () => window.location.reload(),
+                      })
+                    }
+                    className="bg-accent text-accent-foreground rounded-md px-3 py-1 text-xs font-medium"
+                  >
+                    Approve
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => openEdit(projectRowToForm(project))}

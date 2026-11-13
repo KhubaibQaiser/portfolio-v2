@@ -37,6 +37,7 @@ export class CertStack extends cdk.Stack {
         `admin.${domainName}`,
         `storybook.${domainName}`,
         `mcp.${domainName}`,
+        `mcp-write.${domainName}`,
       ],
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });

@@ -153,6 +153,22 @@ export async function saveProject(
   }
 }
 
+/** Publishes a draft (e.g. one proposed through the project MCP). Only an admin can. */
+export async function approveProject(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    const row = await repo.getProjectById(id);
+    if (row.status === "published") return { success: true };
+    await repo.updateProject(id, { status: "published" }, row.revision);
+    await publishContentChanged();
+    return { success: true };
+  } catch (e) {
+    return actionError(e);
+  }
+}
+
 export async function deleteProject(id: string): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
