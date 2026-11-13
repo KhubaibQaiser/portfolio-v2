@@ -5,11 +5,20 @@ import { SlugViewTracker } from "@/components/analytics/slug-view-tracker";
 import { TrackedExternalLink } from "@/components/analytics/tracked-external-link";
 import { PageBreadcrumbs } from "@/components/layout/page-breadcrumbs";
 import { RelatedProjects } from "@/components/projects/related-projects";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselDots,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@portfolio/ui/carousel";
 import { GitHubIcon } from "@portfolio/ui/icons";
 import { notFound } from "next/navigation";
 import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data";
 import { breadcrumbListJsonLd, creativeWorkJsonLd } from "@/lib/json-ld";
 import { splitPlainTextParagraphs } from "@/lib/plain-text";
+import { projectHeroImages } from "@/lib/project-hero-images";
 import { pickRelatedProjects } from "@/lib/related-projects";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 import type { Project } from "@portfolio/shared/schemas";
@@ -81,6 +90,7 @@ export default async function ProjectDetailPage({
   }
 
   const related = pickRelatedProjects(project, await fetchAllProjects());
+  const heroImages = projectHeroImages(project);
   const overviewParagraphs = splitPlainTextParagraphs(project.description);
 
   return (
@@ -153,17 +163,29 @@ export default async function ProjectDetailPage({
           )}
         </div>
 
-        <div className="bg-muted relative mt-8 aspect-video overflow-hidden rounded-2xl">
-          {project.cover_url ? (
-            <Image
-              src={project.cover_url}
-              alt={project.title}
-              fill
-              sizes="(min-width: 768px) 768px, 100vw"
-              className="object-cover"
-            />
-          ) : null}
-        </div>
+        {heroImages.length > 0 && (
+          <div className="mt-8">
+            <Carousel aria-label={`${project.title} images`}>
+              <CarouselContent className="aspect-video rounded-2xl">
+                {heroImages.map((image, i) => (
+                  <CarouselItem key={image.url}>
+                    <Image
+                      src={image.url}
+                      alt={image.alt}
+                      fill
+                      priority={i === 0}
+                      sizes="(min-width: 768px) 768px, 100vw"
+                      className="object-cover"
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+              <CarouselDots />
+            </Carousel>
+          </div>
+        )}
 
         <section className="mt-12">
           <h2 className="text-accent text-lg font-semibold tracking-wider uppercase">

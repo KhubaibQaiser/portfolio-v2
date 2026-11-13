@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
 import { ContentConflictError } from "@portfolio/shared/concurrency";
+import { isMediaUrl } from "@portfolio/shared/media-url";
 import { projectSchema } from "@portfolio/shared/schemas";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
@@ -14,7 +15,13 @@ import type { ClientRateLimit } from "../config";
  * rejects anything else instead of silently dropping it.
  */
 export const proposeProjectInput = projectSchema
-  .omit({ status: true, sort_order: true, is_featured: true, show_in_resume: true })
+  .omit({
+    status: true,
+    sort_order: true,
+    is_featured: true,
+    show_in_resume: true,
+    gallery: true,
+  })
   .strict();
 
 export type ProposeProjectInput = z.infer<typeof proposeProjectInput>;
@@ -34,17 +41,7 @@ export function readToolEnv(): ToolEnv {
 }
 
 /** Stored, never fetched (ADR 0003 SSRF rule): host must be our media origin. */
-export function isAllowedCoverUrl(url: string, mediaBaseUrl: string | null): boolean {
-  if (!mediaBaseUrl) return false;
-  try {
-    const cover = new URL(url);
-    return (
-      cover.protocol === "https:" && cover.hostname === new URL(mediaBaseUrl).hostname
-    );
-  } catch {
-    return false;
-  }
-}
+export const isAllowedCoverUrl = isMediaUrl;
 
 export type ProposeProjectResult =
   | { ok: true; id: string; slug: string; status: "draft"; reviewUrl: string | null }

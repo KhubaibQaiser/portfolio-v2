@@ -92,6 +92,7 @@ describe("proposeProjectInput", () => {
       { is_featured: true },
       { sort_order: 0 },
       { show_in_resume: true },
+      { gallery: [{ url: "https://media.example.com/a.png", alt: "" }] },
     ]) {
       expect(proposeProjectInput.safeParse({ ...proposal(), ...extra }).success).toBe(
         false,
