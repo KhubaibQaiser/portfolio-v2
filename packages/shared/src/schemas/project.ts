@@ -31,6 +31,15 @@ export const projectSchema = z.object({
   resume_status: z.string().max(80).nullable().default(null),
   /** Newline-separated bullets for the resume PDF (portfolio description stays separate). */
   resume_description: z.string().max(2000).default(""),
+  /**
+   * Extra images shown after the cover in the detail-page carousel. Media-library
+   * URLs only (next/image allows no other host). Admin-owned: the project MCP
+   * cannot set it.
+   */
+  gallery: z
+    .array(z.object({ url: z.string().url(), alt: z.string().max(200).default("") }))
+    .max(12)
+    .optional(),
   /** `draft` rows (created via the project MCP) are hidden from every public read until approved in Admin. */
   status: projectStatusEnum.default("published"),
 });

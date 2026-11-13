@@ -2,6 +2,7 @@
 
 import { getContentRepository } from "@portfolio/data";
 import { isContentConflictError } from "@portfolio/shared/concurrency";
+import { isMediaUrl } from "@portfolio/shared/media-url";
 import {
   heroSchema,
   aboutSchema,
@@ -139,6 +140,16 @@ export async function saveProject(
 
   const parsed = projectSchema.safeParse(values);
   if (!parsed.success) return { success: false, error: parsed.error.message };
+
+  // next/image only allows the media host; reject others here, not at render time.
+  // Unset in local dev with no media storage, where there is nothing to compare to.
+  const mediaBase = process.env.MEDIA_PUBLIC_BASE_URL;
+  if (
+    mediaBase &&
+    (parsed.data.gallery ?? []).some((image) => !isMediaUrl(image.url, mediaBase))
+  ) {
+    return { success: false, error: "Gallery images must come from the media library." };
+  }
 
   try {
     if (id) {

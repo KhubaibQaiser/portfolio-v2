@@ -14,6 +14,7 @@
     "./alt-text": "./src/alt-text.ts",
     "./job-natural-key": "./src/job-natural-key.ts",
     "./concurrency": "./src/concurrency.ts",
+    "./media-url": "./src/media-url.ts",
     "./utils": "./src/utils.ts",
     "./experience-dates": "./src/experience-dates.ts",
     "./experience-bullet-budget": "./src/experience-bullet-budget.ts",

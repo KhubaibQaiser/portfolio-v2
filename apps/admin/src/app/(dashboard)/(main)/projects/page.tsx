@@ -2,9 +2,11 @@ import { getContentRepository } from "@portfolio/data";
 import { ProjectsList } from "./projects-list";
 
 export default async function ProjectsListPage() {
-  const projects = await getContentRepository()
-    .getAllProjects()
-    .catch(() => []);
+  const repo = getContentRepository();
+  const [projects, media] = await Promise.all([
+    repo.getAllProjects().catch(() => []),
+    repo.getMedia().catch(() => []),
+  ]);
 
   return (
     <>
@@ -16,7 +18,7 @@ export default async function ProjectsListPage() {
           </p>
         </div>
       </div>
-      <ProjectsList initialData={projects} />
+      <ProjectsList initialData={projects} media={media} />
     </>
   );
 }

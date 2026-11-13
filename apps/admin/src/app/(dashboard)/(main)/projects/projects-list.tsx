@@ -18,12 +18,17 @@ import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import {
   projectSchema,
+  type Media,
   type Project,
   type ProjectFormData,
 } from "@portfolio/shared/schemas";
+import { GalleryEditor } from "@portfolio/ui/gallery-editor";
+import { MediaPicker } from "@portfolio/ui/media-picker";
 
 type ProjectsListProps = {
   initialData: Project[];
+  /** Media library, for the cover and gallery pickers. */
+  media: Media[];
 };
 
 const EMPTY: ProjectFormData = {
@@ -55,13 +60,15 @@ function projectRowToForm(row: Project): ProjectEditForm {
   return { ...projectSchema.parse(rest), id, revision };
 }
 
-export function ProjectsList({ initialData }: ProjectsListProps) {
+export function ProjectsList({ initialData, media }: ProjectsListProps) {
   const [editing, setEditing] = useState<
     (ProjectFormData & { id?: string; revision?: number }) | null
   >(null);
 
   if (editing) {
-    return <ProjectEditPanel entry={editing} onClose={() => setEditing(null)} />;
+    return (
+      <ProjectEditPanel entry={editing} media={media} onClose={() => setEditing(null)} />
+    );
   }
 
   return <ProjectsListPanel initialData={initialData} onEdit={setEditing} />;
@@ -290,11 +297,22 @@ function RevisionReview({ project, onClose }: { project: Project; onClose: () =>
   );
 }
 
+/** Uploads one file through the same endpoint the Media Library uses. */
+async function uploadMedia(file: File): Promise<Media | null> {
+  const body = new FormData();
+  body.set("file", file);
+  const res = await fetch("/api/media/upload", { method: "POST", body });
+  const data = (await res.json().catch(() => ({}))) as { media?: Media };
+  return res.ok && data.media ? data.media : null;
+}
+
 function ProjectEditPanel({
   entry,
+  media,
   onClose,
 }: {
   entry: ProjectFormData & { id?: string; revision?: number };
+  media: Media[];
   onClose: () => void;
 }) {
   const toast = useToast();
@@ -302,6 +320,8 @@ function ProjectEditPanel({
   const form = useForm<ProjectEditForm>({ defaultValues: entry });
   const { register, handleSubmit, reset, setValue, control } = form;
   const techTags = useWatch({ control, name: "tech_tags" }) ?? [];
+  const gallery = useWatch({ control, name: "gallery" }) ?? [];
+  const [picker, setPicker] = useState<"cover" | "gallery" | null>(null);
 
   function handleClose() {
     if (form.formState.isDirty && !confirmLeave()) return;
@@ -410,7 +430,7 @@ function ProjectEditPanel({
             className="border-border bg-muted/30 focus:border-accent w-full rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
           />
         </div>
-        {(["github_url", "live_url", "cover_url"] as const).map((key) => (
+        {(["github_url", "live_url"] as const).map((key) => (
           <div key={key}>
             <label className="mb-1 block text-sm font-medium capitalize">
               {key.replace(/_/g, " ")}
@@ -421,6 +441,33 @@ function ProjectEditPanel({
             />
           </div>
         ))}
+        <div>
+          <label className="mb-1 block text-sm font-medium">Cover image</label>
+          <div className="flex gap-2">
+            <input
+              {...register("cover_url")}
+              className="border-border bg-muted/30 focus:border-accent min-w-0 flex-1 rounded-lg border px-4 py-2 text-sm focus:outline-hidden"
+            />
+            <button
+              type="button"
+              onClick={() => setPicker("cover")}
+              className="border-border hover:bg-muted rounded-lg border px-3 text-sm"
+            >
+              Choose
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Gallery</label>
+          <p className="text-muted-foreground mb-2 text-xs">
+            Shown after the cover in the project page carousel.
+          </p>
+          <GalleryEditor
+            images={gallery}
+            onChange={(images) => setValue("gallery", images, { shouldDirty: true })}
+            onAdd={() => setPicker("gallery")}
+          />
+        </div>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" {...register("is_featured")} />
@@ -438,6 +485,31 @@ function ProjectEditPanel({
         </label>
         <FormSaveButton saving={saving} onClick={handleSubmit(onSubmit)} />
       </form>
+      {picker && (
+        <MediaPicker
+          items={media}
+          multiple={picker === "gallery"}
+          title={picker === "cover" ? "Choose cover image" : "Add gallery images"}
+          disabledUrls={picker === "gallery" ? gallery.map((g) => g.url) : []}
+          onUpload={uploadMedia}
+          onClose={() => setPicker(null)}
+          onConfirm={(chosen) => {
+            if (picker === "cover") {
+              setValue("cover_url", chosen[0]?.url ?? null, { shouldDirty: true });
+            } else {
+              setValue(
+                "gallery",
+                [
+                  ...gallery,
+                  ...chosen.map((m) => ({ url: m.url, alt: m.alt_text ?? "" })),
+                ].slice(0, 12),
+                { shouldDirty: true },
+              );
+            }
+            setPicker(null);
+          }}
+        />
+      )}
     </Form>
   );
 }
