@@ -91,7 +91,7 @@ export function FeaturedProjectsSection({ projects }: FeaturedProjectsSectionPro
                       </Link>
                     </h3>
                     <div className="bg-muted/50 text-muted-foreground mt-4 rounded-xl p-5 text-sm leading-relaxed">
-                      {project.description}
+                      {project.summary}
                     </div>
                     <div
                       className={cn(
