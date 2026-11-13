@@ -7,7 +7,13 @@ import { Select } from "@portfolio/ui/select";
 import { cn } from "@/lib/utils";
 import { Form, FormSaveButton, confirmLeave } from "@/components/form";
 import { getDeletedIds, tryLeaveForm } from "@/components/form/list-form-utils";
-import { saveProject, deleteProject, approveProject } from "@/lib/actions";
+import {
+  saveProject,
+  deleteProject,
+  approveProject,
+  approveProjectRevision,
+  rejectProjectRevision,
+} from "@/lib/actions";
 import { useToast } from "@/components/toast/toast-provider";
 import { runServerAction } from "@/lib/run-server-action";
 import {
@@ -70,6 +76,7 @@ function ProjectsListPanel({
 }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
+  const [reviewing, setReviewing] = useState<Project | null>(null);
   const defaultValues: ListFormValues = { items: initialData };
 
   const form = useForm<ListFormValues>({ defaultValues });
@@ -141,6 +148,11 @@ function ProjectsListPanel({
                         Draft
                       </span>
                     )}
+                    {project.pending_revision && (
+                      <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-xs text-sky-600">
+                        Pending changes
+                      </span>
+                    )}
                     {project.show_in_resume === false && (
                       <span className="text-muted-foreground text-xs">
                         Hidden from resume
@@ -159,6 +171,15 @@ function ProjectsListPanel({
                     className="bg-accent text-accent-foreground rounded-md px-3 py-1 text-xs font-medium"
                   >
                     Approve
+                  </button>
+                )}
+                {project.pending_revision && (
+                  <button
+                    type="button"
+                    onClick={() => setReviewing(project)}
+                    className="bg-accent text-accent-foreground rounded-md px-3 py-1 text-xs font-medium"
+                  >
+                    Review changes
                   </button>
                 )}
                 <button
@@ -187,8 +208,85 @@ function ProjectsListPanel({
           onClick={handleSubmit(onSubmit)}
           className="mt-6"
         />
+        {reviewing && (
+          <RevisionReview project={reviewing} onClose={() => setReviewing(null)} />
+        )}
       </div>
     </Form>
+  );
+}
+
+function formatValue(value: unknown): string {
+  if (Array.isArray(value)) return value.join(", ");
+  return value === null || value === undefined || value === ""
+    ? "(empty)"
+    : String(value);
+}
+
+/** Before/after view of an agent's staged edit (ADR 0010); Approve applies it live. */
+function RevisionReview({ project, onClose }: { project: Project; onClose: () => void }) {
+  const toast = useToast();
+  const pending = project.pending_revision;
+  if (!pending) return null;
+  const live = project as unknown as Record<string, unknown>;
+  const changes = Object.entries(pending.values);
+  const stale = pending.base_revision !== project.revision;
+
+  const act = (run: () => ReturnType<typeof approveProjectRevision>) =>
+    runServerAction(run, toast, { onSuccess: () => window.location.reload() });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-background border-border max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Review changes: {project.title}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Proposed by {pending.proposed_by} on{" "}
+              {new Date(pending.proposed_at).toLocaleString()}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {stale && (
+          <p className="mt-3 rounded-md bg-amber-500/15 p-3 text-xs text-amber-700">
+            This project was edited after the proposal was made. Approving still applies
+            the proposed values to the fields listed below.
+          </p>
+        )}
+        <div className="mt-4 space-y-4">
+          {changes.map(([key, after]) => (
+            <div key={key}>
+              <p className="text-sm font-medium">{key.replace(/_/g, " ")}</p>
+              <p className="mt-1 rounded-md bg-red-500/10 p-2 text-xs whitespace-pre-wrap">
+                {formatValue(live[key])}
+              </p>
+              <p className="mt-1 rounded-md bg-green-500/10 p-2 text-xs whitespace-pre-wrap">
+                {formatValue(after)}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => act(() => rejectProjectRevision(project.id))}
+            className="border-border rounded-md border px-3 py-1.5 text-sm"
+          >
+            Reject
+          </button>
+          <button
+            type="button"
+            onClick={() => act(() => approveProjectRevision(project.id))}
+            className="bg-accent text-accent-foreground rounded-md px-3 py-1.5 text-sm font-medium"
+          >
+            Approve and publish
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

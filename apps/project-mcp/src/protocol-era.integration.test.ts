@@ -114,7 +114,12 @@ async function assertEraTools(client: Client, expectedEra: ProtocolEra): Promise
 
   const tools = await client.listTools();
   const names = tools.tools.map((t) => t.name);
-  expect(names).toEqual(["propose_project"]);
+  expect(names).toEqual([
+    "propose_project",
+    "list_projects",
+    "get_project",
+    "propose_project_update",
+  ]);
   expect(tools.tools[0]).toMatchObject({
     title: "Propose project (draft)",
     annotations: { readOnlyHint: false, destructiveHint: false },

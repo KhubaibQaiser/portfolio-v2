@@ -7,6 +7,7 @@ export type {
   ExperienceFormData,
   Project,
   ProjectFormData,
+  ProjectUpdate,
   ProjectType,
   Skill,
   SkillFormData,

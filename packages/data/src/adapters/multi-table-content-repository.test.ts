@@ -94,6 +94,44 @@ describe.skipIf(!endpoint)("MultiTableContentRepository (integration)", () => {
     expect((await repo.getProjectById(id)).id).toBe(id);
   });
 
+  it("stages, hides and clears a pending project revision", async () => {
+    const slug = `pending-${Date.now()}`;
+    const created = await repo.insertProject({
+      ...projectForm,
+      slug,
+      status: "published",
+    });
+    const pending = {
+      values: { title: "Staged title" },
+      base_revision: created.revision,
+      proposed_at: new Date().toISOString(),
+      proposed_by: "client-1",
+    };
+
+    await repo.updateProject(created.id, { pending_revision: pending }, created.revision);
+
+    const admin = await repo.getProjectById(created.id);
+    expect(admin.pending_revision).toEqual(pending);
+    expect(admin.title).toBe(created.title);
+    expect(await repo.getProjectBySlug(slug)).not.toHaveProperty("pending_revision");
+    expect((await repo.getProjects()).find((p) => p.slug === slug)).not.toHaveProperty(
+      "pending_revision",
+    );
+
+    await expect(
+      repo.updateProject(created.id, { pending_revision: pending }, created.revision),
+    ).rejects.toBeInstanceOf(ContentConflictError);
+
+    await repo.updateProject(
+      created.id,
+      { ...pending.values, pending_revision: null },
+      admin.revision,
+    );
+    const applied = await repo.getProjectById(created.id);
+    expect(applied.title).toBe("Staged title");
+    expect(applied.pending_revision).toBeUndefined();
+  });
+
   it("sums daily usage from resume generations via the by-user GSI", async () => {
     await repo.insertResumeGeneration({
       created_by: "user-1",

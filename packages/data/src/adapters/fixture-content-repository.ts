@@ -19,6 +19,7 @@ import type {
   MediaInsert,
   Project,
   ProjectFormData,
+  ProjectUpdate,
   Resume,
   ResumeFormData,
   ResumeGeneration,
@@ -48,7 +49,11 @@ import {
   testimonialFixtures,
   type ContentFixtureBundle,
 } from "../fixtures/content";
-import { defaultJobPreferencesRow, isPublishedProject } from "@portfolio/shared/schemas";
+import {
+  defaultJobPreferencesRow,
+  isPublishedProject,
+  withoutPendingRevision,
+} from "@portfolio/shared/schemas";
 
 function now(): string {
   return new Date().toISOString();
@@ -170,6 +175,7 @@ export function createFixtureContentRepository(
     async getProjects() {
       return clone(projects)
         .filter(isPublishedProject)
+        .map(withoutPendingRevision)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getAllProjects() {
@@ -178,6 +184,7 @@ export function createFixtureContentRepository(
     async getFeaturedProjects() {
       return clone(projects)
         .filter((p) => isPublishedProject(p) && p.is_featured)
+        .map(withoutPendingRevision)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getProjectById(id: string) {
@@ -185,7 +192,7 @@ export function createFixtureContentRepository(
     },
     async getProjectBySlug(slug: string) {
       const row = projects.find((p) => p.slug === slug && isPublishedProject(p));
-      return row ? clone(row) : null;
+      return row ? withoutPendingRevision(clone(row)) : null;
     },
     async insertProject(values: ProjectFormData, options?: { id?: string }) {
       if (options?.id && projects.some((p) => p.id === options.id)) {
@@ -201,14 +208,13 @@ export function createFixtureContentRepository(
       projects.push(row);
       return clone(row);
     },
-    async updateProject(
-      id: string,
-      values: Partial<ProjectFormData>,
-      expectedRevision?: number,
-    ) {
+    async updateProject(id: string, values: ProjectUpdate, expectedRevision?: number) {
       const row = requireById(projects, id, "Project");
       assertRevision(row.revision, expectedRevision);
-      Object.assign(row, values, { updated_at: now(), revision: nextRevision(row) });
+      const { pending_revision: pending, ...rest } = values;
+      Object.assign(row, rest, { updated_at: now(), revision: nextRevision(row) });
+      if (pending === null) delete row.pending_revision;
+      else if (pending) row.pending_revision = pending;
     },
     async deleteProject(id: string) {
       const idx = projects.findIndex((r) => r.id === id);

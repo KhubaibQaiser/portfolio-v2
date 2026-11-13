@@ -25,6 +25,7 @@ import type {
   MediaInsert,
   Project,
   ProjectFormData,
+  ProjectUpdate,
   Resume,
   ResumeFormData,
   ResumeGeneration,
@@ -51,6 +52,7 @@ import {
   mediaRowSchema,
   normalizeResumeLayoutGuidelines,
   isPublishedProject,
+  withoutPendingRevision,
   projectRowSchema,
   resumeLayoutRowSchema,
   resumeRowSchema,
@@ -410,18 +412,16 @@ export function createMultiTableContentRepository(
     const current = await getItem(table, { id });
     if (!current) throw new Error(`${label} not found: ${id}`);
     const revision = revisionOf(current);
-    await putWithRevision(
-      table,
-      "id",
-      {
-        ...current,
-        ...writable(values),
-        id,
-        updated_at: now(),
-        revision: revision + 1,
-      },
-      expectedRevision ?? revision,
-    );
+    const next: Item = {
+      ...current,
+      ...writable(values),
+      id,
+      updated_at: now(),
+      revision: revision + 1,
+    };
+    // `null` is dropped by `writable`; for these attributes it means "remove".
+    if (values.pending_revision === null) delete next.pending_revision;
+    await putWithRevision(table, "id", next, expectedRevision ?? revision);
   }
 
   function insertRow(values: WriteValues): Item {
@@ -488,6 +488,7 @@ export function createMultiTableContentRepository(
       return items
         .map(toProject)
         .filter(isPublishedProject)
+        .map(withoutPendingRevision)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getAllProjects() {
@@ -499,6 +500,7 @@ export function createMultiTableContentRepository(
       return items
         .map(toProject)
         .filter((p) => isPublishedProject(p) && p.is_featured)
+        .map(withoutPendingRevision)
         .sort((a, b) => a.sort_order - b.sort_order);
     },
     async getProjectById(id: string) {
@@ -516,7 +518,7 @@ export function createMultiTableContentRepository(
         }),
       );
       const first = items?.map(toProject).find(isPublishedProject);
-      return first ?? null;
+      return first ? withoutPendingRevision(first) : null;
     },
     async insertProject(values: ProjectFormData, options?: { id?: string }) {
       const row = options?.id
@@ -526,11 +528,7 @@ export function createMultiTableContentRepository(
       else await putItem(tables.project, row);
       return toProject(row);
     },
-    async updateProject(
-      id: string,
-      values: Partial<ProjectFormData>,
-      expectedRevision?: number,
-    ) {
+    async updateProject(id: string, values: ProjectUpdate, expectedRevision?: number) {
       await patchRow(tables.project, id, "Project", values, expectedRevision);
     },
     async deleteProject(id: string) {
