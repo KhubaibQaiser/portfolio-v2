@@ -1,6 +1,6 @@
 # ADR 0010 — Project MCP: read tools and staged edits (no delete)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-13)
 - **Date:** 2026-11-13
 - **Deciders:** Khubaib (with AI pairing)
 - **Amends:** [ADR 0009](0009-project-write-mcp.md) (which allowed one tool, `propose_project`)

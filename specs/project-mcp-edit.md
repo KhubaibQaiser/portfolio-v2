@@ -1,8 +1,8 @@
 # Project MCP — read tools and staged edits
 
-Status: **Draft — no implementation until reviewed.** Decisions are the owner's
+Status: **Accepted, implemented.** Decisions are the owner's
 answers (2026-11-13); ADR [0010](../docs/adr/0010-project-mcp-staged-edits.md)
-records them and must be Accepted before code. Builds on PR 108 (ADR 0009).
+records them. Builds on PR 108 (ADR 0009).
 
 ## Goal
 
@@ -38,6 +38,7 @@ the MCP.
 3. Draft: merge values, bump revision. Published: write only `pending_revision` (and bump `revision`, so a later Admin edit invalidates the proposal's `base_revision`).
 4. `cover_url` must be null or on the media host. Inputs and outputs pass `deepSanitize`.
 5. Empty update (no fields) is rejected.
+6. Link fields (`cover_url`, `github_url`, `live_url`, `playstore_url`, `appstore_url`, `resume_status`) can be set but not cleared to null through the MCP; clearing one is an Admin action.
 
 ## Admin
 

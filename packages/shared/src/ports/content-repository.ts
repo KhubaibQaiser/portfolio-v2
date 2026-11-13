@@ -7,6 +7,7 @@ import type {
   ExperienceFormData,
   Project,
   ProjectFormData,
+  ProjectUpdate,
   Skill,
   SkillFormData,
   Testimonial,
@@ -85,9 +86,10 @@ export type ContentRepository = {
    * atomic uniqueness check. Without it, a random id is used.
    */
   insertProject(values: ProjectFormData, options?: { id?: string }): Promise<Project>;
+  /** `values.pending_revision: null` clears a staged revision (ADR 0010). */
   updateProject(
     id: string,
-    values: Partial<ProjectFormData>,
+    values: ProjectUpdate,
     expectedRevision?: number,
   ): Promise<void>;
   deleteProject(id: string): Promise<void>;

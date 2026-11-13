@@ -169,6 +169,45 @@ export async function approveProject(id: string): Promise<ActionResult> {
   }
 }
 
+/**
+ * Applies an agent's staged edit (ADR 0010) to the live row and publishes. Uses
+ * the row's current revision, so edits Admin made since the proposal are kept
+ * unless the proposal overrides those fields.
+ */
+export async function approveProjectRevision(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    const row = await repo.getProjectById(id);
+    if (!row.pending_revision) return { success: true };
+    await repo.updateProject(
+      id,
+      { ...row.pending_revision.values, pending_revision: null },
+      row.revision,
+    );
+    await publishContentChanged();
+    return { success: true };
+  } catch (e) {
+    return actionError(e);
+  }
+}
+
+/** Discards an agent's staged edit; the live row is unchanged, so nothing to purge. */
+export async function rejectProjectRevision(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  try {
+    const row = await repo.getProjectById(id);
+    if (!row.pending_revision) return { success: true };
+    await repo.updateProject(id, { pending_revision: null }, row.revision);
+    return { success: true };
+  } catch (e) {
+    return actionError(e);
+  }
+}
+
 export async function deleteProject(id: string): Promise<ActionResult> {
   const auth = await requireAdmin();
   if (!auth.ok) return { success: false, error: auth.error };
