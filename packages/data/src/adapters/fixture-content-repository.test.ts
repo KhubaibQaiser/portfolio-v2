@@ -173,4 +173,14 @@ describe("FixtureContentRepository", () => {
       count: 0,
     });
   });
+
+  it("rejects a second project insert with the same explicit id", async () => {
+    const [seed] = await repo.getProjects();
+    const { id: _id, created_at: _c, updated_at: _u, revision: _r, ...form } = seed!;
+    await repo.insertProject({ ...form, slug: "dup-id" }, { id: "slug-dup-id" });
+
+    await expect(
+      repo.insertProject({ ...form, slug: "dup-id" }, { id: "slug-dup-id" }),
+    ).rejects.toBeInstanceOf(ContentConflictError);
+  });
 });
