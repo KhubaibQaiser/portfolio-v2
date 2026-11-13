@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import type { ContentRepository } from "@portfolio/shared/ports";
+import { ContentConflictError } from "@portfolio/shared/concurrency";
 import { projectSchema } from "@portfolio/shared/schemas";
 import { deepSanitize } from "../sanitize";
 import { withGuardrails } from "../tool-wrapper";
@@ -8,7 +9,7 @@ import type { ClientRateLimit } from "../config";
 
 /**
  * Fields the caller may set. `status`, `sort_order`, `is_featured` and
- * `show_in_resume` are server-owned (ADR 0008): an agent can propose a project
+ * `show_in_resume` are server-owned (ADR 0009): an agent can propose a project
  * but cannot publish, order, feature, or put it on the resume. `.strict()`
  * rejects anything else instead of silently dropping it.
  */
@@ -67,13 +68,27 @@ export async function proposeProject(
     return { ok: false, error: `slug already exists: ${input.slug}` };
   }
 
-  const row = await repo.insertProject({
-    ...input,
-    sort_order: existing.length,
-    is_featured: false,
-    show_in_resume: false,
-    status: "draft",
-  });
+  // The id is derived from the slug and the put is conditional, so two concurrent
+  // proposals of one slug cannot both succeed (the read above is only a fast path
+  // and does not see rows written after it, nor Admin rows with random ids).
+  let row;
+  try {
+    row = await repo.insertProject(
+      {
+        ...input,
+        sort_order: existing.length,
+        is_featured: false,
+        show_in_resume: false,
+        status: "draft",
+      },
+      { id: `slug-${input.slug}` },
+    );
+  } catch (error) {
+    if (error instanceof ContentConflictError) {
+      return { ok: false, error: `slug already exists: ${input.slug}` };
+    }
+    throw error;
+  }
 
   return {
     ok: true,
@@ -94,6 +109,14 @@ export function registerProposeProjectTool(
   server.registerTool(
     "propose_project",
     {
+      title: "Propose project (draft)",
+      // Creates a new row only; never overwrites or deletes (ADR 0009).
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
       description:
         "Propose a new portfolio project. It is saved as a DRAFT and stays hidden from the public site until the owner approves it in the Admin panel. Cannot publish, edit, delete, or feature projects.",
       inputSchema: proposeProjectInput,

@@ -162,6 +162,7 @@ export async function approveProject(id: string): Promise<ActionResult> {
     const row = await repo.getProjectById(id);
     if (row.status === "published") return { success: true };
     await repo.updateProject(id, { status: "published" }, row.revision);
+    await publishContentChanged();
     return { success: true };
   } catch (e) {
     return actionError(e);

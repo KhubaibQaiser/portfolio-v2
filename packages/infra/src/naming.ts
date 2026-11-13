@@ -187,7 +187,7 @@ export function grantAdminDataAccess(
 }
 
 /**
- * Project-mcp permissions (ADR 0008): the only write-capable network Lambda.
+ * Project-mcp permissions (ADR 0009): the only write-capable network Lambda.
  * `PutItem` on the project table (and its GSIs for the slug check read) and
  * nothing else; plus the same scoped rate-limit counter as candidate-mcp. It
  * can create rows but not update or delete them.

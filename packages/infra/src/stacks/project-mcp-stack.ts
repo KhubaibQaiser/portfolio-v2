@@ -34,7 +34,7 @@ export type ProjectMcpStackProps = cdk.StackProps & {
 };
 
 /**
- * Project write MCP server (ADR 0008): OAuth 2.1 resource server behind
+ * Project write MCP server (ADR 0009): OAuth 2.1 resource server behind
  * CloudFront on `mcp-write.<domain>`. Own Cognito pool and scope
  * (`projects.write`) so candidate-mcp tokens can never write. Its only tool
  * creates drafts that an admin must approve.

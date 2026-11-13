@@ -187,10 +187,13 @@ export function createFixtureContentRepository(
       const row = projects.find((p) => p.slug === slug && isPublishedProject(p));
       return row ? clone(row) : null;
     },
-    async insertProject(values: ProjectFormData) {
+    async insertProject(values: ProjectFormData, options?: { id?: string }) {
+      if (options?.id && projects.some((p) => p.id === options.id)) {
+        throw new ContentConflictError();
+      }
       const row: Project = {
         ...values,
-        id: randomUUID(),
+        id: options?.id ?? randomUUID(),
         created_at: now(),
         updated_at: now(),
         revision: 1,

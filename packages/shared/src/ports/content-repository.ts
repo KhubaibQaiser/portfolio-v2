@@ -79,7 +79,12 @@ export type ContentRepository = {
   getFeaturedProjects(): Promise<Project[]>;
   getProjectById(id: string): Promise<Project>;
   getProjectBySlug(slug: string): Promise<Project | null>;
-  insertProject(values: ProjectFormData): Promise<Project>;
+  /**
+   * With `options.id` the insert is conditional (fails with `ContentConflictError`
+   * if that id exists), so a caller can derive the id from the slug to get an
+   * atomic uniqueness check. Without it, a random id is used.
+   */
+  insertProject(values: ProjectFormData, options?: { id?: string }): Promise<Project>;
   updateProject(
     id: string,
     values: Partial<ProjectFormData>,

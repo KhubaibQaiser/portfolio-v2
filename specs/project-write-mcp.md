@@ -2,16 +2,15 @@
 
 Contract for letting an MCP client (Claude.ai / Claude Code now, other agents
 later) **propose a new portfolio project** that the owner approves in Admin.
-Status: **built, not deployed.** [ADR 0008](../docs/adr/0008-project-write-mcp.md)
+Status: **built, not deployed.** [ADR 0009](../docs/adr/0009-project-write-mcp.md)
 is Accepted. Implemented: schema `status`, draft filtering, the Admin Approve
 action, `apps/project-mcp`, and `ProjectMcpStack` (synth-tested). Per AGENTS.md
 invariant 7 and ADR 0003, a write-capable MCP tool needs its own ADR and a
 human-review gate; this is that gate.
 
-Freshness model: **unchanged time-based ISR** (`export const revalidate = 10`
-on public pages). No tags, no revalidate endpoint, no tag-cache changes. An
-approved project appears on the site within ~10 s plus CDN
-stale-while-revalidate (`expireTime: 60`).
+Freshness model: **ADR 0008 on-demand purge.** `approveProject` publishes
+`ContentChanged` after the status flip, so the approved project shows up as soon
+as the purge completes. Proposing a draft publishes nothing (it is hidden anyway).
 
 ## Decisions
 
@@ -21,7 +20,7 @@ stale-while-revalidate (`expireTime: 60`).
 | Review gate   | Tool creates a **draft**. Only an Admin action publishes it.                                                        |
 | Auth          | OAuth 2.1 + Cognito as in ADR 0006, new scope `projects.write`, separate user pool/clients from candidate-mcp.     |
 | Callers       | Interactive (auth code + PKCE) first; M2M allowed later by adding an app client, no code change.                   |
-| Invalidation  | None. ISR timer only.                                                                                               |
+| Invalidation  | `approveProject` calls `publishContentChanged()` (ADR 0008). Proposals do not.                                      |
 
 ## Schema change (packages/shared)
 

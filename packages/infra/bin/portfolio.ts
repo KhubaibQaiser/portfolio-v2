@@ -172,7 +172,7 @@ if (config.domainEnabled && cert) {
   });
   candidateMcp.addDependency(data);
 
-  // Write-capable (drafts only) MCP: separate pool/scope/stack, ADR 0008.
+  // Write-capable (drafts only) MCP: separate pool/scope/stack, ADR 0009.
   const projectMcp = new ProjectMcpStack(app, `${config.appName}-ProjectMcp`, {
     env: primaryEnv,
     config,

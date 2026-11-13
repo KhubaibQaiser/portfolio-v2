@@ -36,6 +36,18 @@ describe("proposeProject", () => {
     expect((await repo.getAllProjects()).length).toBe(before);
   });
 
+  it("lets only one of two concurrent proposals of the same slug win", async () => {
+    const repo = createFixtureContentRepository();
+    const results = await Promise.all([
+      proposeProject(repo, proposal("race"), env),
+      proposeProject(repo, proposal("race"), env),
+    ]);
+
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(results.find((r) => !r.ok)).toEqual({ ok: false, error: "slug already exists: race" });
+    expect((await repo.getAllProjects()).filter((p) => p.slug === "race")).toHaveLength(1);
+  });
+
   it("rejects a cover_url outside the media host", async () => {
     const repo = createFixtureContentRepository();
     const result = await proposeProject(

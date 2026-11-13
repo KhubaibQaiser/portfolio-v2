@@ -6,7 +6,7 @@ import type { ClientRateLimit } from "./config";
 /**
  * Builds one `McpServer` per HTTP request (see `http-handler.ts`) or stdio
  * connection (`index.ts`). The only tool is `propose_project`, which can only
- * create drafts (ADR 0008).
+ * create drafts (ADR 0009).
  */
 export function createProjectMcpServer(
   repo: ContentRepository,

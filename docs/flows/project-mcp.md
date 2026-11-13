@@ -1,6 +1,6 @@
 # Flow — project write MCP (draft proposals)
 
-Network MCP on `mcp-write.<domain>` (ADR [0008](../adr/0008-project-write-mcp.md)).
+Network MCP on `mcp-write.<domain>` (ADR [0009](../adr/0009-project-write-mcp.md)).
 Separate Cognito pool and scope (`projects.write`) from candidate-mcp. The only
 tool, `propose_project`, creates a **draft**; an admin approves it.
 
@@ -12,7 +12,7 @@ flowchart TD
   tool[propose_project]
   ddb[(Dynamo project table)]
   admin[Admin /projects: Approve]
-  web[Public site ISR revalidate=10]
+  web[Public site (purged on approve)]
 
   client --> cf --> fn --> tool --> ddb
   ddb -->|status draft: hidden| web
@@ -35,7 +35,7 @@ flowchart TD
 
 1. Draft visible on the public site: a reader bypassed `getProjects` / `getProjectBySlug`.
 2. `cover_url` rejected: it must be on the `MEDIA_PUBLIC_BASE_URL` host.
-3. Approved project not showing: ISR is time-based (about 10 s plus CDN stale window).
+3. Approved project not showing: check that `approveProject` published `ContentChanged` and the purge Lambda ran (ADR 0008).
 4. Auth/discovery issues: same ladder as [candidate-mcp](candidate-mcp.md).
 
 Logs: Project-mcp `ServerFn`, `service` = `portfolio-project-mcp`.

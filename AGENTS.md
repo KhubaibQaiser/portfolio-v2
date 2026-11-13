@@ -10,10 +10,10 @@ below as the source of truth, not guesses from training data.
 - `apps/candidate-mcp` — network-facing MCP server for external automation
   (OAuth 2.1 + Cognito, ADR 0006). See ADR 0003/0006 before changing auth, IAM, or
   adding tools.
-- `apps/project-mcp` — write-capable MCP (ADR 0008): one tool, `propose_project`,
+- `apps/project-mcp` — write-capable MCP (ADR 0009): one tool, `propose_project`,
   creates **drafts only**; admin approval publishes. Separate Cognito pool/scope
   and a PutItem-on-project-only IAM grant. Do not add tools or widen the grant
-  without amending ADR 0008.
+  without amending ADR 0009.
 - `packages/shared` — Zod schemas and ports (`ContentRepository`, `MediaStore`, …).
 - `packages/data` — DynamoDB / fixture adapters.
 - `packages/ai` — model factory, prompts, schemas, guardrails, resume policy.

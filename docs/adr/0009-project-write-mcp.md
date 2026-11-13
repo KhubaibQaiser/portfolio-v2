@@ -1,4 +1,4 @@
-# ADR 0008 — Project write MCP: draft-only proposals, Admin approval
+# ADR 0009 — Project write MCP: draft-only proposals, Admin approval
 
 - **Status:** Accepted (2026-11-06)
 - **Date:** 2026-11-06
@@ -28,9 +28,10 @@ without opening Admin to type the fields.
 4. **Fail-closed filtering at the port.** Public consumers (web pages, chat,
    resume data, `candidate-mcp`) already call those methods, so they never see
    drafts without per-caller changes. Admin uses `getAllProjects()`.
-5. **Freshness stays time-based ISR** (`revalidate = 10`). No tags, no
-   revalidate endpoint. An approved project appears within about 10 s plus the
-   CDN stale window.
+5. **Freshness uses ADR 0008's on-demand purge.** `approveProject` calls
+   `publishContentChanged()` after the status flip, so an approved project
+   appears without waiting for the page TTL. `propose_project` only writes a
+   hidden draft and publishes nothing.
 6. **Network and identity** follow ADR 0003/0006 (OAuth 2.1, origin-verify,
    Host/Origin allowlists, rate limit per `client_id`, `deepSanitize`).
    The Lambda's DynamoDB grant is `PutItem` on the project table and its
